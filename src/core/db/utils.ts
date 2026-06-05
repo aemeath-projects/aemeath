@@ -6,6 +6,26 @@
 
 import { Prisma as MainPrisma } from '../../../prisma/main/generated/index.js'
 
+// ────────────────────────────────────────────
+//  Prisma 错误类型守卫
+// ────────────────────────────────────────────
+
+interface PrismaKnownError {
+  code: string
+  meta?: Record<string, unknown>
+  message: string
+}
+
+/**
+ * 判断 catch 到的 unknown 错误是否为 Prisma 已知请求错误。
+ *
+ * TypeScript 6 下 `export import` 别名无法用于 `instanceof` 类型收窄，
+ * 故封装为类型谓词函数。
+ */
+export function isPrismaKnownError(err: unknown): err is PrismaKnownError {
+  return err instanceof MainPrisma.PrismaClientKnownRequestError
+}
+
 /** 默认慢查询阈值（毫秒）。 */
 const DEFAULT_THRESHOLD_MS = 200
 

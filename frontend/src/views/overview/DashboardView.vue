@@ -83,13 +83,7 @@
       <v-card-text class="pa-4">
         <v-row>
           <v-col v-for="nav in quickNavs" :key="nav.to" cols="6" sm="4" md="3">
-            <v-card
-              variant="outlined"
-              rounded="lg"
-              class="pa-3 cursor-pointer"
-              :to="nav.to"
-              hover
-            >
+            <v-card variant="outlined" rounded="lg" class="pa-3 cursor-pointer" :to="nav.to" hover>
               <div class="d-flex align-center ga-2 mb-1">
                 <v-icon :color="nav.color" size="20">{{ nav.icon }}</v-icon>
                 <span class="text-body-2 font-weight-medium">{{ nav.title }}</span>
@@ -157,14 +151,62 @@ const stats = computed(() => [
 ])
 
 const quickNavs = [
-  { to: '/queue', icon: 'mdi-tray-full', title: '任务队列', subtitle: '队列状态监控', color: 'purple' },
-  { to: '/chat/messages', icon: 'mdi-message-text-outline', title: '消息记录', subtitle: '查看聊天记录', color: 'blue' },
-  { to: '/chat/archive', icon: 'mdi-archive-outline', title: '归档管理', subtitle: '聊天记录归档', color: 'teal' },
-  { to: '/personnel/users', icon: 'mdi-account-group', title: '用户管理', subtitle: '管理用户信息', color: 'indigo' },
-  { to: '/personnel/groups', icon: 'mdi-forum', title: '群聊管理', subtitle: '管理群组信息', color: 'deep-purple' },
-  { to: '/permissions/groups', icon: 'mdi-shield-check', title: '权限管理', subtitle: '功能开关控制', color: 'orange' },
-  { to: '/checkin/records', icon: 'mdi-calendar-check', title: '签到记录', subtitle: '查看打卡历史', color: 'green' },
-  { to: '/logs', icon: 'mdi-text-box-outline', title: '应用日志', subtitle: '实时日志流', color: 'grey' },
+  {
+    to: '/queue',
+    icon: 'mdi-tray-full',
+    title: '任务队列',
+    subtitle: '队列状态监控',
+    color: 'purple',
+  },
+  {
+    to: '/chat/messages',
+    icon: 'mdi-message-text-outline',
+    title: '消息记录',
+    subtitle: '查看聊天记录',
+    color: 'blue',
+  },
+  {
+    to: '/chat/archive',
+    icon: 'mdi-archive-outline',
+    title: '归档管理',
+    subtitle: '聊天记录归档',
+    color: 'teal',
+  },
+  {
+    to: '/personnel/users',
+    icon: 'mdi-account-group',
+    title: '用户管理',
+    subtitle: '管理用户信息',
+    color: 'indigo',
+  },
+  {
+    to: '/personnel/groups',
+    icon: 'mdi-forum',
+    title: '群聊管理',
+    subtitle: '管理群组信息',
+    color: 'deep-purple',
+  },
+  {
+    to: '/permissions/groups',
+    icon: 'mdi-shield-check',
+    title: '权限管理',
+    subtitle: '功能开关控制',
+    color: 'orange',
+  },
+  {
+    to: '/checkin/records',
+    icon: 'mdi-calendar-check',
+    title: '签到记录',
+    subtitle: '查看打卡历史',
+    color: 'green',
+  },
+  {
+    to: '/logs',
+    icon: 'mdi-text-box-outline',
+    title: '应用日志',
+    subtitle: '实时日志流',
+    color: 'grey',
+  },
 ]
 
 onMounted(async () => {

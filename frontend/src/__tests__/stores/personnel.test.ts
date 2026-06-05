@@ -20,28 +20,70 @@ vi.mock('@/apis/personnel', () => ({
 import * as api from '@/apis/personnel'
 
 const mockPaginatedUsers = {
-  items: [{ qq: 1, nickname: 'Alice' }],
+  items: [
+    {
+      qq: 1,
+      nickname: 'Alice',
+      relation: 'friend',
+      group_count: 2,
+      last_synced: '2024-01-01T00:00:00Z',
+    },
+  ],
   total: 1,
   page: 1,
   page_size: 20,
   pages: 1,
 }
 const mockPaginatedGroups = {
-  items: [{ group_id: 100, group_name: 'TestGroup' }],
+  items: [
+    {
+      group_id: 100,
+      group_name: 'TestGroup',
+      member_count: 10,
+      max_member_count: 200,
+      is_active: true,
+      last_synced: '2024-01-01T00:00:00Z',
+    },
+  ],
   total: 1,
   page: 1,
   page_size: 20,
   pages: 1,
 }
 const mockPaginatedMembers = {
-  items: [{ qq: 1, nickname: 'Alice', role: 'member' }],
+  items: [
+    {
+      qq: 1,
+      nickname: 'Alice',
+      card: 'A',
+      role: 'member',
+      relation: 'friend',
+      join_time: 1700000000,
+      last_active_time: 1700000000,
+      title: '',
+      level: '1',
+    },
+  ],
   total: 1,
   page: 1,
   page_size: 20,
   pages: 1,
 }
-const mockUserDetail = { qq: 1, nickname: 'Alice', sex: 'male', age: 20 }
-const mockSyncStatus = { last_sync: '2024-01-01T00:00:00Z', is_syncing: false }
+const mockUserDetail = {
+  qq: 1,
+  nickname: 'Alice',
+  relation: 'friend',
+  group_count: 2,
+  last_synced: '2024-01-01T00:00:00Z',
+}
+const mockSyncStatus = {
+  last_sync_time: '2024-01-01T00:00:00Z',
+  duration_seconds: 5,
+  status: 'completed',
+  users_synced: 10,
+  groups_synced: 3,
+  memberships_synced: 50,
+}
 
 describe('usePersonnelStore', () => {
   beforeEach(() => {
@@ -240,7 +282,15 @@ describe('usePersonnelStore', () => {
   // ── loadAdmins() / setAdmin() / unsetAdmin() ──
 
   describe('管理员操作', () => {
-    const mockAdmins = [{ qq: 1, nickname: 'Alice' }]
+    const mockAdmins = [
+      {
+        qq: 1,
+        nickname: 'Alice',
+        relation: 'admin',
+        group_count: 2,
+        last_synced: '2024-01-01T00:00:00Z',
+      },
+    ]
 
     it('loadAdmins() 成功时更新 admins', async () => {
       vi.mocked(api.fetchAdmins).mockResolvedValue(mockAdmins)
@@ -289,7 +339,7 @@ describe('usePersonnelStore', () => {
 
     it('clearCache() 清空缓存后 getUserName 再次返回 ID 字符串', async () => {
       vi.mocked(api.resolvePersonnel).mockResolvedValue({
-        users: { 1: { qq: 1, nickname: 'Alice' } },
+        users: { 1: { nickname: 'Alice', relation: 'friend' } },
         groups: {},
       })
       const store = usePersonnelStore()

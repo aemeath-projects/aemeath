@@ -2,9 +2,9 @@
  * 今日老婆（jrlp）业务逻辑服务 —— 抽取、预设、查询、修改、删除。
  */
 
-import type { WifeRecord } from '../../prisma/main/generated/index.js'
-import { Prisma } from '../../prisma/main/generated/index.js'
+import type { WifeRecord, Prisma } from '../../prisma/main/generated/index.js'
 import type { MainPrismaClient } from '../core/db/client.js'
+import { isPrismaKnownError } from '../core/db/utils.js'
 import { Startup } from '../core/lifecycle/registry.js'
 
 export type { WifeRecord }
@@ -112,11 +112,11 @@ export class JrlpService {
       })
       return { record, isNew: true, wifeDisplayName }
     } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      if (isPrismaKnownError(err) && err.code === 'P2002') {
         // 并发冲突：重查
         const refound = await this._findRecord(groupId, userId, today)
         if (refound === null) {
-          throw new Error('并发写入后仍未找到记录，请重试')
+          throw new Error('并发写入后仍未找到记录，请重试', { cause: err })
         }
         const wifeUser = await this.db.user.findUnique({
           where: { qq: refound.wifeQq },
@@ -219,7 +219,7 @@ export class JrlpService {
       await this.db.wifeRecord.delete({ where: { id: recordId } })
       return true
     } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+      if (isPrismaKnownError(err) && err.code === 'P2025') {
         return false
       }
       throw err

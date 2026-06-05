@@ -2,9 +2,14 @@
  * 点赞服务 —— 手动点赞、定时任务注册/取消/查询、批量定时执行。
  */
 
-import type { LikeTask, LikeHistory, LikeSource } from '../../prisma/main/generated/index.js'
-import { Prisma } from '../../prisma/main/generated/index.js'
+import type {
+  LikeTask,
+  LikeHistory,
+  LikeSource,
+  Prisma,
+} from '../../prisma/main/generated/index.js'
 import type { MainPrismaClient } from '../core/db/client.js'
+import { isPrismaKnownError } from '../core/db/utils.js'
 import { Startup } from '../core/lifecycle/registry.js'
 import type { BotAPI } from '../core/protocol/api.js'
 
@@ -134,7 +139,7 @@ export class LikeService {
         },
       })
     } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      if (isPrismaKnownError(err) && err.code === 'P2002') {
         // 并发竞争
         return { alreadyExists: true }
       }
@@ -155,7 +160,7 @@ export class LikeService {
       await this.db.likeTask.delete({ where: { qq: qqBig } })
       return true
     } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+      if (isPrismaKnownError(err) && err.code === 'P2025') {
         return false
       }
       throw err

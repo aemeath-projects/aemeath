@@ -11,9 +11,12 @@ export default tseslint.config(
       'node_modules/',
       'frontend/',
       'src/core/db/__generated__/',
+      'prisma/',
       '.venv/',
       'misc/',
-      '*.js',
+      '**/*.js',
+      '**/*.cjs',
+      '**/*.mjs',
     ],
   },
   eslint.configs.recommended,
@@ -23,7 +26,7 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         projectService: {
-          allowDefaultProject: ['*.config.ts'],
+          allowDefaultProject: ['*.config.ts', 'prisma/*/prisma.config.ts'],
         },
         tsconfigRootDir: import.meta.dirname,
       },

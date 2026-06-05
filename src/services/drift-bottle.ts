@@ -9,6 +9,7 @@ import type {
 } from '../../prisma/main/generated/index.js'
 import { Prisma } from '../../prisma/main/generated/index.js'
 import type { MainPrismaClient } from '../core/db/client.js'
+import { isPrismaKnownError } from '../core/db/utils.js'
 import { Startup } from '../core/lifecycle/registry.js'
 
 export type { DriftBottleItem, DriftBottlePool, DriftBottleGroupPool }
@@ -114,6 +115,7 @@ export class DriftBottleService {
       content: unknown
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     const rows = await this.db.$queryRaw<RawRow[]>(Prisma.sql`
       UPDATE drift_bottle_items
       SET is_picked = TRUE,
@@ -156,6 +158,7 @@ export class DriftBottleService {
       available_count: bigint
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     const rows = await this.db.$queryRaw<RawRow[]>(Prisma.sql`
       SELECT
         p.id,
@@ -188,8 +191,8 @@ export class DriftBottleService {
     try {
       return await this.db.driftBottlePool.create({ data: { id: nextId, name } })
     } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
-        throw new Error(`漂流瓶池名称已存在：${name}`)
+      if (isPrismaKnownError(err) && err.code === 'P2002') {
+        throw new Error(`漂流瓶池名称已存在：${name}`, { cause: err })
       }
       throw err
     }
@@ -216,8 +219,8 @@ export class DriftBottleService {
     try {
       await this.db.driftBottlePool.delete({ where: { id: poolId } })
     } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2003') {
-        throw new Error('该池下仍有群归属，无法删除')
+      if (isPrismaKnownError(err) && err.code === 'P2003') {
+        throw new Error('该池下仍有群归属，无法删除', { cause: err })
       }
       throw err
     }

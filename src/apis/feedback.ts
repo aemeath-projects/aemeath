@@ -33,9 +33,10 @@ function feedbackToDict(f: Record<string, unknown>): Record<string, unknown> {
   return {
     id: f.id,
     userId: String(f.userId),
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+
     groupId:
-      f.groupId !== null && f.groupId !== undefined ? String(f.groupId as bigint | number) : null,
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string
+      f.groupId != null ? String(f.groupId) : null,
     content: f.content,
     status: f.status,
     feedbackType: f.feedbackType ?? null,

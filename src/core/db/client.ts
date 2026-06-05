@@ -64,11 +64,9 @@ function appendConnectionLimit(url: string, poolSize: number): string {
  * @param poolSize - 可选，连接池大小，追加为 URL 的 connection_limit 参数
  */
 export function createMainDb(url: string, poolSize?: number): MainPrismaClient {
-  const datasourceUrl = poolSize != null ? appendConnectionLimit(url, poolSize) : url
+  process.env.DATABASE_URL = poolSize != null ? appendConnectionLimit(url, poolSize) : url
 
-  return new MainPrismaClient({
-    datasourceUrl,
-  })
+  return new MainPrismaClient()
 }
 
 /**
@@ -78,9 +76,7 @@ export function createMainDb(url: string, poolSize?: number): MainPrismaClient {
  * @param poolSize - 可选，连接池大小，追加为 URL 的 connection_limit 参数
  */
 export function createChatDb(url: string, poolSize?: number): ChatPrismaClient {
-  const datasourceUrl = poolSize != null ? appendConnectionLimit(url, poolSize) : url
+  process.env.CHAT_DATABASE_URL = poolSize != null ? appendConnectionLimit(url, poolSize) : url
 
-  return new ChatPrismaClient({
-    datasourceUrl,
-  })
+  return new ChatPrismaClient()
 }

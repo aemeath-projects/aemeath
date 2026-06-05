@@ -7,6 +7,7 @@ import type { CheckinRecord } from '../../prisma/main/generated/index.js'
 import type { CacheClient } from '../core/cache/client.js'
 import { checkinStatsKey } from '../core/cache/key-registry.js'
 import type { MainPrismaClient } from '../core/db/client.js'
+import { isPrismaKnownError } from '../core/db/utils.js'
 import { Startup } from '../core/lifecycle/registry.js'
 import { SHANGHAI_TZ } from '../core/utils/helpers.js'
 
@@ -148,7 +149,7 @@ export class CheckinService {
         })
       })
     } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      if (isPrismaKnownError(err) && err.code === 'P2002') {
         // 并发冲突：视为重复签到
         console.warn('[CheckinService] 签到并发冲突，视为重复', { groupId, userId })
         return { isDuplicate: true, rank: 0, streak, total }
@@ -229,6 +230,7 @@ export class CheckinService {
     }
 
     // by === 'streak'：使用原生 SQL 计算当前连续天数
+    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
     const sql =
       gid != null
         ? Prisma.sql`
@@ -288,6 +290,7 @@ export class CheckinService {
             )
             SELECT user_id, streak FROM current_streaks ORDER BY streak DESC LIMIT ${effectiveLimit}
           `
+    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
 
     interface RawRow {
       user_id: bigint

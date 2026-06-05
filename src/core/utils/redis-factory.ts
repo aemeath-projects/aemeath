@@ -24,7 +24,7 @@ export async function checkRedisReachable(url: string, name: string): Promise<vo
   try {
     await redis.connect()
   } catch (err) {
-    throw new Error(`${name} 连接失败: ${String(err)}`)
+    throw new Error(`${name} 连接失败: ${String(err)}`, { cause: err })
   } finally {
     redis.disconnect()
   }

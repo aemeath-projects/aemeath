@@ -6,6 +6,7 @@ import vuetify from 'vite-plugin-vuetify'
 export default defineConfig({
   plugins: [vue(), vuetify({ autoImport: true })],
   test: {
+    name: 'frontend',
     environment: 'jsdom',
     setupFiles: ['./src/test-setup.ts'],
     include: ['src/tests/**/*.test.ts'],

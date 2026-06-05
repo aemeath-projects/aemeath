@@ -15,7 +15,9 @@ import {
   PERM_GROUP_GLOB,
 } from '../cache/key-registry.js'
 import type { MainPrismaClient } from '../db/client.js'
-import type { FeatureRegistry } from '../registries/feature-registry.js'
+import { componentRegistry } from '../framework/decorators.js'
+import { Startup } from '../lifecycle/registry.js'
+import { FeatureRegistry } from '../registries/feature-registry.js'
 
 /** 缓存 TTL（秒）。 */
 const CACHE_TTL = 60
@@ -362,3 +364,35 @@ export class FeaturePermissionService {
     }
   }
 }
+
+// ── 生命周期注册 ──
+
+Startup({
+  name: 'permission_service',
+  provides: ['permission_service'],
+  requires: ['db', 'cache'],
+})(async (deps: Record<string, unknown>): Promise<Record<string, unknown>> => {
+  const db = deps.db as MainPrismaClient
+  const cache = deps.cache as CacheClient
+
+  // 从 componentRegistry 构建 FeatureRegistry（handler 扫描完成后已填充）
+  const registry = new FeatureRegistry()
+  for (const [, meta] of componentRegistry) {
+    registry.register({
+      name: meta.name,
+      displayName: meta.displayName,
+      description: meta.description,
+      defaultEnabled: meta.defaultEnabled,
+      system: meta.system,
+      admin: meta.admin,
+      messageScope: 'all',
+      mappingType: '',
+      tags: [...meta.tags],
+      parent: null,
+      children: [],
+      trigger: '',
+    })
+  }
+
+  return { permission_service: new FeaturePermissionService(db, cache, registry) }
+})

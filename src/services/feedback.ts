@@ -2,11 +2,13 @@
  * 用户反馈业务逻辑 —— 反馈创建、查询、状态更新、通知。
  */
 
-import type { Prisma,
+import type {
+  Prisma,
   Feedback,
   FeedbackStatus,
   FeedbackSource,
-  FeedbackType } from '../../prisma/main/generated/index.js'
+  FeedbackType,
+} from '../../prisma/main/generated/index.js'
 import type { MainPrismaClient } from '../core/db/client.js'
 import { Startup } from '../core/lifecycle/registry.js'
 import type { BotAPI } from '../core/protocol/api.js'
@@ -80,15 +82,7 @@ export class FeedbackService {
    * 分页查询反馈列表，支持多条件筛选和搜索。返回 [items, total] 元组。
    */
   async listFeedbacks(params: ListFeedbacksParams = {}): Promise<[Feedback[], number]> {
-    const {
-      page = 1,
-      pageSize = 20,
-      status,
-      feedbackType,
-      userId,
-      source,
-      search,
-    } = params
+    const { page = 1, pageSize = 20, status, feedbackType, userId, source, search } = params
 
     const where: Prisma.FeedbackWhereInput = {
       ...(status != null ? { status: status as FeedbackStatus } : {}),
@@ -219,12 +213,9 @@ export class FeedbackService {
 
   private async _notifyUser(feedback: Feedback): Promise<void> {
     const preview =
-      feedback.content.length > 50
-        ? `${feedback.content.slice(0, 50)}...`
-        : feedback.content
+      feedback.content.length > 50 ? `${feedback.content.slice(0, 50)}...` : feedback.content
 
-    let message =
-      `【反馈处理通知】\n您的反馈已处理完成。\n反馈内容：${preview}\n`
+    let message = `【反馈处理通知】\n您的反馈已处理完成。\n反馈内容：${preview}\n`
     if (feedback.adminReply) {
       message += `管理员回复：${feedback.adminReply}`
     }

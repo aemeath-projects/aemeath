@@ -100,7 +100,6 @@ export class DailyCheckinService {
     let failed = 0
 
     for (const groupId of groupIds) {
-
       // Redis 去重：今日已打卡则跳过
       let alreadyDone: boolean
       try {
@@ -193,12 +192,6 @@ Startup({
   const connMgr = deps.conn_mgr as ConnectionManager
   const permissionService = deps.permission_service as FeaturePermissionService
   return {
-    daily_checkin_service: new DailyCheckinService(
-      db,
-      cache,
-      botApi,
-      connMgr,
-      permissionService,
-    ),
+    daily_checkin_service: new DailyCheckinService(db, cache, botApi, connMgr, permissionService),
   }
 })

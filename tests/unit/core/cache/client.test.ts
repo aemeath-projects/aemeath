@@ -62,11 +62,7 @@ describe('CacheClient', () => {
 
       await cache.set('test:key', { score: 42 })
 
-      expect(mockRedis.setex).toHaveBeenCalledWith(
-        'test:key',
-        300,
-        JSON.stringify({ score: 42 }),
-      )
+      expect(mockRedis.setex).toHaveBeenCalledWith('test:key', 300, JSON.stringify({ score: 42 }))
     })
 
     it('应当使用自定义 TTL', async () => {
@@ -74,11 +70,7 @@ describe('CacheClient', () => {
 
       await cache.set('test:key', 'value', 600)
 
-      expect(mockRedis.setex).toHaveBeenCalledWith(
-        'test:key',
-        600,
-        JSON.stringify('value'),
-      )
+      expect(mockRedis.setex).toHaveBeenCalledWith('test:key', 600, JSON.stringify('value'))
     })
 
     it('TTL 为 0 时应当使用 SET（无过期）', async () => {
@@ -86,10 +78,7 @@ describe('CacheClient', () => {
 
       await cache.set('persist:key', 'forever', 0)
 
-      expect(mockRedis.set).toHaveBeenCalledWith(
-        'persist:key',
-        JSON.stringify('forever'),
-      )
+      expect(mockRedis.set).toHaveBeenCalledWith('persist:key', JSON.stringify('forever'))
       expect(mockRedis.setex).not.toHaveBeenCalled()
     })
   })
@@ -163,21 +152,14 @@ describe('CacheClient', () => {
 
       expect(result).toEqual({ fresh: true })
       expect(factory).toHaveBeenCalledOnce()
-      expect(mockRedis.setex).toHaveBeenCalledWith(
-        'miss:key',
-        120,
-        JSON.stringify({ fresh: true }),
-      )
+      expect(mockRedis.setex).toHaveBeenCalledWith('miss:key', 120, JSON.stringify({ fresh: true }))
     })
   })
 
   describe('deleteByPattern', () => {
     it('应当使用 SCAN 循环删除匹配的键', async () => {
       // 第一次 SCAN 返回部分键和非零 cursor
-      mockRedis.scan.mockResolvedValueOnce([
-        '42',
-        ['texas:perm:1', 'texas:perm:2'],
-      ])
+      mockRedis.scan.mockResolvedValueOnce(['42', ['texas:perm:1', 'texas:perm:2']])
       // 第二次 SCAN 返回剩余键和 cursor=0（结束）
       mockRedis.scan.mockResolvedValueOnce(['0', ['texas:perm:3']])
       mockRedis.del.mockResolvedValue(2).mockResolvedValueOnce(2)
@@ -187,13 +169,7 @@ describe('CacheClient', () => {
 
       expect(deleted).toBe(3)
       expect(mockRedis.scan).toHaveBeenCalledTimes(2)
-      expect(mockRedis.scan).toHaveBeenCalledWith(
-        '0',
-        'MATCH',
-        'texas:perm:*',
-        'COUNT',
-        100,
-      )
+      expect(mockRedis.scan).toHaveBeenCalledWith('0', 'MATCH', 'texas:perm:*', 'COUNT', 100)
       expect(mockRedis.del).toHaveBeenCalledWith('texas:perm:1', 'texas:perm:2')
       expect(mockRedis.del).toHaveBeenCalledWith('texas:perm:3')
     })

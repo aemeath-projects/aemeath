@@ -371,8 +371,12 @@ export class PersonnelQueryService {
     ])
 
     return {
-      users: Object.fromEntries(users.map((u) => [String(u.qq), { nickname: u.nickname, relation: u.relation }])),
-      groups: Object.fromEntries(groups.map((g) => [String(g.groupId), { groupName: g.groupName }])),
+      users: Object.fromEntries(
+        users.map((u) => [String(u.qq), { nickname: u.nickname, relation: u.relation }]),
+      ),
+      groups: Object.fromEntries(
+        groups.map((g) => [String(g.groupId), { groupName: g.groupName }]),
+      ),
     }
   }
 }

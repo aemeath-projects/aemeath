@@ -51,9 +51,7 @@ for (const worker of workers) {
   })
 }
 
-console.info(
-  `[worker] Texas Worker 已启动，监听队列: ${workers.map((w) => w.name).join(', ')}`,
-)
+console.info(`[worker] Texas Worker 已启动，监听队列: ${workers.map((w) => w.name).join(', ')}`)
 
 // ── 优雅关闭 ──
 

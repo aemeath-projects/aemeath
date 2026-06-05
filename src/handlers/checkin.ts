@@ -22,7 +22,7 @@ function getTodayShanghai(): Date {
 
 class CheckinHandler {
   /** 处理用户签到请求，回复排名和连续/累计天数。 */
-   
+
   async handleCheckin(ctx: Context): Promise<boolean> {
     const { CheckinService: CheckinSvc } = await import('../services/checkin.js')
 
@@ -80,21 +80,19 @@ Component({
   defaultEnabled: true,
 })(CheckinHandler)
 
- 
 OnKeyword(new Set(['签到']), {
   scope: MessageScope.GROUP,
   displayName: '签到（关键词）',
   description: '发送「签到」触发',
-// eslint-disable-next-line @typescript-eslint/unbound-method
+  // eslint-disable-next-line @typescript-eslint/unbound-method
 })(CheckinHandler.prototype.handleCheckin)
 
- 
 OnCommand('签到', {
   permission: Permission.ANYONE,
   scope: MessageScope.GROUP,
   displayName: '签到（命令）',
   description: '发送「/签到」触发',
-// eslint-disable-next-line @typescript-eslint/unbound-method
+  // eslint-disable-next-line @typescript-eslint/unbound-method
 })(CheckinHandler.prototype.handleCheckin)
 
 export { CheckinHandler }

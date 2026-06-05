@@ -13,9 +13,7 @@ import { getRpcBridge } from '../core/rpc/bridge.js'
  * 通过 RPCBridge 调用主进程注册的 request_like handler，
  * 返回点赞结果字典。
  */
-export async function dailyLikeProcessor(
-  _job: Job,
-): Promise<Record<string, unknown>> {
+export async function dailyLikeProcessor(_job: Job): Promise<Record<string, unknown>> {
   const config = loadConfig()
   const bridge = getRpcBridge(config.PERSISTENT_REDIS_URL)
 

@@ -5,6 +5,7 @@
 import type { Queue } from 'bullmq'
 
 import { Startup, Shutdown } from '../core/lifecycle/registry.js'
+import { logger } from '../core/logging/setup.js'
 import { QUEUE_NAMES } from '../core/tasks/broker.js'
 
 // ── 调度器 ID 常量 ──
@@ -23,9 +24,7 @@ const SCHEDULER_IDS = {
  *
  * @param queues - 按队列名称索引的 Queue 实例 map
  */
-export async function registerScheduledJobs(
-  queues: Record<string, Queue>,
-): Promise<void> {
+export async function registerScheduledJobs(queues: Record<string, Queue>): Promise<void> {
   const dailyCheckinQueue = queues[QUEUE_NAMES.DAILY_CHECKIN]
   const dailyLikeQueue = queues[QUEUE_NAMES.DAILY_LIKE]
   const chatArchiveQueue = queues[QUEUE_NAMES.CHAT_ARCHIVE]
@@ -75,9 +74,7 @@ export async function registerScheduledJobs(
 
   await Promise.all(jobs)
 
-  console.info('[Scheduler] 定时任务注册完成', {
-    jobs: Object.values(SCHEDULER_IDS),
-  })
+  logger.info({ jobs: Object.values(SCHEDULER_IDS) }, '[scheduler] 定时任务注册完成')
 }
 
 // ── 生命周期注册 ──
@@ -92,8 +89,6 @@ Startup({
   return { scheduler: { queues } }
 })
 
-Shutdown({ name: 'scheduler' })(
-  async (_services: Record<string, unknown>): Promise<void> => {
-    // BullMQ Queue 实例由 broker 模块管理，此处无需额外清理
-  },
-)
+Shutdown({ name: 'scheduler' })(async (_services: Record<string, unknown>): Promise<void> => {
+  // BullMQ Queue 实例由 broker 模块管理，此处无需额外清理
+})

@@ -96,10 +96,7 @@ export class PersonnelService {
    *
    * 若用户当前 relation 为 admin，则跳过 relation 更新。
    */
-  async upsertUsers(
-    usersData: FriendData[],
-    relation: UserRelation = 'stranger',
-  ): Promise<number> {
+  async upsertUsers(usersData: FriendData[], relation: UserRelation = 'stranger'): Promise<number> {
     if (usersData.length === 0) return 0
     const now = new Date()
     let total = 0
@@ -195,7 +192,10 @@ export class PersonnelService {
           data: { nickname: m.nickname ?? '', relation: 'group_member', lastSynced: now },
         })
       } else {
-        await this.db.user.update({ where: { qq }, data: { nickname: m.nickname ?? '', lastSynced: now } })
+        await this.db.user.update({
+          where: { qq },
+          data: { nickname: m.nickname ?? '', lastSynced: now },
+        })
       }
 
       // upsert 成员关系
@@ -367,7 +367,9 @@ export class PersonnelService {
   }
 
   /** 获取所有超级管理员列表。 */
-  async getAdmins(): Promise<{ qq: bigint; nickname: string; relation: string; lastSynced: string | null }[]> {
+  async getAdmins(): Promise<
+    { qq: bigint; nickname: string; relation: string; lastSynced: string | null }[]
+  > {
     const admins = await this.db.user.findMany({ where: { relation: 'admin' } })
     return admins.map((r) => ({
       qq: r.qq,
@@ -425,7 +427,10 @@ export class PersonnelService {
   // ── 内部辅助 ──
 
   /** 简化版 upsertUsers（不进行 admin 保护判断，直接批量写入）。 */
-  private async _upsertUsersSimple(usersData: FriendData[], relation: UserRelation): Promise<number> {
+  private async _upsertUsersSimple(
+    usersData: FriendData[],
+    relation: UserRelation,
+  ): Promise<number> {
     if (usersData.length === 0) return 0
     const now = new Date()
     let total = 0

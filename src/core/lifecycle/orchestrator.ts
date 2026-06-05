@@ -2,6 +2,8 @@
  * 生命周期编排器 —— 拓扑排序 + 按序启动/关闭业务模块。
  */
 
+import { logger } from '../logging/setup.js'
+
 import type { ShutdownEntry, StartupEntry } from './registry.js'
 
 /**
@@ -80,9 +82,7 @@ export class LifecycleOrchestrator {
       const deps = Object.fromEntries(entry.requires.map((k) => [k, this._services[k]]))
       const provided = await entry.fn(deps)
       Object.assign(this._services, provided)
-      console.log(
-        `[lifecycle] 业务模块已启动：${entry.name}，provides=[${entry.provides.join(', ')}]`,
-      )
+      logger.info({ provides: entry.provides }, `[${entry.name}] 业务模块已启动`)
     }
 
     return { ...this._services }
@@ -105,9 +105,9 @@ export class LifecycleOrchestrator {
           entry.provides.filter((k) => k in this._services).map((k) => [k, this._services[k]]),
         )
         await hookEntry.fn(svcDict)
-        console.log(`[lifecycle] 业务模块已关闭：${entry.name}`)
+        logger.info({}, `[${entry.name}] 业务模块已关闭`)
       } catch (err) {
-        console.error(`[lifecycle] 业务模块关闭失败：${entry.name}，错误：${String(err)}`)
+        logger.error({ err }, `[${entry.name}] 业务模块关闭失败`)
       }
     }
   }

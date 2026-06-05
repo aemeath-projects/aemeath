@@ -2,11 +2,7 @@
  * 点赞服务 —— 手动点赞、定时任务注册/取消/查询、批量定时执行。
  */
 
-import type {
-  LikeTask,
-  LikeHistory,
-  LikeSource,
-} from '../../prisma/main/generated/index.js'
+import type { LikeTask, LikeHistory, LikeSource } from '../../prisma/main/generated/index.js'
 import { Prisma } from '../../prisma/main/generated/index.js'
 import type { MainPrismaClient } from '../core/db/client.js'
 import { Startup } from '../core/lifecycle/registry.js'
@@ -75,11 +71,7 @@ export class LikeService {
    * @param times - 点赞次数
    * @param source - 触发来源
    */
-  async sendLikeNow(
-    qq: bigint | number,
-    times: number,
-    source: LikeSource,
-  ): Promise<boolean> {
+  async sendLikeNow(qq: bigint | number, times: number, source: LikeSource): Promise<boolean> {
     const qqBig = BigInt(qq)
     let success = false
     try {
@@ -142,10 +134,7 @@ export class LikeService {
         },
       })
     } catch (err) {
-      if (
-        err instanceof Prisma.PrismaClientKnownRequestError &&
-        err.code === 'P2002'
-      ) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
         // 并发竞争
         return { alreadyExists: true }
       }
@@ -166,10 +155,7 @@ export class LikeService {
       await this.db.likeTask.delete({ where: { qq: qqBig } })
       return true
     } catch (err) {
-      if (
-        err instanceof Prisma.PrismaClientKnownRequestError &&
-        err.code === 'P2025'
-      ) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
         return false
       }
       throw err
@@ -200,7 +186,9 @@ export class LikeService {
   /**
    * 分页查询所有定时点赞任务。返回 [items, total] 元组。
    */
-  async listTasks(params: { page?: number; pageSize?: number } = {}): Promise<[LikeTask[], number]> {
+  async listTasks(
+    params: { page?: number; pageSize?: number } = {},
+  ): Promise<[LikeTask[], number]> {
     const { page = 1, pageSize = 20 } = params
     const [items, total] = await Promise.all([
       this.db.likeTask.findMany({
@@ -217,14 +205,7 @@ export class LikeService {
    * 分页查询点赞历史记录。返回 [items, total] 元组。
    */
   async listHistory(params: ListHistoryParams = {}): Promise<[LikeHistory[], number]> {
-    const {
-      qq,
-      source,
-      dateFrom,
-      dateTo,
-      page = 1,
-      pageSize = 20,
-    } = params
+    const { qq, source, dateFrom, dateTo, page = 1, pageSize = 20 } = params
 
     const where: Prisma.LikeHistoryWhereInput = {
       ...(qq != null ? { qq: BigInt(qq) } : {}),

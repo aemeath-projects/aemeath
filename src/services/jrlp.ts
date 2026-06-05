@@ -112,10 +112,7 @@ export class JrlpService {
       })
       return { record, isNew: true, wifeDisplayName }
     } catch (err) {
-      if (
-        err instanceof Prisma.PrismaClientKnownRequestError &&
-        err.code === 'P2002'
-      ) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
         // 并发冲突：重查
         const refound = await this._findRecord(groupId, userId, today)
         if (refound === null) {
@@ -222,10 +219,7 @@ export class JrlpService {
       await this.db.wifeRecord.delete({ where: { id: recordId } })
       return true
     } catch (err) {
-      if (
-        err instanceof Prisma.PrismaClientKnownRequestError &&
-        err.code === 'P2025'
-      ) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
         return false
       }
       throw err

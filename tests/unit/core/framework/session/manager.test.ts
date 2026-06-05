@@ -68,18 +68,15 @@ class SimpleSession extends InteractiveSession<SimpleData> {
 
   override async buildStates(): Promise<State[]> {
     return [
-      makeState(
-        'ask',
-        {
-          onEnter: async (ctx: SessionContext): Promise<void> => {
-            await ctx.reply('请输入内容')
-          },
-          onInput: async (_ctx: SessionContext): Promise<string | null> => {
-            this.data.step = 'done'
-            return 'finish'
-          },
+      makeState('ask', {
+        onEnter: async (ctx: SessionContext): Promise<void> => {
+          await ctx.reply('请输入内容')
         },
-      ),
+        onInput: async (_ctx: SessionContext): Promise<string | null> => {
+          this.data.step = 'done'
+          return 'finish'
+        },
+      }),
       makeState('finish', {}, { isFinal: true }),
     ]
   }

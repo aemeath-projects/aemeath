@@ -4,11 +4,7 @@
 
 import type { Context } from '../core/framework/context.js'
 import type { ComponentMeta } from '../core/framework/decorators.js'
-import {
-  Component,
-  OnCommand,
-  MessageScope,
-} from '../core/framework/decorators.js'
+import { Component, OnCommand, MessageScope } from '../core/framework/decorators.js'
 import type { MarkdownRenderer } from '../core/utils/md2img.js'
 
 const HELP_PAGE_SIZE = 8
@@ -39,16 +35,16 @@ function buildListMarkdown(categories: HelpCategory[], page: number, totalPages:
     lines.push('| 功能 | 说明 | 触发方式 |')
     lines.push('|------|------|----------|')
     for (const item of cat.items) {
-      lines.push(`| ${item.displayName} | ${item.description || '—'} | ${fmtTrigger(item.trigger)} |`)
+      lines.push(
+        `| ${item.displayName} | ${item.description || '—'} | ${fmtTrigger(item.trigger)} |`,
+      )
     }
     lines.push('')
   }
 
   lines.push('---')
   if (totalPages > 1) {
-    const parts: string[] = [
-      `第 ${String(page)} 页 / 共 ${String(totalPages)} 页`,
-    ]
+    const parts: string[] = [`第 ${String(page)} 页 / 共 ${String(totalPages)} 页`]
     if (page < totalPages) {
       parts.push(`发送 \`/help ${String(page + 1)}\` 查看下一页`)
     }
@@ -154,9 +150,7 @@ async function handleDetail(
   allFeatures: ComponentMeta[],
   renderer: MarkdownRenderer,
 ): Promise<boolean> {
-  const meta = allFeatures.find(
-    (c) => c.name === featureQuery || c.displayName === featureQuery,
-  )
+  const meta = allFeatures.find((c) => c.name === featureQuery || c.displayName === featureQuery)
 
   if (meta === undefined) {
     await ctx.reply('未找到该功能或功能未启用')
@@ -170,7 +164,7 @@ async function handleDetail(
 
 class HelpHandler {
   /** 处理 /help 指令。 */
-   
+
   async showHelp(ctx: Context): Promise<boolean> {
     const { MarkdownRenderer } = await import('../core/utils/md2img.js')
 
@@ -205,14 +199,12 @@ Component({
   system: true,
 })(HelpHandler)
 
- 
- 
 OnCommand('/help', {
   aliases: new Set(['/帮助', '/？']),
   displayName: '功能帮助',
   description: '查看当前可用功能列表，发送 /help <功能名> 查看子命令详情',
   scope: MessageScope.ALL,
-// eslint-disable-next-line @typescript-eslint/unbound-method
+  // eslint-disable-next-line @typescript-eslint/unbound-method
 })(HelpHandler.prototype.showHelp)
 
 export { HelpHandler }

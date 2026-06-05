@@ -15,9 +15,6 @@ export function ok<T>(data: T, message = 'success'): ApiResponse<T> {
 }
 
 /** 构造失败响应。 */
-export function fail(
-  message: string,
-  data: unknown = null,
-): ApiResponse {
+export function fail(message: string, data: unknown = null): ApiResponse {
   return { code: -1, data, message }
 }

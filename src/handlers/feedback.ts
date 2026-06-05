@@ -5,11 +5,7 @@
  */
 
 import type { Context } from '../core/framework/context.js'
-import {
-  Component,
-  OnCommand,
-  Permission,
-} from '../core/framework/decorators.js'
+import { Component, OnCommand, Permission } from '../core/framework/decorators.js'
 import type { FeedbackService } from '../services/feedback.js'
 
 type FeedbackType = 'bug' | 'suggestion' | 'complaint'
@@ -35,7 +31,7 @@ function parseQuickFeedback(args: string): [FeedbackType | null, string] {
 
 class FeedbackHandler {
   /** 提交反馈命令。有参数时直接提交，无参数时提示用法。 */
-   
+
   async submitFeedback(ctx: Context): Promise<boolean> {
     const { FeedbackService: FeedbackSvc } = await import('../services/feedback.js')
 
@@ -77,7 +73,7 @@ class FeedbackHandler {
   }
 
   /** 查询用户最近 5 条反馈。 */
-   
+
   async myFeedbacks(ctx: Context): Promise<boolean> {
     const { FeedbackService: FeedbackSvc } = await import('../services/feedback.js')
 
@@ -136,23 +132,20 @@ Component({
   defaultEnabled: true,
 })(FeedbackHandler)
 
- 
- 
 OnCommand('/反馈', {
   aliases: new Set(['/feedback']),
   permission: Permission.ANYONE,
   displayName: '提交反馈',
   description: '提交用户反馈，格式：/反馈 [类型] 内容',
-// eslint-disable-next-line @typescript-eslint/unbound-method
+  // eslint-disable-next-line @typescript-eslint/unbound-method
 })(FeedbackHandler.prototype.submitFeedback)
 
- 
 OnCommand('/我的反馈', {
   aliases: new Set(['/myfeedback']),
   permission: Permission.ANYONE,
   displayName: '查询我的反馈',
   description: '查询用户自己的反馈列表',
-// eslint-disable-next-line @typescript-eslint/unbound-method
+  // eslint-disable-next-line @typescript-eslint/unbound-method
 })(FeedbackHandler.prototype.myFeedbacks)
 
 export { FeedbackHandler }

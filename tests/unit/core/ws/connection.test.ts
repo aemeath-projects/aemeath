@@ -196,7 +196,7 @@ describe('ConnectionManager', () => {
       connMgr.handleConnect(socket, {} as never)
 
       connMgr.send('{"test":true}')
-       
+
       expect(socket.send).toHaveBeenCalledWith('{"test":true}')
     })
 

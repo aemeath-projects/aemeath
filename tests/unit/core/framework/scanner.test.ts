@@ -25,7 +25,9 @@ afterEach(() => {
 describe('ComponentScanner', () => {
   it('registerHandlers() 应将 componentRegistry 中的组件注册到 mapping', () => {
     // 模拟装饰器副作用：手动填充 componentRegistry 和 handlerRegistry
-    function handleEcho(): void { /* noop */ }
+    function handleEcho(): void {
+      /* noop */
+    }
     OnCommand('echo')(handleEcho)
 
     class EchoHandler {
@@ -50,7 +52,9 @@ describe('ComponentScanner', () => {
 
   it('注册组件后 getComponentNames() 应返回组件名', () => {
     class TestHandler {
-      run(): void { /* noop */ }
+      run(): void {
+        /* noop */
+      }
     }
 
     Component({ name: 'test-comp' })(TestHandler)
@@ -64,7 +68,9 @@ describe('ComponentScanner', () => {
 
   it('同一组件不应被重复注册', () => {
     class UniqueHandler {
-      run(): void { /* noop */ }
+      run(): void {
+        /* noop */
+      }
     }
 
     Component({ name: 'unique-comp' })(UniqueHandler)
@@ -81,7 +87,9 @@ describe('ComponentScanner', () => {
 
   it('componentRegistry 中有 handler 方法的组件应注册到 mapping', () => {
     // 创建一个有 handler 方法的组件
-    function myHandle(): void { /* noop */ }
+    function myHandle(): void {
+      /* noop */
+    }
     OnCommand('mycommand')(myHandle)
 
     class MyHandlerComp {

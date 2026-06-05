@@ -27,9 +27,7 @@ describe('ChatHistoryService', () => {
 
   beforeEach(() => {
     mockChatDb = createMockChatDb()
-    service = new ChatHistoryService(
-      mockChatDb as unknown as ChatPrismaClient,
-    )
+    service = new ChatHistoryService(mockChatDb as unknown as ChatPrismaClient)
   })
 
   // ──────────────────────────────────────────────
@@ -149,7 +147,9 @@ describe('ChatHistoryService', () => {
 
       await service.getGroupHistory(888n, { limit: 20 })
 
-      interface FindManyArg { take: number }
+      interface FindManyArg {
+        take: number
+      }
       const callArg = mockChatDb.chatMessage.findMany.mock.calls[0]?.[0] as FindManyArg
       expect(callArg.take).toBe(20)
     })

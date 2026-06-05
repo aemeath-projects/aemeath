@@ -253,7 +253,11 @@ describe('FeedbackService', () => {
       mockDb.feedback.findMany.mockResolvedValue(fakeFeedbacks)
       mockDb.feedback.count.mockResolvedValue(1)
 
-      const [items, total] = await service.listFeedbacks({ status: 'pending', page: 1, pageSize: 10 })
+      const [items, total] = await service.listFeedbacks({
+        status: 'pending',
+        page: 1,
+        pageSize: 10,
+      })
 
       expect(items).toEqual(fakeFeedbacks)
       expect(total).toBe(1)

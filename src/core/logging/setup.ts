@@ -4,6 +4,7 @@
 
 import pino from 'pino'
 import type { Logger } from 'pino'
+import pinoPretty from 'pino-pretty'
 
 // ── 日志广播流写入器（Phase 6 接入）──
 
@@ -29,18 +30,16 @@ const broadcastWritable = {
  */
 export function createLogger(opts: { level: string; format: 'json' | 'console' }): Logger {
   if (opts.format === 'console') {
-    return pino({
-      level: opts.level,
-      transport: {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          translateTime: 'yyyy-mm-dd HH:MM:ss.l',
-          messageFormat: '{msg}',
-          ignore: 'pid,hostname',
-        },
-      },
+    // stream 模式 + 显式 destination:process.stdout，确保通过 WriteConsoleW 输出
+    // 避免 sonicBoom(fd=1) 使用 WriteFile + GBK 代码页导致中文乱码（Windows 特有问题）
+    const prettyStream = pinoPretty({
+      colorize: true,
+      translateTime: 'yyyy-mm-dd HH:MM:ss.l',
+      messageFormat: '{msg}',
+      ignore: 'pid,hostname',
+      destination: process.stdout,
     })
+    return pino({ level: opts.level }, prettyStream)
   }
 
   // JSON 模式：通过多目标写入同时输出到 stdout 和广播器

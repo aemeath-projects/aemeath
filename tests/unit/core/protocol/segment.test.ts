@@ -152,12 +152,7 @@ describe('extractPlaintext', () => {
   })
 
   it('handles mixed segment array correctly', () => {
-    const segments = [
-      Seg.reply(99),
-      Seg.at(111n),
-      Seg.text('nice pic'),
-      Seg.image('img.jpg'),
-    ]
+    const segments = [Seg.reply(99), Seg.at(111n), Seg.text('nice pic'), Seg.image('img.jpg')]
     expect(extractPlaintext(segments)).toBe('nice pic')
   })
 })

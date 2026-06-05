@@ -48,7 +48,7 @@ function filterContent(
 
 class DriftBottleHandler {
   /** 处理扔漂流瓶请求。 */
-   
+
   async handleThrow(ctx: Context): Promise<boolean> {
     const { DriftBottleService: DriftSvc } = await import('../services/drift-bottle.js')
 
@@ -61,12 +61,11 @@ class DriftBottleHandler {
     const groupId = BigInt(ctx.groupId)
 
     const rawMessage = (ctx.event as Record<string, unknown>).message
-    const message =
-      Array.isArray(rawMessage)
-        ? (rawMessage as MessageSegment[])
-        : typeof rawMessage === 'string'
-          ? rawMessage
-          : ctx.getPlaintext()
+    const message = Array.isArray(rawMessage)
+      ? (rawMessage as MessageSegment[])
+      : typeof rawMessage === 'string'
+        ? rawMessage
+        : ctx.getPlaintext()
 
     const content = filterContent(message, TRIGGER_THROW)
     if (content.length === 0) {
@@ -94,7 +93,7 @@ class DriftBottleHandler {
   }
 
   /** 处理捞漂流瓶请求。 */
-   
+
   async handlePick(ctx: Context): Promise<boolean> {
     const { DriftBottleService: DriftSvc } = await import('../services/drift-bottle.js')
 
@@ -123,9 +122,10 @@ class DriftBottleHandler {
 
     const replySegs: MessageSegment[] = [
       Seg.text('捞到了一个漂流瓶：\n'),
-      ...(bottle.content as { type: string; data: Record<string, unknown> }[]).map(
-        (s) => ({ type: s.type, data: s.data }),
-      ),
+      ...(bottle.content as { type: string; data: Record<string, unknown> }[]).map((s) => ({
+        type: s.type,
+        data: s.data,
+      })),
     ]
 
     await ctx.reply(replySegs)
@@ -143,22 +143,20 @@ Component({
   defaultEnabled: true,
 })(DriftBottleHandler)
 
- 
 OnStartsWith(TRIGGER_THROW, {
   permission: Permission.ANYONE,
   scope: MessageScope.GROUP,
   displayName: '扔漂流瓶',
   description: '消息以「扔漂流瓶」开头时触发，内容包含文字或图片',
-// eslint-disable-next-line @typescript-eslint/unbound-method
+  // eslint-disable-next-line @typescript-eslint/unbound-method
 })(DriftBottleHandler.prototype.handleThrow)
 
- 
 OnFullMatch(TRIGGER_PICK, {
   permission: Permission.ANYONE,
   scope: MessageScope.GROUP,
   displayName: '捞漂流瓶',
   description: '发送「捞漂流瓶」时随机捞取同池内一个瓶',
-// eslint-disable-next-line @typescript-eslint/unbound-method
+  // eslint-disable-next-line @typescript-eslint/unbound-method
 })(DriftBottleHandler.prototype.handlePick)
 
 export { DriftBottleHandler }

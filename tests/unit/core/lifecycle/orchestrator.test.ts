@@ -29,7 +29,11 @@ function makeStartup(
 function makeShutdown(name: string, fn?: ShutdownEntry['fn']): ShutdownEntry {
   return {
     name,
-    fn: fn ?? (async (_services: Record<string, unknown>) => { /* noop */ }),
+    fn:
+      fn ??
+      (async (_services: Record<string, unknown>) => {
+        /* noop */
+      }),
   }
 }
 
@@ -121,9 +125,15 @@ describe('LifecycleOrchestrator', () => {
     await orchestrator.startup({}, entries)
 
     const shutdowns = [
-      makeShutdown('a', async () => { order.push('a') }),
-      makeShutdown('b', async () => { order.push('b') }),
-      makeShutdown('c', async () => { order.push('c') }),
+      makeShutdown('a', async () => {
+        order.push('a')
+      }),
+      makeShutdown('b', async () => {
+        order.push('b')
+      }),
+      makeShutdown('c', async () => {
+        order.push('c')
+      }),
     ]
 
     await orchestrator.shutdown(shutdowns)
@@ -133,10 +143,7 @@ describe('LifecycleOrchestrator', () => {
   })
 
   it('没有对应 shutdown 的模块应被跳过', async () => {
-    const entries = [
-      makeStartup('a', ['a'], []),
-      makeStartup('b', ['b'], ['a']),
-    ]
+    const entries = [makeStartup('a', ['a'], []), makeStartup('b', ['b'], ['a'])]
 
     await orchestrator.startup({}, entries)
 
@@ -149,9 +156,7 @@ describe('LifecycleOrchestrator', () => {
   })
 
   it('services getter 应返回当前所有服务', async () => {
-    await orchestrator.startup({ infra: 'infra-value' }, [
-      makeStartup('svc', ['svc'], ['infra']),
-    ])
+    await orchestrator.startup({ infra: 'infra-value' }, [makeStartup('svc', ['svc'], ['infra'])])
 
     const svcs = orchestrator.services
     expect(svcs.infra).toBe('infra-value')

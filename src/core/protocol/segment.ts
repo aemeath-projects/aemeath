@@ -244,10 +244,7 @@ export class MessageBuilder {
  */
 export function extractPlaintext(segments: MessageSegment[]): string {
   return segments
-    .filter(
-      (seg): seg is TextSegment =>
-        seg.type === 'text' && typeof seg.data.text === 'string',
-    )
+    .filter((seg): seg is TextSegment => seg.type === 'text' && typeof seg.data.text === 'string')
     .map((seg) => seg.data.text)
     .join('')
 }

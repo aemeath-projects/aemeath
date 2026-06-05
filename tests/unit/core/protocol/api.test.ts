@@ -92,9 +92,15 @@ describe('BotAPI', () => {
       const api = new BotAPI((data) => sent.push(data))
 
       await expect(
-        (api as unknown as {
-          call: (action: string, params: Record<string, unknown>, timeoutMs: number) => Promise<APIResponse>
-        }).call('get_status', {}, 10),
+        (
+          api as unknown as {
+            call: (
+              action: string,
+              params: Record<string, unknown>,
+              timeoutMs: number,
+            ) => Promise<APIResponse>
+          }
+        ).call('get_status', {}, 10),
       ).rejects.toThrow(/超时|timeout/i)
     })
 
@@ -103,9 +109,15 @@ describe('BotAPI', () => {
       const { api, sent } = makeBotAPI()
 
       // 第一个调用（会超时）
-      const p1 = (api as unknown as {
-        call: (action: string, params: Record<string, unknown>, timeoutMs: number) => Promise<APIResponse>
-      }).call('get_status', {}, 50)
+      const p1 = (
+        api as unknown as {
+          call: (
+            action: string,
+            params: Record<string, unknown>,
+            timeoutMs: number,
+          ) => Promise<APIResponse>
+        }
+      ).call('get_status', {}, 50)
 
       // 推进时间使其超时
       vi.advanceTimersByTime(100)

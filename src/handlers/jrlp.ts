@@ -3,11 +3,7 @@
  */
 
 import type { Context } from '../core/framework/context.js'
-import {
-  Component,
-  OnRegex,
-  MessageScope,
-} from '../core/framework/decorators.js'
+import { Component, OnRegex, MessageScope } from '../core/framework/decorators.js'
 import { MessageBuilder } from '../core/protocol/segment.js'
 import type { JrlpService } from '../services/jrlp.js'
 
@@ -23,7 +19,7 @@ function getTodayShanghai(): Date {
 
 class JrlpHandler {
   /** 随机抽取今日群老婆。 */
-   
+
   async drawWife(ctx: Context): Promise<boolean> {
     const { JrlpService: JrlpSvc } = await import('../services/jrlp.js')
 
@@ -75,12 +71,11 @@ Component({
   defaultEnabled: true,
 })(JrlpHandler)
 
- 
 OnRegex('^(jrlp|今日老婆|抽老婆|群老婆)$', 0, {
   scope: MessageScope.GROUP,
   displayName: '抽取今日老婆',
   description: '指令：jrlp / 今日老婆 / 抽老婆 / 群老婆',
-// eslint-disable-next-line @typescript-eslint/unbound-method
+  // eslint-disable-next-line @typescript-eslint/unbound-method
 })(JrlpHandler.prototype.drawWife)
 
 export { JrlpHandler }

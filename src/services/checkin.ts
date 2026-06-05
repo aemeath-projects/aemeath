@@ -114,8 +114,7 @@ export class CheckinService {
 
     // 1. 读缓存
     const cached =
-      (await this.cache.get<CheckinCache>(key)) ??
-      (await this._rebuildCache(groupId, userId))
+      (await this.cache.get<CheckinCache>(key)) ?? (await this._rebuildCache(groupId, userId))
 
     const lastDate = cached.lastDate
     const streak = cached.streak
@@ -149,10 +148,7 @@ export class CheckinService {
         })
       })
     } catch (err) {
-      if (
-        err instanceof Prisma.PrismaClientKnownRequestError &&
-        err.code === 'P2002'
-      ) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
         // 并发冲突：视为重复签到
         console.warn('[CheckinService] 签到并发冲突，视为重复', { groupId, userId })
         return { isDuplicate: true, rank: 0, streak, total }
@@ -293,7 +289,10 @@ export class CheckinService {
             SELECT user_id, streak FROM current_streaks ORDER BY streak DESC LIMIT ${effectiveLimit}
           `
 
-    interface RawRow { user_id: bigint; streak: bigint }
+    interface RawRow {
+      user_id: bigint
+      streak: bigint
+    }
     const rows = await this.db.$queryRaw<RawRow[]>(sql)
     return rows.map((r) => ({ userId: r.user_id, value: Number(r.streak) }))
   }
@@ -395,9 +394,7 @@ export class CheckinService {
         prevDate = d
         streak = 1
       } else {
-        const diffDays = Math.round(
-          (prevDate.getTime() - d.getTime()) / 86400_000,
-        )
+        const diffDays = Math.round((prevDate.getTime() - d.getTime()) / 86400_000)
         if (diffDays === 1) {
           streak += 1
           prevDate = d

@@ -165,8 +165,12 @@ export class SyncCoordinator {
 
       // 4. 持久化到数据库
       await this.personnelService.persistSyncData(
-        Array.isArray(friendsData) ? (friendsData as Parameters<PersonnelService['persistSyncData']>[0]) : null,
-        Array.isArray(groupsData) ? (groupsData as Parameters<PersonnelService['persistSyncData']>[1]) : null,
+        Array.isArray(friendsData)
+          ? (friendsData as Parameters<PersonnelService['persistSyncData']>[0])
+          : null,
+        Array.isArray(groupsData)
+          ? (groupsData as Parameters<PersonnelService['persistSyncData']>[1])
+          : null,
         Object.keys(membersData).length > 0
           ? (membersData as Parameters<PersonnelService['persistSyncData']>[2])
           : null,

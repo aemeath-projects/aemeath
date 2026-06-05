@@ -20,9 +20,10 @@ import { ComponentScanner } from './framework/scanner.js'
 import { LifecycleOrchestrator } from './lifecycle/orchestrator.js'
 import { getAllStartups, getAllShutdowns } from './lifecycle/registry.js'
 import { BotAPI } from './protocol/api.js'
+import { ServiceRegistry } from './registries/service-registry.js'
 import { RPCConsumer } from './rpc/consumer.js'
 import { createBullMQConnection, getQueue, QUEUE_NAMES } from './tasks/broker.js'
-import { createRedis } from './utils/redis-factory.js'
+import { createRedis, checkRedisReachable } from './utils/redis-factory.js'
 import { ConnectionManager } from './ws/connection.js'
 import { registerWsRoute } from './ws/server.js'
 
@@ -36,9 +37,25 @@ import { registerWsRoute } from './ws/server.js'
  * @param config - 已验证的应用配置
  */
 export async function setupLifecycle(app: FastifyInstance, config: Config): Promise<void> {
+  // BotAPI 和 ConnectionManager 必须在 onReady 之前创建，以便在 Fastify 启动阶段注册 WS 路由。
+  // onReady 触发时插件引导已完成（FST_ERR_ROOT_PLG_BOOTED），此后无法再注册路由。
+  const connMgrRef: { current: ConnectionManager | undefined } = { current: undefined }
+  const botApi = new BotAPI((data: string) => {
+    connMgrRef.current?.send(data)
+  })
+
+  const dispatcherRef: { current: EventDispatcher | undefined } = { current: undefined }
+  const connMgr = new ConnectionManager(botApi, (event) => {
+    void dispatcherRef.current?.dispatch(event, botApi)
+  })
+  connMgrRef.current = connMgr
+
+  // 注册 WebSocket 路由（必须在 app.listen() 之前完成，即插件引导阶段）
+  registerWsRoute(app, connMgr, config.NAPCAT_ACCESS_TOKEN)
+
   // ── 启动钩子 ──
   app.addHook('onReady', async () => {
-    await _startup(app, config)
+    await _startup(app, config, botApi, connMgr, dispatcherRef)
   })
 
   // ── 关闭钩子 ──
@@ -65,6 +82,8 @@ interface AppState {
   // 任务
   rpcConsumer: RPCConsumer
   queues: Record<string, ReturnType<typeof getQueue>>
+  // 服务注册表（API 路由通过此访问业务服务）
+  serviceRegistry: ServiceRegistry
   // 业务服务（由 orchestrator 填充）
   [key: string]: unknown
 }
@@ -76,7 +95,13 @@ function getState(app: FastifyInstance): AppState {
 
 // ── 启动逻辑 ──
 
-async function _startup(app: FastifyInstance, config: Config): Promise<void> {
+async function _startup(
+  app: FastifyInstance,
+  config: Config,
+  botApi: BotAPI,
+  connMgr: ConnectionManager,
+  dispatcherRef: { current: EventDispatcher | undefined },
+): Promise<void> {
   app.log.info('Texas 正在启动...')
 
   // 1. 初始化 Prisma 客户端
@@ -101,30 +126,28 @@ async function _startup(app: FastifyInstance, config: Config): Promise<void> {
   const srcRoot = resolve('src')
   await scanner.scan(
     [resolve(srcRoot, 'handlers')],
-    [resolve(srcRoot, 'services'), resolve(srcRoot, 'core', 'browser')],
+    [
+      resolve(srcRoot, 'services'),
+      resolve(srcRoot, 'core', 'browser'),
+      resolve(srcRoot, 'core', 'permission'),
+    ],
     composite,
   )
 
-  // 6. 构建 Dispatcher（先用空的 onEvent，在 connMgr 构造完成后更新）
+  // 6. 构建 Dispatcher 并连接到 connMgr（解决 setupLifecycle 阶段的前向引用）
   const dispatcher = new EventDispatcher(composite, [
     new LoggingInterceptor(),
     new SessionInterceptor(),
   ])
+  dispatcherRef.current = dispatcher
 
-  // 7. BotAPI 需要发送回调，ConnectionManager 需要 onEvent 回调
-  // 用 wrapper 对象解决 BotAPI 回调与 connMgr 之间的前向引用
-  const connMgrRef: { current: ConnectionManager | undefined } = { current: undefined }
-  const botApi = new BotAPI((data: string) => {
-    connMgrRef.current?.send(data)
-  })
-
-  const connMgr = new ConnectionManager(botApi, (event) => {
-    void dispatcher.dispatch(event, botApi)
-  })
-  connMgrRef.current = connMgr
-
-  // 8. RPC Consumer（主进程端）
+  // 7. RPC Consumer（主进程端）
   const rpcConsumer = new RPCConsumer(config.PERSISTENT_REDIS_URL)
+
+  // 8.5. 预检所有 Redis 连接可达性（连接不可用时立即抛出，避免后续操作无声挂起）
+  await checkRedisReachable(config.CACHE_REDIS_URL, 'Cache Redis')
+  await checkRedisReachable(config.PERSISTENT_REDIS_URL, 'Persistent Redis')
+  await checkRedisReachable(config.BULLMQ_REDIS_URL, 'BullMQ Redis')
 
   // 9. 创建 BullMQ 队列
   const bullConn = createBullMQConnection(config.BULLMQ_REDIS_URL)
@@ -154,7 +177,14 @@ async function _startup(app: FastifyInstance, config: Config): Promise<void> {
 
   const allServices = await orchestrator.startup(infraServices, getAllStartups())
 
-  // 11. 注册 RPC handler（打卡服务在 @Startup 注册完毕后才能访问）
+  // 11. 构建 ServiceRegistry（API 路由通过 app.state.serviceRegistry 访问业务服务）
+  const serviceRegistry = new ServiceRegistry()
+  for (const [key, value] of Object.entries(allServices)) {
+    serviceRegistry.register(key, value)
+  }
+  serviceRegistry.freeze()
+
+  // 13. 注册 RPC handler（打卡服务在 @Startup 注册完毕后才能访问）
   const dailyCheckinSvc = allServices.daily_checkin_service as DailyCheckinService | undefined
   if (dailyCheckinSvc !== undefined) {
     rpcConsumer.registerHandler('request_checkin', async (params) => {
@@ -173,13 +203,10 @@ async function _startup(app: FastifyInstance, config: Config): Promise<void> {
     })
   }
 
-  // 12. 启动 RPC Consumer
+  // 14. 启动 RPC Consumer
   await rpcConsumer.start()
 
-  // 13. 注册 WebSocket 路由
-  registerWsRoute(app, connMgr, config.NAPCAT_ACCESS_TOKEN)
-
-  // 14. 将所有服务挂载到 app.state
+  // 15. 将所有服务挂载到 app.state
   const state = getState(app)
   Object.assign(state, {
     mainDb,
@@ -194,6 +221,7 @@ async function _startup(app: FastifyInstance, config: Config): Promise<void> {
     scanner,
     rpcConsumer,
     queues,
+    serviceRegistry,
     ...allServices,
   })
 

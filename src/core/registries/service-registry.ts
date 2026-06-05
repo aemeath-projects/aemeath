@@ -12,9 +12,7 @@ export class ServiceRegistry {
   /** 注册服务实例。冻结后调用抛出 Error。 */
   register(name: string, instance: unknown): void {
     if (this._frozen) {
-      throw new Error(
-        `ServiceRegistry 已冻结，禁止在运行期注册服务（name=${name}）`,
-      )
+      throw new Error(`ServiceRegistry 已冻结，禁止在运行期注册服务（name=${name}）`)
     }
     this._store.set(name, instance)
   }

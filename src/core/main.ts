@@ -10,7 +10,7 @@ import { resolve } from 'node:path'
 
 import fastifyStatic from '@fastify/static'
 import fastifyWebsocket from '@fastify/websocket'
-import Fastify from 'fastify'
+import Fastify, { type FastifyInstance } from 'fastify'
 
 import { authPlugin } from '../apis/plugins/auth.js'
 import { corsPlugin } from '../apis/plugins/cors.js'
@@ -19,7 +19,7 @@ import { registerRoutes } from '../apis/router.js'
 
 import { loadConfig } from './config.js'
 import { setupLifecycle } from './lifespan.js'
-import { createLogger, setLogger } from './logging/setup.js'
+import { createLogger, setLogger, logger } from './logging/setup.js'
 import { metricsRegistry } from './monitoring/metrics.js'
 import { VERSION, DESCRIPTION } from './version.js'
 
@@ -36,10 +36,11 @@ async function bootstrap(): Promise<void> {
   setLogger(appLogger)
 
   // 创建 Fastify 实例（使用 Pino 作为内置日志器）
+  // pino.Logger 与 FastifyBaseLogger 运行时兼容但 TypeScript 泛型逆变不一致，用类型断言统一
   const app = Fastify({
     loggerInstance: appLogger,
     disableRequestLogging: false,
-  })
+  }) as unknown as FastifyInstance
 
   // ── 注册插件 ──
 
@@ -112,6 +113,6 @@ async function bootstrap(): Promise<void> {
 // ── 入口 ──
 
 bootstrap().catch((err: unknown) => {
-  console.error('启动失败:', err)
+  logger.error({ err }, '启动失败')
   process.exit(1)
 })

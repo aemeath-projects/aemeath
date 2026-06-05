@@ -64,7 +64,8 @@ export class ConnectionManager {
     this._connectedAt = new Date()
 
     socket.on('message', (raw: unknown) => {
-      const text = typeof raw === 'string' ? raw : Buffer.isBuffer(raw) ? raw.toString() : String(raw)
+      const text =
+        typeof raw === 'string' ? raw : Buffer.isBuffer(raw) ? raw.toString() : String(raw)
       this.handleMessage(text)
     })
 

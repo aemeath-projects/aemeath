@@ -1,17 +1,17 @@
 {
   "name": "texas",
   "version": "1.0.0",
-  "description": "QQ Bot framework based on NapCat / OneBot 11",
+  "description": "",
   "type": "module",
   "engines": {
     "node": ">=22.12.0"
   },
   "packageManager": "pnpm@10.12.1",
   "scripts": {
-    "dev": "nodemon",
+    "dev": "cross-env NODE_ENV=development LOG_FORMAT=console nodemon",
     "build": "tsc -p tsconfig.build.json",
-    "start": "node dist/core/main.js",
-    "worker": "node dist/worker.js",
+    "start": "cross-env NODE_ENV=production node dist/core/main.js",
+    "worker": "cross-env NODE_ENV=production node dist/worker.js",
     "dev:frontend": "pnpm --filter frontend dev",
     "build:frontend": "pnpm --filter frontend build",
     "lint": "eslint .",
@@ -64,6 +64,7 @@
     "@vitest/coverage-v8": "^4.1.0",
     "commit-and-tag-version": "^12.7.3",
     "commitizen": "^4.3.0",
+    "cross-env": "^10.1.0",
     "cz-conventional-changelog": "^3.3.0",
     "eslint": "^9.0.0",
     "eslint-config-prettier": "^10.0.0",

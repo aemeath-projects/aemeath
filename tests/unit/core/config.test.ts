@@ -6,9 +6,7 @@ import { loadConfig, normalizeRedisUrl } from '../../../src/core/config.js'
  * 构造一份包含所有必填字段的最小有效环境变量集合。
  * 测试中可按需覆盖个别字段。
  */
-function validEnv(
-  overrides: Record<string, string> = {},
-): Record<string, string> {
+function validEnv(overrides: Record<string, string> = {}): Record<string, string> {
   return {
     NAPCAT_ACCESS_TOKEN: 'test-secret-token',
     DATABASE_URL: 'postgresql://texas:texas@localhost:5432/texas',
@@ -24,12 +22,8 @@ describe('loadConfig', () => {
     const config = loadConfig(validEnv())
 
     expect(config.NAPCAT_ACCESS_TOKEN).toBe('test-secret-token')
-    expect(config.DATABASE_URL).toBe(
-      'postgresql://texas:texas@localhost:5432/texas',
-    )
-    expect(config.CHAT_DATABASE_URL).toBe(
-      'postgresql://texas:texas@localhost:5432/chat_history',
-    )
+    expect(config.DATABASE_URL).toBe('postgresql://texas:texas@localhost:5432/texas')
+    expect(config.CHAT_DATABASE_URL).toBe('postgresql://texas:texas@localhost:5432/chat_history')
     // 默认值
     expect(config.NAPCAT_MESSAGE_POST_FORMAT).toBe('array')
     expect(config.NAPCAT_REPORT_SELF_MESSAGE).toBe(false)
@@ -56,27 +50,25 @@ describe('loadConfig', () => {
   })
 
   it('NAPCAT_ACCESS_TOKEN 为空字符串时应当抛出错误', () => {
-    expect(() => loadConfig(validEnv({ NAPCAT_ACCESS_TOKEN: '' }))).toThrow(
+    expect(() => loadConfig(validEnv({ NAPCAT_ACCESS_TOKEN: '' }))).toThrow('NAPCAT_ACCESS_TOKEN')
+  })
+
+  it('NAPCAT_ACCESS_TOKEN 为纯空白时应当抛出错误', () => {
+    expect(() => loadConfig(validEnv({ NAPCAT_ACCESS_TOKEN: '   ' }))).toThrow(
       'NAPCAT_ACCESS_TOKEN',
     )
   })
 
-  it('NAPCAT_ACCESS_TOKEN 为纯空白时应当抛出错误', () => {
-    expect(() =>
-      loadConfig(validEnv({ NAPCAT_ACCESS_TOKEN: '   ' })),
-    ).toThrow('NAPCAT_ACCESS_TOKEN')
-  })
-
   it('DATABASE_URL 不以 postgresql:// 开头时应当抛出错误', () => {
-    expect(() =>
-      loadConfig(validEnv({ DATABASE_URL: 'mysql://localhost/db' })),
-    ).toThrow("postgresql://")
+    expect(() => loadConfig(validEnv({ DATABASE_URL: 'mysql://localhost/db' }))).toThrow(
+      'postgresql://',
+    )
   })
 
   it('CHAT_DATABASE_URL 不以 postgresql:// 开头时应当抛出错误', () => {
-    expect(() =>
-      loadConfig(validEnv({ CHAT_DATABASE_URL: 'mysql://localhost/chat' })),
-    ).toThrow("postgresql://")
+    expect(() => loadConfig(validEnv({ CHAT_DATABASE_URL: 'mysql://localhost/chat' }))).toThrow(
+      'postgresql://',
+    )
   })
 
   it('NODE_ENV 应当默认为 "development"', () => {
@@ -195,30 +187,28 @@ describe('PERSISTENT_REDIS_URL 回退', () => {
         PERSISTENT_REDIS_URL: 'redis://persistent-host:6379',
       }),
     )
-    expect(config.PERSISTENT_REDIS_URL).toBe(
-      'redis://persistent-host:6379/0',
-    )
+    expect(config.PERSISTENT_REDIS_URL).toBe('redis://persistent-host:6379/0')
     expect(config.PERSISTENT_REDIS_URL).not.toBe(config.CACHE_REDIS_URL)
   })
 })
 
 describe('Redis URL 格式校验', () => {
   it('BULLMQ_REDIS_URL 格式错误时应当抛出错误', () => {
-    expect(() =>
-      loadConfig(validEnv({ BULLMQ_REDIS_URL: 'http://not-redis' })),
-    ).toThrow('BULLMQ_REDIS_URL')
+    expect(() => loadConfig(validEnv({ BULLMQ_REDIS_URL: 'http://not-redis' }))).toThrow(
+      'BULLMQ_REDIS_URL',
+    )
   })
 
   it('CACHE_REDIS_URL 格式错误时应当抛出错误', () => {
-    expect(() =>
-      loadConfig(validEnv({ CACHE_REDIS_URL: 'http://not-redis' })),
-    ).toThrow('CACHE_REDIS_URL')
+    expect(() => loadConfig(validEnv({ CACHE_REDIS_URL: 'http://not-redis' }))).toThrow(
+      'CACHE_REDIS_URL',
+    )
   })
 
   it('PERSISTENT_REDIS_URL 格式错误时应当抛出错误', () => {
-    expect(() =>
-      loadConfig(validEnv({ PERSISTENT_REDIS_URL: 'http://not-redis' })),
-    ).toThrow('PERSISTENT_REDIS_URL')
+    expect(() => loadConfig(validEnv({ PERSISTENT_REDIS_URL: 'http://not-redis' }))).toThrow(
+      'PERSISTENT_REDIS_URL',
+    )
   })
 })
 

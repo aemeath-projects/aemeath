@@ -91,29 +91,35 @@ export class RPCBridge {
       })
 
       // 先订阅再入队，防止竞态窗口
-      this._sub.subscribe(respChannel).then(() => {
-        // 将请求序列化后推入 Redis List
-        return this._redis.rpush(rpcRequestQueueKey(), JSON.stringify(req))
-      }).catch(() => {
-        cleanup()
-        resolve({
-          request_id: requestId,
-          success: false,
-          error: 'rpc_subscribe_error',
+      this._sub
+        .subscribe(respChannel)
+        .then(() => {
+          // 将请求序列化后推入 Redis List
+          return this._redis.rpush(rpcRequestQueueKey(), JSON.stringify(req))
         })
-      })
+        .catch(() => {
+          cleanup()
+          resolve({
+            request_id: requestId,
+            success: false,
+            error: 'rpc_subscribe_error',
+          })
+        })
 
       // 超时定时器
       const remaining = deadline - Date.now()
-      timer = setTimeout(() => {
-        if (resolved) return
-        cleanup()
-        resolve({
-          request_id: requestId,
-          success: false,
-          error: 'rpc_timeout',
-        })
-      }, Math.max(remaining, POLL_INTERVAL_MS))
+      timer = setTimeout(
+        () => {
+          if (resolved) return
+          cleanup()
+          resolve({
+            request_id: requestId,
+            success: false,
+            error: 'rpc_timeout',
+          })
+        },
+        Math.max(remaining, POLL_INTERVAL_MS),
+      )
     })
   }
 

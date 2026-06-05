@@ -337,11 +337,7 @@ export class BotAPI {
   }
 
   /** 获取群历史消息。 */
-  async getGroupMsgHistory(
-    groupId: number,
-    messageSeq?: number,
-    count = 20,
-  ): Promise<APIResponse> {
+  async getGroupMsgHistory(groupId: number, messageSeq?: number, count = 20): Promise<APIResponse> {
     const params: Record<string, unknown> = { group_id: groupId, count }
     if (messageSeq !== undefined) params.message_seq = messageSeq
     return this.call('get_group_msg_history', params)
@@ -526,11 +522,19 @@ export class BotAPI {
 
   /** 移动群文件到指定目录。 */
   async moveGroupFile(groupId: number, fileId: string, targetDir: string): Promise<APIResponse> {
-    return this.call('move_group_file', { group_id: groupId, file_id: fileId, target_dir: targetDir })
+    return this.call('move_group_file', {
+      group_id: groupId,
+      file_id: fileId,
+      target_dir: targetDir,
+    })
   }
 
   /** 将群文件转发至另一个群。 */
-  async transGroupFile(groupId: number, fileId: string, targetGroupId: number): Promise<APIResponse> {
+  async transGroupFile(
+    groupId: number,
+    fileId: string,
+    targetGroupId: number,
+  ): Promise<APIResponse> {
     return this.call('trans_group_file', {
       group_id: groupId,
       file_id: fileId,
@@ -661,11 +665,7 @@ export class BotAPI {
   }
 
   /** 获取好友历史消息。 */
-  async getFriendMsgHistory(
-    userId: number,
-    count = 20,
-    messageSeq?: number,
-  ): Promise<APIResponse> {
+  async getFriendMsgHistory(userId: number, count = 20, messageSeq?: number): Promise<APIResponse> {
     const params: Record<string, unknown> = { user_id: userId, count }
     if (messageSeq !== undefined) params.message_seq = messageSeq
     return this.call('get_friend_msg_history', params)

@@ -4,20 +4,14 @@
 
 import type { Redis } from 'ioredis'
 
-import {
-  rpcHandlerExecSeconds,
-  rpcInflight,
-  rpcRegisteredHandlers,
-} from '../monitoring/metrics.js'
+import { rpcHandlerExecSeconds, rpcInflight, rpcRegisteredHandlers } from '../monitoring/metrics.js'
 import { createRedis } from '../utils/redis-factory.js'
 
 import { rpcRequestQueueKey, rpcResponseChannelKey } from './keys.js'
 import type { RPCRequest, RPCResponse } from './models.js'
 
 /** 自定义 action handler 类型：接收 params dict，返回任意可序列化结果。 */
-export type ActionHandler = (
-  params: Record<string, unknown>,
-) => Promise<unknown>
+export type ActionHandler = (params: Record<string, unknown>) => Promise<unknown>
 
 /** 并发 handler 数量上限（背压保护）。 */
 const DEFAULT_MAX_CONCURRENCY = 64
@@ -46,10 +40,7 @@ export class RPCConsumer {
   /** 用于等待所有 inflight 请求完成。 */
   private _drainResolve: (() => void) | undefined
 
-  constructor(
-    redisUrl: string,
-    maxConcurrency: number = DEFAULT_MAX_CONCURRENCY,
-  ) {
+  constructor(redisUrl: string, maxConcurrency: number = DEFAULT_MAX_CONCURRENCY) {
     this._redis = createRedis(redisUrl, { lazyConnect: false })
     this._pub = createRedis(redisUrl, { lazyConnect: false })
     this._maxConcurrency = maxConcurrency
@@ -62,9 +53,7 @@ export class RPCConsumer {
    */
   registerHandler(action: string, handler: ActionHandler): void {
     if (this._handlers.has(action)) {
-      console.warn(
-        `[RPCConsumer] RPC handler 重复注册，将覆盖原有 handler: ${action}`,
-      )
+      console.warn(`[RPCConsumer] RPC handler 重复注册，将覆盖原有 handler: ${action}`)
     }
     this._handlers.set(action, handler)
     rpcRegisteredHandlers.set(this._handlers.size)
@@ -94,9 +83,7 @@ export class RPCConsumer {
 
     // 等待所有 inflight 请求完成
     if (this._inflight > 0) {
-      console.info(
-        `[RPCConsumer] 等待 in-flight RPC 请求完成 (count=${String(this._inflight)})`,
-      )
+      console.info(`[RPCConsumer] 等待 in-flight RPC 请求完成 (count=${String(this._inflight)})`)
       await new Promise<void>((resolve) => {
         this._drainResolve = resolve
       })
@@ -120,9 +107,7 @@ export class RPCConsumer {
         const [, raw] = result
         // 背压保护：超过最大并发时丢弃并记录警告
         if (this._inflight >= this._maxConcurrency) {
-          console.warn(
-            `[RPCConsumer] 背压限制已达 ${String(this._maxConcurrency)}，丢弃请求`,
-          )
+          console.warn(`[RPCConsumer] 背压限制已达 ${String(this._maxConcurrency)}，丢弃请求`)
           continue
         }
 
@@ -165,10 +150,7 @@ export class RPCConsumer {
     try {
       await this._pub.publish(respChannel, JSON.stringify(rpcResp))
     } catch (err) {
-      console.error(
-        `[RPCConsumer] RPC 响应发布失败 (action=${req.action}):`,
-        err,
-      )
+      console.error(`[RPCConsumer] RPC 响应发布失败 (action=${req.action}):`, err)
     }
   }
 
@@ -191,10 +173,9 @@ export class RPCConsumer {
       const result = await Promise.race([
         handler(req.params),
         new Promise<never>((_, reject) =>
-          setTimeout(
-            () => { reject(new Error(`handler 执行超时（>${String(req.timeout)}s）`)); },
-            req.timeout * 1000,
-          ),
+          setTimeout(() => {
+            reject(new Error(`handler 执行超时（>${String(req.timeout)}s）`))
+          }, req.timeout * 1000),
         ),
       ])
       const elapsed = (Date.now() - t0) / 1000
@@ -210,9 +191,7 @@ export class RPCConsumer {
       const elapsed = (Date.now() - t0) / 1000
       rpcHandlerExecSeconds.labels({ action: req.action }).observe(elapsed)
       const message = err instanceof Error ? err.message : String(err)
-      console.warn(
-        `[RPCConsumer] RPC 请求执行失败 (action=${req.action}): ${message}`,
-      )
+      console.warn(`[RPCConsumer] RPC 请求执行失败 (action=${req.action}): ${message}`)
       return {
         request_id: req.request_id,
         success: false,

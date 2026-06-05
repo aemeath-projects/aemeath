@@ -146,9 +146,7 @@ function parseNotice(data: RawEvent): NoticeEvent {
   return data as unknown as NoticeEvent
 }
 
-function parseRequest(
-  data: RawEvent,
-): FriendRequestEvent | GroupRequestEvent | RequestEvent {
+function parseRequest(data: RawEvent): FriendRequestEvent | GroupRequestEvent | RequestEvent {
   const reqType = typeof data.request_type === 'string' ? data.request_type : ''
 
   if (reqType === 'friend') {

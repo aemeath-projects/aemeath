@@ -30,9 +30,7 @@ describe('PermissionRegistry', () => {
   })
 
   it('fromFeatureRegistry() 应从 FeatureRegistry 构建权限规则', () => {
-    featureRegistry.register(
-      makeFeatureInfo({ name: 'echo', defaultEnabled: true }),
-    )
+    featureRegistry.register(makeFeatureInfo({ name: 'echo', defaultEnabled: true }))
     featureRegistry.register(
       makeFeatureInfo({ name: 'admin-cmd', admin: true, defaultEnabled: false }),
     )

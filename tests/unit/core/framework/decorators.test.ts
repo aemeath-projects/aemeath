@@ -50,19 +50,27 @@ describe('MessageScope 常量', () => {
 
 // 非空 handler 类（避免 @typescript-eslint/no-extraneous-class）
 class EchoHandler {
-  handle(): void { /* noop */ }
+  handle(): void {
+    /* noop */
+  }
 }
 
 class MinimalHandler {
-  handle(): void { /* noop */ }
+  handle(): void {
+    /* noop */
+  }
 }
 
 class SysHandler {
-  handle(): void { /* noop */ }
+  handle(): void {
+    /* noop */
+  }
 }
 
 class SchedulerFeature {
-  run(): void { /* noop */ }
+  run(): void {
+    /* noop */
+  }
 }
 
 describe('@Component 装饰器', () => {

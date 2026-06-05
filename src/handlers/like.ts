@@ -3,12 +3,7 @@
  */
 
 import type { Context } from '../core/framework/context.js'
-import {
-  Component,
-  OnCommand,
-  MessageScope,
-  Permission,
-} from '../core/framework/decorators.js'
+import { Component, OnCommand, MessageScope, Permission } from '../core/framework/decorators.js'
 import type { LikeService } from '../services/like.js'
 
 const DEFAULT_LIKE_TIMES = 10
@@ -22,7 +17,7 @@ const USAGE =
 
 class LikeHandler {
   /** 解析参数并分发到对应子命令。 */
-   
+
   async handle(ctx: Context): Promise<void> {
     const { LikeService: LikeSvc } = await import('../services/like.js')
 
@@ -51,12 +46,7 @@ class LikeHandler {
 }
 
 /** 执行立即点赞。 */
-async function handleSend(
-  ctx: Context,
-  svc: LikeService,
-  qq: bigint,
-  sub: string,
-): Promise<void> {
+async function handleSend(ctx: Context, svc: LikeService, qq: bigint, sub: string): Promise<void> {
   let times = DEFAULT_LIKE_TIMES
   if (/^\d+$/u.test(sub)) {
     const n = parseInt(sub, 10)
@@ -125,14 +115,13 @@ Component({
   defaultEnabled: true,
 })(LikeHandler)
 
- 
 OnCommand('like', {
   aliases: new Set(['点赞']),
   permission: Permission.ANYONE,
   scope: MessageScope.ALL,
   displayName: '点赞',
   description: '/like [n|schedule|cancel|status]',
-// eslint-disable-next-line @typescript-eslint/unbound-method
+  // eslint-disable-next-line @typescript-eslint/unbound-method
 })(LikeHandler.prototype.handle)
 
 export { LikeHandler }

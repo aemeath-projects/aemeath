@@ -101,7 +101,10 @@ export class DriftBottleService {
    *
    * 使用 $queryRaw 的 UPDATE ... RETURNING 实现原子捞取，防止并发重捞。
    */
-  async pickBottle(params: { poolId: number; userId: bigint | number }): Promise<BottleItem | null> {
+  async pickBottle(params: {
+    poolId: number
+    userId: bigint | number
+  }): Promise<BottleItem | null> {
     const poolId = params.poolId
     const userId = BigInt(params.userId)
     interface RawRow {
@@ -147,7 +150,11 @@ export class DriftBottleService {
    * 列出所有池，含各池未捞取瓶数统计。
    */
   async listPools(): Promise<PoolInfo[]> {
-    interface RawRow { id: number; name: string; available_count: bigint }
+    interface RawRow {
+      id: number
+      name: string
+      available_count: bigint
+    }
 
     const rows = await this.db.$queryRaw<RawRow[]>(Prisma.sql`
       SELECT
@@ -181,10 +188,7 @@ export class DriftBottleService {
     try {
       return await this.db.driftBottlePool.create({ data: { id: nextId, name } })
     } catch (err) {
-      if (
-        err instanceof Prisma.PrismaClientKnownRequestError &&
-        err.code === 'P2002'
-      ) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
         throw new Error(`漂流瓶池名称已存在：${name}`)
       }
       throw err
@@ -212,10 +216,7 @@ export class DriftBottleService {
     try {
       await this.db.driftBottlePool.delete({ where: { id: poolId } })
     } catch (err) {
-      if (
-        err instanceof Prisma.PrismaClientKnownRequestError &&
-        err.code === 'P2003'
-      ) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2003') {
         throw new Error('该池下仍有群归属，无法删除')
       }
       throw err

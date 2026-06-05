@@ -71,19 +71,17 @@ describe('CheckinService', () => {
       // rebuild 时 count = 0
       mockDb.checkinRecord.count.mockResolvedValue(0)
       // $transaction 模拟：调用回调并返回 rank
-      mockDb.$transaction.mockImplementation(
-        async (fn: (tx: unknown) => Promise<void>) => {
-          const fakeTx = {
-            checkinRecord: {
-              create: vi.fn().mockResolvedValue({}),
-              count: vi.fn().mockResolvedValue(1),
-            },
-          }
-          await fn(fakeTx)
-          // rank is captured inside checkin(), we just need transaction to succeed
-          return undefined
-        },
-      )
+      mockDb.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<void>) => {
+        const fakeTx = {
+          checkinRecord: {
+            create: vi.fn().mockResolvedValue({}),
+            count: vi.fn().mockResolvedValue(1),
+          },
+        }
+        await fn(fakeTx)
+        // rank is captured inside checkin(), we just need transaction to succeed
+        return undefined
+      })
       mockCache.set.mockResolvedValue(undefined)
 
       const result = await service.checkin({ groupId: 12345n, userId: 67890n, today: TODAY })
@@ -103,18 +101,16 @@ describe('CheckinService', () => {
         total: 10,
       })
       // $transaction 成功
-      mockDb.$transaction.mockImplementation(
-        async (fn: (tx: unknown) => Promise<void>) => {
-          const fakeTx = {
-            checkinRecord: {
-              create: vi.fn().mockResolvedValue({}),
-              count: vi.fn().mockResolvedValue(3),
-            },
-          }
-          await fn(fakeTx)
-          return undefined
-        },
-      )
+      mockDb.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<void>) => {
+        const fakeTx = {
+          checkinRecord: {
+            create: vi.fn().mockResolvedValue({}),
+            count: vi.fn().mockResolvedValue(3),
+          },
+        }
+        await fn(fakeTx)
+        return undefined
+      })
       mockCache.set.mockResolvedValue(undefined)
 
       const result = await service.checkin({ groupId: 12345n, userId: 67890n, today: TODAY })
@@ -131,18 +127,16 @@ describe('CheckinService', () => {
         streak: 3,
         total: 8,
       })
-      mockDb.$transaction.mockImplementation(
-        async (fn: (tx: unknown) => Promise<void>) => {
-          const fakeTx = {
-            checkinRecord: {
-              create: vi.fn().mockResolvedValue({}),
-              count: vi.fn().mockResolvedValue(1),
-            },
-          }
-          await fn(fakeTx)
-          return undefined
-        },
-      )
+      mockDb.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<void>) => {
+        const fakeTx = {
+          checkinRecord: {
+            create: vi.fn().mockResolvedValue({}),
+            count: vi.fn().mockResolvedValue(1),
+          },
+        }
+        await fn(fakeTx)
+        return undefined
+      })
       mockCache.set.mockResolvedValue(undefined)
 
       const result = await service.checkin({ groupId: 12345n, userId: 67890n, today: TODAY })

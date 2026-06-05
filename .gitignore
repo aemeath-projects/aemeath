@@ -145,6 +145,10 @@ vite.config.ts.timestamp-*
 # IntelliJ Idea
 .idea/
 
+# Claude Code Generated Files
+.spec-workflow/
+.serena/
+
 # 杂项
 misc/
 

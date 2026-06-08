@@ -145,7 +145,7 @@ export class ArchiveS3 {
         sha256: sha256Hex,
       },
       archived_at: new Date().toISOString(),
-      archived_by: 'texas-worker',
+      archived_by: 'aemeath-worker',
     }
   }
 }

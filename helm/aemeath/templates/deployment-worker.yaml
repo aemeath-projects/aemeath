@@ -1,17 +1,16 @@
+{{- if .Values.worker.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "texas.fullname" . }}-bot
+  name: {{ include "aemeath.fullname" . }}-worker
   labels:
-    {{- include "texas.labels" . | nindent 4 }}
-    app.kubernetes.io/component: bot
+    {{- include "aemeath.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
 spec:
-  {{- if not .Values.autoscaling.enabled }}
-  replicas: {{ .Values.bot.replicaCount }}
-  {{- end }}
+  replicas: {{ .Values.worker.replicaCount }}
   selector:
     matchLabels:
-      {{- include "texas.bot.selectorLabels" . | nindent 6 }}
+      {{- include "aemeath.worker.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
@@ -21,7 +20,7 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
       labels:
-        {{- include "texas.bot.selectorLabels" . | nindent 8 }}
+        {{- include "aemeath.worker.selectorLabels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -30,54 +29,43 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "texas.serviceAccountName" . }}
+      serviceAccountName: {{ include "aemeath.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        - name: bot
-          image: {{ include "texas.image" . }}
+        - name: worker
+          image: {{ include "aemeath.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           securityContext:
             {{- toYaml .Values.containerSecurityContext | nindent 12 }}
-          args: ["bot"]
-          {{- with .Values.bot.extraEnv }}
+          args: ["worker"]
+          {{- with .Values.worker.extraEnv }}
           env:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           envFrom:
             - configMapRef:
-                name: {{ include "texas.configMapName" . }}
+                name: {{ include "aemeath.configMapName" . }}
             - secretRef:
-                name: {{ include "texas.secretName" . }}
-          ports:
-            - name: http
-              containerPort: {{ .Values.service.port }}
-              protocol: TCP
-          {{- with .Values.probes.liveness }}
-          livenessProbe:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          {{- with .Values.probes.readiness }}
-          readinessProbe:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
+                name: {{ include "aemeath.secretName" . }}
           resources:
-            {{- toYaml .Values.bot.resources | nindent 12 }}
+            {{- toYaml .Values.worker.resources | nindent 12 }}
           volumeMounts:
             - name: tmp
               mountPath: /tmp
       volumes:
         - name: tmp
           emptyDir: {}
-      {{- with .Values.bot.nodeSelector }}
+      {{- with .Values.worker.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.bot.affinity }}
+      {{- with .Values.worker.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.bot.tolerations }}
+      {{- with .Values.worker.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+{{- end }}

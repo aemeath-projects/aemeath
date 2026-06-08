@@ -15,7 +15,7 @@ export const useSettingsStore = defineStore(
   },
   {
     persist: {
-      key: 'texas-settings',
+      key: 'aemeath-settings',
       pick: ['queueRefreshInterval', 'defaultPageSize'],
     },
   },

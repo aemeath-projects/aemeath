@@ -1,12 +1,12 @@
-# /texas:audit — 全量代码审计
+# /aemeath:audit — 全量代码审计
 
 对 codebase 进行全面分析，找出潜在 bug、性能问题和违反项目规则的代码。
 
 **用法：**
 
-- `/texas:audit` — 全栈审计（默认）
-- `/texas:audit backend` — 仅审计 TypeScript 后端
-- `/texas:audit frontend` — 仅审计 Vue 前端
+- `/aemeath:audit` — 全栈审计（默认）
+- `/aemeath:audit backend` — 仅审计 TypeScript 后端
+- `/aemeath:audit frontend` — 仅审计 Vue 前端
 
 当前范围：$ARGUMENTS（为空则默认 `all`）
 

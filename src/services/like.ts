@@ -2,12 +2,8 @@
  * 点赞服务 —— 手动点赞、定时任务注册/取消/查询、批量定时执行。
  */
 
-import type {
-  LikeTask,
-  LikeHistory,
-  LikeSource,
-  Prisma,
-} from '../../prisma/main/generated/index.js'
+import type { LikeTask, LikeHistory, LikeSource, Prisma } from '#prisma/main'
+
 import type { MainPrismaClient } from '../core/db/client.js'
 import { isPrismaKnownError } from '../core/db/utils.js'
 import { Startup } from '../core/lifecycle/registry.js'

@@ -15,9 +15,9 @@ export async function swaggerPlugin(app: FastifyInstance): Promise<void> {
   await app.register(swagger, {
     openapi: {
       info: {
-        title: 'Texas API',
+        title: 'Aemeath API',
         version: '2.0.0',
-        description: 'Texas QQ Bot 管理平台 API',
+        description: 'Aemeath QQ Bot 管理平台 API',
       },
       servers: [{ url: '/' }],
     },

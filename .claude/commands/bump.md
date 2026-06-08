@@ -1,19 +1,19 @@
-# /texas:bump — 版本号更新与打 Tag
+# /aemeath:bump — 版本号更新与打 Tag
 
 自动化版本发布流程：解析参数 → 前置检查 → 预览变更 → 执行 bump → 询问推送。
 
 底层工具：`commit-and-tag-version`，读取 Conventional Commits 自动推断升级级别，
-同步更新 `package.json`、`frontend/package.json`、`helm/texas/Chart.yaml`，并生成 `CHANGELOG.md`。
+同步更新 `package.json`、`frontend/package.json`、`helm/aemeath/Chart.yaml`，并生成 `CHANGELOG.md`。
 
 ## 用法
 
 ```
-/texas:bump                  # 由工具根据 commits 自动推断级别（推荐）
-/texas:bump patch            # 强制 patch 升级（1.2.1 → 1.2.2）
-/texas:bump minor            # 强制 minor 升级（1.2.1 → 1.3.0）
-/texas:bump major            # 强制 major 升级（1.2.1 → 2.0.0）
-/texas:bump --dry-run        # 仅预览，不执行任何写入操作
-/texas:bump minor --dry-run  # 强制 minor 级别的 dry-run 预览
+/aemeath:bump                  # 由工具根据 commits 自动推断级别（推荐）
+/aemeath:bump patch            # 强制 patch 升级（1.2.1 → 1.2.2）
+/aemeath:bump minor            # 强制 minor 升级（1.2.1 → 1.3.0）
+/aemeath:bump major            # 强制 major 升级（1.2.1 → 2.0.0）
+/aemeath:bump --dry-run        # 仅预览，不执行任何写入操作
+/aemeath:bump minor --dry-run  # 强制 minor 级别的 dry-run 预览
 ```
 
 参数 `$ARGUMENTS` 可包含以下内容（顺序不限）：
@@ -71,7 +71,7 @@ Commit：  chore(release): v2.0.0
 将更新的文件：
   package.json              "version": "2.0.0"
   frontend/package.json     "version": "2.0.0"
-  helm/texas/Chart.yaml     version: 2.0.0 / appVersion: "2.0.0"
+  helm/aemeath/Chart.yaml     version: 2.0.0 / appVersion: "2.0.0"
   CHANGELOG.md              追加本次版本变更记录
 ```
 
@@ -102,7 +102,7 @@ pnpm bump
 工具将自动完成：
 
 - 读取根 `package.json` 的当前版本
-- 同步更新 `package.json`、`frontend/package.json`、`helm/texas/Chart.yaml` 中的版本号
+- 同步更新 `package.json`、`frontend/package.json`、`helm/aemeath/Chart.yaml` 中的版本号
 - 追加本次版本变更到 `CHANGELOG.md`（按 feat / fix / perf / refactor 分类）
 - 生成 commit：`chore(release): v<new_version>`
 - 创建 tag：`v<new_version>`

@@ -1,8 +1,8 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: { { include "texas.fullname" . } }
-  labels: { { - include "texas.labels" . | nindent 4 } }
+  name: { { include "aemeath.fullname" . } }
+  labels: { { - include "aemeath.labels" . | nindent 4 } }
 spec:
   type: { { .Values.service.type } }
   ports:
@@ -10,4 +10,4 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
-  selector: { { - include "texas.bot.selectorLabels" . | nindent 4 } }
+  selector: { { - include "aemeath.bot.selectorLabels" . | nindent 4 } }

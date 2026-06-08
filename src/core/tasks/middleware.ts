@@ -5,7 +5,7 @@
 import type { Redis } from 'ioredis'
 
 /** Worker 心跳 Redis key 前缀。 */
-const HEARTBEAT_KEY_PREFIX = 'texas:worker:heartbeat'
+const HEARTBEAT_KEY_PREFIX = 'aemeath:worker:heartbeat'
 
 /**
  * BullMQ Worker 心跳中间件。

@@ -2,7 +2,8 @@
  * 今日老婆（jrlp）业务逻辑服务 —— 抽取、预设、查询、修改、删除。
  */
 
-import type { WifeRecord, Prisma } from '../../prisma/main/generated/index.js'
+import type { WifeRecord, Prisma } from '#prisma/main'
+
 import type { MainPrismaClient } from '../core/db/client.js'
 import { isPrismaKnownError } from '../core/db/utils.js'
 import { Startup } from '../core/lifecycle/registry.js'

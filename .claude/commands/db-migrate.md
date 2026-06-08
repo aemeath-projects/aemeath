@@ -1,4 +1,4 @@
-# /texas:db-migrate — 数据库迁移工作流
+# /aemeath:db-migrate — 数据库迁移工作流
 
 管理双数据库（主库 + 聊天库）的 Prisma 迁移。
 

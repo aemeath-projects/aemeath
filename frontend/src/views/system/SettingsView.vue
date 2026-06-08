@@ -81,7 +81,7 @@
         <v-list-item>
           <v-list-item-title class="text-caption text-medium-emphasis">项目名称</v-list-item-title>
           <v-list-item-subtitle class="text-body-2 font-weight-medium mt-0.5">
-            Texas QQ Bot Framework
+            Aemeath QQ Bot Framework
           </v-list-item-subtitle>
         </v-list-item>
         <v-list-item>

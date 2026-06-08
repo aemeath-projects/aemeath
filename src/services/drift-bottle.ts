@@ -2,12 +2,9 @@
  * 漂流瓶业务逻辑服务 —— 扔/捞漂流瓶、漂流瓶池管理。
  */
 
-import type {
-  DriftBottleItem,
-  DriftBottlePool,
-  DriftBottleGroupPool,
-} from '../../prisma/main/generated/index.js'
-import { Prisma } from '../../prisma/main/generated/index.js'
+import type { DriftBottleItem, DriftBottlePool, DriftBottleGroupPool } from '#prisma/main'
+import { Prisma } from '#prisma/main'
+
 import type { MainPrismaClient } from '../core/db/client.js'
 import { isPrismaKnownError } from '../core/db/utils.js'
 import { Startup } from '../core/lifecycle/registry.js'

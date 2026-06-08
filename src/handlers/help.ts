@@ -31,7 +31,7 @@ function fmtTrigger(trigger: string): string {
 }
 
 function buildListMarkdown(categories: HelpCategory[], page: number, totalPages: number): string {
-  const lines: string[] = ['# Texas Bot 功能帮助', '']
+  const lines: string[] = ['# Aemeath Bot 功能帮助', '']
 
   for (const cat of categories) {
     lines.push(`## ${cat.tag}`)

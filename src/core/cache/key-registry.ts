@@ -9,99 +9,99 @@
 
 /** 群功能权限缓存键。 */
 export function permGroupKey(groupId: bigint | number, featureName: string): string {
-  return `texas:perm:group:${String(groupId)}:${featureName}`
+  return `aemeath:perm:group:${String(groupId)}:${featureName}`
 }
 
 /** 私聊功能权限缓存键。 */
 export function permPrivateKey(userId: bigint | number, featureName: string): string {
-  return `texas:perm:private:${featureName}:${String(userId)}`
+  return `aemeath:perm:private:${featureName}:${String(userId)}`
 }
 
 /** 群 bot 总开关缓存键。 */
 export function permGroupEnabledKey(groupId: bigint | number): string {
-  return `texas:perm:group_enabled:${String(groupId)}`
+  return `aemeath:perm:group_enabled:${String(groupId)}`
 }
 
 // ── 人员缓存 ──
 
 /** 最近一次同步状态键。 */
 export function personnelSyncStatusKey(): string {
-  return 'texas:personnel:sync_status'
+  return 'aemeath:personnel:sync_status'
 }
 
 /** 同步任务分布式锁键。 */
 export function personnelSyncLockKey(): string {
-  return 'texas:lock:personnel_sync'
+  return 'aemeath:lock:personnel_sync'
 }
 
 /** 用户关系等级缓存键。 */
 export function userRelationKey(qq: bigint | number): string {
-  return `texas:personnel:user:${String(qq)}:relation`
+  return `aemeath:personnel:user:${String(qq)}:relation`
 }
 
 /** 超级管理员 QQ 号集合键。 */
 export function adminSetKey(): string {
-  return 'texas:personnel:admins'
+  return 'aemeath:personnel:admins'
 }
 
 // ── 签到缓存 ──
 
 /** 某群某日的打卡状态键（dateStr 格式：YYYY-MM-DD）。 */
 export function checkinDailyKey(groupId: bigint | number, dateStr: string): string {
-  return `texas:checkin:${String(groupId)}:${dateStr}`
+  return `aemeath:checkin:${String(groupId)}:${dateStr}`
 }
 
 /** 用户在某群的签到统计缓存键。 */
 export function checkinStatsKey(groupId: bigint | number, userId: bigint | number): string {
-  return `texas:checkin:stats:${String(groupId)}:${String(userId)}`
+  return `aemeath:checkin:stats:${String(groupId)}:${String(userId)}`
 }
 
 // ── 会话缓存 ──
 
 /** 会话元信息键。 */
 export function sessionMetaKey(sessionKey: string): string {
-  return `texas:session:${sessionKey}`
+  return `aemeath:session:${sessionKey}`
 }
 
 /** 会话数据键。 */
 export function sessionDataKey(sessionKey: string): string {
-  return `texas:session:${sessionKey}:data`
+  return `aemeath:session:${sessionKey}:data`
 }
 
 // ── RPC 缓存 ──
 
 /** RPC 请求队列键（Redis List），Worker → 主进程。 */
 export function rpcRequestQueueKey(): string {
-  return 'texas:rpc:requests'
+  return 'aemeath:rpc:requests'
 }
 
 /** RPC 响应通道键（Redis Pub/Sub），主进程 → Worker。 */
 export function rpcResponseChannelKey(requestId: string): string {
-  return `texas:rpc:resp:${requestId}`
+  return `aemeath:rpc:resp:${requestId}`
 }
 
 // ── Glob 模式（用于批量删除） ──
 
 /** 群功能权限 glob 模式。 */
-export const PERM_GROUP_GLOB = 'texas:perm:group:*:*'
+export const PERM_GROUP_GLOB = 'aemeath:perm:group:*:*'
 
 /** 私聊功能权限 glob 模式。 */
-export const PERM_PRIVATE_GLOB = 'texas:perm:private:*:*'
+export const PERM_PRIVATE_GLOB = 'aemeath:perm:private:*:*'
 
 /** 群 bot 总开关 glob 模式。 */
-export const PERM_GROUP_ENABLED_GLOB = 'texas:perm:group_enabled:*'
+export const PERM_GROUP_ENABLED_GLOB = 'aemeath:perm:group_enabled:*'
 
 /** 人员关系缓存 glob 模式。 */
-export const USER_RELATION_GLOB = 'texas:personnel:user:*:relation'
+export const USER_RELATION_GLOB = 'aemeath:personnel:user:*:relation'
 
 /** 签到打卡 glob 模式。 */
-export const CHECKIN_DAILY_GLOB = 'texas:checkin:*:*'
+export const CHECKIN_DAILY_GLOB = 'aemeath:checkin:*:*'
 
 /** 签到统计 glob 模式。 */
-export const CHECKIN_STATS_GLOB = 'texas:checkin:stats:*:*'
+export const CHECKIN_STATS_GLOB = 'aemeath:checkin:stats:*:*'
 
 /** 会话元信息 glob 模式。 */
-export const SESSION_META_GLOB = 'texas:session:*'
+export const SESSION_META_GLOB = 'aemeath:session:*'
 
 /** RPC 响应通道 glob 模式。 */
-export const RPC_RESPONSE_GLOB = 'texas:rpc:resp:*'
+export const RPC_RESPONSE_GLOB = 'aemeath:rpc:resp:*'

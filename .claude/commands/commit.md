@@ -1,4 +1,4 @@
-# /texas:commit — 创建 Commit
+# /aemeath:commit — 创建 Commit
 
 分析当前 git 改动，生成符合项目 Conventional Commits 规范的提交信息，支持拆分提交建议。
 
@@ -10,8 +10,8 @@
 
 **使用示例：**
 
-- `/texas:commit` — 按拆分原则自动判断提交次数
-- `/texas:commit 1` — 强制所有变更在一次提交中完成
+- `/aemeath:commit` — 按拆分原则自动判断提交次数
+- `/aemeath:commit 1` — 强制所有变更在一次提交中完成
 
 ## 执行步骤
 

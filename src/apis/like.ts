@@ -116,7 +116,7 @@ export async function likeRoutes(app: FastifyInstance): Promise<void> {
       const page = req.query.page ? parseInt(req.query.page, 10) : 1
       const pageSize = req.query.pageSize ? parseInt(req.query.pageSize, 10) : 20
 
-      const { LikeSource } = await import('../../prisma/main/generated/index.js')
+      const { LikeSource } = await import('#prisma/main')
       const source =
         sourceStr !== undefined && Object.values(LikeSource).includes(sourceStr as never)
           ? (sourceStr as (typeof LikeSource)[keyof typeof LikeSource])

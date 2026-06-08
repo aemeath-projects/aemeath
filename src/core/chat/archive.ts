@@ -2,7 +2,8 @@
  * 聊天记录归档服务与 BullMQ 任务 —— 编排冷数据归档流程（发现分区 → 导出 → 上传 S3 → 清理）。
  */
 
-import type { ArchiveStatus } from '../../../prisma/main/generated/index.js'
+import type { ArchiveStatus } from '#prisma/main'
+
 import type { ChatPrismaClient, MainPrismaClient } from '../db/client.js'
 import { logger, type Logger } from '../logging/setup.js'
 

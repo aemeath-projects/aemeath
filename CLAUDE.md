@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 项目简介
 
-Texas 是基于 NapCat / OneBot 11 协议的 QQ 机器人框架，采用 **TypeScript 后端（Node.js + Fastify 5）+ Vue 3 前端**的全栈架构。v2 已从 Python 完全重构为 TypeScript。
+Aemeath 是基于 NapCat / OneBot 11 协议的 QQ 机器人框架，采用 **TypeScript 后端（Node.js + Fastify 5）+ Vue 3 前端**的全栈架构。v2 已从 Python 完全重构为 TypeScript。
 
 ## 团队规则（必读）
 
@@ -104,7 +104,7 @@ docker-compose -f compose.yaml up -d   # 启动 PostgreSQL + Redis + NapCat
 ### 生产镜像
 
 ```bash
-docker build -t texas:latest .
+docker build -t aemeath:latest .
 # 通过环境变量 ROLE 控制启动角色: bot(默认) | worker
 # worker 消费 BullMQ 队列任务；主进程内嵌 APScheduler 定时调度
 ```
@@ -113,10 +113,10 @@ docker build -t texas:latest .
 
 | 命令                | 说明                                          |
 | ------------------- | --------------------------------------------- |
-| `/texas:audit`      | 全量代码审计（bug、性能、规则违反检查）       |
-| `/texas:bump`       | 版本号更新与打 Tag                            |
-| `/texas:commit`     | 生成 Conventional Commit 提交信息             |
-| `/texas:db-migrate` | 数据库迁移工作流（生成 → 检查 → 执行 → 验证） |
+| `/aemeath:audit`      | 全量代码审计（bug、性能、规则违反检查）       |
+| `/aemeath:bump`       | 版本号更新与打 Tag                            |
+| `/aemeath:commit`     | 生成 Conventional Commit 提交信息             |
+| `/aemeath:db-migrate` | 数据库迁移工作流（生成 → 检查 → 执行 → 验证） |
 
 ## 架构概览
 
@@ -323,7 +323,7 @@ BullMQ（任务队列）取代原有的 Dramatiq。Worker 进程运行在 `src/w
 
 ### WebSocket 连接管理 (`src/core/ws/`)
 
-NapCat 主动反向 WebSocket 连接 Texas，`ConnectionManager` 管理连接池，`HeartbeatMonitor` 负责心跳检测和自动重连。
+NapCat 主动反向 WebSocket 连接 Aemeath，`ConnectionManager` 管理连接池，`HeartbeatMonitor` 负责心跳检测和自动重连。
 
 ### 前端架构
 

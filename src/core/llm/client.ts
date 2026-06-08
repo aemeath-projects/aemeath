@@ -4,7 +4,7 @@
 
 import { ChatOpenAI } from '@langchain/openai'
 
-import type { LlmProvider, LlmModel } from '../../../prisma/main/generated/index.js'
+import type { LlmProvider, LlmModel } from '#prisma/main'
 
 export type { LlmProvider, LlmModel }
 

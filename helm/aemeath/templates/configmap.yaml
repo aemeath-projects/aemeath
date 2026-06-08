@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "texas.configMapName" . }}
+  name: {{ include "aemeath.configMapName" . }}
   labels:
-    {{- include "texas.labels" . | nindent 4 }}
+    {{- include "aemeath.labels" . | nindent 4 }}
 data:
   {{- range $key, $value := .Values.config }}
   {{ $key }}: {{ $value | quote }}

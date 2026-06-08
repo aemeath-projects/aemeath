@@ -2,7 +2,7 @@
   <v-app>
     <v-app-bar app color="primary" prominent>
       <v-app-bar-nav-icon @click="menuOpen = !menuOpen"></v-app-bar-nav-icon>
-      <v-app-bar-title>Texas</v-app-bar-title>
+      <v-app-bar-title>Aemeath</v-app-bar-title>
       <v-spacer></v-spacer>
       <v-tooltip text="主题偏好" location="bottom">
         <template #activator="{ props }">
@@ -14,7 +14,7 @@
           <v-btn
             icon="mdi-github"
             v-bind="props"
-            href="https://github.com/AkariRin/Texas"
+            href="https://github.com/aemeath-projects/aemeath"
             target="_blank"
           ></v-btn>
         </template>

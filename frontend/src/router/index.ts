@@ -24,7 +24,7 @@ const router = createRouter({
       meta: {
         title: '仪表盘',
         icon: 'mdi-view-dashboard',
-        subtitle: 'Texas 机器人管理面板概览',
+        subtitle: 'Aemeath 机器人管理面板概览',
       },
     },
     {
@@ -256,7 +256,7 @@ const router = createRouter({
       meta: {
         title: '设置',
         icon: 'mdi-cog',
-        subtitle: 'Texas 机器人管理面板设置',
+        subtitle: 'Aemeath 机器人管理面板设置',
         panel: '系统',
       },
     },
@@ -276,7 +276,7 @@ const router = createRouter({
 
 router.afterEach((to) => {
   const pageTitle = to.meta?.title as string | undefined
-  document.title = pageTitle ? `${pageTitle} | Texas` : 'Texas'
+  document.title = pageTitle ? `${pageTitle} | Aemeath` : 'Aemeath'
 })
 
 export default router

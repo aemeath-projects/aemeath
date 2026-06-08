@@ -51,7 +51,7 @@ export const useThemeStore = defineStore(
   },
   {
     persist: {
-      key: 'texas-theme-preference',
+      key: 'aemeath-theme-preference',
       pick: ['preference'],
     },
   },

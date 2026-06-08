@@ -1,10 +1,10 @@
 # ─────────────────────────────────────────────
-# Texas Helm Chart - Default Values
+# Aemeath Helm Chart - Default Values
 # ─────────────────────────────────────────────
 
 # -- 全局镜像配置
 image:
-  repository: texas
+  repository: aemeath
   tag: '' # 默认使用 Chart appVersion
   pullPolicy: IfNotPresent
 
@@ -78,14 +78,14 @@ ingress:
     # kubernetes.io/ingress.class: nginx
     # cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
-    - host: texas.local
+    - host: aemeath.local
       paths:
         - path: /
           pathType: Prefix
   tls: []
-  #  - secretName: texas-tls
+  #  - secretName: aemeath-tls
   #    hosts:
-  #      - texas.local
+  #      - aemeath.local
 
 # ─── Autoscaling (仅 bot) ───
 autoscaling:
@@ -141,17 +141,17 @@ config:
 # 或在 helm install/upgrade 时通过 --set secret.XXX=... 覆盖，切勿将明文密码提交到版本库。
 secret:
   NAPCAT_ACCESS_TOKEN: ''
-  DATABASE_URL: 'postgresql+asyncpg://texas:texas@texas-postgresql:5432/texas'
-  CHAT_DATABASE_URL: 'postgresql+asyncpg://texas:texas@texas-postgresql:5432/chat_history'
-  BULLMQ_REDIS_URL: 'redis://texas-redis-master:6379'
-  CACHE_REDIS_URL: 'redis://texas-redis-cache-master:6379'
-  PERSISTENT_REDIS_URL: 'redis://texas-redis-master:6379'
+  DATABASE_URL: 'postgresql+asyncpg://aemeath:aemeath@aemeath-postgresql:5432/aemeath'
+  CHAT_DATABASE_URL: 'postgresql+asyncpg://aemeath:aemeath@aemeath-postgresql:5432/chat_history'
+  BULLMQ_REDIS_URL: 'redis://aemeath-redis-master:6379'
+  CACHE_REDIS_URL: 'redis://aemeath-redis-cache-master:6379'
+  PERSISTENT_REDIS_URL: 'redis://aemeath-redis-master:6379'
   # S3
   S3_ENDPOINT_URL: ''
   S3_ACCESS_KEY_ID: ''
   S3_SECRET_ACCESS_KEY: ''
   S3_REGION: us-east-1
-  S3_ARCHIVE_BUCKET: texas-chat-archive
+  S3_ARCHIVE_BUCKET: aemeath-chat-archive
   S3_ARCHIVE_PREFIX: v1
 
 # 使用已存在的 Secret（优先级高于上方 secret 块）
@@ -180,9 +180,9 @@ probes:
 postgresql:
   enabled: true
   auth:
-    username: texas
-    password: texas
-    database: texas
+    username: aemeath
+    password: aemeath
+    database: aemeath
   primary:
     persistence:
       enabled: true

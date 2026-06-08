@@ -102,7 +102,7 @@ async function _startup(
   connMgr: ConnectionManager,
   dispatcherRef: { current: EventDispatcher | undefined },
 ): Promise<void> {
-  app.log.info('Texas 正在启动...')
+  app.log.info('Aemeath 正在启动...')
 
   // 1. 初始化 Prisma 客户端
   const mainDb = createMainDb(config.DATABASE_URL, config.DB_POOL_SIZE)
@@ -225,13 +225,13 @@ async function _startup(
     ...allServices,
   })
 
-  app.log.info(`Texas 已启动，等待 NapCat 连接 (host=${config.HOST} port=${String(config.PORT)})`)
+  app.log.info(`Aemeath 已启动，等待 NapCat 连接 (host=${config.HOST} port=${String(config.PORT)})`)
 }
 
 // ── 关闭逻辑 ──
 
 async function _shutdown(app: FastifyInstance): Promise<void> {
-  app.log.info('Texas 正在关闭...')
+  app.log.info('Aemeath 正在关闭...')
 
   const state = getState(app)
 
@@ -258,5 +258,5 @@ async function _shutdown(app: FastifyInstance): Promise<void> {
   const queues = state.queues as Record<string, { close(): Promise<void> }>
   await Promise.all(Object.values(queues).map((q) => q.close()))
 
-  app.log.info('Texas 已停止')
+  app.log.info('Aemeath 已停止')
 }

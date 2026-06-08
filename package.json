@@ -1,5 +1,5 @@
 {
-  "name": "texas",
+  "name": "aemeath",
   "version": "1.0.0",
   "private": true,
   "description": "",
@@ -7,10 +7,10 @@
   "engines": {
     "node": ">=22.12.0"
   },
-  "packageManager": "pnpm@11.5.1",
+  "packageManager": "pnpm@11.5.2",
   "scripts": {
     "dev": "cross-env NODE_ENV=development LOG_FORMAT=console nodemon",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsup",
     "start": "cross-env NODE_ENV=production node dist/core/main.js",
     "worker": "cross-env NODE_ENV=production node dist/worker.js",
     "dev:frontend": "pnpm --filter frontend dev",
@@ -27,7 +27,7 @@
     "test:frontend": "vitest run --project frontend",
     "test:frontend:watch": "vitest --project frontend",
     "test:frontend:coverage": "vitest run --project frontend --coverage",
-    "db:generate": "prisma generate --config prisma/main/prisma.config.ts && prisma generate --config prisma/chat/prisma.config.ts",
+    "db:generate": "prisma generate --config prisma/main/prisma.config.ts && prisma generate --config prisma/chat/prisma.config.ts && node scripts/patch-prisma-exports/index.cjs",
     "db:migrate": "prisma migrate deploy --config prisma/main/prisma.config.ts && prisma migrate deploy --config prisma/chat/prisma.config.ts",
     "db:migrate:dev:main": "prisma migrate dev --config prisma/main/prisma.config.ts",
     "db:migrate:dev:chat": "prisma migrate dev --config prisma/chat/prisma.config.ts",
@@ -37,7 +37,8 @@
     "bump:major": "commit-and-tag-version --release-as major",
     "changelog": "commit-and-tag-version --skip.bump --skip.commit --skip.tag",
     "commit": "cz",
-    "prepare": "husky"
+    "prepare": "husky",
+    "import:jrlp": ""
   },
   "dependencies": {
     "@fastify/cors": "^11.2.0",
@@ -78,21 +79,37 @@
     "nodemon": "^3.1.14",
     "prettier": "^3.8.3",
     "prisma": "^7.8.0",
+    "tsup": "^8.5.1",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.60.1",
+    "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.8"
   },
   "lint-staged": {
-    "*.{ts,tsx}": [
-      "eslint --fix"
-    ],
-    "{src,scripts}/**/*.{ts,tsx}": [
+    "{src,scripts,tests}/**/*.{ts,tsx}": [
+      "eslint --fix",
       "prettier --write"
     ],
     "frontend/src/**/*.{ts,tsx,vue}": [
       "prettier --write"
     ]
+  },
+  "imports": {
+    "#prisma/main": {
+      "import": {
+        "types": "./prisma/main/generated/index.d.ts",
+        "default": "./prisma/main/generated/index.js"
+      },
+      "default": "./prisma/main/generated/index.js"
+    },
+    "#prisma/chat": {
+      "import": {
+        "types": "./prisma/chat/generated/index.d.ts",
+        "default": "./prisma/chat/generated/index.js"
+      },
+      "default": "./prisma/chat/generated/index.js"
+    }
   },
   "config": {
     "commitizen": {

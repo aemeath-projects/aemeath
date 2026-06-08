@@ -15,8 +15,8 @@
 
 请通过以下方式私下报告：
 
-1. 使用 GitHub 的 [Private Security Advisories](https://github.com/AkariRin/Texas/security/advisories/new) 提交
-2. 或发送邮件至：**texas@akari.moe**
+1. 使用 GitHub 的 [Private Security Advisories](https://github.com/aemeath-projects/aemeath/security/advisories/new) 提交
+2. 或发送邮件至：**aemeath@akari.moe**
 
 报告中请尽可能包含：
 
@@ -56,7 +56,7 @@
 
 ## Security Practices for Deployers
 
-部署 Texas 时请遵循以下安全基线：
+部署 Aemeath 时请遵循以下安全基线：
 
 - **必须**通过 `.env` 文件或环境变量注入所有凭据，**禁止**硬编码
 - `NAPCAT_ACCESS_TOKEN` 使用高熵随机字符串（至少 32 字节）

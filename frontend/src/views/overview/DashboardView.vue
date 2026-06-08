@@ -38,7 +38,7 @@
           <v-card-text class="pa-5 d-flex flex-column justify-space-between h-100">
             <div>
               <div class="text-overline text-medium-emphasis mb-1">系统</div>
-              <div class="text-h6 font-weight-bold mb-1">Texas Bot</div>
+              <div class="text-h6 font-weight-bold mb-1">Aemeath Bot</div>
               <div class="text-body-2 text-medium-emphasis">{{ currentTime }}</div>
             </div>
             <v-btn

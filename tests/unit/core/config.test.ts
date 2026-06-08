@@ -9,8 +9,8 @@ import { loadConfig, normalizeRedisUrl } from '../../../src/core/config.js'
 function validEnv(overrides: Record<string, string> = {}): Record<string, string> {
   return {
     NAPCAT_ACCESS_TOKEN: 'test-secret-token',
-    DATABASE_URL: 'postgresql://texas:texas@localhost:5432/texas',
-    CHAT_DATABASE_URL: 'postgresql://texas:texas@localhost:5432/chat_history',
+    DATABASE_URL: 'postgresql://aemeath:aemeath@localhost:5432/aemeath',
+    CHAT_DATABASE_URL: 'postgresql://aemeath:aemeath@localhost:5432/chat_history',
     BULLMQ_REDIS_URL: 'redis://localhost:6379',
     CACHE_REDIS_URL: 'redis://localhost:6379',
     ...overrides,
@@ -22,8 +22,10 @@ describe('loadConfig', () => {
     const config = loadConfig(validEnv())
 
     expect(config.NAPCAT_ACCESS_TOKEN).toBe('test-secret-token')
-    expect(config.DATABASE_URL).toBe('postgresql://texas:texas@localhost:5432/texas')
-    expect(config.CHAT_DATABASE_URL).toBe('postgresql://texas:texas@localhost:5432/chat_history')
+    expect(config.DATABASE_URL).toBe('postgresql://aemeath:aemeath@localhost:5432/aemeath')
+    expect(config.CHAT_DATABASE_URL).toBe(
+      'postgresql://aemeath:aemeath@localhost:5432/chat_history',
+    )
     // 默认值
     expect(config.NAPCAT_MESSAGE_POST_FORMAT).toBe('array')
     expect(config.NAPCAT_REPORT_SELF_MESSAGE).toBe(false)
@@ -35,7 +37,7 @@ describe('loadConfig', () => {
     expect(config.LOG_LEVEL).toBe('info')
     expect(config.LOG_FORMAT).toBe('json')
     expect(config.S3_REGION).toBe('us-east-1')
-    expect(config.S3_ARCHIVE_BUCKET).toBe('texas-archive')
+    expect(config.S3_ARCHIVE_BUCKET).toBe('aemeath-archive')
     expect(config.S3_ARCHIVE_PREFIX).toBe('chat-archive')
     expect(config.FRONTEND_DIST_DIR).toBe('frontend/dist')
   })

@@ -6,7 +6,6 @@ import { logger } from '../logging/setup.js'
 import type { BotAPI } from '../protocol/api.js'
 import type { AnyOneBotEvent } from '../protocol/models/events.js'
 
-
 import { Context, FinishError } from './context.js'
 import type { HandlerInterceptor } from './interceptor.js'
 import type { CompositeHandlerMapping, ResolvedHandler } from './mapping.js'

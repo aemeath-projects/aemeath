@@ -45,7 +45,7 @@ export const ConfigSchema = Type.Object({
   S3_ACCESS_KEY_ID: Type.String({ default: '' }),
   S3_SECRET_ACCESS_KEY: Type.String({ default: '' }),
   S3_REGION: Type.String({ default: 'us-east-1' }),
-  S3_ARCHIVE_BUCKET: Type.String({ default: 'texas-archive' }),
+  S3_ARCHIVE_BUCKET: Type.String({ default: 'aemeath-archive' }),
   S3_ARCHIVE_PREFIX: Type.String({ default: 'chat-archive' }),
 
   // 监控与日志

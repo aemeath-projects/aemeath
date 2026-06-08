@@ -1,5 +1,5 @@
 /**
- * Fastify 应用入口 —— 组装并启动 Texas 框架。
+ * Fastify 应用入口 —— 组装并启动 Aemeath 框架。
  *
  * 开发环境运行: pnpm dev
  * 生产环境运行: node dist/core/main.js
@@ -107,7 +107,7 @@ async function bootstrap(): Promise<void> {
 
   // ── 启动监听 ──
   await app.listen({ host: config.HOST, port: config.PORT })
-  app.log.info(`Texas bot started — http://${config.HOST}:${String(config.PORT)}`)
+  app.log.info(`Aemeath bot started — http://${config.HOST}:${String(config.PORT)}`)
 }
 
 // ── 入口 ──

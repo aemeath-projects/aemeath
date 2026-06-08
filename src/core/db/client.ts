@@ -4,8 +4,8 @@
  * 包含 BigInt → number 序列化支持（QQ 号等字段安全范围内）。
  */
 
-import { PrismaClient as ChatPrismaClient } from '../../../prisma/chat/generated/index.js'
-import { PrismaClient as MainPrismaClient } from '../../../prisma/main/generated/index.js'
+import { PrismaClient as ChatPrismaClient } from '#prisma/chat'
+import { PrismaClient as MainPrismaClient } from '#prisma/main'
 
 export type { ChatPrismaClient, MainPrismaClient }
 

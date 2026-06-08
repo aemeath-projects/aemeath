@@ -4,7 +4,7 @@
 
 /** RPC 请求队列键（Redis List），Worker → 主进程。 */
 export function rpcRequestQueueKey(): string {
-  return 'texas:rpc:requests'
+  return 'aemeath:rpc:requests'
 }
 
 /**
@@ -13,5 +13,5 @@ export function rpcRequestQueueKey(): string {
  * @param requestId - 请求 UUID
  */
 export function rpcResponseChannelKey(requestId: string): string {
-  return `texas:rpc:resp:${requestId}`
+  return `aemeath:rpc:resp:${requestId}`
 }

@@ -1,5 +1,5 @@
 /**
- * Texas BullMQ Worker 进程入口 —— 消费队列任务，通过 RPC 调用主进程业务服务。
+ * Aemeath BullMQ Worker 进程入口 —— 消费队列任务，通过 RPC 调用主进程业务服务。
  *
  * 启动方式：
  *   node dist/worker.js
@@ -24,7 +24,7 @@ const log = logger.child({ name: 'worker' })
 
 const connection = createBullMQConnection(config.BULLMQ_REDIS_URL)
 
-log.info('Texas Worker 正在启动...')
+log.info('Aemeath Worker 正在启动...')
 
 // ── 创建 Worker 实例 ──
 
@@ -55,14 +55,14 @@ for (const worker of workers) {
   })
 }
 
-log.info(`Texas Worker 已启动，监听队列: ${workers.map((w) => w.name).join(', ')}`)
+log.info(`Aemeath Worker 已启动，监听队列: ${workers.map((w) => w.name).join(', ')}`)
 
 // ── 优雅关闭 ──
 
 async function shutdown(): Promise<void> {
   log.info('收到停止信号，正在优雅关闭...')
   await Promise.all(workers.map((w) => w.close()))
-  log.info('Texas Worker 已停止')
+  log.info('Aemeath Worker 已停止')
   process.exit(0)
 }
 

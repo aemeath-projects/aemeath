@@ -18,7 +18,8 @@ vi.mock('@langchain/openai', () => {
 import { ChatOpenAI } from '@langchain/openai'
 /* eslint-enable import-x/order */
 
-import type { LlmModel, LlmProvider } from '../../../../prisma/main/generated/index.js'
+import type { LlmModel, LlmProvider } from '#prisma/main'
+
 import { LLMClient } from '../../../../src/core/llm/client.js'
 
 type MockedChatOpenAI = ReturnType<typeof vi.fn>

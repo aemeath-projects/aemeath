@@ -14,9 +14,9 @@ services:
   postgres:
     image: postgres:17-alpine
     environment:
-      POSTGRES_DB: texas
-      POSTGRES_USER: texas
-      POSTGRES_PASSWORD: texas
+      POSTGRES_DB: aemeath
+      POSTGRES_USER: aemeath
+      POSTGRES_PASSWORD: aemeath
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:

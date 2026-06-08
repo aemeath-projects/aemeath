@@ -84,7 +84,7 @@ async function collectQueueState(app: FastifyInstance): Promise<QueueStateResult
           scheduleRaw: null,
           args: null,
           kwargs: null,
-          options: { expires: null, queue: 'texas_queue' },
+          options: { expires: null, queue: 'aemeath_queue' },
           enabled: true,
         })
       }
@@ -182,7 +182,7 @@ export async function queueRoutes(app: FastifyInstance): Promise<void> {
             scheduleRaw: null,
             args: null,
             kwargs: null,
-            options: { expires: null, queue: 'texas_queue' },
+            options: { expires: null, queue: 'aemeath_queue' },
             enabled: true,
           })
         }

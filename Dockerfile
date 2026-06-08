@@ -54,25 +54,27 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # 创建非 root 用户
-RUN groupadd -g 1000 texas && useradd -u 1000 -g texas -s /bin/sh -m texas
+RUN groupadd -g 1000 aemeath && useradd -u 1000 -g aemeath -s /bin/sh -m aemeath
 
 # 从构建阶段复制产物
-COPY --from=builder --chown=texas:texas /app/dist ./dist
-COPY --from=builder --chown=texas:texas /app/frontend/dist ./frontend/dist
-COPY --from=builder --chown=texas:texas /app/node_modules ./node_modules
-COPY --from=builder --chown=texas:texas /app/package.json ./
+COPY --from=builder --chown=aemeath:aemeath /app/dist ./dist
+COPY --from=builder --chown=aemeath:aemeath /app/prisma/main/generated ./prisma/main/generated
+COPY --from=builder --chown=aemeath:aemeath /app/prisma/chat/generated ./prisma/chat/generated
+COPY --from=builder --chown=aemeath:aemeath /app/frontend/dist ./frontend/dist
+COPY --from=builder --chown=aemeath:aemeath /app/node_modules ./node_modules
+COPY --from=builder --chown=aemeath:aemeath /app/package.json ./
 
 # 复制 Playwright 浏览器二进制（从 builder 的 root 缓存目录）
-COPY --from=builder --chown=texas:texas /root/.cache/ms-playwright /home/texas/.cache/ms-playwright
+COPY --from=builder --chown=aemeath:aemeath /root/.cache/ms-playwright /home/aemeath/.cache/ms-playwright
 
 # 复制启动脚本
-COPY --chown=texas:texas entrypoint.sh /entrypoint.sh
+COPY --chown=aemeath:aemeath entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-USER texas
+USER aemeath
 
 ENV NODE_ENV=production
-ENV PLAYWRIGHT_BROWSERS_PATH=/home/texas/.cache/ms-playwright
+ENV PLAYWRIGHT_BROWSERS_PATH=/home/aemeath/.cache/ms-playwright
 
 EXPOSE 8000
 ENTRYPOINT ["/entrypoint.sh"]

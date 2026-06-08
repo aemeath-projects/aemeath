@@ -4,7 +4,7 @@
  * 通过 Prisma `$extends` 的 query 扩展实现，记录超过阈值的数据库查询。
  */
 
-import { Prisma as MainPrisma } from '../../../prisma/main/generated/index.js'
+import { Prisma as MainPrisma } from '#prisma/main'
 
 // ────────────────────────────────────────────
 //  Prisma 错误类型守卫

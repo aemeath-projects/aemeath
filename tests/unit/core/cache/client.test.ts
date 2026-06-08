@@ -159,19 +159,19 @@ describe('CacheClient', () => {
   describe('deleteByPattern', () => {
     it('应当使用 SCAN 循环删除匹配的键', async () => {
       // 第一次 SCAN 返回部分键和非零 cursor
-      mockRedis.scan.mockResolvedValueOnce(['42', ['texas:perm:1', 'texas:perm:2']])
+      mockRedis.scan.mockResolvedValueOnce(['42', ['aemeath:perm:1', 'aemeath:perm:2']])
       // 第二次 SCAN 返回剩余键和 cursor=0（结束）
-      mockRedis.scan.mockResolvedValueOnce(['0', ['texas:perm:3']])
+      mockRedis.scan.mockResolvedValueOnce(['0', ['aemeath:perm:3']])
       mockRedis.del.mockResolvedValue(2).mockResolvedValueOnce(2)
       mockRedis.del.mockResolvedValueOnce(1)
 
-      const deleted = await cache.deleteByPattern('texas:perm:*')
+      const deleted = await cache.deleteByPattern('aemeath:perm:*')
 
       expect(deleted).toBe(3)
       expect(mockRedis.scan).toHaveBeenCalledTimes(2)
-      expect(mockRedis.scan).toHaveBeenCalledWith('0', 'MATCH', 'texas:perm:*', 'COUNT', 100)
-      expect(mockRedis.del).toHaveBeenCalledWith('texas:perm:1', 'texas:perm:2')
-      expect(mockRedis.del).toHaveBeenCalledWith('texas:perm:3')
+      expect(mockRedis.scan).toHaveBeenCalledWith('0', 'MATCH', 'aemeath:perm:*', 'COUNT', 100)
+      expect(mockRedis.del).toHaveBeenCalledWith('aemeath:perm:1', 'aemeath:perm:2')
+      expect(mockRedis.del).toHaveBeenCalledWith('aemeath:perm:3')
     })
 
     it('无匹配键时应当返回 0', async () => {

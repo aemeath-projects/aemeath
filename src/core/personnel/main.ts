@@ -78,7 +78,7 @@ export interface MemberData {
 }
 
 /** 同步状态持久化键。 */
-const SYNC_STATUS_KEY = 'texas:personnel:sync_status'
+const SYNC_STATUS_KEY = 'aemeath:personnel:sync_status'
 
 /**
  * 用户管理核心服务 —— 封装 upsert、同步编排、缓存管理。

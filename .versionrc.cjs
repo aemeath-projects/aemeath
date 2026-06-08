@@ -8,7 +8,7 @@ module.exports = {
   bumpFiles: [
     { filename: 'package.json', type: 'json' },
     { filename: 'frontend/package.json', type: 'json' },
-    { filename: 'helm/texas/Chart.yaml', updater: 'scripts/helm-version-updater.cjs' },
+    { filename: 'helm/aemeath/Chart.yaml', updater: 'scripts/release/helm-version-updater.cjs' },
   ],
 
   /** 每次 bump 自动更新 CHANGELOG.md */

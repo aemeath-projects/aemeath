@@ -40,7 +40,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: akaririn/texas
+          images: akaririn/aemeath
           tags: |
             type=semver,pattern={{version}},value=${{ github.event.workflow_run.head_branch }}
             type=semver,pattern={{major}}.{{minor}},value=${{ github.event.workflow_run.head_branch }}
@@ -94,8 +94,8 @@ jobs:
             exit 1
           fi
           VERSION="${HEAD_BRANCH#v}"
-          sed -i "s/^version:.*/version: ${VERSION}/" helm/texas/Chart.yaml
-          sed -i "s/^appVersion:.*/appVersion: \"${VERSION}\"/" helm/texas/Chart.yaml
+          sed -i "s/^version:.*/version: ${VERSION}/" helm/aemeath/Chart.yaml
+          sed -i "s/^appVersion:.*/appVersion: \"${VERSION}\"/" helm/aemeath/Chart.yaml
 
       - name: Add Helm dependency repos
         run: |
@@ -103,13 +103,13 @@ jobs:
           helm repo update
 
       - name: Build Helm dependencies
-        run: helm dependency build helm/texas
+        run: helm dependency build helm/aemeath
 
       - name: Package Helm chart
-        run: helm package helm/texas -d .helm-out
+        run: helm package helm/aemeath -d .helm-out
 
       - name: Push Helm chart to GHCR (OCI)
-        run: helm push .helm-out/*.tgz oci://ghcr.io/Project-Texas
+        run: helm push .helm-out/*.tgz oci://ghcr.io/aemeath-projects
 
   github-release:
     name: Create GitHub Release

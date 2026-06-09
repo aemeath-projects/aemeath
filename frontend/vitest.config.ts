@@ -9,14 +9,14 @@ export default defineConfig({
     name: 'frontend',
     environment: 'jsdom',
     setupFiles: ['./src/test-setup.ts'],
-    include: ['src/tests/**/*.test.ts'],
+    include: ['tests/**/*.test.ts'],
     reporters: ['default', 'junit'],
     outputFile: { junit: 'junit.xml' },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
       include: ['src/utils/**', 'src/composables/**', 'src/stores/**'],
-      exclude: ['src/tests/**'],
+      exclude: ['tests/**'],
       // thresholds: {
       //   lines: 70,
       //   functions: 70,

@@ -404,7 +404,7 @@ pnpm test        # 单次运行（CI 模式）
 pnpm test:watch  # 监听模式
 ```
 
-前端测试位于 `frontend/src/__tests__/`（按 `composables/`、`utils/` 分类）。
+前端测试位于 `frontend/tests/`（按 `composables/`、`utils/`、`stores/` 分类）。
 
 ## 详细文档
 

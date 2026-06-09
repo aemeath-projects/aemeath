@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { parseEvent } from '../../../../src/core/protocol/event.js'
+import { parseEvent } from '@/core/protocol/event.js'
 import type {
   GroupMessageEvent,
   HeartbeatEvent,
   LifecycleEvent,
   NoticeEvent,
-} from '../../../../src/core/protocol/models/events.js'
+} from '@/core/protocol/models/events.js'
 
 describe('parseEvent', () => {
   it('should parse a group message event', () => {

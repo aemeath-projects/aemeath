@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { VERSION } from '../../../src/core/version.js'
+import { VERSION } from '@/core/version.js'
 
 describe('version', () => {
   it('should export a semver string', () => {

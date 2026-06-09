@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { loadConfig, normalizeRedisUrl } from '../../../src/core/config.js'
+import { loadConfig, normalizeRedisUrl } from '@/core/config.js'
 
 /**
  * 构造一份包含所有必填字段的最小有效环境变量集合。

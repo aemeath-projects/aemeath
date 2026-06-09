@@ -128,8 +128,9 @@ async function _startup(
     [resolve(srcRoot, 'handlers')],
     [
       resolve(srcRoot, 'services'),
-      resolve(srcRoot, 'core', 'browser'),
+      resolve(srcRoot, 'core', 'renderer'),
       resolve(srcRoot, 'core', 'permission'),
+      resolve(srcRoot, 'render-templates'),
     ],
     composite,
   )

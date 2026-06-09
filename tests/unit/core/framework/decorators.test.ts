@@ -21,7 +21,7 @@ import {
   componentRegistry,
   featureRegistry,
   handlerRegistry,
-} from '../../../../src/core/framework/decorators.js'
+} from '@/core/framework/decorators.js'
 
 // 测试前清空全局注册表，避免跨测试污染
 beforeEach(() => {

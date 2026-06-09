@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { MainPrismaClient } from '../../../../src/core/db/client.js'
-import { PersonnelQueryService } from '../../../../src/core/personnel/query.js'
+import type { MainPrismaClient } from '@/core/db/client.js'
+import { PersonnelQueryService } from '@/core/personnel/query.js'
 
 /** 创建 mock MainPrismaClient（仅包含 personnel 查询需要的方法）。 */
 function createMockDb() {

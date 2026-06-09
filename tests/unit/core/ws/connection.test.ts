@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { BotAPI } from '../../../../src/core/protocol/api.js'
-import type { APIResponse } from '../../../../src/core/protocol/models/api.js'
-import type { AnyOneBotEvent } from '../../../../src/core/protocol/models/events.js'
-import { ConnectionManager } from '../../../../src/core/ws/connection.js'
-import type { MinimalSocket } from '../../../../src/core/ws/connection.js'
+import { BotAPI } from '@/core/protocol/api.js'
+import type { APIResponse } from '@/core/protocol/models/api.js'
+import type { AnyOneBotEvent } from '@/core/protocol/models/events.js'
+import { ConnectionManager } from '@/core/ws/connection.js'
+import type { MinimalSocket } from '@/core/ws/connection.js'
 
 /** 模拟 WebSocket 套接字。 */
 function makeMockSocket() {

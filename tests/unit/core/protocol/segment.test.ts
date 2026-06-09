@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import type { AtSegment } from '../../../../src/core/protocol/models/segments.js'
+import type { AtSegment } from '@/core/protocol/models/segments.js'
 import {
   buildMentionMessage,
   extractPlaintext,
   MessageBuilder,
   Seg,
-} from '../../../../src/core/protocol/segment.js'
+} from '@/core/protocol/segment.js'
 
 describe('Seg factory methods', () => {
   it('Seg.text() returns correct text segment', () => {

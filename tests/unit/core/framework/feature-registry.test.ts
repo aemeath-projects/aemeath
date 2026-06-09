@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { FeatureRegistry } from '../../../../src/core/registries/feature-registry.js'
-import type { FeatureInfo } from '../../../../src/core/registries/feature-registry.js'
+import { FeatureRegistry } from '@/core/registries/feature-registry.js'
+import type { FeatureInfo } from '@/core/registries/feature-registry.js'
 
 function makeFeatureInfo(overrides: Partial<FeatureInfo> = {}): FeatureInfo {
   return {

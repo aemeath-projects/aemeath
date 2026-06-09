@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { BotAPI } from '../../../../src/core/protocol/api.js'
-import type { APIResponse } from '../../../../src/core/protocol/models/api.js'
+import { BotAPI } from '@/core/protocol/api.js'
+import type { APIResponse } from '@/core/protocol/models/api.js'
 
 /** 创建一个 BotAPI 实例，同时捕获所有通过 send 发出的字符串。 */
 function makeBotAPI(): { api: BotAPI; sent: string[] } {

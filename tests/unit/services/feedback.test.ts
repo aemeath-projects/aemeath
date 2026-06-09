@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { MainPrismaClient } from '../../../src/core/db/client.js'
-import type { BotAPI } from '../../../src/core/protocol/api.js'
-import { FeedbackService } from '../../../src/services/feedback.js'
+import type { MainPrismaClient } from '@/core/db/client.js'
+import type { BotAPI } from '@/core/protocol/api.js'
+import { FeedbackService } from '@/services/feedback.js'
 
 // ────────────────────────────────────────────
 //  Mock 工厂

@@ -5,9 +5,9 @@ import {
   OnCommand,
   componentRegistry,
   handlerRegistry,
-} from '../../../../src/core/framework/decorators.js'
-import { CompositeHandlerMapping } from '../../../../src/core/framework/mapping.js'
-import { ComponentScanner } from '../../../../src/core/framework/scanner.js'
+} from '@/core/framework/decorators.js'
+import { CompositeHandlerMapping } from '@/core/framework/mapping.js'
+import { ComponentScanner } from '@/core/framework/scanner.js'
 
 // ── 测试用辅助 ──
 

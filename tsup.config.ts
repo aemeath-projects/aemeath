@@ -1,10 +1,11 @@
+import { cp } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
 import { defineConfig } from 'tsup'
 
 export default defineConfig({
   entry: {
-    'core/main': 'src/core/main.ts',
+    main: 'src/core/main.ts',
     worker: 'src/core/worker.ts',
   },
   format: 'esm',
@@ -14,8 +15,12 @@ export default defineConfig({
   clean: true,
   outDir: 'dist',
   sourcemap: true,
+  minify: true,
   external: [/^#prisma\/.*/],
   esbuildOptions(options) {
     options.alias = { '@logger': resolve('./src/core/logging/main.ts') }
+  },
+  async onSuccess() {
+    await cp('assets', 'dist/assets', { recursive: true })
   },
 })

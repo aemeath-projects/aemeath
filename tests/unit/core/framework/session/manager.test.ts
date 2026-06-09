@@ -4,14 +4,14 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { CacheClient } from '../../../../../src/core/cache/client.js'
-import type { Context } from '../../../../../src/core/framework/context.js'
-import { InteractiveSession } from '../../../../../src/core/framework/session/base.js'
-import type { SessionData } from '../../../../../src/core/framework/session/base.js'
-import type { SessionContext } from '../../../../../src/core/framework/session/context.js'
-import { SessionManager } from '../../../../../src/core/framework/session/manager.js'
-import { makeState } from '../../../../../src/core/framework/session/state.js'
-import type { State } from '../../../../../src/core/framework/session/state.js'
+import type { CacheClient } from '@/core/cache/client.js'
+import type { Context } from '@/core/framework/context.js'
+import { InteractiveSession } from '@/core/framework/session/base.js'
+import type { SessionData } from '@/core/framework/session/base.js'
+import type { SessionContext } from '@/core/framework/session/context.js'
+import { SessionManager } from '@/core/framework/session/manager.js'
+import { makeState } from '@/core/framework/session/state.js'
+import type { State } from '@/core/framework/session/state.js'
 
 // ── Mock CacheClient ──
 

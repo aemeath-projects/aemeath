@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { CacheClient } from '../../../src/core/cache/client.js'
-import type { MainPrismaClient } from '../../../src/core/db/client.js'
-import { CheckinService } from '../../../src/services/checkin.js'
+import type { CacheClient } from '@/core/cache/client.js'
+import type { MainPrismaClient } from '@/core/db/client.js'
+import { CheckinService } from '@/services/checkin.js'
 
 // ────────────────────────────────────────────
 //  Mock 工厂

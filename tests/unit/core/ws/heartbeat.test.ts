@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { HeartbeatMonitor } from '../../../../src/core/ws/heartbeat.js'
+import { HeartbeatMonitor } from '@/core/ws/heartbeat.js'
 
 describe('HeartbeatMonitor', () => {
   beforeEach(() => {

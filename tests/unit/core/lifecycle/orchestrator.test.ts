@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { LifecycleOrchestrator } from '../../../../src/core/lifecycle/orchestrator.js'
-import type { ShutdownEntry, StartupEntry } from '../../../../src/core/lifecycle/registry.js'
+import { LifecycleOrchestrator } from '@/core/lifecycle/orchestrator.js'
+import type { ShutdownEntry, StartupEntry } from '@/core/lifecycle/registry.js'
 
 function makeStartup(
   name: string,

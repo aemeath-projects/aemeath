@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ChatHistoryService } from '../../../../src/core/chat/main.js'
-import type { ChatPrismaClient } from '../../../../src/core/db/client.js'
+import { ChatHistoryService } from '@/core/chat/main.js'
+import type { ChatPrismaClient } from '@/core/db/client.js'
 
 /** 创建 chatDb mock。 */
 function createMockChatDb() {

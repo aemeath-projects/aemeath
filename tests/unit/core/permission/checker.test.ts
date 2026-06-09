@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { Context } from '../../../../src/core/framework/context.js'
-import { Permission } from '../../../../src/core/framework/decorators.js'
-import { FeaturePermissionChecker } from '../../../../src/core/permission/checker.js'
-import type { FeaturePermissionService } from '../../../../src/core/permission/main.js'
-import type { PersonnelService } from '../../../../src/core/personnel/main.js'
-import type { PermissionRegistry } from '../../../../src/core/registries/permission-registry.js'
+import type { Context } from '@/core/framework/context.js'
+import { Permission } from '@/core/framework/decorators.js'
+import { FeaturePermissionChecker } from '@/core/permission/checker.js'
+import type { FeaturePermissionService } from '@/core/permission/main.js'
+import type { PersonnelService } from '@/core/personnel/main.js'
+import type { PermissionRegistry } from '@/core/registries/permission-registry.js'
 
 /** 创建 mock FeaturePermissionService。 */
 function createMockPermissionService() {

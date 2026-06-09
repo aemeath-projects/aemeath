@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { Context, FinishError } from '../../../../src/core/framework/context.js'
-import type { BotAPI } from '../../../../src/core/protocol/api.js'
-import type { AnyOneBotEvent } from '../../../../src/core/protocol/models/events.js'
-import type { MessageSegment } from '../../../../src/core/protocol/models/segments.js'
+import { Context, FinishError } from '@/core/framework/context.js'
+import type { BotAPI } from '@/core/protocol/api.js'
+import type { AnyOneBotEvent } from '@/core/protocol/models/events.js'
+import type { MessageSegment } from '@/core/protocol/models/segments.js'
 
 // ── 测试用 BotAPI mock ──
 

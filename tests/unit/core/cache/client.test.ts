@@ -1,7 +1,7 @@
 import type { Redis } from 'ioredis'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { CacheClient } from '../../../../src/core/cache/client.js'
+import { CacheClient } from '@/core/cache/client.js'
 
 /** 创建一个 mock Redis 实例，包含 CacheClient 使用的所有方法。 */
 function createMockRedis() {

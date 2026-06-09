@@ -7,7 +7,8 @@ import { getLogger } from '@logger'
 import type { Context } from '@/core/framework/context.js'
 import type { ComponentMeta } from '@/core/framework/decorators.js'
 import { Component, OnCommand, MessageScope } from '@/core/framework/decorators.js'
-import type { MarkdownRenderer } from '@/core/utils/md2img.js'
+import { render } from '@/core/renderer/main.js'
+import type { HelpData } from '@/render-templates/help.js'
 
 const log = getLogger('help')
 
@@ -27,40 +28,6 @@ interface HelpCategory {
   items: HelpItem[]
 }
 
-function fmtTrigger(trigger: string): string {
-  return trigger ? trigger.replace(/\|/g, '\\|') : '—'
-}
-
-function buildListMarkdown(categories: HelpCategory[], page: number, totalPages: number): string {
-  const lines: string[] = ['# Aemeath Bot 功能帮助', '']
-
-  for (const cat of categories) {
-    lines.push(`## ${cat.tag}`)
-    lines.push('| 功能 | 说明 | 触发方式 |')
-    lines.push('|------|------|----------|')
-    for (const item of cat.items) {
-      lines.push(
-        `| ${item.displayName} | ${item.description || '—'} | ${fmtTrigger(item.trigger)} |`,
-      )
-    }
-    lines.push('')
-  }
-
-  lines.push('---')
-  if (totalPages > 1) {
-    const parts: string[] = [`第 ${String(page)} 页 / 共 ${String(totalPages)} 页`]
-    if (page < totalPages) {
-      parts.push(`发送 \`/help ${String(page + 1)}\` 查看下一页`)
-    }
-    parts.push('`/help <功能名>` 查看详情')
-    lines.push(parts.join(' · '))
-  } else {
-    lines.push('发送 `/help <功能名>` 查看详情')
-  }
-
-  return lines.join('\n')
-}
-
 /** 降级处理：直接发送纯文本功能列表。 */
 async function fallbackText(ctx: Context): Promise<boolean> {
   const { componentRegistry } = await import('@/core/framework/decorators.js')
@@ -74,30 +41,11 @@ async function fallbackText(ctx: Context): Promise<boolean> {
   return true
 }
 
-/** 渲染 Markdown 并发送图片，失败时回退文字。 */
-async function renderAndSend(
-  ctx: Context,
-  renderer: MarkdownRenderer,
-  md: string,
-  errorLabel: string,
-): Promise<void> {
-  try {
-    const { Seg } = await import('@/core/protocol/segment.js')
-    const buf = await renderer.render(md, { width: RENDER_WIDTH })
-    const b64 = `base64://${buf.toString('base64')}`
-    await ctx.reply([Seg.image(b64)])
-  } catch (err) {
-    log.error({ userId: ctx.userId, err }, errorLabel)
-    await ctx.reply('帮助图片生成失败，请稍后重试')
-  }
-}
-
 /** 列表模式：渲染指定页的功能列表。 */
 async function handleList(
   ctx: Context,
   page: number,
   allFeatures: ComponentMeta[],
-  renderer: MarkdownRenderer,
 ): Promise<boolean> {
   const grouped = new Map<string, HelpItem[]>()
   for (const meta of allFeatures) {
@@ -137,13 +85,29 @@ async function handleList(
     pageGrouped.set(item.tag, arr)
   }
 
-  const pageCats: HelpCategory[] = []
+  const pageCats: { tag: string; items: { name: string; desc: string }[] }[] = []
   for (const [t, its] of pageGrouped) {
-    pageCats.push({ tag: t, items: its })
+    pageCats.push({
+      tag: t,
+      items: its.map((i) => ({ name: i.displayName, desc: i.description || '—' })),
+    })
   }
 
-  const md = buildListMarkdown(pageCats, page, totalPages)
-  await renderAndSend(ctx, renderer, md, '帮助列表渲染失败')
+  const helpData: HelpData = {
+    title: 'Aemeath Bot 功能帮助',
+    categories: pageCats,
+    page,
+    totalPages,
+  }
+
+  try {
+    const { Seg } = await import('@/core/protocol/segment.js')
+    const buf = await render('help', helpData, { width: RENDER_WIDTH })
+    await ctx.reply([Seg.image(`base64://${buf.toString('base64')}`)])
+  } catch (err) {
+    log.error({ userId: ctx.userId, err }, '帮助列表渲染失败')
+    return fallbackText(ctx)
+  }
   return true
 }
 
@@ -152,7 +116,6 @@ async function handleDetail(
   ctx: Context,
   featureQuery: string,
   allFeatures: ComponentMeta[],
-  renderer: MarkdownRenderer,
 ): Promise<boolean> {
   const meta = allFeatures.find((c) => c.name === featureQuery || c.displayName === featureQuery)
 
@@ -161,34 +124,42 @@ async function handleDetail(
     return true
   }
 
-  const md = [`# ${meta.displayName}`, '', meta.description].join('\n')
-  await renderAndSend(ctx, renderer, md, '帮助详情渲染失败')
+  const helpData: HelpData = {
+    title: meta.displayName,
+    categories: [
+      {
+        tag: '说明',
+        items: [{ name: meta.displayName, desc: meta.description || '—' }],
+      },
+    ],
+    page: 1,
+    totalPages: 1,
+  }
+
+  try {
+    const { Seg } = await import('@/core/protocol/segment.js')
+    const buf = await render('help', helpData, { width: RENDER_WIDTH })
+    await ctx.reply([Seg.image(`base64://${buf.toString('base64')}`)])
+  } catch (err) {
+    log.error({ userId: ctx.userId, err }, '帮助详情渲染失败')
+    return fallbackText(ctx)
+  }
   return true
 }
 
 class HelpHandler {
   /** 处理 /help 指令。 */
-
   async showHelp(ctx: Context): Promise<boolean> {
-    const { MarkdownRenderer } = await import('@/core/utils/md2img.js')
-
-    if (!ctx.hasService(MarkdownRenderer)) {
-      return fallbackText(ctx)
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-unsafe-argument
-    const renderer = ctx.getService(MarkdownRenderer as any) as unknown as MarkdownRenderer
     const arg = ctx.getArgStr().trim()
-
     const { componentRegistry } = await import('@/core/framework/decorators.js')
     const allFeatures = [...componentRegistry.values()].filter((c) => !c.system)
 
     if (!arg || /^\d+$/u.test(arg)) {
       const page = arg ? parseInt(arg, 10) : 1
-      return handleList(ctx, page, allFeatures, renderer)
+      return handleList(ctx, page, allFeatures)
     }
 
-    return handleDetail(ctx, arg, allFeatures, renderer)
+    return handleDetail(ctx, arg, allFeatures)
   }
 }
 

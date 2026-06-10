@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "aemeath.fullname" . }}-bot
+  name: {{ include "aemeath.fullname" . }}
   labels:
     {{- include "aemeath.labels" . | nindent 4 }}
     app.kubernetes.io/component: bot
@@ -39,7 +39,7 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           securityContext:
             {{- toYaml .Values.containerSecurityContext | nindent 12 }}
-          args: ["bot"]
+          args: ["main"]
           {{- with .Values.bot.extraEnv }}
           env:
             {{- toYaml . | nindent 12 }}

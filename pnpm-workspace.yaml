@@ -1,5 +1,8 @@
 packages:
   - 'frontend'
+peerDependencyRules:
+  allowedVersions:
+    tsconfck>typescript: '6'
 allowBuilds:
   '@prisma/client': true
   '@prisma/engines': true

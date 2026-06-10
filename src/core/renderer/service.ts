@@ -2,12 +2,12 @@
  * RenderService —— Satori + resvg-js 渲染管线。
  */
 
+import { getLogger } from '@logger'
 import { Resvg } from '@resvg/resvg-js'
 import satori from 'satori'
 import type { Font } from 'satori'
 
 import { RenderError, TemplateNotFoundError, TemplateRenderError } from '../errors.js'
-import { getLogger } from '../logging/index.js'
 
 import { loadFonts } from './fonts.js'
 import type { RenderOptions, SatoriElement, TemplateFunction, TemplateRegistry } from './types.js'

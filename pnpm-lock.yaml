@@ -78,6 +78,9 @@ importers:
       '@eslint/js':
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.4.1(jiti@2.7.0)(supports-color@5.5.0))
+      '@fontsource/noto-sans-sc':
+        specifier: ^5.2.9
+        version: 5.2.9
       '@inquirer/prompts':
         specifier: ^8.5.2
         version: 8.5.2(@types/node@25.9.2)
@@ -988,6 +991,9 @@ packages:
 
   '@fastify/websocket@11.2.0':
     resolution: {integrity: sha512-3HrDPbAG1CzUCqnslgJxppvzaAZffieOVbLp1DAy1huCSynUWPifSvfdEDUR8HlJLp3sp1A36uOM2tJogADS8w==}
+
+  '@fontsource/noto-sans-sc@5.2.9':
+    resolution: {integrity: sha512-bTUIWGBgJDpwi5qAr+x0/lcgv80IHTB9vl6s2f6EymZEa7qYV99yNRBZuKFT+SYDKVunZrjCEhWtpxqmbXWl5Q==}
 
   '@fontsource/roboto@5.2.10':
     resolution: {integrity: sha512-8HlA5FtSfz//oFSr2eL7GFXAiE7eIkcGOtx7tjsLKq+as702x9+GU7K95iDeWFapHC4M2hv9RrpXKRTGGBI8Zg==}
@@ -6471,6 +6477,8 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+
+  '@fontsource/noto-sans-sc@5.2.9': {}
 
   '@fontsource/roboto@5.2.10': {}
 

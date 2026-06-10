@@ -11,6 +11,7 @@ import {
   OnKeyword,
   MessageScope,
   Permission,
+  SettingNode,
 } from '@/core/framework/decorators.js'
 import { MessageBuilder } from '@/core/protocol/segment.js'
 import type { CheckinService } from '@/services/checkin.js'
@@ -82,6 +83,19 @@ Component({
   description: '用户手动签到，回复今日本群排名和连续/累计天数',
   tags: ['fun'],
   defaultEnabled: true,
+})(CheckinHandler)
+
+SettingNode('user_checkin.enabled', {
+  type: 'boolean',
+  default: true,
+  description: '是否启用群签到功能',
+})(CheckinHandler)
+
+SettingNode('user_checkin.permission', {
+  type: 'enum',
+  default: 'ANYONE',
+  enumOptions: Permission,
+  description: '最低权限等级',
 })(CheckinHandler)
 
 OnKeyword(new Set(['签到']), {

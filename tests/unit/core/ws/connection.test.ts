@@ -11,9 +11,8 @@ function makeMockSocket() {
   const listeners: Record<string, ((...args: unknown[]) => void)[]> = {}
 
   const socket = {
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     send: vi.fn((_data: string): void => {}),
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+
     close: vi.fn((_code?: number, _reason?: string): void => {}),
     on(event: string, cb: (...args: unknown[]) => void) {
       listeners[event] ??= []
@@ -37,7 +36,7 @@ function makeConnMgr() {
   const apiResponses: APIResponse[] = []
 
   // 创建一个 BotAPI，捕获 handleResponse 的调用
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
+
   const api = new BotAPI((_data: string): void => {})
   // 在 spy 之前保存原始方法，避免循环调用
   const originalHandleResponse = api.handleResponse.bind(api)

@@ -7,7 +7,7 @@
 import { logger } from '@logger'
 
 import type { Context } from '@/core/framework/context.js'
-import { Component, OnCommand, Permission } from '@/core/framework/decorators.js'
+import { Component, OnCommand, Permission, SettingNode } from '@/core/framework/decorators.js'
 import type { FeedbackService } from '@/services/feedback.js'
 
 type FeedbackType = 'bug' | 'suggestion' | 'complaint'
@@ -134,6 +134,19 @@ Component({
   description: '用户反馈提交与查询功能',
   tags: ['user', 'feedback'],
   defaultEnabled: true,
+})(FeedbackHandler)
+
+SettingNode('feedback.enabled', {
+  type: 'boolean',
+  default: true,
+  description: '是否启用用户反馈功能',
+})(FeedbackHandler)
+
+SettingNode('feedback.permission', {
+  type: 'enum',
+  default: 'ANYONE',
+  enumOptions: Permission,
+  description: '最低权限等级',
 })(FeedbackHandler)
 
 OnCommand('/反馈', {

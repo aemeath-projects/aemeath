@@ -83,7 +83,7 @@ function makeHandler(
 ): HandlerMethod {
   return {
     instance: {},
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+
     method: () => {},
     priority: 50,
     componentName: 'test',

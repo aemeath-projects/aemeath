@@ -18,9 +18,11 @@ import {
   OnRequest,
   OnStartsWith,
   Permission,
+  SettingNode,
   componentRegistry,
   featureRegistry,
   handlerRegistry,
+  settingNodeRegistry,
 } from '@/core/framework/decorators.js'
 
 // 测试前清空全局注册表，避免跨测试污染
@@ -28,6 +30,7 @@ beforeEach(() => {
   componentRegistry.clear()
   handlerRegistry.clear()
   featureRegistry.clear()
+  settingNodeRegistry.clear()
 })
 
 describe('Permission 常量', () => {
@@ -334,5 +337,23 @@ describe('@Feature 装饰器', () => {
     expect(meta?.displayName).toBe('定时任务')
     expect(meta?.defaultEnabled).toBe(true)
     expect(meta?.target).toBe(SchedulerFeature)
+  })
+})
+
+describe('@SettingNode 装饰器（re-export from settings）', () => {
+  it('通过 framework/decorators 导入的 SettingNode 可正常注册', () => {
+    SettingNode('echo.enabled', { type: 'boolean', default: true })(EchoHandler)
+
+    const nodes = settingNodeRegistry.get(EchoHandler)
+    expect(nodes).toHaveLength(1)
+    expect(nodes![0]!.key).toBe('echo.enabled')
+  })
+
+  it('通过 framework/decorators 导入的 settingNodeRegistry 与装饰器共享同一实例', () => {
+    SettingNode('echo.permission', { type: 'enum', default: 'ANYONE', enumOptions: Permission })(
+      EchoHandler,
+    )
+
+    expect(settingNodeRegistry.has(EchoHandler)).toBe(true)
   })
 })

@@ -3,7 +3,13 @@
  */
 
 import type { Context } from '@/core/framework/context.js'
-import { Component, OnCommand, MessageScope, Permission } from '@/core/framework/decorators.js'
+import {
+  Component,
+  OnCommand,
+  MessageScope,
+  Permission,
+  SettingNode,
+} from '@/core/framework/decorators.js'
 import type { LikeService } from '@/services/like.js'
 
 const DEFAULT_LIKE_TIMES = 10
@@ -113,6 +119,19 @@ Component({
   description: '给自己 QQ 主页点赞，支持手动和每日定时自动点赞',
   tags: ['fun'],
   defaultEnabled: true,
+})(LikeHandler)
+
+SettingNode('like.enabled', {
+  type: 'boolean',
+  default: true,
+  description: '是否启用点赞功能',
+})(LikeHandler)
+
+SettingNode('like.permission', {
+  type: 'enum',
+  default: 'ANYONE',
+  enumOptions: Permission,
+  description: '最低权限等级',
 })(LikeHandler)
 
 OnCommand('like', {

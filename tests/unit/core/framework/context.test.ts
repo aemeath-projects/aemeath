@@ -337,7 +337,7 @@ describe('Context.setRegexMatch / getRegexMatch', () => {
 
     const match = /(\d+)/u.exec('test 123')
     expect(match).not.toBeNull()
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
     ctx.setRegexMatch(match!)
     expect(ctx.getRegexMatch()).toBe(match)
     expect(ctx.getRegexMatch()?.[1]).toBe('123')

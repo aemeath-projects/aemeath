@@ -33,10 +33,15 @@ export class EventDispatcher {
     private readonly interceptors: HandlerInterceptor[] = [],
     // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
     services?: Map<Function, unknown>,
-    private readonly featureChecker?: FeatureChecker,
+    private _featureChecker?: FeatureChecker,
   ) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
     this.services = services ?? new Map<Function, unknown>()
+  }
+
+  /** 延迟注入权限检查器（在 Startup 完成后设置）。 */
+  setFeatureChecker(checker: FeatureChecker): void {
+    this._featureChecker = checker
   }
 
   /** 分发事件到匹配的处理器，依次运行拦截器链。 */
@@ -56,9 +61,16 @@ export class EventDispatcher {
         ctx.setRegexMatch(resolved.regexMatch)
       }
 
+      // 注入 handler 元数据供权限检查器读取
+      ctx.setAttribute('handlerMethod', {
+        componentName: resolved.handler.componentName,
+        methodName: resolved.handler.method.name,
+        permission: resolved.handler.meta.permission,
+      })
+
       // 统一权限检查（功能级 + 角色级，由 featureChecker 统一处理）
-      if (this.featureChecker !== undefined) {
-        const allowed = await this.featureChecker.check(ctx)
+      if (this._featureChecker !== undefined) {
+        const allowed = await this._featureChecker.check(ctx)
         if (!allowed) {
           continue
         }

@@ -188,7 +188,7 @@ describe('SessionManager.cancelSession', () => {
     await manager.startSession(SimpleSession, ctx)
     const key = manager.getActiveSessionKey(12345, 99999)
     expect(key).not.toBeNull()
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
     const result = await manager.cancelSession(key!)
     expect(result).toBe(true)
     expect(manager.getActiveSessionCount()).toBe(0)
@@ -214,7 +214,7 @@ describe('SessionManager.dispatchInput', () => {
     expect(key).not.toBeNull()
     // 模拟用户输入
     ctx.getPlaintext.mockReturnValue('hello')
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
     const dispatched = await manager.dispatchInput(key!, ctx)
     expect(dispatched).toBe(true)
   })
@@ -234,7 +234,7 @@ describe('SessionManager.dispatchInput', () => {
     const key = manager.getActiveSessionKey(12345, 99999)
     expect(key).not.toBeNull()
     ctx.getPlaintext.mockReturnValue('anything')
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
     await manager.dispatchInput(key!, ctx)
     // 到达 final 状态后，会话应被清理
     expect(manager.getActiveSessionCount()).toBe(0)

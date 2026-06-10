@@ -7,10 +7,10 @@ import { Resvg } from '@resvg/resvg-js'
 import satori from 'satori'
 import type { Font } from 'satori'
 
-import { RenderError, TemplateNotFoundError, TemplateRenderError } from '../errors.js'
-
 import { loadFonts } from './fonts.js'
 import type { RenderOptions, SatoriElement, TemplateFunction, TemplateRegistry } from './types.js'
+
+import { RenderError, TemplateNotFoundError, TemplateRenderError } from '@/core/errors.js'
 
 const log = getLogger('renderer')
 

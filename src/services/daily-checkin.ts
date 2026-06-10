@@ -11,8 +11,8 @@ import type { CacheClient } from '@/core/cache/client.js'
 import { checkinDailyKey } from '@/core/cache/key-registry.js'
 import type { MainPrismaClient } from '@/core/db/client.js'
 import { Startup } from '@/core/lifecycle/registry.js'
-import type { FeaturePermissionService } from '@/core/permission/index.js'
 import type { BotAPI } from '@/core/protocol/api.js'
+import type { SettingsService } from '@/core/settings/service.js'
 import { SHANGHAI_TZ } from '@/core/utils/helpers.js'
 import type { ConnectionManager } from '@/core/ws/connection.js'
 
@@ -22,7 +22,7 @@ import type { ConnectionManager } from '@/core/ws/connection.js'
 const CHECKIN_TTL = 90_000
 /** 群间发送延迟（毫秒），避免 QQ 限流。 */
 const SEND_DELAY_MS = 1500
-/** 此服务注册到权限系统的功能名。 */
+/** 此服务对应的功能名。 */
 const FEATURE_NAME = 'daily_checkin'
 
 /** 触发来源。 */
@@ -54,7 +54,7 @@ export class DailyCheckinService {
     private readonly cache: CacheClient,
     private readonly botApi: BotAPI,
     private readonly connMgr: ConnectionManager,
-    private readonly permissionService: FeaturePermissionService,
+    private readonly settings: SettingsService,
   ) {}
 
   // ════════════════════════════════════════════
@@ -118,16 +118,12 @@ export class DailyCheckinService {
         continue
       }
 
-      // 权限检查：群级功能开关
+      // 功能开关：通过 SettingsService 查询群级配置
       let enabled: boolean
       try {
-        enabled = await this.permissionService.isGroupFeatureEnabled(
-          groupId,
-          FEATURE_NAME,
-          FEATURE_NAME,
-        )
+        enabled = await this.settings.get<boolean>(`${FEATURE_NAME}.enabled`, { group: groupId })
       } catch (err) {
-        this._log.warn({ groupId, err }, '权限查询失败，跳过该群')
+        this._log.warn({ groupId, err }, '功能开关查询失败，跳过该群')
         skipped++
         continue
       }
@@ -175,14 +171,14 @@ export class DailyCheckinService {
 Startup({
   name: 'daily_checkin',
   provides: ['daily_checkin_service'],
-  requires: ['db', 'cache', 'bot_api', 'conn_mgr', 'permission_service'],
+  requires: ['db', 'cache', 'bot_api', 'conn_mgr', 'settings'],
 })(async (deps: Record<string, unknown>): Promise<Record<string, unknown>> => {
   const db = deps.db as MainPrismaClient
   const cache = deps.cache as CacheClient
   const botApi = deps.bot_api as BotAPI
   const connMgr = deps.conn_mgr as ConnectionManager
-  const permissionService = deps.permission_service as FeaturePermissionService
+  const settings = deps.settings as SettingsService
   return {
-    daily_checkin_service: new DailyCheckinService(db, cache, botApi, connMgr, permissionService),
+    daily_checkin_service: new DailyCheckinService(db, cache, botApi, connMgr, settings),
   }
 })

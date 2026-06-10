@@ -107,7 +107,6 @@ async function bootstrap(): Promise<void> {
 
   // ── 启动监听 ──
   await app.listen({ host: config.HOST, port: config.PORT })
-  app.log.info(`Aemeath bot started — http://${config.HOST}:${String(config.PORT)}`)
 }
 
 // ── 入口 ──

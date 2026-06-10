@@ -14,6 +14,7 @@ import { EventDispatcher } from './framework/dispatcher.js'
 import { LoggingInterceptor } from './framework/interceptors/logging.js'
 import { SessionInterceptor } from './framework/interceptors/session.js'
 import { CompositeHandlerMapping } from './framework/mapping.js'
+import type { FeatureChecker } from './framework/ports.js'
 import { ComponentScanner } from './framework/scanner.js'
 import { LifecycleOrchestrator } from './lifecycle/orchestrator.js'
 import { getAllStartups, getAllShutdowns } from './lifecycle/registry.js'
@@ -129,7 +130,7 @@ async function _startup(
     [
       resolve(srcRoot, 'services'),
       resolve(srcRoot, 'core', 'renderer'),
-      resolve(srcRoot, 'core', 'permission'),
+      resolve(srcRoot, 'core', 'settings'),
       resolve(srcRoot, 'render-templates'),
     ],
     composite,
@@ -178,6 +179,12 @@ async function _startup(
 
   const allServices = await orchestrator.startup(infraServices, getAllStartups())
 
+  // 10.5. 注入 Settings 权限检查器到 Dispatcher（延迟绑定）
+  const settingsChecker = allServices.settings_checker as FeatureChecker | undefined
+  if (settingsChecker) {
+    dispatcher.setFeatureChecker(settingsChecker)
+  }
+
   // 11. 构建 ServiceRegistry（API 路由通过 app.state.serviceRegistry 访问业务服务）
   const serviceRegistry = new ServiceRegistry()
   for (const [key, value] of Object.entries(allServices)) {
@@ -208,8 +215,7 @@ async function _startup(
   await rpcConsumer.start()
 
   // 15. 将所有服务挂载到 app.state
-  const state = getState(app)
-  Object.assign(state, {
+  ;(app as unknown as { state: AppState }).state = {
     mainDb,
     chatDb,
     cacheRedis,
@@ -224,7 +230,7 @@ async function _startup(
     queues,
     serviceRegistry,
     ...allServices,
-  })
+  }
 
   app.log.info(`Aemeath 已启动，等待 NapCat 连接 (host=${config.HOST} port=${String(config.PORT)})`)
 }

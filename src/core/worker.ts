@@ -9,11 +9,11 @@
 import { createLogger, setLogger, logger } from '@logger'
 import { Worker } from 'bullmq'
 
-import { dailyCheckinProcessor } from '../tasks/daily-checkin.js'
-import { dailyLikeProcessor } from '../tasks/daily-like.js'
-
 import { loadConfig } from './config.js'
 import { createBullMQConnection, QUEUE_NAMES } from './tasks/broker.js'
+
+import { dailyCheckinProcessor } from '@/tasks/daily-checkin.js'
+import { dailyLikeProcessor } from '@/tasks/daily-like.js'
 
 // ── 初始化 ──
 

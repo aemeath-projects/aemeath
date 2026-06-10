@@ -2,9 +2,9 @@
  * 渲染服务单例与生命周期注册。
  */
 
-import { Startup } from '../lifecycle/registry.js'
-
 import { RenderService } from './service.js'
+
+import { Startup } from '@/core/lifecycle/registry.js'
 
 /** 全局渲染服务单例（Startup 完成后可用）。 */
 export const renderService = new RenderService()

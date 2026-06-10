@@ -5,7 +5,13 @@
 import { logger } from '@logger'
 
 import type { Context } from '@/core/framework/context.js'
-import { Component, OnRegex, MessageScope } from '@/core/framework/decorators.js'
+import {
+  Component,
+  OnRegex,
+  MessageScope,
+  Permission,
+  SettingNode,
+} from '@/core/framework/decorators.js'
 import { MessageBuilder } from '@/core/protocol/segment.js'
 import type { JrlpService } from '@/services/jrlp.js'
 
@@ -73,6 +79,19 @@ Component({
   description: '每日群内随机抽取群老婆，每人每群每天一次',
   tags: ['fun'],
   defaultEnabled: true,
+})(JrlpHandler)
+
+SettingNode('jrlp.enabled', {
+  type: 'boolean',
+  default: true,
+  description: '是否启用今日老婆功能',
+})(JrlpHandler)
+
+SettingNode('jrlp.permission', {
+  type: 'enum',
+  default: 'ANYONE',
+  enumOptions: Permission,
+  description: '最低权限等级',
 })(JrlpHandler)
 
 OnRegex('^(jrlp|今日老婆|抽老婆|群老婆)$', 0, {

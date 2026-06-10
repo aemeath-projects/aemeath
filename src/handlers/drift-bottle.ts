@@ -11,6 +11,7 @@ import {
   OnFullMatch,
   MessageScope,
   Permission,
+  SettingNode,
 } from '@/core/framework/decorators.js'
 import type { MessageSegment } from '@/core/protocol/models/segments.js'
 import { MessageBuilder, Seg } from '@/core/protocol/segment.js'
@@ -145,6 +146,19 @@ Component({
   description: '扔/捞漂流瓶，同池内随机互通，每瓶一次性消耗',
   tags: ['fun'],
   defaultEnabled: true,
+})(DriftBottleHandler)
+
+SettingNode('drift_bottle.enabled', {
+  type: 'boolean',
+  default: true,
+  description: '是否启用漂流瓶功能',
+})(DriftBottleHandler)
+
+SettingNode('drift_bottle.permission', {
+  type: 'enum',
+  default: 'ANYONE',
+  enumOptions: Permission,
+  description: '最低权限等级',
 })(DriftBottleHandler)
 
 OnStartsWith(TRIGGER_THROW, {

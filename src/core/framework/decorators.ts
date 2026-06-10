@@ -313,3 +313,12 @@ export function Feature(opts: FeatureOptions) {
     featureRegistry.set(opts.name, meta)
   }
 }
+
+// ── Settings 装饰器 re-export ──
+
+export { SettingNode, settingNodeRegistry } from '@/core/settings/decorators.js'
+export type {
+  SettingNodeMeta,
+  SettingNodeOptions,
+  SettingValueType,
+} from '@/core/settings/decorators.js'

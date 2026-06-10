@@ -9,7 +9,7 @@
   },
   "packageManager": "pnpm@11.5.2",
   "scripts": {
-    "aemeath": "",
+    "aemeath": "tsx cli/main.ts",
     "dev": "cross-env NODE_ENV=development LOG_FORMAT=console nodemon",
     "build": "tsup",
     "start": "cross-env NODE_ENV=production node dist/main.js",
@@ -18,8 +18,8 @@
     "build:frontend": "pnpm --filter frontend build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --check \"src/**/*.ts\" \"frontend/src/**/*.{ts,vue}\" \"scripts/**/*\"",
-    "format:fix": "prettier --write \"src/**/*.ts\" \"frontend/src/**/*.{ts,vue}\" \"scripts/**/*\"",
+    "format": "prettier --check \"src/**/*.ts\" \"cli/**/*.ts\" \"frontend/src/**/*.{ts,vue}\" \"scripts/**/*\"",
+    "format:fix": "prettier --write \"src/**/*.ts\" \"cli/**/*.ts\" \"frontend/src/**/*.{ts,vue}\" \"scripts/**/*\"",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:backend": "vitest run --project backend",
@@ -66,8 +66,12 @@
     "@commitlint/cli": "^21.0.2",
     "@commitlint/config-conventional": "^21.0.2",
     "@eslint/js": "^10.0.1",
+    "@inquirer/prompts": "^8.5.2",
+    "@types/cli-progress": "^3.11.6",
     "@types/node": "^25.9.2",
     "@vitest/coverage-v8": "^4.1.8",
+    "cli-progress": "^3.12.0",
+    "commander": "^15.0.0",
     "commit-and-tag-version": "^12.7.3",
     "commitizen": "^4.3.1",
     "cross-env": "^10.1.0",
@@ -78,6 +82,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^17.0.7",
     "nodemon": "^3.1.14",
+    "ora": "^9.4.0",
     "prettier": "^3.8.3",
     "prisma": "^7.8.0",
     "tsup": "^8.5.1",
@@ -88,7 +93,7 @@
     "vitest": "^4.1.8"
   },
   "lint-staged": {
-    "{src,scripts,tests}/**/*.{ts,tsx}": [
+    "{src,cli,scripts,tests}/**/*.{ts,tsx}": [
       "eslint --fix",
       "prettier --write"
     ],

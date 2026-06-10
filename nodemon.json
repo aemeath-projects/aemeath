@@ -2,5 +2,5 @@
   "watch": ["src"],
   "ext": "ts,json",
   "ignore": ["dist/**"],
-  "exec": "tsx src/core/main.ts"
+  "exec": "tsx --env-file=.env src/core/main.ts"
 }

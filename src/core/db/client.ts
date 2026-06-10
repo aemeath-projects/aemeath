@@ -4,6 +4,8 @@
  * 包含 BigInt → number 序列化支持（QQ 号等字段安全范围内）。
  */
 
+import { PrismaPg } from '@prisma/adapter-pg'
+
 import { PrismaClient as ChatPrismaClient } from '#prisma/chat'
 import { PrismaClient as MainPrismaClient } from '#prisma/main'
 
@@ -37,23 +39,6 @@ if (!BigInt.prototype.toJSON) {
 }
 
 // ────────────────────────────────────────────
-//  连接 URL 工具
-// ────────────────────────────────────────────
-
-/**
- * 将 connection_limit 参数追加到 PostgreSQL 连接 URL。
- *
- * 如果 URL 已包含 connection_limit 参数则不做修改。
- */
-function appendConnectionLimit(url: string, poolSize: number): string {
-  const parsed = new URL(url)
-  if (!parsed.searchParams.has('connection_limit')) {
-    parsed.searchParams.set('connection_limit', String(poolSize))
-  }
-  return parsed.toString()
-}
-
-// ────────────────────────────────────────────
 //  工厂函数
 // ────────────────────────────────────────────
 
@@ -61,22 +46,20 @@ function appendConnectionLimit(url: string, poolSize: number): string {
  * 创建主库 Prisma Client 实例。
  *
  * @param url - PostgreSQL 连接字符串（DATABASE_URL）
- * @param poolSize - 可选，连接池大小，追加为 URL 的 connection_limit 参数
+ * @param poolSize - 可选，连接池最大连接数
  */
 export function createMainDb(url: string, poolSize?: number): MainPrismaClient {
-  process.env.DATABASE_URL = poolSize != null ? appendConnectionLimit(url, poolSize) : url
-
-  return new MainPrismaClient()
+  const adapter = new PrismaPg({ connectionString: url, max: poolSize })
+  return new MainPrismaClient({ adapter })
 }
 
 /**
  * 创建聊天库 Prisma Client 实例。
  *
  * @param url - PostgreSQL 连接字符串（CHAT_DATABASE_URL）
- * @param poolSize - 可选，连接池大小，追加为 URL 的 connection_limit 参数
+ * @param poolSize - 可选，连接池最大连接数
  */
 export function createChatDb(url: string, poolSize?: number): ChatPrismaClient {
-  process.env.CHAT_DATABASE_URL = poolSize != null ? appendConnectionLimit(url, poolSize) : url
-
-  return new ChatPrismaClient()
+  const adapter = new PrismaPg({ connectionString: url, max: poolSize })
+  return new ChatPrismaClient({ adapter })
 }

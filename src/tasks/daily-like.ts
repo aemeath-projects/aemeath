@@ -1,32 +1,28 @@
-/**
- * 每日点赞 BullMQ 处理器 —— 由 BullMQ Worker 触发，通过 Redis RPC 调用主进程执行点赞。
- */
+/** 每日点赞 BullMQ 处理器 —— Worker 内查询 DB，返回 BotApiCall[]。 */
 
-import { getLogger } from '@logger'
 import type { Job } from 'bullmq'
 
-import { loadConfig } from '@/core/config.js'
-import { getRpcBridge } from '@/core/rpc/bridge.js'
+import type { MainPrismaClient } from '@/core/db/client.js'
+import type { BotActionJobResult } from '@/core/tasks/models.js'
 
-const log = getLogger('dailyLike')
+export const JOB_NAME = 'daily-like' as const
 
-/**
- * BullMQ 每日点赞任务处理器。
- *
- * 通过 RPCBridge 调用主进程注册的 request_like handler，
- * 返回点赞结果字典。
- */
-export async function dailyLikeProcessor(_job: Job): Promise<Record<string, unknown>> {
-  const config = loadConfig()
-  const bridge = getRpcBridge(config.PERSISTENT_REDIS_URL)
+const DEFAULT_LIKE_TIMES = 10
 
-  const resp = await bridge.call('request_like', {}, 60_000)
+export interface LikeWorkerDeps {
+  db: MainPrismaClient
+}
 
-  if (resp.success) {
-    log.info({ data: resp.data }, '每日点赞 RPC 调用成功')
-    return resp.data ?? {}
-  }
+export async function dailyLikeProcessor(
+  _job: Job,
+  deps: LikeWorkerDeps,
+): Promise<BotActionJobResult> {
+  const tasks = await deps.db.likeTask.findMany({ select: { qq: true } })
 
-  log.error({ error: resp.error }, '每日点赞 RPC 调用失败')
-  throw new Error(`点赞 RPC 失败: ${resp.error ?? 'unknown'}`)
+  const calls = tasks.map((t) => ({
+    method: 'sendLike',
+    args: [Number(t.qq), DEFAULT_LIKE_TIMES],
+  }))
+
+  return { type: 'bot-action', calls }
 }

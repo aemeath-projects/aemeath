@@ -20,13 +20,11 @@ import { LifecycleOrchestrator } from './lifecycle/orchestrator.js'
 import { getAllStartups, getAllShutdowns } from './lifecycle/registry.js'
 import { BotAPI } from './protocol/api.js'
 import { ServiceRegistry } from './registries/service-registry.js'
-import { RPCConsumer } from './rpc/consumer.js'
-import { createBullMQConnection, getQueue, QUEUE_NAMES } from './tasks/broker.js'
+import { createBullMQConnection, getTaskQueue } from './tasks/broker.js'
+import { TaskExecutor } from './tasks/executor.js'
 import { createRedis, checkRedisReachable } from './utils/redis-factory.js'
 import { ConnectionManager } from './ws/connection.js'
 import { registerWsRoute } from './ws/server.js'
-
-import type { DailyCheckinService } from '@/services/daily-checkin.js'
 
 /**
  * 应用生命周期编排。
@@ -81,8 +79,8 @@ interface AppState {
   dispatcher: EventDispatcher
   scanner: ComponentScanner
   // 任务
-  rpcConsumer: RPCConsumer
-  queues: Record<string, ReturnType<typeof getQueue>>
+  taskExecutor: TaskExecutor
+  queue: ReturnType<typeof getTaskQueue>
   // 服务注册表（API 路由通过此访问业务服务）
   serviceRegistry: ServiceRegistry
   // 业务服务（由 orchestrator 填充）
@@ -143,22 +141,14 @@ async function _startup(
   ])
   dispatcherRef.current = dispatcher
 
-  // 7. RPC Consumer（主进程端）
-  const rpcConsumer = new RPCConsumer(config.PERSISTENT_REDIS_URL)
-
   // 8.5. 预检所有 Redis 连接可达性（连接不可用时立即抛出，避免后续操作无声挂起）
   await checkRedisReachable(config.CACHE_REDIS_URL, 'Cache Redis')
   await checkRedisReachable(config.PERSISTENT_REDIS_URL, 'Persistent Redis')
   await checkRedisReachable(config.BULLMQ_REDIS_URL, 'BullMQ Redis')
 
-  // 9. 创建 BullMQ 队列
+  // 9. 创建 BullMQ 单队列
   const bullConn = createBullMQConnection(config.BULLMQ_REDIS_URL)
-  const queues = {
-    [QUEUE_NAMES.DAILY_CHECKIN]: getQueue(QUEUE_NAMES.DAILY_CHECKIN, bullConn),
-    [QUEUE_NAMES.DAILY_LIKE]: getQueue(QUEUE_NAMES.DAILY_LIKE, bullConn),
-    [QUEUE_NAMES.CHAT_ARCHIVE]: getQueue(QUEUE_NAMES.CHAT_ARCHIVE, bullConn),
-    [QUEUE_NAMES.ENSURE_PARTITIONS]: getQueue(QUEUE_NAMES.ENSURE_PARTITIONS, bullConn),
-  }
+  const queue = getTaskQueue(bullConn)
 
   // 10. 生命周期编排器：按拓扑顺序启动所有业务模块
   const orchestrator = new LifecycleOrchestrator()
@@ -173,8 +163,7 @@ async function _startup(
     conn_mgr: connMgr,
     dispatcher,
     scanner,
-    rpc_consumer: rpcConsumer,
-    queues,
+    queue,
   }
 
   const allServices = await orchestrator.startup(infraServices, getAllStartups())
@@ -192,27 +181,9 @@ async function _startup(
   }
   serviceRegistry.freeze()
 
-  // 13. 注册 RPC handler（打卡服务在 @Startup 注册完毕后才能访问）
-  const dailyCheckinSvc = allServices.daily_checkin_service as DailyCheckinService | undefined
-  if (dailyCheckinSvc !== undefined) {
-    rpcConsumer.registerHandler('request_checkin', async (params) => {
-      const source = (params.source as string | undefined) ?? 'scheduled'
-      dailyCheckinSvc.requestCheckin(source === 'ws_connect' ? 'ws_connect' : 'scheduled')
-      return { triggered: true }
-    })
-  }
-
-  // 点赞 RPC handler
-  const likeSvc = allServices.like_service as { runScheduledLikes(): boolean } | undefined
-  if (likeSvc !== undefined) {
-    rpcConsumer.registerHandler('request_like', async (_params) => {
-      likeSvc.runScheduledLikes()
-      return { triggered: true }
-    })
-  }
-
-  // 14. 启动 RPC Consumer
-  await rpcConsumer.start()
+  // 13. 启动 TaskExecutor（监听 job completed 事件）
+  const taskExecutor = new TaskExecutor(botApi, connMgr, cacheClient, bullConn)
+  taskExecutor.start()
 
   // 15. 将所有服务挂载到 app.state
   ;(app as unknown as { state: AppState }).state = {
@@ -226,8 +197,8 @@ async function _startup(
     connMgr,
     dispatcher,
     scanner,
-    rpcConsumer,
-    queues,
+    taskExecutor,
+    queue,
     serviceRegistry,
     ...allServices,
   }
@@ -242,8 +213,8 @@ async function _shutdown(app: FastifyInstance): Promise<void> {
 
   const state = getState(app)
 
-  // 停止 RPC Consumer
-  await state.rpcConsumer.stop()
+  // 停止 TaskExecutor
+  await state.taskExecutor.close()
 
   // 关闭业务模块（@Shutdown 按启动逆序）
   const orchestrator = new LifecycleOrchestrator()
@@ -262,8 +233,7 @@ async function _shutdown(app: FastifyInstance): Promise<void> {
   state.persistentRedis.disconnect()
 
   // 关闭 BullMQ 队列
-  const queues = state.queues as Record<string, { close(): Promise<void> }>
-  await Promise.all(Object.values(queues).map((q) => q.close()))
+  await (state.queue as { close(): Promise<void> }).close()
 
   app.log.info('Aemeath 已停止')
 }

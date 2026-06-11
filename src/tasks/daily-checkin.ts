@@ -1,32 +1,55 @@
-/**
- * 每日打卡 BullMQ 处理器 —— 由 BullMQ Worker 触发，通过 Redis RPC 调用主进程执行打卡。
- */
+/** 每日打卡 BullMQ 处理器 —— Worker 内完成预处理，返回 BotApiCall[]。 */
 
-import { getLogger } from '@logger'
 import type { Job } from 'bullmq'
 
-import { loadConfig } from '@/core/config.js'
-import { getRpcBridge } from '@/core/rpc/bridge.js'
+import type { CacheClient } from '@/core/cache/client.js'
+import { checkinDailyKey } from '@/core/cache/key-registry.js'
+import type { MainPrismaClient } from '@/core/db/client.js'
+import type { MinimalSettingSchema } from '@/core/settings/query.js'
+import { getSettingValue } from '@/core/settings/query.js'
+import type { BotActionJobResult } from '@/core/tasks/models.js'
 
-const log = getLogger('dailyCheckin')
+export const JOB_NAME = 'daily-checkin' as const
 
-/**
- * BullMQ 每日打卡任务处理器。
- *
- * 通过 RPCBridge 调用主进程注册的 request_checkin handler，
- * 返回打卡结果字典。
- */
-export async function dailyCheckinProcessor(_job: Job): Promise<Record<string, unknown>> {
-  const config = loadConfig()
-  const bridge = getRpcBridge(config.PERSISTENT_REDIS_URL)
+export interface CheckinWorkerDeps {
+  db: MainPrismaClient
+  cache: CacheClient
+  schemaMap: ReadonlyMap<string, MinimalSettingSchema>
+}
 
-  const resp = await bridge.call('request_checkin', { source: 'scheduled' }, 10_000)
+export async function dailyCheckinProcessor(
+  _job: Job,
+  deps: CheckinWorkerDeps,
+): Promise<BotActionJobResult> {
+  const { db, cache, schemaMap } = deps
+  const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Shanghai' }).format(new Date())
 
-  if (resp.success) {
-    log.info({ data: resp.data }, '每日打卡 RPC 调用成功')
-    return resp.data ?? {}
+  const groups = await db.group.findMany({
+    where: { isActive: true },
+    select: { groupId: true },
+  })
+
+  const calls: { method: string; args: unknown[] }[] = []
+
+  for (const g of groups) {
+    const botEnabled = await getSettingValue<boolean>('bot.enabled', {
+      db,
+      schemaMap,
+      group: g.groupId,
+    })
+    if (!botEnabled) continue
+
+    const featureEnabled = await getSettingValue<boolean>('daily_checkin.enabled', {
+      db,
+      schemaMap,
+      group: g.groupId,
+    })
+    if (!featureEnabled) continue
+
+    if (await cache.exists(checkinDailyKey(g.groupId, today))) continue
+
+    calls.push({ method: 'sendGroupSign', args: [Number(g.groupId)] })
   }
 
-  log.error({ error: resp.error }, '每日打卡 RPC 调用失败')
-  throw new Error(`打卡 RPC 失败: ${resp.error ?? 'unknown'}`)
+  return { type: 'bot-action', calls }
 }

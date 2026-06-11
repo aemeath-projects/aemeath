@@ -68,18 +68,6 @@ export function sessionDataKey(sessionKey: string): string {
   return `aemeath:session:${sessionKey}:data`
 }
 
-// ── RPC 缓存 ──
-
-/** RPC 请求队列键（Redis List），Worker → 主进程。 */
-export function rpcRequestQueueKey(): string {
-  return 'aemeath:rpc:requests'
-}
-
-/** RPC 响应通道键（Redis Pub/Sub），主进程 → Worker。 */
-export function rpcResponseChannelKey(requestId: string): string {
-  return `aemeath:rpc:resp:${requestId}`
-}
-
 // ── Glob 模式（用于批量删除） ──
 
 /** 群功能权限 glob 模式。 */
@@ -102,6 +90,3 @@ export const CHECKIN_STATS_GLOB = 'aemeath:checkin:stats:*:*'
 
 /** 会话元信息 glob 模式。 */
 export const SESSION_META_GLOB = 'aemeath:session:*'
-
-/** RPC 响应通道 glob 模式。 */
-export const RPC_RESPONSE_GLOB = 'aemeath:rpc:resp:*'

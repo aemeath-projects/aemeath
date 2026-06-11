@@ -78,40 +78,6 @@ export const handlersRegistered = new Gauge({
   registers: [metricsRegistry],
 })
 
-// ── RPC 指标 ──
-
-export const rpcCallsTotal = new Counter({
-  name: 'aemeath_rpc_calls_total',
-  help: 'RPC calls initiated by Worker via bridge',
-  labelNames: ['action', 'success'] as const,
-  registers: [metricsRegistry],
-})
-
-export const rpcCallDurationSeconds = new Histogram({
-  name: 'aemeath_rpc_call_duration_seconds',
-  help: 'End-to-end RPC call duration as measured by the bridge (seconds)',
-  registers: [metricsRegistry],
-})
-
-export const rpcHandlerExecSeconds = new Histogram({
-  name: 'aemeath_rpc_handler_exec_seconds',
-  help: 'RPC handler execution duration on the consumer side (seconds)',
-  labelNames: ['action'] as const,
-  registers: [metricsRegistry],
-})
-
-export const rpcInflight = new Gauge({
-  name: 'aemeath_rpc_inflight',
-  help: 'Number of in-flight RPC handler tasks',
-  registers: [metricsRegistry],
-})
-
-export const rpcRegisteredHandlers = new Gauge({
-  name: 'aemeath_rpc_registered_handlers',
-  help: 'Number of registered RPC action handlers',
-  registers: [metricsRegistry],
-})
-
 // ── 系统指标 ──
 
 export const uptimeSeconds = new Gauge({

@@ -107,7 +107,7 @@ docker-compose -f compose.yaml up -d   # 启动 PostgreSQL + Redis + NapCat
 ```bash
 docker build -t aemeath:latest .
 # 通过环境变量 ROLE 控制启动角色: bot(默认) | worker
-# worker 消费 BullMQ 队列任务；主进程内嵌 APScheduler 定时调度
+# worker 消费 BullMQ 队列任务；主进程通过 BullMQ Job Scheduler 注册定时任务
 ```
 
 ### 快捷命令（Claude Code Slash Commands）
@@ -214,7 +214,9 @@ Shutdown({ name: 'my_service' })(async (services: Record<string, unknown>): Prom
 })
 ```
 
-基础设施 key（可在 `requires` 中直接使用）：`db`、`chat_db`、`cache`、`persistent`、`cache_redis`、`persistent_redis`、`bot_api`、`conn_mgr`、`dispatcher`、`scanner`、`rpc_consumer`、`queues`、`renderer`、`settings`
+基础设施 key（可在 `requires` 中直接使用）：`db`、`chat_db`、`cache`、`persistent`、`cache_redis`、`persistent_redis`、`bot_api`、`conn_mgr`、`dispatcher`、`scanner`、`queue`
+
+业务服务 key（由 Startup 注册后可用）：`renderer`、`settings`、`settings_checker`、`personnelService` 等
 
 `ComponentScanner` 扫描 `src/handlers/`（event handlers）及 `src/services/`、`src/core/renderer/`、`src/core/settings/`、`src/render-templates/`（服务/模板）时触发模块 import，装饰器副作用自动注册到注册表。
 
@@ -241,9 +243,8 @@ src/
 │   ├── personnel/   # 人员领域（api、events、query、sync）
 │   ├── protocol/    # OneBot 11 协议模型与 API 封装
 │   ├── registries/  # 功能/权限/服务/配置注册表
-│   ├── rpc/         # 跨进程 RPC（Redis pub/sub）
 │   ├── settings/    # 设置领域（SettingsService、SettingsPermissionChecker，Startup key: settings）
-│   ├── tasks/       # BullMQ broker 配置
+│   ├── tasks/       # BullMQ broker、TaskExecutor、任务模型
 │   ├── utils/       # 工具函数（helpers、md2img、redis-factory、response）
 │   └── ws/          # WebSocket 连接管理（connection、heartbeat、server）
 │   config.ts        # 环境变量校验（TypeBox ConfigSchema）
@@ -302,7 +303,7 @@ src/
 | `daily-checkin.ts` | `DailyCheckinService` | 群签到（定时触发，RPC 桥接）                      |
 | `checkin.ts`       | `CheckinService`      | 群签到业务逻辑（积分、排行、汇总）                |
 | `drift-bottle.ts`  | `DriftBottleService`  | 漂流瓶（扔/捞、多池管理）                         |
-| `scheduler.ts`     | `SchedulerService`    | APScheduler / 定时任务编排                        |
+| `scheduler.ts`     | `registerScheduledJobs` | BullMQ Job Scheduler 注册四条定时任务（签到、点赞、归档、分区预建）|
 
 ### 异步任务（BullMQ）
 
@@ -317,7 +318,7 @@ BullMQ（任务队列）取代原有的 Dramatiq。Worker 进程运行在 `src/c
 | `chat_archive`      | 聊天记录按月归档 |
 | `ensure_partitions` | 聊天库分区预创建 |
 
-**跨进程 RPC（`src/core/rpc/`）：** BullMQ Worker 通过 `RPCBridge` 经 Redis pub/sub 调用主进程功能。新增需要主进程能力的 Worker，应通过 `RPCBridge` 而非直接实例化 Service。
+**主进程 TaskExecutor（`src/core/tasks/executor.ts`）：** Worker 进程直接携带 DB/cache 依赖运行 processor 函数，返回 `BotActionJobResult`；主进程的 `TaskExecutor` 监听 BullMQ QueueEvents 的 `completed` 事件，按白名单调用 Bot API（如 `sendGroupMsg`）。新增需要 Bot API 的任务，在 processor 返回值中声明动作，而非直接在 Worker 进程中调用 Bot API。
 
 ### WebSocket 连接管理 (`src/core/ws/`)
 

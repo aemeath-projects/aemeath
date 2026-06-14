@@ -96,6 +96,7 @@ function makeHandler(
       description: '',
       ...metaOverrides,
     },
+    interceptors: [],
     ...overrides,
   }
 }

@@ -5,6 +5,7 @@
 import { logger } from '@logger'
 
 import { Context, FinishError } from './context.js'
+import type { InterceptorEntry } from './decorators/symbols.js'
 import type { HandlerInterceptor } from './interceptor.js'
 import type { CompositeHandlerMapping, FeatureChecker, ResolvedHandler } from './mapping.js'
 
@@ -71,20 +72,22 @@ export class EventDispatcher {
     }
   }
 
-  /** 为单个 handler 运行完整的拦截器链。 */
+  /** 为单个 handler 运行完整的拦截器链（全局 + 声明式）。 */
   private async _runHandlerWithInterceptors(
     ctx: Context,
     resolved: ResolvedHandler,
   ): Promise<void> {
+    // 实例化声明式拦截器（每次 dispatch 按需创建，不缓存）
+    const declInterceptors = this._instantiateInterceptors(resolved.handler.interceptors)
+
     let handlerError: Error | undefined
 
-    // 前置拦截器（顺序）
+    // 全局拦截器 preHandle（顺序）
     for (const interceptor of this.interceptors) {
       try {
         const ok = await interceptor.preHandle(ctx, resolved)
         if (!ok) {
           this._log.debug(`拦截器 ${interceptor.constructor.name} 已阻断事件`)
-          // 依然需要运行 afterCompletion（已完成的前置拦截器），此处简化：直接返回
           return
         }
       } catch (err) {
@@ -94,48 +97,99 @@ export class EventDispatcher {
       }
     }
 
-    // 调用处理器方法
-    if (handlerError === undefined) {
+    if (handlerError !== undefined) {
+      await this._runAfterCompletion(this.interceptors, ctx, resolved, handlerError)
+      await this._runAfterCompletion(declInterceptors, ctx, resolved, handlerError)
+      return
+    }
+
+    // 声明式拦截器 preHandle（顺序，记录已执行 preHandle 的拦截器）
+    const executedDecl: HandlerInterceptor[] = []
+    let declBlocked = false
+    for (const interceptor of declInterceptors) {
       try {
-        const fn = resolved.handler.method
-        const result: unknown = await (
-          fn as (this: object, ...args: unknown[]) => Promise<unknown>
-        ).call(resolved.handler.instance, ctx)
-
-        // result === true 表示调用方希望停止（不是异常，只是信号）
-        // 后置拦截器（逆序）
-        for (const interceptor of [...this.interceptors].reverse()) {
-          try {
-            await interceptor.postHandle(ctx, resolved)
-          } catch (err) {
-            handlerError = err instanceof Error ? err : new Error(String(err))
-            this._log.error(`postHandle 中发生错误：${handlerError.message}`)
-            break
-          }
+        const ok = await interceptor.preHandle(ctx, resolved)
+        // 无论通过与否，只要执行了 preHandle，就应执行 afterCompletion
+        executedDecl.push(interceptor)
+        if (!ok) {
+          this._log.debug(`声明式拦截器 ${interceptor.constructor.name} 已阻断事件`)
+          declBlocked = true
+          break
         }
-
-        // 停止后续 handler 的信号由调用方（dispatch 循环）处理；
-        // 这里通过 FinishError 约定，return true 不需要特殊处理（已在外层 break）
-        void result
       } catch (err) {
-        if (err instanceof FinishError) {
-          // 正常流程终止，不视为错误
-        } else {
-          handlerError = err instanceof Error ? err : new Error(String(err))
-          this._log.error(
-            `handler ${resolved.handler.componentName}.${resolved.handler.method.name} 执行失败：${handlerError.message}`,
-          )
-        }
+        handlerError = err instanceof Error ? err : new Error(String(err))
+        this._log.error(`声明式拦截器 preHandle 中发生错误：${handlerError.message}`)
+        break
       }
     }
 
-    // 完成后拦截器（始终执行，逆序）
-    for (const interceptor of [...this.interceptors].reverse()) {
+    if (declBlocked || handlerError !== undefined) {
+      await this._runAfterCompletion(this.interceptors, ctx, resolved, handlerError)
+      await this._runAfterCompletion(executedDecl, ctx, resolved, handlerError)
+      return
+    }
+
+    // 调用处理器方法
+    try {
+      const fn = resolved.handler.method
+      await (fn as (this: object, ...args: unknown[]) => Promise<unknown>).call(
+        resolved.handler.instance,
+        ctx,
+      )
+
+      // postHandle（声明式逆序，全局逆序）
+      for (const interceptor of [...declInterceptors].reverse()) {
+        try {
+          await interceptor.postHandle(ctx, resolved)
+        } catch (err) {
+          handlerError = err instanceof Error ? err : new Error(String(err))
+          this._log.error(`声明式拦截器 postHandle 中发生错误：${handlerError.message}`)
+          break
+        }
+      }
+      for (const interceptor of [...this.interceptors].reverse()) {
+        try {
+          await interceptor.postHandle(ctx, resolved)
+        } catch (err) {
+          handlerError = err instanceof Error ? err : new Error(String(err))
+          this._log.error(`postHandle 中发生错误：${handlerError.message}`)
+          break
+        }
+      }
+    } catch (err) {
+      if (err instanceof FinishError) {
+        // 正常流程终止，不视为错误
+      } else {
+        handlerError = err instanceof Error ? err : new Error(String(err))
+        this._log.error(
+          `handler ${resolved.handler.componentName}.${resolved.handler.method.name} 执行失败：${handlerError.message}`,
+        )
+      }
+    }
+
+    // afterCompletion（始终执行，全局逆序，声明式逆序）
+    await this._runAfterCompletion(this.interceptors, ctx, resolved, handlerError)
+    await this._runAfterCompletion(declInterceptors, ctx, resolved, handlerError)
+  }
+
+  /** 批量执行 afterCompletion（逆序，忽略内部错误）。 */
+  private async _runAfterCompletion(
+    interceptors: readonly HandlerInterceptor[],
+    ctx: Context,
+    resolved: ResolvedHandler,
+    error: Error | undefined,
+  ): Promise<void> {
+    for (const interceptor of [...interceptors].reverse()) {
       try {
-        await interceptor.afterCompletion(ctx, resolved, handlerError)
+        await interceptor.afterCompletion(ctx, resolved, error)
       } catch (cleanupErr) {
         this._log.error(`afterCompletion 中发生错误：${String(cleanupErr)}`)
       }
     }
+  }
+
+  /** 按需实例化声明式拦截器列表。 */
+  private _instantiateInterceptors(entries: readonly InterceptorEntry[]): HandlerInterceptor[] {
+    return entries.map((entry) => new entry.interceptorClass(entry.options) as HandlerInterceptor)
   }
 }

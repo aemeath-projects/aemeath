@@ -55,4 +55,4 @@ export type {
   HandlerMeta as HandlerClassMeta,
 } from './registry.js'
 export type { HandlerInterceptor } from './interceptor.js'
-export { buildHandlerMethod } from './handler-method-builder.js'
+export { buildHandlerMethod } from './method-builder.js'

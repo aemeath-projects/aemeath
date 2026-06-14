@@ -4,7 +4,7 @@
  */
 
 import type { HandlerMeta, Permission } from './constants.js'
-import type { MethodMetaEntry } from './decorators/symbols.js'
+import type { InterceptorEntry, MethodMetaEntry } from './decorators/symbols.js'
 import type { HandlerMethod } from './mapping.js'
 import type { HandlerRegistryData } from './registry.js'
 
@@ -71,15 +71,18 @@ export function buildHandlerMethod(
 
   const priority = methodEntry.priority ?? data.options.defaultPriority ?? 50
 
-  // TODO: classInterceptors 和 methodInterceptors 已由装饰器收集，
-  // 但当前 HandlerMethod 类型无对应字段，EventDispatcher 尚未支持
-  // 按 Handler/方法级别执行声明式拦截器管线。待 EventDispatcher 适配后移除此注释。
+  // 合并拦截器：类级（classInterceptors）在前，方法级在后
+  const interceptors: readonly InterceptorEntry[] = [
+    ...data.classInterceptors,
+    ...methodEntry.interceptors,
+  ]
+
   return {
     instance,
-
     method: methodFn,
     priority,
     componentName: data.options.name,
     meta,
+    interceptors,
   }
 }

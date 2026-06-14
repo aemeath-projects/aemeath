@@ -4,6 +4,7 @@
 
 import type { HandlerMeta } from './constants.js'
 import type { Context } from './context.js'
+import type { InterceptorEntry } from './decorators/symbols.js'
 
 import type { AnyOneBotEvent } from '@/core/protocol/models/events.js'
 import { extractPlaintext } from '@/core/protocol/utils.js'
@@ -30,6 +31,8 @@ export interface HandlerMethod {
   componentName: string
   /** 方法级元数据（来自 OnCommand 等装饰器）。 */
   meta: HandlerMeta
+  /** 声明式拦截器列表（class 级在前，method 级在后）。无拦截器时为空数组。 */
+  interceptors: readonly InterceptorEntry[]
 }
 
 /** resolve() 的结果单元 —— 包含匹配到的处理器及本次匹配上下文。 */

@@ -2,15 +2,14 @@
  * EventDispatcher —— 统一事件分发（类似 Spring DispatcherServlet）。
  */
 
+import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 import { logger } from '@logger'
 
 import { Context, FinishError } from './context.js'
+import type { ContextApis } from './context.js'
 import type { InterceptorEntry } from './decorators/symbols.js'
 import type { HandlerInterceptor } from './interceptor.js'
 import type { CompositeHandlerMapping, FeatureChecker, ResolvedHandler } from './mapping.js'
-
-import type { BotAPI } from '@/core/protocol/api.js'
-import type { AnyOneBotEvent } from '@/core/protocol/models/events.js'
 
 /**
  * 接收已解析的事件，通过映射解析处理器，并运行拦截器链。
@@ -37,8 +36,8 @@ export class EventDispatcher {
   }
 
   /** 分发事件到匹配的处理器，依次运行拦截器链。 */
-  async dispatch(event: AnyOneBotEvent, bot: BotAPI): Promise<void> {
-    const ctx = new Context(event, bot)
+  async dispatch(event: AnyOneBotEvent, apis: ContextApis): Promise<void> {
+    const ctx = new Context(event, apis)
 
     // 解析匹配的处理器
     const resolvedHandlers = this.mapping.resolve(event)

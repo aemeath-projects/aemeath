@@ -2,11 +2,12 @@
  * 会话上下文 —— 封装会话内的交互信息（TypeScript 移植自 context.py）。
  */
 
+import type { MessageSegment } from '@aemeath-projects/napcat/types'
+
 import type { InteractiveSession, SessionData } from './base.js'
 import { CONFIRM_STATE_PREFIX } from './commands.js'
 
 import type { Context } from '@/core/dispatch/context.js'
-import type { MessageSegment } from '@/core/protocol/models/segments.js'
 
 /** 确认状态配置。 */
 export interface ConfirmConfig {
@@ -71,7 +72,7 @@ export class SessionContext {
   }
 
   get bot(): unknown {
-    return this._ctx.bot
+    return this._ctx.msgApi
   }
 
   /** 获取原始事件上下文（需要访问完整 Context API 时使用）。 */

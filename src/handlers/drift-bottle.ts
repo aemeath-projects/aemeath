@@ -2,6 +2,8 @@
  * 漂流瓶 Bot 处理器 —— 响应「扔漂流瓶」和「捞漂流瓶」关键词。
  */
 
+import { Seg } from '@aemeath-projects/napcat'
+import type { MessageSegment } from '@aemeath-projects/napcat/types'
 import { logger } from '@logger'
 
 import { type Context } from '@/core/dispatch/context.js'
@@ -14,7 +16,7 @@ import {
   SettingNode,
 } from '@/core/dispatch/decorators/index.js'
 import { Inject } from '@/core/lifecycle/decorators/index.js'
-import { MessageBuilder, Seg, type MessageSegment } from '@/core/protocol/index.js'
+import { MessageBuilder } from '@/core/utils/message-builder.js'
 import type { DriftBottleService } from '@/services/drift-bottle.js'
 
 const TRIGGER_THROW = '扔漂流瓶'

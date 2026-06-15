@@ -1,10 +1,12 @@
 /** TaskExecutor —— 监听 BullMQ QueueEvents，按 job result 执行 Bot API。 */
 
+import { Seg } from '@aemeath-projects/napcat'
+import type { FriendApi, GroupApi, MessageApi, NapCatClient } from '@aemeath-projects/napcat'
+import type { MessageSegment } from '@aemeath-projects/napcat/types'
 import { getLogger } from '@logger'
 import { Job, Queue, QueueEvents } from 'bullmq'
 import type { ConnectionOptions } from 'bullmq'
 
-import type { BotAPI } from '@/core/protocol/api.js'
 import type { RedisStore } from '@/core/redis/store.js'
 import {
   isBotActionResult,
@@ -12,20 +14,18 @@ import {
   isSelfContainedResult,
 } from '@/core/tasks/models.js'
 import type { BotActionJobResult, RenderSendJobResult } from '@/core/tasks/models.js'
-import type { ConnectionManager } from '@/core/ws/connection.js'
 
 const log = getLogger('TaskExecutor')
-
-/** 允许执行的 Bot API 方法白名单。 */
-const ALLOWED_BOT_METHODS = new Set(['sendGroupSign', 'sendLike', 'sendMsg', 'sendGroupMsg'])
 
 export class TaskExecutor {
   private readonly events: QueueEvents
   private readonly queue: Queue
 
   constructor(
-    private readonly botApi: BotAPI,
-    private readonly connMgr: ConnectionManager,
+    private readonly msgApi: MessageApi,
+    private readonly friendApi: FriendApi,
+    private readonly groupApi: GroupApi,
+    private readonly client: NapCatClient,
     private readonly cache: RedisStore,
     connection: ConnectionOptions,
     queueName: string,
@@ -82,26 +82,48 @@ export class TaskExecutor {
   }
 
   private async _executeBotActions(result: BotActionJobResult, jobName: string): Promise<void> {
-    if (!this.connMgr.isConnected) {
+    if (this.client.transport.state !== 'connected') {
       log.warn({ jobName }, 'WS 未连接，跳过 Bot API 调用')
       return
     }
 
     for (const call of result.calls) {
-      if (!ALLOWED_BOT_METHODS.has(call.method)) {
-        log.warn({ jobName, method: call.method }, 'Bot API 方法不在白名单，已拒绝')
-        continue
-      }
-
       try {
-        const botApiRecord = this.botApi as unknown as Record<
-          string,
-          ((...args: unknown[]) => Promise<unknown>) | undefined
-        >
-        const fn = botApiRecord[call.method]
-        // 已通过白名单检查，方法必然存在；若实现未提供该方法则跳过
-        if (fn == null) continue
-        await fn(...call.args)
+        switch (call.method) {
+          case 'sendGroupMsg': {
+            const [groupId, message] = call.args as [number, MessageSegment[]]
+            await this.msgApi.sendGroupMsg(groupId, message)
+            break
+          }
+          case 'sendGroupSign': {
+            const [groupId] = call.args as [number]
+            await this.groupApi.sendGroupSign(groupId)
+            break
+          }
+          case 'sendLike': {
+            const [userId, times] = call.args as [number, number]
+            await this.friendApi.sendLike(userId, times)
+            break
+          }
+          case 'sendMsg': {
+            const [params] = call.args as [
+              {
+                message_type: 'group' | 'private'
+                group_id?: number
+                user_id?: number
+                message: MessageSegment[]
+              },
+            ]
+            if (params.message_type === 'group' && params.group_id != null) {
+              await this.msgApi.sendGroupMsg(params.group_id, params.message)
+            } else if (params.message_type === 'private' && params.user_id != null) {
+              await this.msgApi.sendPrivateMsg(params.user_id, params.message)
+            }
+            break
+          }
+          default:
+            log.warn({ jobName, method: call.method }, 'Bot API 方法不在白名单，已拒绝')
+        }
       } catch (err) {
         log.error({ jobName, method: call.method, err }, 'Bot API 调用失败')
       }
@@ -128,7 +150,7 @@ export class TaskExecutor {
   }
 
   private async _executeRenderSend(result: RenderSendJobResult): Promise<void> {
-    if (!this.connMgr.isConnected) {
+    if (this.client.transport.state !== 'connected') {
       log.warn({ tempKey: result.tempKey }, 'WS 未连接，跳过 render-send')
       return
     }
@@ -139,14 +161,13 @@ export class TaskExecutor {
       return
     }
 
-    // NapCat 专有扩展：file=base64:// 前缀，非 OneBot 11 标准
-    const cqCode = `[CQ:image,file=base64://${b64}]`
+    const imageSegment = Seg.image(`base64://${b64}`)
 
     try {
       if ('groupId' in result.sendTo) {
-        await this.botApi.sendGroupMsg(result.sendTo.groupId, cqCode)
+        await this.msgApi.sendGroupMsg(result.sendTo.groupId, [imageSegment])
       } else {
-        await this.botApi.sendPrivateMsg(result.sendTo.userId, cqCode)
+        await this.msgApi.sendPrivateMsg(result.sendTo.userId, [imageSegment])
       }
     } catch (err) {
       log.error({ tempKey: result.tempKey, err }, 'render-send Bot API 调用失败')

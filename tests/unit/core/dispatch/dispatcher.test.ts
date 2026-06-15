@@ -1,6 +1,9 @@
+import type { FriendApi, GroupApi, MessageApi } from '@aemeath-projects/napcat'
+import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { MessageScope, Permission } from '@/core/dispatch/constants.js'
+import type { ContextApis } from '@/core/dispatch/context.js'
 import type { InterceptorEntry } from '@/core/dispatch/decorators/symbols.js'
 import { EventDispatcher } from '@/core/dispatch/dispatcher.js'
 import type { HandlerInterceptor } from '@/core/dispatch/interceptor.js'
@@ -9,8 +12,6 @@ import type {
   HandlerMethod,
   ResolvedHandler,
 } from '@/core/dispatch/mapping.js'
-import type { BotAPI } from '@/core/protocol/api.js'
-import type { AnyOneBotEvent } from '@/core/protocol/models/events.js'
 
 /** 构造最小 ResolvedHandler */
 function makeResolved(interceptors: InterceptorEntry[] = []): ResolvedHandler {
@@ -59,9 +60,13 @@ function makeMapping(resolved: ResolvedHandler[]): CompositeHandlerMapping {
   } as unknown as CompositeHandlerMapping
 }
 
-/** 构造假 BotAPI */
-function makeBot(): BotAPI {
-  return {} as BotAPI
+/** 构造假 ContextApis */
+function makeApis(): ContextApis {
+  return {
+    msgApi: {} as MessageApi,
+    friendApi: {} as unknown as FriendApi,
+    groupApi: {} as unknown as GroupApi,
+  }
 }
 
 /** 构造拦截器类，记录调用顺序 */
@@ -96,7 +101,7 @@ describe('EventDispatcher 声明式拦截器管线', () => {
     })
 
     const dispatcher = new EventDispatcher(makeMapping([resolved]))
-    await dispatcher.dispatch(makeEvent(), makeBot())
+    await dispatcher.dispatch(makeEvent(), makeApis())
 
     expect(calls).toEqual(['A:pre', 'handler', 'A:post', 'A:after'])
   })
@@ -121,7 +126,7 @@ describe('EventDispatcher 声明式拦截器管线', () => {
     })
 
     const dispatcher = new EventDispatcher(makeMapping([resolved]))
-    await dispatcher.dispatch(makeEvent(), makeBot())
+    await dispatcher.dispatch(makeEvent(), makeApis())
 
     expect(calls).toContain('block:pre')
     expect(calls).toContain('block:after')
@@ -149,7 +154,7 @@ describe('EventDispatcher 声明式拦截器管线', () => {
     handlerFn.mockRejectedValue(err)
 
     const dispatcher = new EventDispatcher(makeMapping([resolved]))
-    await dispatcher.dispatch(makeEvent(), makeBot())
+    await dispatcher.dispatch(makeEvent(), makeApis())
 
     expect(calls).not.toContain('post')
     expect(calls).toContain('after')
@@ -167,7 +172,7 @@ describe('EventDispatcher 声明式拦截器管线', () => {
     handlerFn.mockResolvedValue(undefined)
 
     const dispatcher = new EventDispatcher(makeMapping([resolved]))
-    await dispatcher.dispatch(makeEvent(), makeBot())
+    await dispatcher.dispatch(makeEvent(), makeApis())
 
     const preIdx = (name: string) => calls.indexOf(`${name}:pre`)
     expect(preIdx('class')).toBeLessThan(preIdx('method'))
@@ -179,7 +184,7 @@ describe('EventDispatcher 声明式拦截器管线', () => {
     handlerFn.mockResolvedValue(undefined)
 
     const dispatcher = new EventDispatcher(makeMapping([resolved]))
-    await dispatcher.dispatch(makeEvent(), makeBot())
+    await dispatcher.dispatch(makeEvent(), makeApis())
 
     expect(handlerFn).toHaveBeenCalledOnce()
   })
@@ -206,7 +211,7 @@ describe('EventDispatcher 声明式拦截器管线', () => {
 
     const globalInterceptorInstance = new GlobalInterceptor()
     const dispatcher = new EventDispatcher(makeMapping([resolved]), [globalInterceptorInstance])
-    await dispatcher.dispatch(makeEvent(), makeBot())
+    await dispatcher.dispatch(makeEvent(), makeApis())
 
     expect(calls).toContain('global:pre')
     expect(calls).toContain('decl:pre')
@@ -226,7 +231,7 @@ describe('EventDispatcher 声明式拦截器管线', () => {
     })
 
     const dispatcher = new EventDispatcher(makeMapping([resolved]), [new GlobalInterceptor()])
-    await dispatcher.dispatch(makeEvent(), makeBot())
+    await dispatcher.dispatch(makeEvent(), makeApis())
 
     expect(calls).toEqual(['G:pre', 'D:pre', 'handler', 'D:post', 'G:post', 'G:after', 'D:after'])
   })

@@ -1,7 +1,7 @@
+import type { MessageApi } from '@aemeath-projects/napcat'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { MainPrismaClient } from '@/core/db.js'
-import type { BotAPI } from '@/core/protocol/api.js'
 import { FeedbackService } from '@/services/feedback.js'
 
 // ────────────────────────────────────────────
@@ -32,7 +32,7 @@ function createMockBotApi() {
 }
 
 type MockDb = ReturnType<typeof createMockDb>
-type MockBotApi = ReturnType<typeof createMockBotApi>
+type MockMsgApi = ReturnType<typeof createMockBotApi>
 
 // ────────────────────────────────────────────
 //  Tests
@@ -40,7 +40,7 @@ type MockBotApi = ReturnType<typeof createMockBotApi>
 
 describe('FeedbackService', () => {
   let mockDb: MockDb
-  let mockBotApi: MockBotApi
+  let mockBotApi: MockMsgApi
   let service: FeedbackService
 
   beforeEach(() => {
@@ -48,7 +48,7 @@ describe('FeedbackService', () => {
     mockBotApi = createMockBotApi()
     service = new FeedbackService(
       mockDb as unknown as MainPrismaClient,
-      mockBotApi as unknown as BotAPI,
+      mockBotApi as unknown as MessageApi,
     )
     vi.clearAllMocks()
   })
@@ -224,7 +224,12 @@ describe('FeedbackService', () => {
       expect(mockBotApi.sendPrivateMsg).toHaveBeenCalledOnce()
       expect(mockBotApi.sendPrivateMsg).toHaveBeenCalledWith(
         expect.any(Number),
-        expect.stringContaining('反馈已处理完成'),
+        expect.arrayContaining([
+          expect.objectContaining({
+            type: 'text',
+            data: expect.objectContaining({ text: expect.stringContaining('反馈已处理完成') }),
+          }),
+        ]),
       )
     })
   })

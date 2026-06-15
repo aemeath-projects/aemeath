@@ -1,10 +1,9 @@
 // tests/unit/core/tasks/executor.test.ts
+import type { FriendApi, GroupApi, MessageApi, NapCatClient } from '@aemeath-projects/napcat'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { BotAPI } from '@/core/protocol/api.js'
 import type { RedisStore } from '@/core/redis/store.js'
 import type { RenderSendJobResult } from '@/core/tasks/models.js'
-import type { ConnectionManager } from '@/core/ws/connection.js'
 
 // ── BullMQ mock 工厂（每个 test 独立实例化，避免 .mock.results 下标竞争）──
 
@@ -40,17 +39,30 @@ vi.mock('bullmq', () => ({
   Job: { fromId: vi.fn() },
 }))
 
-function createMockBotApi() {
+function createMockMsgApi() {
   return {
-    sendGroupSign: vi.fn().mockResolvedValue({ status: 'ok', retcode: 0, data: null, echo: '' }),
-    sendLike: vi.fn().mockResolvedValue({ status: 'ok', retcode: 0, data: null, echo: '' }),
     sendGroupMsg: vi.fn().mockResolvedValue({ status: 'ok', retcode: 0, data: null, echo: '' }),
     sendPrivateMsg: vi.fn().mockResolvedValue({ status: 'ok', retcode: 0, data: null, echo: '' }),
-  } as unknown as BotAPI
+    deleteMsg: vi.fn().mockResolvedValue({ status: 'ok', retcode: 0, data: null, echo: '' }),
+  } as unknown as MessageApi
 }
 
-function createMockConnMgr(connected = true) {
-  return { isConnected: connected } as unknown as ConnectionManager
+function createMockFriendApi() {
+  return {
+    sendLike: vi.fn().mockResolvedValue({ status: 'ok', retcode: 0, data: null, echo: '' }),
+  } as unknown as FriendApi
+}
+
+function createMockGroupApi() {
+  return {
+    sendGroupSign: vi.fn().mockResolvedValue({ status: 'ok', retcode: 0, data: null, echo: '' }),
+  } as unknown as GroupApi
+}
+
+function createMockClient(connected = true) {
+  return {
+    transport: { state: connected ? 'connected' : 'disconnected' },
+  } as unknown as NapCatClient
 }
 
 function createMockCache() {
@@ -82,10 +94,12 @@ describe('TaskExecutor', () => {
     Job.fromId = vi.fn().mockResolvedValue({ name: 'test-job' })
 
     const { TaskExecutor } = await import('@/core/tasks/executor.js')
-    const botApi = createMockBotApi()
+    const mockGroupApi = createMockGroupApi()
     const executor = new TaskExecutor(
-      botApi,
-      createMockConnMgr(),
+      createMockMsgApi(),
+      createMockFriendApi(),
+      mockGroupApi,
+      createMockClient(),
       createMockCache(),
       {},
       'aemeath-tasks',
@@ -98,7 +112,7 @@ describe('TaskExecutor', () => {
     })
 
     await new Promise((r) => setTimeout(r, 10))
-    expect(botApi.sendGroupSign).not.toHaveBeenCalled()
+    expect(mockGroupApi.sendGroupSign).not.toHaveBeenCalled()
   })
 
   it('WS 未连接时跳过 BotAPI 调用', async () => {
@@ -106,10 +120,12 @@ describe('TaskExecutor', () => {
     Job.fromId = vi.fn().mockResolvedValue({ name: 'checkin' })
 
     const { TaskExecutor } = await import('@/core/tasks/executor.js')
-    const botApi = createMockBotApi()
+    const mockGroupApi = createMockGroupApi()
     const executor = new TaskExecutor(
-      botApi,
-      createMockConnMgr(false),
+      createMockMsgApi(),
+      createMockFriendApi(),
+      mockGroupApi,
+      createMockClient(false),
       createMockCache(),
       {},
       'aemeath-tasks',
@@ -125,7 +141,7 @@ describe('TaskExecutor', () => {
     })
 
     await new Promise((r) => setTimeout(r, 10))
-    expect(botApi.sendGroupSign).not.toHaveBeenCalled()
+    expect(mockGroupApi.sendGroupSign).not.toHaveBeenCalled()
   })
 
   it('白名单内方法正常调用', async () => {
@@ -133,10 +149,12 @@ describe('TaskExecutor', () => {
     Job.fromId = vi.fn().mockResolvedValue({ name: 'like' })
 
     const { TaskExecutor } = await import('@/core/tasks/executor.js')
-    const botApi = createMockBotApi()
+    const mockFriendApi = createMockFriendApi()
     const executor = new TaskExecutor(
-      botApi,
-      createMockConnMgr(),
+      createMockMsgApi(),
+      mockFriendApi,
+      createMockGroupApi(),
+      createMockClient(),
       createMockCache(),
       {},
       'aemeath-tasks',
@@ -152,7 +170,7 @@ describe('TaskExecutor', () => {
     })
 
     await new Promise((r) => setTimeout(r, 10))
-    expect(botApi.sendLike).toHaveBeenCalledWith(111, 10)
+    expect(mockFriendApi.sendLike).toHaveBeenCalledWith(111, 10)
   })
 
   it('白名单外方法被拒绝', async () => {
@@ -160,10 +178,12 @@ describe('TaskExecutor', () => {
     Job.fromId = vi.fn().mockResolvedValue({ name: 'evil' })
 
     const { TaskExecutor } = await import('@/core/tasks/executor.js')
-    const botApi = createMockBotApi()
+    const mockGroupApi = createMockGroupApi()
     const executor = new TaskExecutor(
-      botApi,
-      createMockConnMgr(),
+      createMockMsgApi(),
+      createMockFriendApi(),
+      mockGroupApi,
+      createMockClient(),
       createMockCache(),
       {},
       'aemeath-tasks',
@@ -179,8 +199,8 @@ describe('TaskExecutor', () => {
     })
 
     await new Promise((r) => setTimeout(r, 10))
-    expect((botApi as unknown as Record<string, unknown>).deleteMsg).toBeUndefined()
-    expect(botApi.sendGroupSign).not.toHaveBeenCalled()
+    expect((mockGroupApi as unknown as Record<string, unknown>).deleteMsg).toBeUndefined()
+    expect(mockGroupApi.sendGroupSign).not.toHaveBeenCalled()
   })
 
   it('sendGroupSign 成功后通过 postCacheOps 写入打卡去重键', async () => {
@@ -188,9 +208,17 @@ describe('TaskExecutor', () => {
     Job.fromId = vi.fn().mockResolvedValue({ name: 'checkin' })
 
     const { TaskExecutor } = await import('@/core/tasks/executor.js')
-    const botApi = createMockBotApi()
+    const mockGroupApi = createMockGroupApi()
     const cache = createMockCache()
-    const executor = new TaskExecutor(botApi, createMockConnMgr(), cache, {}, 'aemeath-tasks')
+    const executor = new TaskExecutor(
+      createMockMsgApi(),
+      createMockFriendApi(),
+      mockGroupApi,
+      createMockClient(),
+      cache,
+      {},
+      'aemeath-tasks',
+    )
     executor.start()
 
     mockEvents.emit('completed', {
@@ -205,7 +233,7 @@ describe('TaskExecutor', () => {
     })
 
     await new Promise((r) => setTimeout(r, 10))
-    expect(botApi.sendGroupSign).toHaveBeenCalledWith(300)
+    expect(mockGroupApi.sendGroupSign).toHaveBeenCalledWith(300)
     expect(cache.set).toHaveBeenCalledOnce()
     // 验证 cache.set 的第三个参数是 TTL（90000）
     expect((cache.set as ReturnType<typeof vi.fn>).mock.calls[0]![2]).toBe(90_000)
@@ -236,8 +264,16 @@ describe('render-send result', () => {
     const cache = createMockCache()
     ;(cache.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce('base64pngdata')
 
-    const botApi = createMockBotApi()
-    const executor = new TaskExecutor(botApi, createMockConnMgr(), cache, {}, 'test-queue')
+    const mockMsgApi = createMockMsgApi()
+    const executor = new TaskExecutor(
+      mockMsgApi,
+      createMockFriendApi(),
+      createMockGroupApi(),
+      createMockClient(),
+      cache,
+      {},
+      'test-queue',
+    )
     executor.start()
 
     const result: RenderSendJobResult = {
@@ -248,9 +284,9 @@ describe('render-send result', () => {
     mockEvents.emit('completed', { jobId: 'job-1', returnvalue: JSON.stringify(result) })
     await new Promise((r) => setTimeout(r, 30))
 
-    expect(botApi.sendGroupMsg).toHaveBeenCalledWith(
+    expect(mockMsgApi.sendGroupMsg).toHaveBeenCalledWith(
       12345,
-      '[CQ:image,file=base64://base64pngdata]',
+      expect.arrayContaining([expect.objectContaining({ type: 'image' })]),
     )
     expect(cache.del).toHaveBeenCalledWith('aemeath:render:temp:job-1')
   })
@@ -263,8 +299,16 @@ describe('render-send result', () => {
     const cache = createMockCache()
     // 默认 get 返回 null（已在 createMockCache 中设置）
 
-    const botApi = createMockBotApi()
-    const executor = new TaskExecutor(botApi, createMockConnMgr(), cache, {}, 'test-queue')
+    const mockMsgApi = createMockMsgApi()
+    const executor = new TaskExecutor(
+      mockMsgApi,
+      createMockFriendApi(),
+      createMockGroupApi(),
+      createMockClient(),
+      cache,
+      {},
+      'test-queue',
+    )
     executor.start()
 
     const result: RenderSendJobResult = {
@@ -275,7 +319,7 @@ describe('render-send result', () => {
     mockEvents.emit('completed', { jobId: 'job-2', returnvalue: JSON.stringify(result) })
     await new Promise((r) => setTimeout(r, 30))
 
-    expect(botApi.sendGroupMsg).not.toHaveBeenCalled()
+    expect(mockMsgApi.sendGroupMsg).not.toHaveBeenCalled()
   })
 
   it('sendTo userId 时调用 sendPrivateMsg', async () => {
@@ -286,8 +330,16 @@ describe('render-send result', () => {
     const cache = createMockCache()
     ;(cache.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce('imgdata')
 
-    const botApi = createMockBotApi()
-    const executor = new TaskExecutor(botApi, createMockConnMgr(), cache, {}, 'test-queue')
+    const mockMsgApi = createMockMsgApi()
+    const executor = new TaskExecutor(
+      mockMsgApi,
+      createMockFriendApi(),
+      createMockGroupApi(),
+      createMockClient(),
+      cache,
+      {},
+      'test-queue',
+    )
     executor.start()
 
     const result: RenderSendJobResult = {
@@ -298,7 +350,10 @@ describe('render-send result', () => {
     mockEvents.emit('completed', { jobId: 'job-3', returnvalue: JSON.stringify(result) })
     await new Promise((r) => setTimeout(r, 30))
 
-    expect(botApi.sendPrivateMsg).toHaveBeenCalledWith(9999, '[CQ:image,file=base64://imgdata]')
+    expect(mockMsgApi.sendPrivateMsg).toHaveBeenCalledWith(
+      9999,
+      expect.arrayContaining([expect.objectContaining({ type: 'image' })]),
+    )
     expect(cache.del).toHaveBeenCalledWith('aemeath:render:temp:job-pm')
   })
 })

@@ -27,14 +27,14 @@ module.exports = {
 
   /** Conventional Commits 类型映射，控制 CHANGELOG 中显示的分类 */
   types: [
-    { type: 'feat', section: '✨ 新功能' },
-    { type: 'fix', section: '🐛 Bug 修复' },
-    { type: 'perf', section: '⚡ 性能优化' },
-    { type: 'refactor', section: '♻️ 重构' },
-    { type: 'docs', section: '📝 文档' },
-    { type: 'style', section: '💄 代码风格', hidden: true },
-    { type: 'test', section: '✅ 测试', hidden: true },
-    { type: 'chore', section: '🔧 杂项', hidden: true },
-    { type: 'ci', section: '👷 CI/CD', hidden: true },
+    { type: 'feat', section: '新功能' },
+    { type: 'fix', section: 'Bug 修复' },
+    { type: 'perf', section: '性能优化' },
+    { type: 'refactor', section: '重构' },
+    { type: 'docs', section: '文档' },
+    { type: 'style', section: '代码风格', hidden: true },
+    { type: 'test', section: '测试', hidden: true },
+    { type: 'chore', section: '杂项', hidden: true },
+    { type: 'ci', section: 'CI/CD', hidden: true },
   ],
 }

@@ -11,3 +11,6 @@ allowBuilds:
   msgpackr-extract: true
   prisma: true
   unrs-resolver: true
+minimumReleaseAgeExclude:
+  - '@aemeath-projects/napcat@1.0.0'
+  - '@aemeath-projects/napcat@1.1.0'

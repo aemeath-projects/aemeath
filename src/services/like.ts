@@ -2,6 +2,7 @@
  * 点赞服务 —— 手动点赞、定时任务注册/取消/查询、批量定时执行。
  */
 
+import type { FriendApi } from '@aemeath-projects/napcat'
 import { logger, type Logger } from '@logger'
 
 import type { LikeTask, LikeHistory, LikeSource, Prisma } from '#prisma/main'
@@ -9,7 +10,6 @@ import type { LikeTask, LikeHistory, LikeSource, Prisma } from '#prisma/main'
 import type { MainPrismaClient } from '@/core/db.js'
 import { isPrismaKnownError } from '@/core/db.js'
 import { Service, Inject, Provide, Startup } from '@/core/lifecycle/decorators/index.js'
-import type { BotAPI } from '@/core/protocol/index.js'
 
 export type { LikeTask, LikeHistory, LikeSource }
 
@@ -56,7 +56,7 @@ export class LikeService {
 
   constructor(
     private readonly db: MainPrismaClient,
-    private readonly botApi: BotAPI,
+    private readonly friendApi: FriendApi,
   ) {}
 
   // ════════════════════════════════════════════
@@ -79,8 +79,8 @@ export class LikeService {
     const qqBig = BigInt(qq)
     let success = false
     try {
-      const resp = await this.botApi.sendLike(Number(qqBig), times)
-      success = resp.status === 'ok'
+      const result = await this.friendApi.sendLike(Number(qqBig), times)
+      success = result.ok
     } catch (err) {
       this._log.warn({ qq, times, err }, 'send_like 异常')
     }
@@ -293,8 +293,8 @@ export class LikeBootstrap {
   db!: MainPrismaClient
 
   /** 注入 Bot API */
-  @Inject('bot_api')
-  botApi!: BotAPI
+  @Inject('friend_api')
+  friendApi!: FriendApi
 
   /** 对外暴露点赞服务实例 */
   @Provide('like_service')
@@ -302,6 +302,6 @@ export class LikeBootstrap {
 
   @Startup
   start(): void {
-    this.likeService = new LikeService(this.db, this.botApi)
+    this.likeService = new LikeService(this.db, this.friendApi)
   }
 }

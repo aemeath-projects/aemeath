@@ -1,3 +1,4 @@
+import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { MessageScope, Permission } from '@/core/dispatch/constants.js'
@@ -12,7 +13,6 @@ import {
   RegexHandlerMapping,
   StartsWithHandlerMapping,
 } from '@/core/dispatch/mapping.js'
-import type { AnyOneBotEvent } from '@/core/protocol/models/events.js'
 
 // ── 测试用事件工厂 ──
 

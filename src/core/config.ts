@@ -28,6 +28,9 @@ export const ConfigSchema = Type.Object({
   IMAGE_URL_TTL: Type.Number({ minimum: 1, default: 7200 }),
   ENABLE_RKEY_REFRESH: Type.Boolean({ default: true }),
 
+  // NapCat 역방향 WebSocket 서버 포트 (Fastify PORT와 분리)
+  NAPCAT_WS_PORT: Type.Number({ minimum: 1, maximum: 65535, default: 3001 }),
+
   // PostgreSQL
   DATABASE_URL: Type.String(),
   DB_POOL_SIZE: Type.Number({ minimum: 1, default: 10 }),

@@ -5,16 +5,15 @@
  * 均通过 Redis 日期键去重，防止重复打卡。
  */
 
+import type { GroupApi, NapCatClient } from '@aemeath-projects/napcat'
 import { logger, type Logger } from '@logger'
 
 import type { MainPrismaClient } from '@/core/db.js'
 import { Service, Inject, Provide, Startup } from '@/core/lifecycle/decorators/index.js'
-import type { BotAPI } from '@/core/protocol/index.js'
 import type { RedisStore } from '@/core/redis/index.js'
 import { cacheKeyRegistry } from '@/core/registries.js'
 import type { SettingsService } from '@/core/settings/index.js'
 import { SHANGHAI_TZ } from '@/core/utils.js'
-import type { ConnectionManager } from '@/core/ws/index.js'
 
 // ── 常量 ──
 
@@ -52,8 +51,8 @@ export class DailyCheckinService {
   constructor(
     private readonly db: MainPrismaClient,
     private readonly cache: RedisStore,
-    private readonly botApi: BotAPI,
-    private readonly connMgr: ConnectionManager,
+    private readonly groupApi: GroupApi,
+    private readonly client: NapCatClient,
     private readonly settings: SettingsService,
   ) {}
 
@@ -90,7 +89,7 @@ export class DailyCheckinService {
   // ════════════════════════════════════════════
 
   private async _runCheckin(source: CheckinSource): Promise<void> {
-    if (!this.connMgr.isConnected) {
+    if (this.client.transport.state !== 'connected') {
       this._log.warn({ source }, 'WS 未连接，跳过本轮打卡')
       return
     }
@@ -137,10 +136,10 @@ export class DailyCheckinService {
 
       // 执行打卡
       try {
-        const resp = await this.botApi.sendGroupSign(Number(groupId))
-        if (resp.status !== 'ok') {
+        const result = await this.groupApi.sendGroupSign(Number(groupId))
+        if (!result.ok) {
           this._log.warn(
-            { groupId, retcode: resp.retcode, message: resp.message },
+            { groupId, code: result.error.code, message: result.error.message },
             '群打卡 API 返回失败',
           )
           failed++
@@ -193,12 +192,12 @@ export class DailyCheckinBootstrap {
   cache!: RedisStore
 
   /** 注入 Bot API */
-  @Inject('bot_api')
-  botApi!: BotAPI
+  @Inject('group_api')
+  groupApi!: GroupApi
 
   /** 注入 WebSocket 连接管理器 */
-  @Inject('conn_mgr')
-  connMgr!: ConnectionManager
+  @Inject('bot_client')
+  client!: NapCatClient
 
   /** 注入设置服务 */
   @Inject('settings')
@@ -213,8 +212,8 @@ export class DailyCheckinBootstrap {
     this.dailyCheckinService = new DailyCheckinService(
       this.db,
       this.cache,
-      this.botApi,
-      this.connMgr,
+      this.groupApi,
+      this.client,
       this.settings,
     )
   }

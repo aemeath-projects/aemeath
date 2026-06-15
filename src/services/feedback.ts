@@ -2,13 +2,14 @@
  * 用户反馈业务逻辑 —— 反馈创建、查询、状态更新、通知。
  */
 
+import { Seg } from '@aemeath-projects/napcat'
+import type { MessageApi } from '@aemeath-projects/napcat'
 import { logger, type Logger } from '@logger'
 
 import type { Prisma, Feedback, FeedbackStatus, FeedbackSource, FeedbackType } from '#prisma/main'
 
 import type { MainPrismaClient } from '@/core/db.js'
 import { Service, Inject, Provide, Startup } from '@/core/lifecycle/decorators/index.js'
-import type { BotAPI } from '@/core/protocol/index.js'
 
 export type { Feedback, FeedbackStatus, FeedbackSource, FeedbackType }
 
@@ -44,7 +45,7 @@ export class FeedbackService {
 
   constructor(
     private readonly db: MainPrismaClient,
-    private readonly botApi: BotAPI,
+    private readonly msgApi: MessageApi,
   ) {}
 
   // ════════════════════════════════════════════
@@ -191,7 +192,7 @@ export class FeedbackService {
     // 并发通知所有管理员
     const sendTasks = admins.map(async (admin) => {
       try {
-        await this.botApi.sendPrivateMsg(Number(admin.qq), message)
+        await this.msgApi.sendPrivateMsg(Number(admin.qq), [Seg.text(message)])
       } catch (err: unknown) {
         this._log.warn({ adminQq: admin.qq, feedbackId: feedback.id, err }, '通知管理员失败')
       }
@@ -211,9 +212,9 @@ export class FeedbackService {
 
     try {
       if (feedback.source === 'group' && feedback.groupId != null) {
-        await this.botApi.sendGroupMsg(Number(feedback.groupId), message)
+        await this.msgApi.sendGroupMsg(Number(feedback.groupId), [Seg.text(message)])
       } else {
-        await this.botApi.sendPrivateMsg(Number(feedback.userId), message)
+        await this.msgApi.sendPrivateMsg(Number(feedback.userId), [Seg.text(message)])
       }
     } catch (err) {
       this._log.warn({ userId: feedback.userId, feedbackId: feedback.id, err }, '通知用户失败')
@@ -230,8 +231,8 @@ export class FeedbackBootstrap {
   db!: MainPrismaClient
 
   /** 注入 Bot API */
-  @Inject('bot_api')
-  botApi!: BotAPI
+  @Inject('msg_api')
+  msgApi!: MessageApi
 
   /** 对外暴露反馈服务实例 */
   @Provide('feedback_service')
@@ -239,6 +240,6 @@ export class FeedbackBootstrap {
 
   @Startup
   start(): void {
-    this.feedbackService = new FeedbackService(this.db, this.botApi)
+    this.feedbackService = new FeedbackService(this.db, this.msgApi)
   }
 }

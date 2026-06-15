@@ -30,7 +30,7 @@
 
 - 业务异常使用 `src/core/errors.ts` 中定义的异常类，**禁止**直接 `throw new Error('...')`
 - **禁止裸 `catch (e)`** 后什么都不做（静默吞错）；需要兜底时记录 `app.log.error` 或 Pino logger
-- API 层所有响应必须通过 `src/core/utils/response.ts` 的 `ok()` / `fail()` 包装
+- API 层所有响应必须通过 `src/core/response.ts` 的 `ok()` / `fail()` 包装
 - Promise 拒绝必须被 `await` 捕获或通过 `.catch()` 处理；**禁止** `void somePromise()` 忽略错误（仅在确认不需要等待结果时允许）
 
 ## 输入校验
@@ -42,7 +42,7 @@
 ## 命名规范
 
 - **TypeScript**：变量/函数 `camelCase`，类/接口/类型 `PascalCase`，常量 `UPPER_SNAKE_CASE`，私有成员 `_prefix` 或 TypeScript `private`
-- **Handler 装饰器**：`@Component`、`@OnCommand`、`@OnKeyword` 等均为 **PascalCase**（区别于旧 Python 版本的小写）
+- **Handler 装饰器**：`@Handler`、`@OnCommand`、`@OnKeyword` 等均为 **PascalCase**
 - **Vue 组件**：文件名 `PascalCase.vue`，组件内部变量遵循 camelCase
 - **API 路由路径**：使用 kebab-case（`/api/chat-history`，非 `/api/chatHistory`）
 - **数据库表名**（Prisma `@@map`）：`snake_case` 复数形式（`chat_messages`，非 `ChatMessage`）

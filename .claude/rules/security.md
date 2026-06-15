@@ -32,7 +32,7 @@
 
 - 本项目 API 使用 **Bearer token 认证**而非 cookie session，天然规避主要 CSRF 攻击面
 - 确保 `src/apis/plugins/cors.ts` 中 CORS 白名单不包含通配符 `*`（除非是纯公开接口）
-- WebSocket 握手必须校验 `NAPCAT_ACCESS_TOKEN`，拒绝无令牌连接（见 `src/core/ws/server.ts`）
+- WebSocket 握手必须校验 `NAPCAT_ACCESS_TOKEN`，拒绝无令牌连接（见 `src/core/bot-client.ts`）
 
 ## 依赖安全
 

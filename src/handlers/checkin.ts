@@ -14,7 +14,7 @@ import {
   SettingNode,
 } from '@/core/dispatch/decorators/index.js'
 import { Inject } from '@/core/lifecycle/decorators/index.js'
-import { MessageBuilder } from '@/core/protocol/index.js'
+import { MessageBuilder } from '@/core/utils/message-builder.js'
 import type { CheckinService } from '@/services/checkin.js'
 
 // ── 上海时区辅助 ──

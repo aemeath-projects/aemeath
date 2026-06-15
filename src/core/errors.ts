@@ -37,3 +37,15 @@ export class ValidationError extends AppError {
     this.name = 'ValidationError'
   }
 }
+
+/** Bot API 调用失败（SDK Result.ok === false）。 */
+export class BotApiError extends Error {
+  constructor(
+    /** OneBot 协议返回的 retcode。 */
+    public readonly retcode: number,
+    message: string,
+  ) {
+    super(message)
+    this.name = 'BotApiError'
+  }
+}

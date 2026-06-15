@@ -2,12 +2,11 @@
  * HandlerMapping —— 将事件路由到处理器方法（TypeScript 移植自 mapping.py）。
  */
 
+import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
+
 import type { HandlerMeta } from './constants.js'
 import type { Context } from './context.js'
 import type { InterceptorEntry } from './decorators/symbols.js'
-
-import type { AnyOneBotEvent } from '@/core/protocol/models/events.js'
-import { extractPlaintext } from '@/core/protocol/utils.js'
 
 // ── FeatureChecker 接口 ──
 
@@ -57,6 +56,32 @@ function isGroupMessageEvent(event: AnyOneBotEvent): boolean {
 interface HandlerMapping {
   register(handler: HandlerMethod): void
   resolve(event: AnyOneBotEvent): ResolvedHandler[]
+}
+
+// ── 纯文本提取 ──
+
+/** 从消息事件中提取纯文本。 */
+function extractPlaintext(event: AnyOneBotEvent): string {
+  if (event.post_type !== 'message' && event.post_type !== 'message_sent') {
+    return ''
+  }
+  const msg = (event as { message?: unknown }).message
+  if (typeof msg === 'string') {
+    return msg.trim()
+  }
+  if (!Array.isArray(msg)) {
+    return ''
+  }
+  const parts: string[] = []
+  for (const seg of msg as { type: string; data: Record<string, unknown> }[]) {
+    if (seg.type === 'text') {
+      const text = seg.data.text
+      if (typeof text === 'string') {
+        parts.push(text)
+      }
+    }
+  }
+  return parts.join('').trim()
 }
 
 // ── 具体映射实现 ──

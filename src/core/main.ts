@@ -8,8 +8,16 @@
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 
+import type { NapCatClient, MessageApi, FriendApi, GroupApi } from '@aemeath-projects/napcat'
+import type {
+  PrivateMessageEvent,
+  GroupMessageEvent,
+  MessageSentEvent,
+  AnyNoticeEvent,
+  FriendRequestEvent,
+  GroupRequestEvent,
+} from '@aemeath-projects/napcat/types'
 import fastifyStatic from '@fastify/static'
-import fastifyWebsocket from '@fastify/websocket'
 import { createLogger, setLogger, logger, getLogger } from '@logger'
 import Fastify, { type FastifyInstance, type FastifyPluginAsync } from 'fastify'
 import type { Redis } from 'ioredis'
@@ -19,6 +27,7 @@ import pkg from '../../package.json' with { type: 'json' }
 
 import { loadConfig } from './config.js'
 import { createMainDb, createChatDb } from './db.js'
+import type { ContextApis } from './dispatch/context.js'
 import { EventDispatcher } from './dispatch/dispatcher.js'
 import { LoggingInterceptor } from './dispatch/interceptors/logging.js'
 import { SessionInterceptor } from './dispatch/interceptors/session.js'
@@ -37,20 +46,19 @@ import type { OssBuckets } from './oss/client.js'
 import { authPlugin } from './plugins/auth.js'
 import { corsPlugin } from './plugins/cors.js'
 import { swaggerPlugin } from './plugins/swagger.js'
-import { BotAPI } from './protocol/api.js'
 import { createRedis, checkRedisReachable } from './redis/factory.js'
 import { RedisStore } from './redis/store.js'
 import { createBullMQConnection, getTaskQueue } from './tasks/broker.js'
 import { TaskExecutor } from './tasks/executor.js'
 import { setTaskDefinitions } from './tasks/scheduler.js'
-import { ConnectionManager } from './ws/connection.js'
-import { registerWsRoute } from './ws/server.js'
 // 触发 PersonnelService 的 Startup 注册（EchoLoader 不扫描 src/core/，需手动引入）
 import '@/core/personnel/index.js'
 // 触发 OSS 模块的 Startup 注册
 import '@/core/oss/bootstrap.js'
 // 触发 MediaStorageService 的 Startup 注册
 import '@/core/chat/media.js'
+// 触发 BotClientBootstrap 的 Startup 注册
+import '@/core/bot-client.js'
 
 // ── 模块级生命周期编排器（startup 创建，shutdown 复用同一实例）──
 let _orchestrator: LifecycleOrchestrator | null = null
@@ -65,9 +73,8 @@ interface AppState {
   persistentRedis: Redis
   cacheStore: RedisStore
   persistentStore: RedisStore
-  // 框架核心
-  botApi: BotAPI
-  connMgr: ConnectionManager
+  // 框架核心（SDK）
+  bot_client: NapCatClient
   dispatcher: EventDispatcher
   // 任务
   taskExecutor: TaskExecutor
@@ -164,9 +171,6 @@ async function _registerCoreRoutes(app: FastifyInstance): Promise<void> {
 async function _startup(
   app: FastifyInstance,
   config: ReturnType<typeof loadConfig>,
-  botApi: BotAPI,
-  connMgr: ConnectionManager,
-  dispatcherRef: { current: EventDispatcher | undefined },
 ): Promise<void> {
   app.log.info('Aemeath 正在启动...')
 
@@ -190,12 +194,11 @@ async function _startup(
   // 5. EchoLoader 发现并加载 handlers、services、tasks（触发 @Startup/@Shutdown 副作用）
   const echoConfig = await _loadEchoes(composite)
 
-  // 6. 构建 Dispatcher 并连接到 connMgr（解决 setupLifecycle 阶段的前向引用）
+  // 6. 构建 Dispatcher
   const dispatcher = new EventDispatcher(composite, [
     new LoggingInterceptor(),
     new SessionInterceptor(),
   ])
-  dispatcherRef.current = dispatcher
 
   // 8.5. 预检所有 Redis 连接可达性（连接不可用时立即抛出，避免后续操作无声挂起）
   await checkRedisReachable(config.CACHE_REDIS_URL, 'Cache Redis')
@@ -216,8 +219,6 @@ async function _startup(
     persistent: persistentStore,
     cache_redis: cacheRedis,
     persistent_redis: persistentRedis,
-    bot_api: botApi,
-    conn_mgr: connMgr,
     dispatcher,
     queue,
   }
@@ -233,6 +234,29 @@ async function _startup(
     dispatcher.setFeatureChecker(settingsChecker)
   }
 
+  // 10.6. 订阅 NapCat 事件，将事件分发给 Dispatcher
+  const botClient = allServices.bot_client as NapCatClient
+  const apis: ContextApis = {
+    msgApi: allServices.msg_api as MessageApi,
+    friendApi: allServices.friend_api as FriendApi,
+    groupApi: allServices.group_api as GroupApi,
+  }
+  // 消息事件
+  botClient.on('message', (event: PrivateMessageEvent | GroupMessageEvent) => {
+    void dispatcher.dispatch(event, apis)
+  })
+  botClient.on('message_sent', (event: MessageSentEvent) => {
+    void dispatcher.dispatch(event, apis)
+  })
+  // 通知事件
+  botClient.on('notice', (event: AnyNoticeEvent) => {
+    void dispatcher.dispatch(event, apis)
+  })
+  // 请求事件
+  botClient.on('request', (event: FriendRequestEvent | GroupRequestEvent) => {
+    void dispatcher.dispatch(event, apis)
+  })
+
   // 11. 构建 ServiceRegistry（API 路由通过 app.state.serviceRegistry 访问业务服务）
   const serviceRegistry = new ServiceRegistry()
   for (const [key, value] of Object.entries(allServices)) {
@@ -242,8 +266,10 @@ async function _startup(
 
   // 13. 启动 TaskExecutor（监听 job completed 事件）
   const taskExecutor = new TaskExecutor(
-    botApi,
-    connMgr,
+    allServices.msg_api as MessageApi,
+    allServices.friend_api as FriendApi,
+    allServices.group_api as GroupApi,
+    allServices.bot_client as NapCatClient,
     cacheStore,
     bullConn,
     queueName,
@@ -259,8 +285,7 @@ async function _startup(
     persistentRedis,
     cacheStore,
     persistentStore,
-    botApi,
-    connMgr,
+    bot_client: botClient,
     dispatcher,
     taskExecutor,
     queue,
@@ -268,7 +293,7 @@ async function _startup(
     ...allServices,
   }
 
-  app.log.info(`Aemeath 已启动，等待 NapCat 连接 (host=${config.HOST} port=${String(config.PORT)})`)
+  app.log.info(`Aemeath 已启动，等待 NapCat 连接 (ws_port=${String(config.NAPCAT_WS_PORT)})`)
 }
 
 // ── 关闭逻辑 ──
@@ -323,9 +348,6 @@ async function bootstrap(): Promise<void> {
 
   // ── 注册插件 ──
 
-  // WebSocket 支持（必须在路由注册之前）
-  await app.register(fastifyWebsocket)
-
   // CORS
   await corsPlugin(app)
 
@@ -346,12 +368,12 @@ async function bootstrap(): Promise<void> {
   // 健康检查
   app.get('/health', async () => {
     const state = (app as unknown as { state: Record<string, unknown> }).state
-    const connMgr = state.connMgr as { isConnected?: boolean } | undefined
+    const botClient = state.bot_client as { transport?: { state?: string } } | undefined
     return {
       status: 'healthy',
       version: pkg.version,
       description: pkg.description,
-      ws_connected: connMgr?.isConnected ?? false,
+      ws_connected: botClient?.transport?.state === 'connected',
     }
   })
 
@@ -384,24 +406,8 @@ async function bootstrap(): Promise<void> {
 
   // ── 生命周期钩子（内联启动/关闭编排）──
 
-  // BotAPI 和 ConnectionManager 必须在 onReady 之前创建，以便在 Fastify 启动阶段注册 WS 路由。
-  // onReady 触发时插件引导已完成（FST_ERR_ROOT_PLG_BOOTED），此后无法再注册路由。
-  const connMgrRef: { current: ConnectionManager | undefined } = { current: undefined }
-  const botApi = new BotAPI((data: string) => {
-    connMgrRef.current?.send(data)
-  })
-
-  const dispatcherRef: { current: EventDispatcher | undefined } = { current: undefined }
-  const connMgr = new ConnectionManager(botApi, (event) => {
-    void dispatcherRef.current?.dispatch(event, botApi)
-  })
-  connMgrRef.current = connMgr
-
-  // 注册 WebSocket 路由（必须在 app.listen() 之前完成，即插件引导阶段）
-  registerWsRoute(app, connMgr, config.NAPCAT_ACCESS_TOKEN)
-
   app.addHook('onReady', async () => {
-    await _startup(app, config, botApi, connMgr, dispatcherRef)
+    await _startup(app, config)
   })
 
   app.addHook('onClose', async () => {

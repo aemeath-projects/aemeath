@@ -5,9 +5,9 @@
  * 所有触发入口（WS 连接、API 手动触发、内置定时调度）统一调用 requestSync()。
  */
 
-import type { PersonnelService } from './index.js'
+import type { FriendApi, GroupApi } from '@aemeath-projects/napcat'
 
-import type { BotAPI } from '@/core/protocol/api.js'
+import type { PersonnelService } from './index.js'
 
 /** 同步触发来源。 */
 export type SyncSource = 'ws_connect' | 'manual' | 'scheduled'
@@ -48,7 +48,8 @@ export class SyncCoordinator {
   private readonly _apiDelayMs: number
 
   constructor(
-    private readonly botApi: BotAPI,
+    private readonly friendApi: FriendApi,
+    private readonly groupApi: GroupApi,
     private readonly personnelService: PersonnelService,
     private readonly connStatus: ConnectionStatus,
     opts?: SyncCoordinatorOptions,
@@ -129,12 +130,12 @@ export class SyncCoordinator {
 
     try {
       // 1. 获取好友列表
-      const friendsResp = await this.botApi.getFriendList()
-      const friendsData = friendsResp.status === 'ok' ? (friendsResp.data as unknown[]) : null
+      const friendsResult = await this.friendApi.getFriendList()
+      const friendsData = friendsResult.ok ? (friendsResult.data as unknown[]) : null
 
       // 2. 获取群列表
-      const groupsResp = await this.botApi.getGroupList()
-      const groupsData = groupsResp.status === 'ok' ? (groupsResp.data as unknown[]) : null
+      const groupsResult = await this.groupApi.getGroupList()
+      const groupsData = groupsResult.ok ? (groupsResult.data as unknown[]) : null
 
       // 3. 逐群获取成员列表
       const membersData: Record<number, unknown[]> = {}
@@ -149,9 +150,9 @@ export class SyncCoordinator {
           if (typeof groupId !== 'number' && typeof groupId !== 'bigint') continue
 
           try {
-            const memberResp = await this.botApi.getGroupMemberList(Number(groupId))
-            if (memberResp.status === 'ok' && Array.isArray(memberResp.data)) {
-              membersData[Number(groupId)] = memberResp.data
+            const memberResult = await this.groupApi.getGroupMemberList(Number(groupId))
+            if (memberResult.ok && Array.isArray(memberResult.data)) {
+              membersData[Number(groupId)] = memberResult.data
             }
           } catch {
             // 获取某群成员失败，跳过该群

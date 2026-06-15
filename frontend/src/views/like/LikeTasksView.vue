@@ -100,7 +100,7 @@ import UserAutocomplete from '@/components/UserAutocomplete.vue'
 import { usePagination } from '@/composables/usePagination'
 import { formatTime } from '@/utils/format'
 
-// ── 列表状态 ──
+/* 列表状态 */
 const loading = ref(false)
 const items = ref<LikeTask[]>([])
 const total = ref(0)
@@ -125,7 +125,7 @@ async function fetchTasks(p: number, size: number) {
 
 const { page, pageSize, loadPage, onPageSizeChange } = usePagination(fetchTasks)
 
-// ── 新增任务 ──
+/* 新增任务 */
 const createDialog = ref(false)
 const newQq = ref<number | null>(null)
 const createError = ref('')
@@ -156,7 +156,7 @@ async function submitCreate() {
   }
 }
 
-// ── 取消任务 ──
+/* 取消任务 */
 const cancelDialog = ref(false)
 const cancelTarget = ref<LikeTask | null>(null)
 const cancellingQq = ref<number | null>(null)

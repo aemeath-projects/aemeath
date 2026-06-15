@@ -56,7 +56,7 @@ describe('useLLMStore', () => {
     vi.clearAllMocks()
   })
 
-  // ── 测试组 1：初始状态 ──
+  /* 测试组 1：初始状态 */
 
   describe('初始状态', () => {
     it('providers 初始为空数组', () => {
@@ -85,7 +85,7 @@ describe('useLLMStore', () => {
     })
   })
 
-  // ── 测试组 2：loadProviders() ──
+  /* 测试组 2：loadProviders() */
 
   describe('loadProviders()', () => {
     it('成功时将 API 返回值赋给 providers', async () => {
@@ -132,7 +132,7 @@ describe('useLLMStore', () => {
     })
   })
 
-  // ── 测试组 3：loadProvider() 失败 ──
+  /* 测试组 3：loadProvider() 失败 */
 
   describe('loadProvider() 失败', () => {
     it('API 抛出异常时 currentProvider 被设为 null', async () => {
@@ -162,7 +162,7 @@ describe('useLLMStore', () => {
     })
   })
 
-  // ── 测试组 4：loadModels() ──
+  /* 测试组 4：loadModels() */
 
   describe('loadModels()', () => {
     it('成功时 models 被更新为 API 返回值', async () => {

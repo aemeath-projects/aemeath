@@ -103,7 +103,7 @@ export class MediaStorageService {
   }
 }
 
-// ─── 生命周期注册 ──────────────────────────────────────────
+/* 生命周期注册 */
 
 @Service({ name: 'media_storage_bootstrap' })
 export class MediaStorageBootstrap {

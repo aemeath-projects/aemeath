@@ -9,14 +9,14 @@ import { TimeoutMode } from './enums.js'
 import type { TimeoutConfig } from './timeout.js'
 import { makeTimeoutConfig } from './timeout.js'
 
-// ── 元数据键 ──
+/* 元数据键 */
 
 export const SESSION_META = '__session_meta__'
 export const STATE_META = '__state_meta__'
 export const INPUT_META = '__input_meta__'
 export const EXIT_META = '__exit_meta__'
 
-// ── 元数据类型 ──
+/* 元数据类型 */
 
 /** 会话类元数据。 */
 export interface SessionMeta {
@@ -44,7 +44,7 @@ export interface ExitMeta {
   stateName: string
 }
 
-// ── 带元数据的函数类型 ──
+/* 带元数据的函数类型 */
 
 interface FunctionWithMeta {
   [SESSION_META]?: SessionMeta
@@ -62,7 +62,7 @@ function assignMeta<K extends keyof FunctionWithMeta>(
   Object.assign(target, { [key]: value })
 }
 
-// ── 装饰器 ──
+/* 装饰器 */
 
 /**
  * 标记类为交互式会话。

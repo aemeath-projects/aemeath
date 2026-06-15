@@ -14,7 +14,7 @@ import type { SettingNodeSchema } from '@/apis/settings'
 
 const schemaStore = useSettingsSchemaStore()
 
-// ── 作用域状态 ──
+/* 作用域状态 */
 
 type ScopeType = 'group' | 'user'
 const scopeType = ref<ScopeType>('group')
@@ -27,7 +27,7 @@ const scope = computed(() => ({
   user: scopeType.value === 'user' ? selectedUser.value : null,
 }))
 
-// ── 设置编辑器（仅 category='permission'）──
+/* 设置编辑器（仅 category='permission'） */
 
 const { values, loading, error, save, reset } = useSettingsEditor({
   prefix: '',

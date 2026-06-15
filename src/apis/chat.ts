@@ -23,7 +23,7 @@ function getAppState(app: FastifyInstance): Record<string, unknown> {
  * 聊天记录管理路由插件。
  */
 const chatRoutes: FastifyPluginAsync = async (app) => {
-  // ── 消息查询 ──
+  /* 消息查询 */
 
   /** GET /api/chat/messages/group/:groupId — 获取群聊消息列表（游标分页）。 */
   app.get(
@@ -112,7 +112,7 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
     },
   )
 
-  // ── 归档管理 ──
+  /* 归档管理 */
 
   /** GET /api/chat/archives — 获取归档列表。 */
   app.get(

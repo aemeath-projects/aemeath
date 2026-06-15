@@ -42,14 +42,14 @@ export class SessionContext {
     this.input = userInput
   }
 
-  // ── 会话数据快捷访问 ──
+  /* 会话数据快捷访问 */
 
   /** 会话数据访问。 */
   get data(): SessionData {
     return this.session.data
   }
 
-  // ── 代理 Context 属性 ──
+  /* 代理 Context 属性 */
 
   get userId(): number {
     return this._ctx.userId
@@ -80,7 +80,7 @@ export class SessionContext {
     return this._ctx
   }
 
-  // ── 代理 Context 方法 ──
+  /* 代理 Context 方法 */
 
   /**
    * 向当前会话发送回复。

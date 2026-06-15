@@ -17,7 +17,7 @@ import type {
 } from '@/apis/personnel'
 
 export const usePersonnelStore = defineStore('personnel', () => {
-  // ── 用户列表 ──
+  /* 用户列表 */
   const users = ref<PaginatedResult<UserItem>>({
     items: [],
     total: 0,
@@ -42,7 +42,7 @@ export const usePersonnelStore = defineStore('personnel', () => {
     }
   }
 
-  // ── 用户详情 ──
+  /* 用户详情 */
   const currentUser = ref<UserDetail | null>(null)
   const currentUserGroups = ref<GroupItem[]>([])
 
@@ -64,7 +64,7 @@ export const usePersonnelStore = defineStore('personnel', () => {
     }
   }
 
-  // ── 群列表 ──
+  /* 群列表 */
   const groups = ref<PaginatedResult<GroupItem>>({
     items: [],
     total: 0,
@@ -88,7 +88,7 @@ export const usePersonnelStore = defineStore('personnel', () => {
     }
   }
 
-  // ── 群成员 ──
+  /* 群成员 */
   const groupMembers = ref<PaginatedResult<GroupMemberItem>>({
     items: [],
     total: 0,
@@ -116,7 +116,7 @@ export const usePersonnelStore = defineStore('personnel', () => {
     }
   }
 
-  // ── 会话选择器专用列表（不影响人员管理页面的分页状态） ──
+  /* 会话选择器专用列表（不影响人员管理页面的分页状态） */
   const sessionGroups = ref<GroupItem[]>([])
   const sessionUsers = ref<UserItem[]>([])
   const sessionLoading = ref(false)
@@ -137,7 +137,7 @@ export const usePersonnelStore = defineStore('personnel', () => {
     }
   }
 
-  // ── 非共享状态的数据获取函数（组件内部使用，不写入共享 ref） ──
+  /* 非共享状态的数据获取函数（组件内部使用，不写入共享 ref） */
 
   async function fetchUserDetail(qq: number): Promise<{ user: UserDetail; groups: GroupItem[] }> {
     const [user, groups] = await Promise.all([api.fetchUser(qq), api.fetchUserGroups(qq)])
@@ -153,7 +153,7 @@ export const usePersonnelStore = defineStore('personnel', () => {
     return api.fetchGroup(groupId)
   }
 
-  // ── 同步状态 ──
+  /* 同步状态 */
   const syncStatus = ref<SyncStatus | null>(null)
   const syncLoading = ref(false)
 
@@ -174,7 +174,7 @@ export const usePersonnelStore = defineStore('personnel', () => {
     }
   }
 
-  // ── ID 解析缓存 ──
+  /* ID 解析缓存 */
 
   // shallowRef 包裹 Map，修改后手动 triggerRef 触发响应式更新
   const userCache = shallowRef(new Map<number, ResolvedUser>())
@@ -261,7 +261,7 @@ export const usePersonnelStore = defineStore('personnel', () => {
     triggerRef(groupCache)
   }
 
-  // ── 超级管理员 ──
+  /* 超级管理员 */
   const admins = ref<UserItem[]>([])
   const adminsLoading = ref(false)
 

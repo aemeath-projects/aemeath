@@ -4,9 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { MainPrismaClient } from '@/core/db.js'
 import { FeedbackService } from '@/services/feedback.js'
 
-// ────────────────────────────────────────────
-//  Mock 工厂
-// ────────────────────────────────────────────
+/* Mock 工厂 */
 
 function createMockDb() {
   return {
@@ -34,9 +32,7 @@ function createMockBotApi() {
 type MockDb = ReturnType<typeof createMockDb>
 type MockMsgApi = ReturnType<typeof createMockBotApi>
 
-// ────────────────────────────────────────────
-//  Tests
-// ────────────────────────────────────────────
+/* Tests */
 
 describe('FeedbackService', () => {
   let mockDb: MockDb
@@ -53,9 +49,7 @@ describe('FeedbackService', () => {
     vi.clearAllMocks()
   })
 
-  // ──────────────────────────────────────────────
-  //  createFeedback()
-  // ──────────────────────────────────────────────
+  /* createFeedback() */
 
   describe('createFeedback()', () => {
     const baseFeedback = {
@@ -131,9 +125,7 @@ describe('FeedbackService', () => {
     })
   })
 
-  // ──────────────────────────────────────────────
-  //  updateStatus()
-  // ──────────────────────────────────────────────
+  /* updateStatus() */
 
   describe('updateStatus()', () => {
     const pendingFeedback = {
@@ -234,9 +226,7 @@ describe('FeedbackService', () => {
     })
   })
 
-  // ──────────────────────────────────────────────
-  //  listFeedbacks()
-  // ──────────────────────────────────────────────
+  /* listFeedbacks() */
 
   describe('listFeedbacks()', () => {
     it('应当调用 findMany 和 count 并返回 PageResult', async () => {
@@ -270,9 +260,7 @@ describe('FeedbackService', () => {
     })
   })
 
-  // ──────────────────────────────────────────────
-  //  getUserFeedbacks()
-  // ──────────────────────────────────────────────
+  /* getUserFeedbacks() */
 
   describe('getUserFeedbacks()', () => {
     it('应当按 userId 查询最近 N 条反馈', async () => {

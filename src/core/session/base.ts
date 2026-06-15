@@ -60,7 +60,7 @@ export abstract class InteractiveSession<TData extends SessionData> {
   /** 待注入的确认状态配置，由 SessionContext.confirmTransition() 写入。 */
   _confirmConfig: { prompt: string; onConfirm: string; stateName: string } | null = null
 
-  // ── 生命周期钩子 ──
+  /* 生命周期钩子 */
 
   /** 会话启动时调用，可用于初始化数据。 */
   async onStart(_ctx: SessionContext): Promise<void> {
@@ -87,7 +87,7 @@ export abstract class InteractiveSession<TData extends SessionData> {
     // 子类可重写
   }
 
-  // ── 动态状态机构建 ──
+  /* 动态状态机构建 */
 
   /**
    * 子类可重写此方法动态构建状态。
@@ -98,7 +98,7 @@ export abstract class InteractiveSession<TData extends SessionData> {
     return null
   }
 
-  // ── 内部工具方法 ──
+  /* 内部工具方法 */
 
   /**
    * 从装饰器元数据构建状态列表。

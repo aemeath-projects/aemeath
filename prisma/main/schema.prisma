@@ -1,6 +1,4 @@
-// ──────────────────────────────────────────────────
 // Texas — 主库 Prisma Schema
-// ──────────────────────────────────────────────────
 
 generator client {
   provider        = "prisma-client-js"
@@ -93,7 +91,7 @@ model User {
 
   lastSynced DateTime @default(now()) @map("last_synced") @db.Timestamptz
 
-  // ── Relations ──
+  /* Relations */
   memberships              GroupMembership[]
   feedbacks                Feedback[]           @relation("FeedbackUser")
   checkinRecords           CheckinRecord[]      @relation("CheckinUser")
@@ -113,7 +111,7 @@ model Group {
 
   lastSynced DateTime @default(now()) @map("last_synced") @db.Timestamptz
 
-  // ── Relations ──
+  /* Relations */
   memberships    GroupMembership[]
   feedbacks      Feedback[]      @relation("FeedbackGroup")
   checkinRecords CheckinRecord[] @relation("CheckinGroup")
@@ -137,7 +135,7 @@ model GroupMembership {
   level           String   @default("") @db.VarChar(10)
   isActive        Boolean  @default(true) @map("is_active")
 
-  // ── Relations ──
+  /* Relations */
   user  User  @relation(fields: [userId], references: [qq])
   group Group @relation(fields: [groupId], references: [groupId])
 
@@ -158,7 +156,7 @@ model LlmProvider {
   timeout       Int    @default(60)
   retryInterval Int    @default(1) @map("retry_interval")
 
-  // ── Relations ──
+  /* Relations */
   models LlmModel[]
 
   @@map("llm_providers")
@@ -178,7 +176,7 @@ model LlmModel {
   extraParams Json    @default("{}") @map("extra_params") @db.JsonB
   isEnabled   Boolean @default(true) @map("is_enabled")
 
-  // ── Relations ──
+  /* Relations */
   provider LlmProvider @relation(fields: [providerId], references: [id])
 
   @@unique([providerId, modelName], map: "uq_provider_model")
@@ -200,7 +198,7 @@ model Feedback {
   updatedAt    DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
   processedAt  DateTime?       @map("processed_at") @db.Timestamptz
 
-  // ── Relations ──
+  /* Relations */
   user  User   @relation("FeedbackUser", fields: [userId], references: [qq], onDelete: Cascade)
   group Group? @relation("FeedbackGroup", fields: [groupId], references: [groupId], onDelete: SetNull)
 
@@ -219,7 +217,7 @@ model CheckinRecord {
   checkinDate DateTime @map("checkin_date") @db.Date
   checkinAt   DateTime @map("checkin_at") @db.Timestamptz
 
-  // ── Relations ──
+  /* Relations */
   group Group @relation("CheckinGroup", fields: [groupId], references: [groupId], onDelete: Cascade)
   user  User  @relation("CheckinUser", fields: [userId], references: [qq], onDelete: Cascade)
 
@@ -239,7 +237,7 @@ model WifeRecord {
   date    DateTime @db.Date
   drawnAt DateTime? @map("drawn_at") @db.Timestamptz
 
-  // ── Relations ──
+  /* Relations */
   group Group @relation("JrlpGroup", fields: [groupId], references: [groupId], onDelete: Cascade)
   user  User  @relation("JrlpUser", fields: [userId], references: [qq], onDelete: Cascade)
   wife  User  @relation("JrlpWife", fields: [wifeQq], references: [qq], onDelete: Cascade)
@@ -280,7 +278,7 @@ model DriftBottlePool {
   id   Int    @id
   name String @unique @db.VarChar(64)
 
-  // ── Relations ──
+  /* Relations */
   groupPools DriftBottleGroupPool[]
   items      DriftBottleItem[]
 
@@ -292,7 +290,7 @@ model DriftBottleGroupPool {
   groupId BigInt @id @map("group_id")
   poolId  Int    @map("pool_id")
 
-  // ── Relations ──
+  /* Relations */
   pool DriftBottlePool @relation(fields: [poolId], references: [id], onDelete: Restrict)
 
   @@map("drift_bottle_group_pools")
@@ -310,7 +308,7 @@ model DriftBottleItem {
   pickedAt      DateTime? @map("picked_at") @db.Timestamptz
   createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
-  // ── Relations ──
+  /* Relations */
   pool DriftBottlePool @relation(fields: [poolId], references: [id], onDelete: Cascade)
 
   @@index([poolId, isPicked], map: "ix_drift_bottle_items_pool_is_picked")

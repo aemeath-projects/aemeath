@@ -1,4 +1,3 @@
-// src/core/dispatch/decorators/index.ts
 /** dispatch 装饰器 barrel 导出。 */
 
 export { Handler, type HandlerOptions, type HandlerRegistryData } from './handler.js'

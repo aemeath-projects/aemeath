@@ -13,7 +13,7 @@ import { Service, Inject, Provide, Startup } from '@/core/lifecycle/decorators/i
 
 export type { Feedback, FeedbackStatus, FeedbackSource, FeedbackType }
 
-// ── 数据传输类型 ──
+/* 数据传输类型 */
 
 /** 创建反馈的入参。 */
 export interface CreateFeedbackData {
@@ -222,7 +222,7 @@ export class FeedbackService {
   }
 }
 
-// ── 生命周期注册 ──
+/* 生命周期注册 */
 
 @Service({ name: 'feedback_bootstrap' })
 export class FeedbackBootstrap {

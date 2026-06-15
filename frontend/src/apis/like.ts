@@ -5,7 +5,7 @@
 import http from './client'
 import type { ApiResponse, PaginatedResult } from './types'
 
-// ── 类型定义 ──
+/* 类型定义 */
 
 export type LikeSource = 'manual' | 'scheduled'
 
@@ -39,7 +39,7 @@ export interface ListHistoryParams {
   page_size?: number
 }
 
-// ── API 调用 ──
+/* API 调用 */
 
 const BASE = '/api/like'
 

@@ -1,8 +1,6 @@
-# ─────────────────────────────────────────────
 # Aemeath Helm Chart - Default Values
-# ─────────────────────────────────────────────
 
-# -- 全局镜像配置
+# 全局镜像配置
 image:
   repository: aemeath
   tag: '' # 默认使用 Chart appVersion
@@ -12,14 +10,14 @@ imagePullSecrets: []
 nameOverride: ''
 fullnameOverride: ''
 
-# ─── ServiceAccount ───
+# ServiceAccount
 serviceAccount:
   create: true
   automount: true
   annotations: {}
   name: ''
 
-# ─── 通用 Pod 配置 ───
+# 通用 Pod 配置
 podAnnotations: {}
 podLabels: {}
 podSecurityContext:
@@ -33,7 +31,7 @@ containerSecurityContext:
   capabilities:
     drop: [ALL]
 
-# ─── Bot (Fastify 主服务) ───
+# Bot (Fastify 主服务)
 bot:
   replicaCount: 1
   resources:
@@ -49,7 +47,7 @@ bot:
   # 额外环境变量（key-value 列表）
   extraEnv: []
 
-# ─── BullMQ Worker ───
+# BullMQ Worker
 worker:
   enabled: true
   replicaCount: 1
@@ -65,12 +63,12 @@ worker:
   affinity: {}
   extraEnv: []
 
-# ─── Service ───
+# Service
 service:
   type: ClusterIP
   port: 8000
 
-# ─── Ingress ───
+# Ingress
 ingress:
   enabled: false
   className: ''
@@ -87,7 +85,7 @@ ingress:
   #    hosts:
   #      - aemeath.local
 
-# ─── Autoscaling (仅 bot) ───
+# Autoscaling (仅 bot)
 autoscaling:
   enabled: false
   minReplicas: 1
@@ -95,7 +93,7 @@ autoscaling:
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
 
-# ─── 应用配置 (写入 ConfigMap) ───
+# 应用配置 (写入 ConfigMap)
 config:
   NODE_ENV: production
   NODE_OPTIONS: '--max-old-space-size=512'
@@ -136,7 +134,7 @@ config:
   CHAT_ARCHIVE_BATCH_SIZE: '5000'
   CHAT_ARCHIVE_COMPRESSION: zstd
 
-# ─── 敏感配置 (写入 Secret) ───
+# 敏感配置 (写入 Secret)
 # 警告：以下默认值仅供本地开发使用，生产环境必须通过 existingSecret 引用外部 Secret，
 # 或在 helm install/upgrade 时通过 --set secret.XXX=... 覆盖，切勿将明文密码提交到版本库。
 secret:
@@ -157,7 +155,7 @@ secret:
 # 使用已存在的 Secret（优先级高于上方 secret 块）
 existingSecret: ''
 
-# ─── 健康检查 ───
+# 健康检查
 probes:
   liveness:
     httpGet:
@@ -176,7 +174,7 @@ probes:
     timeoutSeconds: 3
     failureThreshold: 3
 
-# ─── Bitnami PostgreSQL 子 chart ───
+# Bitnami PostgreSQL 子 chart
 postgresql:
   enabled: true
   auth:
@@ -188,7 +186,7 @@ postgresql:
       enabled: true
       size: 10Gi
 
-# ─── Bitnami Redis 子 chart（持久化实例：会话、RPC、锁、BullMQ）───
+# Bitnami Redis 子 chart（持久化实例：会话、RPC、锁、BullMQ）
 redis:
   enabled: true
   architecture: standalone
@@ -199,7 +197,7 @@ redis:
       enabled: true
       size: 2Gi
 
-# ─── Bitnami Redis 子 chart（缓存实例：易失缓存，无持久化）───
+# Bitnami Redis 子 chart（缓存实例：易失缓存，无持久化）
 redis-cache:
   enabled: true
   architecture: standalone

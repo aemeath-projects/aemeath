@@ -34,7 +34,7 @@ function getSyncCoordinator(app: FastifyInstance): SyncCoordinator {
  * 挂载路径前缀：/api/personnel
  */
 export async function registerPersonnelRoutes(app: FastifyInstance): Promise<void> {
-  // ── 用户管理 API ──
+  /* 用户管理 API */
 
   /** 分页查询用户列表。 */
   app.get(
@@ -88,7 +88,7 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
     },
   )
 
-  // ── 群聊管理 API ──
+  /* 群聊管理 API */
 
   /** 分页查询群列表。 */
   app.get(
@@ -158,7 +158,7 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
     },
   )
 
-  // ── 超级管理员管理 API ──
+  /* 超级管理员管理 API */
 
   /** 获取所有超级管理员列表。 */
   app.get('/api/personnel/admins', async (_req: FastifyRequest, reply: FastifyReply) => {
@@ -195,7 +195,7 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
     },
   )
 
-  // ── 同步管理 API ──
+  /* 同步管理 API */
 
   /** 手动触发一次全量同步。 */
   app.post('/api/personnel/sync', async (_req: FastifyRequest, reply: FastifyReply) => {

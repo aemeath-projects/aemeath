@@ -15,7 +15,7 @@ import { cacheKeyRegistry } from '@/core/registries.js'
 import type { SettingsService } from '@/core/settings/index.js'
 import { SHANGHAI_TZ } from '@/core/utils.js'
 
-// ── 常量 ──
+/* 常量 */
 
 /** 打卡 Redis 键 TTL：25 小时（覆盖时区漂移）。 */
 const CHECKIN_TTL = 90_000
@@ -27,7 +27,7 @@ const FEATURE_NAME = 'daily_checkin'
 /** 触发来源。 */
 export type CheckinSource = 'ws_connect' | 'scheduled'
 
-// ── 返回值类型 ──
+/* 返回值类型 */
 
 /** 每日打卡执行结果。 */
 export interface DailyCheckinResult {
@@ -179,7 +179,7 @@ export class DailyCheckinService {
   }
 }
 
-// ── 生命周期注册 ──
+/* 生命周期注册 */
 
 @Service({ name: 'daily_checkin_bootstrap' })
 export class DailyCheckinBootstrap {

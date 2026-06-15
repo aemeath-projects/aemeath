@@ -29,7 +29,7 @@ function getState(app: FastifyInstance): Record<string, unknown> {
   return (app as unknown as { state: Record<string, unknown> }).state
 }
 
-// ── BullMQ 队列操作接口（内联类型，避免引入 bullmq 运行时） ──
+/* BullMQ 队列操作接口（内联类型，避免引入 bullmq 运行时） */
 
 interface BullJob {
   id: string | undefined
@@ -50,13 +50,13 @@ interface BullQueue {
   getWorkers(): Promise<BullWorker[]>
 }
 
-// ── 调度器接口 ──
+/* 调度器接口 */
 
 interface SchedulerApi {
   getSchedules(): Promise<Record<string, unknown>[]>
 }
 
-// ── 聚合所有队列状态的辅助函数 ──
+/* 聚合所有队列状态的辅助函数 */
 
 interface QueueStateResult {
   scheduledTasks: unknown[]

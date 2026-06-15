@@ -2,7 +2,7 @@
  * Queue API 接口层 —— 封装 /api/queue 所有后端接口调用。
  */
 
-// ── 类型定义 ──
+/* 类型定义 */
 
 export interface ScheduledTask {
   name: string
@@ -97,7 +97,7 @@ export interface QueueStreamData {
   error?: string
 }
 
-// ── SSE 实时推送 ──
+/* SSE 实时推送 */
 
 /**
  * 建立 SSE 连接，实时接收队列状态数据。

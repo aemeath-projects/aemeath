@@ -11,7 +11,7 @@ import { useSettingsEditor } from '@/composables/useSettingsEditor'
 
 const schemaStore = useSettingsSchemaStore()
 
-// ── 作用域状态 ──
+/* 作用域状态 */
 
 type ScopeType = 'group' | 'user'
 const scopeType = ref<ScopeType>('group')
@@ -24,7 +24,7 @@ const scope = computed(() => ({
   user: scopeType.value === 'user' ? selectedUser.value : null,
 }))
 
-// ── 设置编辑器 ──
+/* 设置编辑器 */
 
 const { values, loading, error, save, reset } = useSettingsEditor({
   prefix: '',
@@ -32,7 +32,7 @@ const { values, loading, error, save, reset } = useSettingsEditor({
   category: 'config',
 })
 
-// ── 左侧导航 ──
+/* 左侧导航 */
 
 const selectedOwner = ref<string>('')
 

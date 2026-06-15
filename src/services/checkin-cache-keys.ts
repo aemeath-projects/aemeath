@@ -1,4 +1,3 @@
-// src/services/checkin-cache-keys.ts
 /** 签到领域 cache key 自注册。 */
 import { cacheKeyRegistry } from '@/core/registries.js'
 

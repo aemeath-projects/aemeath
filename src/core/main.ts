@@ -60,10 +60,10 @@ import '@/core/chat/media.js'
 // 触发 BotClientBootstrap 的 Startup 注册
 import '@/core/bot-client.js'
 
-// ── 模块级生命周期编排器（startup 创建，shutdown 复用同一实例）──
+/* 模块级生命周期编排器（startup 创建，shutdown 复用同一实例） */
 let _orchestrator: LifecycleOrchestrator | null = null
 
-// ── 内部状态类型 ──
+/* 内部状态类型 */
 
 interface AppState {
   // 基础设施
@@ -92,7 +92,7 @@ function getState(app: FastifyInstance): AppState {
   return (app as unknown as { state: AppState }).state
 }
 
-// ── EchoLoader 辅助函数 ──
+/* EchoLoader 辅助函数 */
 
 /**
  * 通过 EchoLoader 加载 handler、service、task 类型的 echo，
@@ -131,7 +131,7 @@ function _registerHandlersToMapping(composite: CompositeHandlerMapping): void {
   }
 }
 
-// ── 路由注册辅助函数 ──
+/* 路由注册辅助函数 */
 
 /** 通过 EchoLoader 发现并注册 src/apis/ 下所有业务路由插件。 */
 async function _registerEchoRoutes(app: FastifyInstance): Promise<void> {
@@ -166,7 +166,7 @@ async function _registerCoreRoutes(app: FastifyInstance): Promise<void> {
   }
 }
 
-// ── 启动逻辑 ──
+/* 启动逻辑 */
 
 async function _startup(
   app: FastifyInstance,
@@ -296,7 +296,7 @@ async function _startup(
   app.log.info(`Aemeath 已启动，等待 NapCat 连接 (ws_port=${String(config.NAPCAT_WS_PORT)})`)
 }
 
-// ── 关闭逻辑 ──
+/* 关闭逻辑 */
 
 async function _shutdown(app: FastifyInstance): Promise<void> {
   app.log.info('Aemeath 正在关闭...')
@@ -327,7 +327,7 @@ async function _shutdown(app: FastifyInstance): Promise<void> {
   app.log.info('Aemeath 已停止')
 }
 
-// ── 主启动函数 ──
+/* 主启动函数 */
 
 async function bootstrap(): Promise<void> {
   const config = loadConfig()
@@ -346,7 +346,7 @@ async function bootstrap(): Promise<void> {
     disableRequestLogging: false,
   }) as unknown as FastifyInstance
 
-  // ── 注册插件 ──
+  /* 注册插件 */
 
   // CORS
   await corsPlugin(app)
@@ -359,11 +359,11 @@ async function bootstrap(): Promise<void> {
   // Bearer token 认证
   await authPlugin(app)
 
-  // ── 注册 API 路由 ──
+  /* 注册 API 路由 */
   await _registerEchoRoutes(app)
   await _registerCoreRoutes(app)
 
-  // ── 系统端点 ──
+  /* 系统端点 */
 
   // 健康检查
   app.get('/health', async () => {
@@ -384,7 +384,7 @@ async function bootstrap(): Promise<void> {
     return reply.send(metrics)
   })
 
-  // ── 前端静态文件（必须放最后，避免覆盖 API 路由）──
+  /* 前端静态文件（必须放最后，避免覆盖 API 路由） */
   const frontendDist = resolve(config.FRONTEND_DIST_DIR)
   if (existsSync(frontendDist)) {
     await app.register(fastifyStatic, {
@@ -404,7 +404,7 @@ async function bootstrap(): Promise<void> {
     })
   }
 
-  // ── 生命周期钩子（内联启动/关闭编排）──
+  /* 生命周期钩子（内联启动/关闭编排） */
 
   app.addHook('onReady', async () => {
     await _startup(app, config)
@@ -414,11 +414,11 @@ async function bootstrap(): Promise<void> {
     await _shutdown(app)
   })
 
-  // ── 启动监听 ──
+  /* 启动监听 */
   await app.listen({ host: config.HOST, port: config.PORT })
 }
 
-// ── 入口 ──
+/* 入口 */
 
 bootstrap().catch((err: unknown) => {
   logger.error({ err }, '启动失败')

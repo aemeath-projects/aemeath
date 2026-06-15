@@ -8,14 +8,14 @@ import type { HandlerMeta } from './constants.js'
 import type { Context } from './context.js'
 import type { InterceptorEntry } from './decorators/symbols.js'
 
-// ── FeatureChecker 接口 ──
+/* FeatureChecker 接口 */
 
 /** 功能开关检查器接口（供 dispatch 层使用，由 settings 层实现）。 */
 export interface FeatureChecker {
   check(ctx: Context): Promise<boolean>
 }
 
-// ── 数据结构 ──
+/* 数据结构 */
 
 /** 封装已注册的处理器方法及其上下文。 */
 export interface HandlerMethod {
@@ -41,7 +41,7 @@ export interface ResolvedHandler {
   regexMatch: RegExpMatchArray | null
 }
 
-// ── 类型守卫 ──
+/* 类型守卫 */
 
 function isMessageEvent(event: AnyOneBotEvent): boolean {
   return event.post_type === 'message' || event.post_type === 'message_sent'
@@ -51,14 +51,14 @@ function isGroupMessageEvent(event: AnyOneBotEvent): boolean {
   return isMessageEvent(event) && (event as Record<string, unknown>).message_type === 'group'
 }
 
-// ── HandlerMapping 接口 ──
+/* HandlerMapping 接口 */
 
 interface HandlerMapping {
   register(handler: HandlerMethod): void
   resolve(event: AnyOneBotEvent): ResolvedHandler[]
 }
 
-// ── 纯文本提取 ──
+/* 纯文本提取 */
 
 /** 从消息事件中提取纯文本。 */
 function extractPlaintext(event: AnyOneBotEvent): string {
@@ -84,7 +84,7 @@ function extractPlaintext(event: AnyOneBotEvent): string {
   return parts.join('').trim()
 }
 
-// ── 具体映射实现 ──
+/* 具体映射实现 */
 
 /** 通过命令前缀匹配消息文本（例如 /echo、/help）。 */
 export class CommandHandlerMapping implements HandlerMapping {
@@ -299,7 +299,7 @@ export class EventTypeHandlerMapping implements HandlerMapping {
   }
 }
 
-// ── 复合映射 ──
+/* 复合映射 */
 
 const MAPPING_TYPES = [
   'command',

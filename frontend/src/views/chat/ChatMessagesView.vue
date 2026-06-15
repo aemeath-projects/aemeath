@@ -162,14 +162,14 @@ const personnelStore = usePersonnelStore()
 
 const reversedMessages = computed(() => [...store.messages].reverse())
 
-// ── 会话状态 ──
+/* 会话状态 */
 
 const currentSession = ref<{ type: 'group' | 'private'; id: number; name: string } | null>(null)
 const searchKeyword = ref('')
 const filterUserId = ref<number | null>(null)
 const messageContainer = ref<HTMLElement | null>(null)
 
-// ── 弹窗状态 ──
+/* 弹窗状态 */
 
 const detailDialog = ref(false)
 const detailMessage = ref<ChatMessage | null>(null)
@@ -180,7 +180,7 @@ const memberDetailQQ = ref<number | null>(null)
 const imagePreviewDialog = ref(false)
 const imagePreviewSrc = ref('')
 
-// ── @成员名片映射 ──
+/* @成员名片映射 */
 
 const memberNameMap = computed(() => {
   const map = new Map<number, string>()
@@ -193,7 +193,7 @@ const memberNameMap = computed(() => {
   return map
 })
 
-// ── 操作函数 ──
+/* 操作函数 */
 
 function showDetail(msg: ChatMessage) {
   detailMessage.value = msg

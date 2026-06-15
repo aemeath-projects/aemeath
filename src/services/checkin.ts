@@ -18,11 +18,11 @@ import { SHANGHAI_TZ } from '@/core/utils.js'
 
 export type { CheckinRecord }
 
-// ── 缓存 TTL ──
+/* 缓存 TTL */
 
 const CACHE_TTL = 2_592_000 // 30 天（秒）
 
-// ── 返回值类型 ──
+/* 返回值类型 */
 
 /** 签到操作结果。 */
 export interface CheckinResult {
@@ -437,7 +437,7 @@ export class CheckinService {
   }
 }
 
-// ── 生命周期注册 ──
+/* 生命周期注册 */
 
 @Service({ name: 'checkin_service_bootstrap' })
 export class CheckinServiceBootstrap {

@@ -1,4 +1,3 @@
-// src/core/monitoring/registry.ts
 /** prom-client Registry 薄 wrapper，业务模块通过此注册表创建指标。 */
 import { Registry, Counter, Gauge, Histogram } from 'prom-client'
 

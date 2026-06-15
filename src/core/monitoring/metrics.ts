@@ -19,7 +19,7 @@ export const metricsRegistry = {
   },
 }
 
-// ── WebSocket 指标 ──
+/* WebSocket 指标 */
 
 export const wsConnected = metricRegistry.gauge(
   'aemeath_ws_connected',
@@ -37,7 +37,7 @@ export const wsMessagesSent = metricRegistry.counter(
   'WS messages sent to NapCat',
 )
 
-// ── 事件处理指标 ──
+/* 事件处理指标 */
 
 export const eventProcessed = metricRegistry.counter(
   'aemeath_event_processed_total',
@@ -55,7 +55,7 @@ export const eventErrors = metricRegistry.counter(
   'Event processing errors',
 )
 
-// ── API 调用指标 ──
+/* API 调用指标 */
 
 export const apiCalls = metricRegistry.counter('aemeath_api_calls_total', 'OneBot API calls', [
   'action',
@@ -71,21 +71,21 @@ export const apiCallErrors = metricRegistry.counter(
   'OneBot API call failures',
 )
 
-// ── 处理器指标 ──
+/* 处理器指标 */
 
 export const handlersRegistered = metricRegistry.gauge(
   'aemeath_handlers_registered',
   'Number of registered handler methods',
 )
 
-// ── 系统指标 ──
+/* 系统指标 */
 
 export const uptimeSeconds = metricRegistry.gauge(
   'aemeath_uptime_seconds',
   'Process uptime in seconds',
 )
 
-// ── HTTP 请求指标 ──
+/* HTTP 请求指标 */
 
 export const httpRequestsTotal = metricRegistry.counter(
   'aemeath_http_requests_total',

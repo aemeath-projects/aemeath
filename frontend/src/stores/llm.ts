@@ -8,7 +8,7 @@ import * as api from '@/apis/llm'
 import type { ProviderItem, ProviderDetail, ModelItem } from '@/apis/llm'
 
 export const useLLMStore = defineStore('llm', () => {
-  // ── 提供商列表 ──
+  /* 提供商列表 */
   const providers = ref<ProviderItem[]>([])
   const providersLoading = ref(false)
 
@@ -21,7 +21,7 @@ export const useLLMStore = defineStore('llm', () => {
     }
   }
 
-  // ── 提供商详情 ──
+  /* 提供商详情 */
   const currentProvider = ref<ProviderDetail | null>(null)
 
   async function loadProvider(id: string) {
@@ -52,7 +52,7 @@ export const useLLMStore = defineStore('llm', () => {
     return await api.testProvider(id)
   }
 
-  // ── 模型列表 ──
+  /* 模型列表 */
   const models = ref<ModelItem[]>([])
   const modelsLoading = ref(false)
 

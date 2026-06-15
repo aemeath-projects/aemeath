@@ -16,7 +16,7 @@
 请通过以下方式私下报告：
 
 1. 使用 GitHub 的 [Private Security Advisories](https://github.com/aemeath-projects/aemeath/security/advisories/new) 提交
-2. 或发送邮件至：**aemeath@akari.moe**
+2. 或发送邮件至：**aemeath@aemeath.dev**
 
 报告中请尽可能包含：
 

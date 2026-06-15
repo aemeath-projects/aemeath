@@ -107,7 +107,7 @@ const personnelStore = usePersonnelStore()
 
 const groupId = ref<number | null>(null)
 
-// ── 汇总卡片 ──
+/* 汇总卡片 */
 const summaryLoading = ref(false)
 const summary = ref<Summary | null>(null)
 
@@ -117,7 +117,7 @@ const summaryCards = computed(() => [
   { label: '近 30 天活跃用户', value: summary.value?.active_users ?? 0, color: 'info' },
 ])
 
-// ── 排行榜 ──
+/* 排行榜 */
 const leaderLoading = ref(false)
 const leaderboard = ref<LeaderEntry[]>([])
 const leaderBy = ref<'total' | 'streak'>('total')
@@ -129,7 +129,7 @@ function rankColor(rank: number): string {
   return 'default'
 }
 
-// ── 趋势图 ──
+/* 趋势图 */
 const trendLoading = ref(false)
 const trendData = ref<DayCount[]>([])
 
@@ -139,7 +139,7 @@ const trendLabels = computed(() =>
   trendData.value.map((d, i) => (i % 7 === 0 ? d.date.slice(5) : '')),
 )
 
-// ── 数据加载 ──
+/* 数据加载 */
 async function loadAll() {
   summaryLoading.value = true
   leaderLoading.value = true

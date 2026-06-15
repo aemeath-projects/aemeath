@@ -34,7 +34,7 @@ describe('useThemeStore', () => {
     mockMediaQuery.matches = false
   })
 
-  // ── 初始状态 ──
+  /* 初始状态 */
 
   describe('初始状态', () => {
     it('preference 初始为 "light"', () => {
@@ -43,7 +43,7 @@ describe('useThemeStore', () => {
     })
   })
 
-  // ── setPreference() ──
+  /* setPreference() */
 
   describe('setPreference()', () => {
     it('设置为 "dark" 后 preference 更新', () => {
@@ -94,7 +94,7 @@ describe('useThemeStore', () => {
     })
   })
 
-  // ── initTheme() ──
+  /* initTheme() */
 
   describe('initTheme()', () => {
     it('调用时立即应用当前 preference', () => {

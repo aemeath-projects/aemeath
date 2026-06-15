@@ -58,7 +58,7 @@ function applyMethodDecorator(
   return metadata
 }
 
-// ─── @OnCommand ──────────────────────────────────────────────────────────────
+/* @OnCommand */
 
 describe('@OnCommand', () => {
   it('应将 mappingType 设为 command 并记录 cmd', () => {
@@ -85,7 +85,7 @@ describe('@OnCommand', () => {
   })
 })
 
-// ─── @OnKeyword ──────────────────────────────────────────────────────────────
+/* @OnKeyword */
 
 describe('@OnKeyword', () => {
   it('应将 string[] 转为 Set 并写入 trigger.keywords', () => {
@@ -99,7 +99,7 @@ describe('@OnKeyword', () => {
   })
 })
 
-// ─── @OnRegex ────────────────────────────────────────────────────────────────
+/* @OnRegex */
 
 describe('@OnRegex', () => {
   it('应记录 pattern 并编译为 RegExp', () => {
@@ -120,7 +120,7 @@ describe('@OnRegex', () => {
   })
 })
 
-// ─── @OnStartsWith / @OnEndsWith / @OnFullMatch ───────────────────────────────
+/* @OnStartsWith / @OnEndsWith / @OnFullMatch */
 
 describe('@OnStartsWith', () => {
   it('应记录 prefix', () => {
@@ -149,7 +149,7 @@ describe('@OnFullMatch', () => {
   })
 })
 
-// ─── 事件类型装饰器 ────────────────────────────────────────────────────────────
+/* 事件类型装饰器 */
 
 describe('@OnEvent', () => {
   it('应记录 eventType', () => {
@@ -233,7 +233,7 @@ describe('@OnOffline', () => {
   })
 })
 
-// ─── @Interceptor ─────────────────────────────────────────────────────────────
+/* @Interceptor */
 
 /** 测试用假拦截器类 */
 class FakeInterceptor {
@@ -320,7 +320,7 @@ describe('@Interceptor', () => {
   })
 })
 
-// ─── @SettingNode ─────────────────────────────────────────────────────────────
+/* @SettingNode */
 
 describe('@SettingNode', () => {
   it('单个 @SettingNode 应向 HANDLER_SETTINGS 写入一条条目', () => {
@@ -393,7 +393,7 @@ describe('@SettingNode', () => {
   })
 })
 
-// ─── @Permission / @Scope / @Priority ────────────────────────────────────────
+/* @Permission / @Scope / @Priority */
 
 describe('@Permission', () => {
   it('应将 permission 写入方法 entry', () => {
@@ -419,7 +419,7 @@ describe('@Priority', () => {
   })
 })
 
-// ─── 多个装饰器共享同一个 entry ───────────────────────────────────────────────
+/* 多个装饰器共享同一个 entry */
 
 describe('多装饰器共享 entry', () => {
   it('@OnCommand + @Permission + @Scope 应共享同一 MethodMetaEntry', () => {
@@ -451,7 +451,7 @@ describe('多装饰器共享 entry', () => {
   })
 })
 
-// ─── @Handler ─────────────────────────────────────────────────────────────────
+/* @Handler */
 
 /**
  * 通过手动模拟装饰器上下文来应用 @Handler 类装饰器，避免依赖运行时 @ 语法。

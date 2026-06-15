@@ -45,7 +45,7 @@ export const PaginatedLikeHistoryResponseSchema = Type.Object({
   pages: Type.Number(),
 })
 
-// ── TypeScript 接口 ──
+/* TypeScript 接口 */
 
 export interface CreateLikeTaskRequest {
   qq: number

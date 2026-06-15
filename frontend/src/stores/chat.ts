@@ -8,7 +8,7 @@ import * as api from '@/apis/chat'
 import type { ChatMessage, ArchiveLog, PaginatedResult } from '@/apis/chat'
 
 export const useChatStore = defineStore('chat', () => {
-  // ── 消息列表 ──
+  /* 消息列表 */
   const messages = ref<ChatMessage[]>([])
   const messagesLoading = ref(false)
   const messagesError = ref<string | null>(null)
@@ -66,7 +66,7 @@ export const useChatStore = defineStore('chat', () => {
     hasMore.value = true
   }
 
-  // ── 归档 ──
+  /* 归档 */
   const archives = ref<PaginatedResult<ArchiveLog>>({
     items: [],
     total: 0,

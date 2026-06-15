@@ -4,7 +4,7 @@
 
 import { type Static, Type } from '@sinclair/typebox'
 
-// ── 提供商 ──
+/* 提供商 */
 
 /** 提供商创建请求 Schema。 */
 export const CreateProviderSchema = Type.Object({
@@ -45,7 +45,7 @@ export const LlmProviderSchema = Type.Object({
   modelCount: Type.Integer(),
 })
 
-// ── 模型 ──
+/* 模型 */
 
 /** 模型创建请求 Schema。 */
 export const CreateModelSchema = Type.Object({
@@ -88,7 +88,7 @@ export const LlmModelSchema = Type.Object({
   extraParams: Type.Object({}, { additionalProperties: true }),
 })
 
-// ── Chat ──
+/* Chat */
 
 /** 单条对话消息 Schema。 */
 export const ChatMessageSchema = Type.Object({
@@ -107,7 +107,7 @@ export const ChatRequestSchema = Type.Object({
   stream: Type.Boolean({ default: false, description: '是否流式输出' }),
 })
 
-// ── 工具函数 ──
+/* 工具函数 */
 
 /**
  * 将 API Key 掩码为 sk-****abcd 格式。
@@ -117,7 +117,7 @@ export function maskApiKey(key: string): string {
   return `${key.slice(0, 3)}****${key.slice(-4)}`
 }
 
-// ── 静态类型推导 ──
+/* 静态类型推导 */
 
 export type CreateProviderData = Static<typeof CreateProviderSchema>
 export type UpdateProviderData = Static<typeof UpdateProviderSchema>

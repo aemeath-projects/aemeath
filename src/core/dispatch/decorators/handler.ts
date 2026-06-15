@@ -1,4 +1,4 @@
-// src/core/dispatch/decorators/handler.ts
+/** handler 装饰器核心实现：@Handler 类装饰器、方法路由注册。 */
 
 import { SERVICE_INJECTS, type InjectEntry } from '../../lifecycle/decorators/symbols.js'
 import { handlerRegistry, type HandlerOptions, type HandlerRegistryData } from '../registry.js'

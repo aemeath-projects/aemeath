@@ -42,7 +42,7 @@ export const DeleteRecordRequestSchema = Type.Object({
   id: Type.Number({ description: '记录 ID' }),
 })
 
-// ── TypeScript 接口 ──
+/* TypeScript 接口 */
 
 export interface SetWifeRequest {
   groupId: number

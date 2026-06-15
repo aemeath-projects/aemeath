@@ -6,7 +6,7 @@ import pino from 'pino'
 import type { Logger } from 'pino'
 import pinoPretty from 'pino-pretty'
 
-// ── 日志广播流写入器 ──
+/* 日志广播流写入器 */
 
 import { logBroadcaster } from './broadcast.js'
 
@@ -67,7 +67,7 @@ export function setLogger(l: Logger): void {
   logger = l
 }
 
-// ── 延迟绑定子 logger ──
+/* 延迟绑定子 logger */
 // 解决模块加载时序问题：顶层 getLogger() 可能在 setLogger() 之前执行，
 // 代理确保始终委托给当前 logger，而非绑定到初始临时实例。
 

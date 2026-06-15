@@ -10,7 +10,7 @@ import { Service, Inject, Provide, Startup } from '@/core/lifecycle/decorators/i
 
 export type { WifeRecord }
 
-// ── 返回值类型 ──
+/* 返回值类型 */
 
 /** 抽取结果。 */
 export interface DrawResult {
@@ -242,7 +242,7 @@ export class JrlpService {
   }
 }
 
-// ── 生命周期注册 ──
+/* 生命周期注册 */
 
 @Service({ name: 'jrlp_bootstrap' })
 export class JrlpBootstrap {

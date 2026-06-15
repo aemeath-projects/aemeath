@@ -2,7 +2,7 @@
  * Settings 装饰器 —— @SettingNode 声明配置项元数据。
  */
 
-// ── 类型定义 ──
+/* 类型定义 */
 
 export type SettingValueType = 'boolean' | 'number' | 'string' | 'enum'
 
@@ -28,12 +28,12 @@ export interface SettingNodeMeta {
   category: 'permission' | 'config'
 }
 
-// ── 全局注册表 ──
+/* 全局注册表 */
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 export const settingNodeRegistry = new Map<Function, SettingNodeMeta[]>()
 
-// ── 装饰器 ──
+/* 装饰器 */
 
 /**
  * 将配置项绑定到组件类。可叠加多个。

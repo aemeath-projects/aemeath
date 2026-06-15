@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { RedisStore } from '@/core/redis/store.js'
 import type { RenderSendJobResult } from '@/core/tasks/models.js'
 
-// ── BullMQ mock 工厂（每个 test 独立实例化，避免 .mock.results 下标竞争）──
+/* BullMQ mock 工厂（每个 test 独立实例化，避免 .mock.results 下标竞争） */
 
 type EventListener = (data: unknown) => void
 

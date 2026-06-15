@@ -36,7 +36,7 @@ export class SessionManager {
     this._cache = cache
   }
 
-  // ── 会话生命周期 ──
+  /* 会话生命周期 */
 
   /**
    * 启动交互式会话。
@@ -228,7 +228,7 @@ export class SessionManager {
     return true
   }
 
-  // ── 查询方法 ──
+  /* 查询方法 */
 
   /** 返回当前内存中活跃会话的数量。 */
   getActiveSessionCount(): number {
@@ -257,7 +257,7 @@ export class SessionManager {
     return CANCEL_COMMANDS.has(text.trim())
   }
 
-  // ── 内部方法 ──
+  /* 内部方法 */
 
   /**
    * 构建会话键。

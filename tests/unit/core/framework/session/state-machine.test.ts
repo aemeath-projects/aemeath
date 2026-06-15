@@ -12,7 +12,7 @@ import {
 } from '@/core/session/state-machine.js'
 import { makeState } from '@/core/session/state.js'
 
-// ── 测试辅助：伪 SessionContext ──
+/* 测试辅助：伪 SessionContext */
 
 function makeContext(input: string | null = null): SessionContext {
   return {
@@ -26,7 +26,7 @@ function makeContext(input: string | null = null): SessionContext {
   } as unknown as SessionContext
 }
 
-// ── 基础状态机创建 ──
+/* 基础状态机创建 */
 
 describe('StateMachine 创建', () => {
   it('应正确设置初始状态', () => {
@@ -52,7 +52,7 @@ describe('StateMachine 创建', () => {
   })
 })
 
-// ── start ──
+/* start */
 
 describe('StateMachine.start', () => {
   it('应进入初始状态并调用 onEnter', async () => {
@@ -84,7 +84,7 @@ describe('StateMachine.start', () => {
   })
 })
 
-// ── 状态转换 ──
+/* 状态转换 */
 
 describe('StateMachine.transitionTo', () => {
   it('应转换到目标状态并调用 onExit 和 onEnter', async () => {
@@ -109,7 +109,7 @@ describe('StateMachine.transitionTo', () => {
   })
 })
 
-// ── processInput ──
+/* processInput */
 
 describe('StateMachine.processInput', () => {
   it('使用 onInput 处理输入并转换状态', async () => {
@@ -160,7 +160,7 @@ describe('StateMachine.processInput', () => {
   })
 })
 
-// ── addState / getState ──
+/* addState / getState */
 
 describe('StateMachine.addState / getState', () => {
   it('addState 后应可用 getState 取到', () => {
@@ -176,7 +176,7 @@ describe('StateMachine.addState / getState', () => {
   })
 })
 
-// ── addTransition ──
+/* addTransition */
 
 describe('StateMachine.addTransition', () => {
   it('为存在的状态添加转换后，processInput 应可触发', async () => {
@@ -199,7 +199,7 @@ describe('StateMachine.addTransition', () => {
   })
 })
 
-// ── isFinished ──
+/* isFinished */
 
 describe('StateMachine.isFinished', () => {
   it('到达 final 状态后 isFinished 应为 true', async () => {
@@ -226,7 +226,7 @@ describe('StateMachine.isFinished', () => {
   })
 })
 
-// ── iterStates ──
+/* iterStates */
 
 describe('StateMachine.iterStates', () => {
   it('应遍历所有已注册的状态', () => {
@@ -237,7 +237,7 @@ describe('StateMachine.iterStates', () => {
   })
 })
 
-// ── 守卫条件 ──
+/* 守卫条件 */
 
 describe('StateMachine 守卫条件', () => {
   it('guard 返回 false 时不应执行转换', async () => {

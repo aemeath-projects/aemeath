@@ -4,9 +4,7 @@ import type { MainPrismaClient } from '@/core/db.js'
 import type { RedisStore } from '@/core/redis/store.js'
 import { CheckinService } from '@/services/checkin.js'
 
-// ────────────────────────────────────────────
-//  Mock 工厂
-// ────────────────────────────────────────────
+/* Mock 工厂 */
 
 function createMockDb() {
   return {
@@ -33,17 +31,13 @@ function createMockCache() {
 type MockDb = ReturnType<typeof createMockDb>
 type MockCache = ReturnType<typeof createMockCache>
 
-// ────────────────────────────────────────────
-//  Helper: today date
-// ────────────────────────────────────────────
+/* Helper: today date */
 
 const TODAY = new Date('2024-06-15T00:00:00.000Z')
 const TODAY_STR = '2024-06-15'
 const YESTERDAY_STR = '2024-06-14'
 
-// ────────────────────────────────────────────
-//  Tests
-// ────────────────────────────────────────────
+/* Tests */
 
 describe('CheckinService', () => {
   let mockDb: MockDb
@@ -60,9 +54,7 @@ describe('CheckinService', () => {
     vi.clearAllMocks()
   })
 
-  // ──────────────────────────────────────────────
-  //  checkin() — 正常签到
-  // ──────────────────────────────────────────────
+  /* checkin() — 正常签到 */
 
   describe('checkin()', () => {
     it('首次签到应当写入 DB 并更新缓存，返回 isDuplicate=false', async () => {
@@ -146,9 +138,7 @@ describe('CheckinService', () => {
       expect(result.total).toBe(9) // 8+1
     })
 
-    // ──────────────────────────────────────────
-    //  重复签到
-    // ──────────────────────────────────────────
+    /* 重复签到 */
 
     it('今日已签到时应当返回 isDuplicate=true，不写入 DB', async () => {
       // 缓存命中，今天已签到
@@ -181,9 +171,7 @@ describe('CheckinService', () => {
     })
   })
 
-  // ──────────────────────────────────────────────
-  //  rebuildCache()
-  // ──────────────────────────────────────────────
+  /* rebuildCache() */
 
   describe('rebuildCache()', () => {
     it('无历史记录时应当返回空缓存并写入', async () => {
@@ -217,9 +205,7 @@ describe('CheckinService', () => {
     })
   })
 
-  // ──────────────────────────────────────────────
-  //  listRecords()
-  // ──────────────────────────────────────────────
+  /* listRecords() */
 
   describe('listRecords()', () => {
     it('应当调用 findMany 和 count 并返回 PageResult', async () => {

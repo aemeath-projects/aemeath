@@ -30,9 +30,7 @@ describe('ChatHistoryService', () => {
     service = new ChatHistoryService(mockChatDb as unknown as ChatPrismaClient)
   })
 
-  // ──────────────────────────────────────────────
-  //  saveMessage
-  // ──────────────────────────────────────────────
+  /* saveMessage */
 
   describe('saveMessage', () => {
     it('应当调用 chatDb.chatMessage.create() 持久化消息', async () => {
@@ -100,9 +98,7 @@ describe('ChatHistoryService', () => {
     })
   })
 
-  // ──────────────────────────────────────────────
-  //  getGroupHistory
-  // ──────────────────────────────────────────────
+  /* getGroupHistory */
 
   describe('getGroupHistory', () => {
     const fakeMessages = [
@@ -168,9 +164,7 @@ describe('ChatHistoryService', () => {
     })
   })
 
-  // ──────────────────────────────────────────────
-  //  getPrivateHistory
-  // ──────────────────────────────────────────────
+  /* getPrivateHistory */
 
   describe('getPrivateHistory', () => {
     it('应当按 userId 和 messageType=1 查询', async () => {

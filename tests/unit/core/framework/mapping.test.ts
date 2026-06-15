@@ -14,7 +14,7 @@ import {
   StartsWithHandlerMapping,
 } from '@/core/dispatch/mapping.js'
 
-// ── 测试用事件工厂 ──
+/* 测试用事件工厂 */
 
 function makeGroupMsgEvent(text: string): AnyOneBotEvent {
   const event = {
@@ -75,7 +75,7 @@ function makeRequestEvent(requestType: string): AnyOneBotEvent {
   return event
 }
 
-// ── 处理器工厂 ──
+/* 处理器工厂 */
 
 function makeHandler(
   overrides: Partial<HandlerMethod> = {},
@@ -101,7 +101,7 @@ function makeHandler(
   }
 }
 
-// ── CommandHandlerMapping ──
+/* CommandHandlerMapping */
 
 describe('CommandHandlerMapping', () => {
   let mapping: CommandHandlerMapping
@@ -167,7 +167,7 @@ describe('CommandHandlerMapping', () => {
   })
 })
 
-// ── RegexHandlerMapping ──
+/* RegexHandlerMapping */
 
 describe('RegexHandlerMapping', () => {
   let mapping: RegexHandlerMapping
@@ -214,7 +214,7 @@ describe('RegexHandlerMapping', () => {
   })
 })
 
-// ── KeywordHandlerMapping ──
+/* KeywordHandlerMapping */
 
 describe('KeywordHandlerMapping', () => {
   let mapping: KeywordHandlerMapping
@@ -239,7 +239,7 @@ describe('KeywordHandlerMapping', () => {
   })
 })
 
-// ── StartsWithHandlerMapping ──
+/* StartsWithHandlerMapping */
 
 describe('StartsWithHandlerMapping', () => {
   let mapping: StartsWithHandlerMapping
@@ -257,7 +257,7 @@ describe('StartsWithHandlerMapping', () => {
   })
 })
 
-// ── EndsWithHandlerMapping ──
+/* EndsWithHandlerMapping */
 
 describe('EndsWithHandlerMapping', () => {
   let mapping: EndsWithHandlerMapping
@@ -275,7 +275,7 @@ describe('EndsWithHandlerMapping', () => {
   })
 })
 
-// ── FullMatchHandlerMapping ──
+/* FullMatchHandlerMapping */
 
 describe('FullMatchHandlerMapping', () => {
   let mapping: FullMatchHandlerMapping
@@ -293,7 +293,7 @@ describe('FullMatchHandlerMapping', () => {
   })
 })
 
-// ── EventTypeHandlerMapping ──
+/* EventTypeHandlerMapping */
 
 describe('EventTypeHandlerMapping', () => {
   let mapping: EventTypeHandlerMapping
@@ -349,7 +349,7 @@ describe('EventTypeHandlerMapping', () => {
   })
 })
 
-// ── CompositeHandlerMapping ──
+/* CompositeHandlerMapping */
 
 describe('CompositeHandlerMapping', () => {
   let composite: CompositeHandlerMapping

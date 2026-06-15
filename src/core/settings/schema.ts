@@ -8,7 +8,7 @@ import { settingNodeRegistry } from './decorators.js'
 import type { MainPrismaClient } from '@/core/db.js'
 import { handlerRegistry } from '@/core/dispatch/registry.js'
 
-// ── 类型定义 ──
+/* 类型定义 */
 
 export interface SettingNodeSchema {
   key: string
@@ -22,7 +22,7 @@ export interface SettingNodeSchema {
   category: 'permission' | 'config'
 }
 
-// ── 内置系统配置项 ──
+/* 内置系统配置项 */
 
 const BUILTIN_NODES: SettingNodeMeta[] = [
   {
@@ -35,7 +35,7 @@ const BUILTIN_NODES: SettingNodeMeta[] = [
   },
 ]
 
-// ── Schema Map 构建 ──
+/* Schema Map 构建 */
 
 /**
  * 从 settingNodeRegistry + handlerRegistry 构建只读 Schema Map。
@@ -73,7 +73,7 @@ function findComponentName(target: Function): string | undefined {
   return undefined
 }
 
-// ── 启动清理 ──
+/* 启动清理 */
 
 /**
  * 启动时清理 DB 中已无对应 Schema 的废弃配置行。

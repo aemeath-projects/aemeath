@@ -90,7 +90,7 @@ watch(
 )
 
 // Vuetify 4 async autocomplete 核心：watch v-model:search，而非监听 @update:search 事件
-// flush: 'sync' 确保 Phase 1 本地过滤同步执行，避免空闪烁
+// flush: 'sync' 确保本地过滤同步执行，避免空闪烁
 watch(
   search,
   (input) => {
@@ -119,13 +119,13 @@ watch(
 
     const qLower = q.toLowerCase()
 
-    // Phase 1: 本地即时过滤
+    // 本地即时过滤
     const localResults = store.sessionUsers.filter(
       (u) => u.nickname.toLowerCase().includes(qLower) || String(u.qq).includes(q),
     )
     suggestions.value = localResults.slice(0, 10)
 
-    // Phase 2: 本地不足 5 条时走 API
+    // 本地不足 5 条时走 API
     if (debounceTimer !== null) {
       clearTimeout(debounceTimer)
       debounceTimer = null

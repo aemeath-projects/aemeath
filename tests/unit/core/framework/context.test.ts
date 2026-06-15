@@ -6,7 +6,7 @@ import { Context, FinishError } from '@/core/dispatch/context.js'
 import type { ContextApis } from '@/core/dispatch/context.js'
 import { BotApiError } from '@/core/errors.js'
 
-// ── 测试用 ContextApis mock ──
+/* 测试用 ContextApis mock */
 
 interface MockApis {
   apis: ContextApis
@@ -31,7 +31,7 @@ function makeMockApis(): MockApis {
   }
 }
 
-// ── 测试用事件工厂 ──
+/* 测试用事件工厂 */
 
 function makeGroupMsgEvent(text: string): AnyOneBotEvent {
   const event = {
@@ -79,7 +79,7 @@ function makeNoticeEvent(noticeType: string): AnyOneBotEvent {
   return event
 }
 
-// ── FinishError ──
+/* FinishError */
 
 describe('FinishError', () => {
   it('应是 Error 的子类', () => {
@@ -90,7 +90,7 @@ describe('FinishError', () => {
   })
 })
 
-// ── Context.getPlaintext ──
+/* Context.getPlaintext */
 
 describe('Context.getPlaintext', () => {
   it('应提取群消息纯文本', () => {
@@ -106,7 +106,7 @@ describe('Context.getPlaintext', () => {
   })
 })
 
-// ── Context.getArgs ──
+/* Context.getArgs */
 
 describe('Context.getArgs', () => {
   it('应返回命令名之后的参数列表', () => {
@@ -128,7 +128,7 @@ describe('Context.getArgs', () => {
   })
 })
 
-// ── Context.getArgStr ──
+/* Context.getArgStr */
 
 describe('Context.getArgStr', () => {
   it('应返回命令名之后的原始字符串', () => {
@@ -144,7 +144,7 @@ describe('Context.getArgStr', () => {
   })
 })
 
-// ── isGroupEvent / isPrivateEvent ──
+/* isGroupEvent / isPrivateEvent */
 
 describe('Context.isGroupEvent / isPrivateEvent', () => {
   it('群消息事件 isGroupEvent 应为 true', () => {
@@ -169,7 +169,7 @@ describe('Context.isGroupEvent / isPrivateEvent', () => {
   })
 })
 
-// ── groupId / userId / messageId ──
+/* groupId / userId / messageId */
 
 describe('Context 属性', () => {
   it('群消息 groupId 应返回正确的群 ID', () => {
@@ -188,7 +188,7 @@ describe('Context 属性', () => {
   })
 })
 
-// ── reply ──
+/* reply */
 
 describe('Context.reply', () => {
   it('群消息事件应调用 sendGroupMsg', async () => {
@@ -264,7 +264,7 @@ describe('Context.reply', () => {
   })
 })
 
-// ── finish ──
+/* finish */
 
 describe('Context.finish', () => {
   it('应抛出 FinishError', async () => {
@@ -281,7 +281,7 @@ describe('Context.finish', () => {
   })
 })
 
-// ── recall ──
+/* recall */
 
 describe('Context.recall', () => {
   it('消息事件应调用 deleteMsg 并传入 message_id', async () => {
@@ -307,7 +307,7 @@ describe('Context.recall', () => {
   })
 })
 
-// ── 属性存储 ──
+/* 属性存储 */
 
 describe('Context.setAttribute / getAttribute', () => {
   it('应存储并读取属性', () => {
@@ -326,7 +326,7 @@ describe('Context.setAttribute / getAttribute', () => {
   })
 })
 
-// ── 正则匹配 ──
+/* 正则匹配 */
 
 describe('Context.setRegexMatch / getRegexMatch', () => {
   it('应存储并读取正则匹配结果', () => {

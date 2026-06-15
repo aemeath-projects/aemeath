@@ -8,11 +8,11 @@ import type { SettingNodeSchema } from './schema.js'
 
 import type { MainPrismaClient } from '@/core/db.js'
 
-// ── 常量 ──
+/* 常量 */
 
 const NULL_SENTINEL = '__NULL__'
 
-// ── 内部类型 ──
+/* 内部类型 */
 
 interface SettingsDbRow {
   key: string
@@ -25,7 +25,7 @@ export interface SettingsScope {
   user?: bigint
 }
 
-// ── Service ──
+/* Service */
 
 export class SettingsService {
   private readonly db: MainPrismaClient
@@ -170,7 +170,7 @@ export class SettingsService {
     return value
   }
 
-  // ── 私有方法 ──
+  /* 私有方法 */
 
   private _cacheKey(type: string, scope: bigint, key: string): string {
     return `settings:${type}:${scope.toString()}:${key}`

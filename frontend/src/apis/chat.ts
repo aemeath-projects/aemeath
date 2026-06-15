@@ -5,7 +5,7 @@
 import http from './client'
 import type { ApiResponse, PaginatedResult } from './types'
 
-// ── 类型定义 ──
+/* 类型定义 */
 
 export type { PaginatedResult } from './types'
 
@@ -51,11 +51,11 @@ export interface ArchiveLog {
   completed_at: string | null
 }
 
-// ── API 调用 ──
+/* API 调用 */
 
 const BASE = '/api/chat'
 
-// ── 消息查询 ──
+/* 消息查询 */
 
 export async function fetchGroupMessages(
   groupId: number,
@@ -109,7 +109,7 @@ export async function fetchMessageContext(
   return data.data
 }
 
-// ── 归档管理 ──
+/* 归档管理 */
 
 export async function fetchArchives(
   page?: number,

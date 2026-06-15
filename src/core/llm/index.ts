@@ -343,7 +343,7 @@ export class LLMService {
   }
 }
 
-// ── 生命周期注册 ──
+/* 生命周期注册 */
 
 @Service({ name: 'llm_bootstrap' })
 export class LlmBootstrap {

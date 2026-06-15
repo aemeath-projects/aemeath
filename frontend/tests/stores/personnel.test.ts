@@ -50,7 +50,7 @@ describe('usePersonnelStore', () => {
     vi.clearAllMocks()
   })
 
-  // ── 初始状态 ──
+  /* 初始状态 */
 
   describe('初始状态', () => {
     it('users 初始为空分页结构', () => {
@@ -85,7 +85,7 @@ describe('usePersonnelStore', () => {
     })
   })
 
-  // ── loadUsers() ──
+  /* loadUsers() */
 
   describe('loadUsers()', () => {
     it('成功时更新 users', async () => {
@@ -122,7 +122,7 @@ describe('usePersonnelStore', () => {
     })
   })
 
-  // ── loadUser() ──
+  /* loadUser() */
 
   describe('loadUser()', () => {
     it('成功时更新 currentUser', async () => {
@@ -144,7 +144,7 @@ describe('usePersonnelStore', () => {
     })
   })
 
-  // ── loadGroups() ──
+  /* loadGroups() */
 
   describe('loadGroups()', () => {
     it('成功时更新 groups', async () => {
@@ -173,7 +173,7 @@ describe('usePersonnelStore', () => {
     })
   })
 
-  // ── loadGroupMembers() ──
+  /* loadGroupMembers() */
 
   describe('loadGroupMembers()', () => {
     it('成功时更新 groupMembers', async () => {
@@ -202,7 +202,7 @@ describe('usePersonnelStore', () => {
     })
   })
 
-  // ── loadSyncStatus() ──
+  /* loadSyncStatus() */
 
   describe('loadSyncStatus()', () => {
     it('成功时更新 syncStatus', async () => {
@@ -215,7 +215,7 @@ describe('usePersonnelStore', () => {
     })
   })
 
-  // ── doSync() ──
+  /* doSync() */
 
   describe('doSync()', () => {
     it('调用 triggerSync 并在完成后 syncLoading 恢复为 false', async () => {
@@ -238,7 +238,7 @@ describe('usePersonnelStore', () => {
     })
   })
 
-  // ── loadAdmins() / setAdmin() / unsetAdmin() ──
+  /* loadAdmins() / setAdmin() / unsetAdmin() */
 
   describe('管理员操作', () => {
     const mockAdmins = [{ qq: 1, nickname: 'Alice' }]
@@ -275,7 +275,7 @@ describe('usePersonnelStore', () => {
     })
   })
 
-  // ── ID 解析缓存 ──
+  /* ID 解析缓存 */
 
   describe('getUserName() / getGroupName()', () => {
     it('缓存未命中时返回 QQ 号字符串', () => {
@@ -303,7 +303,7 @@ describe('usePersonnelStore', () => {
     })
   })
 
-  // ── loadSessionData() ──
+  /* loadSessionData() */
 
   describe('loadSessionData()', () => {
     it('成功时更新 sessionGroups 和 sessionUsers', async () => {

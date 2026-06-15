@@ -2,7 +2,7 @@
  * 人员相关 UI 辅助函数 —— 关系类型、角色的颜色、标签、图标映射。
  */
 
-// ── 关系类型 ──
+/* 关系类型 */
 
 const RELATION_COLOR: Record<string, string> = {
   stranger: 'grey',
@@ -37,7 +37,7 @@ export function relationIcon(r: string): string {
   return RELATION_ICON[r] ?? 'mdi-account'
 }
 
-// ── 群角色 ──
+/* 群角色 */
 
 const ROLE_COLOR: Record<string, string> = {
   owner: 'amber',
@@ -65,7 +65,7 @@ export const roleOptions = [
   { title: '成员', value: 'member' },
 ] as const
 
-// ── 活跃状态 ──
+/* 活跃状态 */
 
 export function activeColor(active: boolean): string {
   return active ? 'success' : 'grey'

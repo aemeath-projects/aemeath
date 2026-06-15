@@ -9,9 +9,7 @@ import { PrismaClient as MainPrismaClient, Prisma as MainPrisma } from '#prisma/
 
 export type { ChatPrismaClient, MainPrismaClient }
 
-// ────────────────────────────────────────────
-//  BigInt JSON 序列化
-// ────────────────────────────────────────────
+/* BigInt JSON 序列化 */
 
 /**
  * 全局注册 BigInt.prototype.toJSON，使 JSON.stringify 自动将 BigInt 转为 number。
@@ -36,9 +34,7 @@ if (!BigInt.prototype.toJSON) {
   })
 }
 
-// ────────────────────────────────────────────
-//  工厂函数
-// ────────────────────────────────────────────
+/* 工厂函数 */
 
 /**
  * 创建主库 Prisma Client 实例。
@@ -62,9 +58,7 @@ export function createChatDb(url: string, poolSize?: number): ChatPrismaClient {
   return new ChatPrismaClient({ adapter })
 }
 
-// ────────────────────────────────────────────
-//  Prisma 错误类型守卫
-// ────────────────────────────────────────────
+/* Prisma 错误类型守卫 */
 
 interface PrismaKnownError {
   code: string

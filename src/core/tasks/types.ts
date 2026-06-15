@@ -1,4 +1,3 @@
-// src/core/tasks/types.ts
 /** Task Echo 标准导出接口。 */
 import type { Job } from 'bullmq'
 

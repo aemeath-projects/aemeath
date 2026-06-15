@@ -13,7 +13,7 @@ import { SessionManager } from '@/core/session/manager.js'
 import { makeState } from '@/core/session/state.js'
 import type { State } from '@/core/session/state.js'
 
-// ── Mock CacheClient ──
+/* Mock CacheClient */
 
 function makeMockCache() {
   const cache = {
@@ -29,7 +29,7 @@ function makeMockCache() {
   return cache as unknown as RedisStore & typeof cache
 }
 
-// ── Mock Context ──
+/* Mock Context */
 
 function makeMockContext(userId = 12345, groupId?: number) {
   const ctx = {
@@ -57,7 +57,7 @@ function makeMockContext(userId = 12345, groupId?: number) {
   return ctx as unknown as Context & typeof ctx
 }
 
-// ── 简单的测试会话 ──
+/* 简单的测试会话 */
 
 interface SimpleData extends SessionData {
   step: string
@@ -82,7 +82,7 @@ class SimpleSession extends InteractiveSession<SimpleData> {
   }
 }
 
-// ── SessionManager 基础测试 ──
+/* SessionManager 基础测试 */
 
 describe('SessionManager._buildSessionKey', () => {
   it('私聊应生成 private 后缀的 key', () => {
@@ -114,7 +114,7 @@ describe('SessionManager.isCancelCommand', () => {
   })
 })
 
-// ── startSession ──
+/* startSession */
 
 describe('SessionManager.startSession', () => {
   let cache: ReturnType<typeof makeMockCache>
@@ -160,7 +160,7 @@ describe('SessionManager.startSession', () => {
   })
 })
 
-// ── getActiveSessionKey ──
+/* getActiveSessionKey */
 
 describe('SessionManager.getActiveSessionKey', () => {
   it('无活跃会话时应返回 null', () => {
@@ -178,7 +178,7 @@ describe('SessionManager.getActiveSessionKey', () => {
   })
 })
 
-// ── cancelSession ──
+/* cancelSession */
 
 describe('SessionManager.cancelSession', () => {
   it('应取消会话并清理 Redis', async () => {
@@ -202,7 +202,7 @@ describe('SessionManager.cancelSession', () => {
   })
 })
 
-// ── dispatchInput ──
+/* dispatchInput */
 
 describe('SessionManager.dispatchInput', () => {
   it('应将输入路由到活跃会话', async () => {
@@ -241,7 +241,7 @@ describe('SessionManager.dispatchInput', () => {
   })
 })
 
-// ── cancelAllSessions ──
+/* cancelAllSessions */
 
 describe('SessionManager.cancelAllSessions', () => {
   it('应取消所有活跃会话', async () => {
@@ -256,7 +256,7 @@ describe('SessionManager.cancelAllSessions', () => {
   })
 })
 
-// ── close ──
+/* close */
 
 describe('SessionManager.close', () => {
   it('close 后活跃会话数应为 0', async () => {

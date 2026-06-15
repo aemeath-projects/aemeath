@@ -1,4 +1,3 @@
-// src/core/echo/loader.ts
 /** 统一 Echo 组件发现与加载器。 */
 import { readdir, stat } from 'node:fs/promises'
 import { resolve, relative, extname } from 'node:path'

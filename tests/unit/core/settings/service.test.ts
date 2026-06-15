@@ -6,7 +6,7 @@ import { SettingNode, settingNodeRegistry } from '@/core/settings/decorators.js'
 import { buildSchemaMap } from '@/core/settings/schema.js'
 import { SettingsService } from '@/core/settings/service.js'
 
-// ── Mock 工厂 ──
+/* Mock 工厂 */
 
 function createMockRedis(values: Record<string, string | null> = {}) {
   const store = { ...values }
@@ -60,7 +60,7 @@ function createMockDb(
   } as unknown as MainPrismaClient
 }
 
-// ── 测试 ──
+/* 测试 */
 
 class TestFeature {
   handle(): void {}

@@ -13,14 +13,14 @@ import { Service, Inject, Provide, Startup } from '@/core/lifecycle/decorators/i
 
 export type { LikeTask, LikeHistory, LikeSource }
 
-// ── 常量 ──
+/* 常量 */
 
 /** 每次点赞的默认次数。 */
 const DEFAULT_LIKE_TIMES = 10
 /** 批量点赞时各用户间的延迟（毫秒）。 */
 const SEND_DELAY_MS = 1000
 
-// ── 返回值类型 ──
+/* 返回值类型 */
 
 /** 注册定时任务的结果。 */
 export interface RegisterResult {
@@ -284,7 +284,7 @@ export class LikeService {
   }
 }
 
-// ── 生命周期注册 ──
+/* 生命周期注册 */
 
 @Service({ name: 'like_bootstrap' })
 export class LikeBootstrap {

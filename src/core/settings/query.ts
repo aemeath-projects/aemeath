@@ -2,7 +2,7 @@
 
 import type { MainPrismaClient } from '@/core/db.js'
 
-// ── 类型定义 ──
+/* 类型定义 */
 
 export interface MinimalSettingSchema {
   key: string
@@ -17,7 +17,7 @@ export interface SettingsQueryContext {
   user?: bigint | number
 }
 
-// ── 内部类型 ──
+/* 内部类型 */
 
 interface SettingsDbRow {
   key: string
@@ -25,7 +25,7 @@ interface SettingsDbRow {
   value_type: string
 }
 
-// ── 公共函数 ──
+/* 公共函数 */
 
 /**
  * 从 DB 查询单项配置，未命中时回退 schema default。
@@ -63,7 +63,7 @@ export async function getSettingValue<T = unknown>(
   return undefined as T
 }
 
-// ── 私有函数 ──
+/* 私有函数 */
 
 /** 根据 Schema 类型反序列化字符串值。 */
 function _deserialize(raw: string, schema?: MinimalSettingSchema): unknown {

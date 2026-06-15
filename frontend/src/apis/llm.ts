@@ -5,7 +5,7 @@
 import http from './client'
 import type { ApiResponse } from './types'
 
-// ── 类型定义 ──
+/* 类型定义 */
 
 export interface ProviderItem {
   id: string
@@ -100,11 +100,11 @@ export interface TestResult {
   model?: string | null
 }
 
-// ── API 调用 ──
+/* API 调用 */
 
 const BASE = '/api/llm'
 
-// ── 提供商 ──
+/* 提供商 */
 
 export async function fetchProviders(): Promise<ProviderItem[]> {
   const { data } = await http.get<ApiResponse<ProviderItem[]>>(`${BASE}/providers`)
@@ -138,7 +138,7 @@ export async function testProvider(id: string): Promise<TestResult> {
   return data.data
 }
 
-// ── 模型 ──
+/* 模型 */
 
 export async function fetchModels(providerId?: string): Promise<ModelItem[]> {
   const params: Record<string, string> = {}
@@ -166,7 +166,7 @@ export async function deleteModel(id: string): Promise<void> {
   await http.post<ApiResponse<null>>(`${BASE}/models/${id}/delete`)
 }
 
-// ── Chat (非流式) ──
+/* Chat (非流式) */
 
 export async function chat(
   modelId: string,
@@ -182,7 +182,7 @@ export async function chat(
   return data.data
 }
 
-// ── Chat (流式 SSE) ──
+/* Chat (流式 SSE) */
 
 export async function chatStream(
   modelId: string,

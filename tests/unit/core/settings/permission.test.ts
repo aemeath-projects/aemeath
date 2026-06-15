@@ -10,7 +10,7 @@ import { SettingsPermissionChecker } from '@/core/settings/permission.js'
 import { buildSchemaMap } from '@/core/settings/schema.js'
 import type { SettingsService } from '@/core/settings/service.js'
 
-// ── Mock 工厂 ──
+/* Mock 工厂 */
 
 function createMockSettings(overrides: Record<string, unknown> = {}) {
   return {
@@ -67,7 +67,7 @@ function createPrivateContext(
   }
 }
 
-// ── 测试 ──
+/* 测试 */
 
 class TestHandler {
   handle(): void {}

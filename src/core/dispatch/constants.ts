@@ -5,7 +5,7 @@
  * HandlerMeta 接口描述方法路由的完整元数据结构，供 mapping 层消费。
  */
 
-// ── 枚举常量 ──
+/* 枚举常量 */
 
 /** 权限等级枚举。 */
 export const Permission = {
@@ -25,7 +25,7 @@ export const MessageScope = {
 } as const
 export type MessageScope = (typeof MessageScope)[keyof typeof MessageScope]
 
-// ── 方法级路由元数据 ──
+/* 方法级路由元数据 */
 
 /** 处理器方法元数据（用于 mapping 路由）。 */
 export interface HandlerMeta {

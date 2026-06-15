@@ -11,12 +11,12 @@ import { Service, Inject, Provide, Startup } from '@/core/lifecycle/decorators/i
 
 export type { DriftBottleItem, DriftBottlePool, DriftBottleGroupPool }
 
-// ── 常量 ──
+/* 常量 */
 
 /** 默认漂流瓶池 ID（pool_id=0 为系统默认池）。 */
 const DRIFT_BOTTLE_DEFAULT_POOL_ID = 0
 
-// ── 返回值类型 ──
+/* 返回值类型 */
 
 /** 捞到的漂流瓶数据。 */
 export interface BottleItem {
@@ -301,7 +301,7 @@ export class DriftBottleService {
   }
 }
 
-// ── 生命周期注册 ──
+/* 生命周期注册 */
 
 @Service({ name: 'drift_bottle_bootstrap' })
 export class DriftBottleBootstrap {

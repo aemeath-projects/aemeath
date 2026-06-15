@@ -20,7 +20,7 @@ import type { LLMService } from './index.js'
 import { NotFoundError } from '@/core/errors.js'
 import { ok, fail } from '@/core/response.js'
 
-// ── 内部工具 ──
+/* 内部工具 */
 
 function getLlmService(request: FastifyRequest): LLMService {
   // app.state は Fastify の公式パターンではないが、プロジェクト規約に従う
@@ -37,7 +37,7 @@ async function handleError(reply: FastifyReply, err: unknown): Promise<void> {
   await reply.status(500).send(fail(message))
 }
 
-// ── Fastify 插件 ──
+/* Fastify 插件 */
 
 /**
  * LLM 领域 Fastify 路由插件。

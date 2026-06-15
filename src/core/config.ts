@@ -9,9 +9,7 @@ import { Type } from '@sinclair/typebox'
 import { type ValueError, TypeCompiler } from '@sinclair/typebox/compiler'
 import { Default } from '@sinclair/typebox/value'
 
-// ────────────────────────────────────────────
-//  Schema 定义
-// ────────────────────────────────────────────
+/* Schema 定义 */
 
 /** 所有环境变量的 TypeBox Schema。 */
 export const ConfigSchema = Type.Object({
@@ -95,9 +93,7 @@ export const ConfigSchema = Type.Object({
 /** 编译后的校验器（模块级单例，复用以提升性能）。 */
 const compiledValidator = TypeCompiler.Compile(ConfigSchema)
 
-// ────────────────────────────────────────────
-//  类型导出
-// ────────────────────────────────────────────
+/* 类型导出 */
 
 /** Schema 推导的原始配置类型。 */
 type RawConfig = Static<typeof ConfigSchema>
@@ -108,9 +104,7 @@ export type Config = RawConfig & {
   readonly isProduction: boolean
 }
 
-// ────────────────────────────────────────────
-//  Redis URL 规范化
-// ────────────────────────────────────────────
+/* Redis URL 规范化 */
 
 /**
  * 规范化 Redis URL，强制使用 DB /0，忽略 URL 中填写的库索引。
@@ -124,9 +118,7 @@ export function normalizeRedisUrl(url: string): string {
   return parsed.toString()
 }
 
-// ────────────────────────────────────────────
-//  环境变量解析
-// ────────────────────────────────────────────
+/* 环境变量解析 */
 
 /** 布尔型环境变量的 truthy 值集合。 */
 const TRUTHY_VALUES: ReadonlySet<string> = new Set(['true', '1', 'yes'])
@@ -188,9 +180,7 @@ function isBooleanSchema(schema: unknown): boolean {
   )
 }
 
-// ────────────────────────────────────────────
-//  自定义校验（TypeBox Schema 无法覆盖的规则）
-// ────────────────────────────────────────────
+/* 自定义校验（TypeBox Schema 无法覆盖的规则） */
 
 /** 业务校验中使用的 key，提取为常量避免 dot-notation lint 问题。 */
 const ENV_KEY = {
@@ -246,9 +236,7 @@ function assertRedisUrl(url: string, name: string): void {
   }
 }
 
-// ────────────────────────────────────────────
-//  核心入口
-// ────────────────────────────────────────────
+/* 核心入口 */
 
 /**
  * 从 process.env 加载并校验配置，返回不可变的 {@link Config} 对象。

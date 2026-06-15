@@ -116,7 +116,7 @@ export class SyncCoordinator {
     await this._runSync()
   }
 
-  // ── 内部实现 ──
+  /* 内部实现 */
 
   private async _runSync(): Promise<void> {
     // 初始延迟

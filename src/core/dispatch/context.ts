@@ -109,7 +109,7 @@ export class Context {
     this.groupApi = apis.groupApi
   }
 
-  // ── 属性存储（拦截器 <-> 处理器数据传递） ──
+  /* 属性存储（拦截器 <-> 处理器数据传递） */
 
   setAttribute(key: string, value: unknown): void {
     this._attributes.set(key, value)
@@ -119,7 +119,7 @@ export class Context {
     return this._attributes.get(key)
   }
 
-  // ── 正则匹配（由调度器在 OnRegex 时设置） ──
+  /* 正则匹配（由调度器在 OnRegex 时设置） */
 
   setRegexMatch(match: RegExpMatchArray): void {
     this._regexMatch = match
@@ -129,7 +129,7 @@ export class Context {
     return this._regexMatch
   }
 
-  // ── 消息辅助方法 ──
+  /* 消息辅助方法 */
 
   /** 从消息中提取纯文本。 */
   getPlaintext(): string {
@@ -157,7 +157,7 @@ export class Context {
     return idx === -1 ? '' : text.slice(idx + 1).trimStart()
   }
 
-  // ── 回复 / 发送快捷方法 ──
+  /* 回复 / 发送快捷方法 */
 
   /**
    * 向当前会话发送回复。
@@ -219,7 +219,7 @@ export class Context {
     }
   }
 
-  // ── 便捷属性 ──
+  /* 便捷属性 */
 
   /** 判断当前事件是否为群消息事件。 */
   isGroupEvent(): boolean {

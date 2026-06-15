@@ -1,4 +1,3 @@
-// src/core/echo/config.ts
 /** Echo 配置定义与工具函数。 */
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'

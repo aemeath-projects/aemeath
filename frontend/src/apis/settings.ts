@@ -5,7 +5,7 @@
 import http from './client'
 import type { ApiResponse } from './types'
 
-// ── 类型定义 ──
+/* 类型定义 */
 
 export interface SettingNodeSchema {
   key: string
@@ -24,7 +24,7 @@ export interface SettingValue {
   overridden: boolean
 }
 
-// ── API 函数 ──
+/* API 函数 */
 
 const BASE = '/api/settings'
 

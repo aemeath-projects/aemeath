@@ -9,20 +9,20 @@ import { ok, fail } from '@/core/response.js'
 
 const log = getLogger('bot')
 
-// ── 内部工具 ──
+/* 内部工具 */
 
 function getState(app: FastifyInstance): Record<string, unknown> {
   return (app as unknown as { state: Record<string, unknown> }).state
 }
 
-// ── 请求类型 ──
+/* 请求类型 */
 
 interface BotProfileUpdateBody {
   nickname?: string | null
   personalNote?: string | null
 }
 
-// ── 路由插件 ──
+/* 路由插件 */
 
 /**
  * Bot 信息管理路由插件。

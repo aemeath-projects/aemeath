@@ -250,7 +250,7 @@ const headers = [
   { title: '操作', key: 'actions', sortable: false, align: 'end' as const },
 ]
 
-// ── 模型表单状态 ──
+/* 模型表单状态 */
 
 const isEditModel = computed(() => !!editingModel.value)
 const modelSaving = ref(false)
@@ -305,7 +305,7 @@ watch(formDialog, (open) => {
   }
 })
 
-// ── 操作 ──
+/* 操作 */
 
 function loadPage() {
   store.loadModels(filterProvider.value ?? undefined)

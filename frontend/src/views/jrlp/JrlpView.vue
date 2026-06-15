@@ -231,7 +231,7 @@ import { usePagination } from '@/composables/usePagination'
 
 const personnelStore = usePersonnelStore()
 
-// ── 记录列表 ──
+/* 记录列表 */
 const loading = ref(false)
 const items = ref<WifeRecord[]>([])
 const total = ref(0)
@@ -273,10 +273,10 @@ async function fetchRecords(p: number, size: number) {
 
 const { page, pageSize, loadPage, refreshPage, onPageSizeChange } = usePagination(fetchRecords)
 
-// ── 公共表单校验 ──
+/* 公共表单校验 */
 const required = (v: unknown) => !!v || '此字段为必填'
 
-// ── 手动设置老婆 ──
+/* 手动设置老婆 */
 const setWifeDialog = ref(false)
 const setWifeLoading = ref(false)
 const setWifeFormRef = ref<{ validate: () => Promise<{ valid: boolean }> } | null>(null)
@@ -310,7 +310,7 @@ async function submitSetWife() {
   }
 }
 
-// ── 编辑老婆 ──
+/* 编辑老婆 */
 const editDialog = ref(false)
 const editLoading = ref(false)
 const editingId = ref<number | null>(null)
@@ -337,7 +337,7 @@ async function submitEdit() {
   }
 }
 
-// ── 删除 ──
+/* 删除 */
 const deleteDialog = ref(false)
 const deleteLoading = ref(false)
 const deleteTarget = ref<WifeRecord | null>(null)
@@ -359,7 +359,7 @@ async function doDelete() {
   }
 }
 
-// ── 用户信息弹窗 ──
+/* 用户信息弹窗 */
 const userInfoDialog = ref(false)
 const userInfoQq = ref<number | null>(null)
 const userInfoGroupId = ref<number | null>(null)
@@ -370,7 +370,7 @@ function openUserInfo(qq: number, groupId: number) {
   userInfoDialog.value = true
 }
 
-// ── 群聊信息弹窗 ──
+/* 群聊信息弹窗 */
 const groupInfoDialog = ref(false)
 const groupInfoId = ref<number | null>(null)
 

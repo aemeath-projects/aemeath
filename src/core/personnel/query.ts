@@ -75,7 +75,7 @@ function ceilDiv(a: number, b: number): number {
 export class PersonnelQueryService {
   constructor(private readonly db: MainPrismaClient) {}
 
-  // ── 用户查询 ──
+  /* 用户查询 */
 
   /** 获取单个用户详情（含活跃群聊数）。 */
   async getUser(qq: bigint): Promise<UserView | null> {
@@ -182,7 +182,7 @@ export class PersonnelQueryService {
     }))
   }
 
-  // ── 群查询 ──
+  /* 群查询 */
 
   /** 分页查询群列表。 */
   async listGroups(opts?: {

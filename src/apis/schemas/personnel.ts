@@ -10,7 +10,7 @@ export const ResolveRequestSchema = Type.Object({
   groupIds: Type.Optional(Type.Array(Type.Number(), { maxItems: 200 })),
 })
 
-// ── TypeScript 接口 ──
+/* TypeScript 接口 */
 
 export interface ResolveRequest {
   userIds?: number[]

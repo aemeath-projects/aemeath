@@ -90,7 +90,7 @@ export class PersonnelService {
     private readonly cache: RedisStore,
   ) {}
 
-  // ── 批量 upsert 操作 ──
+  /* 批量 upsert 操作 */
 
   /**
    * 批量 upsert 用户。
@@ -231,7 +231,7 @@ export class PersonnelService {
     return total
   }
 
-  // ── 失效数据清理 ──
+  /* 失效数据清理 */
 
   /** 将不在最新群列表中的群标记为 is_active=False。 */
   async deactivateStaleGroups(activeGroupIds: Set<bigint>): Promise<void> {
@@ -262,7 +262,7 @@ export class PersonnelService {
     })
   }
 
-  // ── 全量同步持久化 ──
+  /* 全量同步持久化 */
 
   /**
    * 将采集到的用户数据批量持久化到数据库。
@@ -337,7 +337,7 @@ export class PersonnelService {
     return { usersSynced, groupsSynced, membershipsSynced }
   }
 
-  // ── 超级管理员管理 ──
+  /* 超级管理员管理 */
 
   /** 设置超级管理员。返回是否成功。 */
   async setAdmin(qq: bigint): Promise<boolean> {
@@ -427,7 +427,7 @@ export class PersonnelService {
     return relation
   }
 
-  // ── 内部辅助 ──
+  /* 内部辅助 */
 
   /** 简化版 upsertUsers（不进行 admin 保护判断，直接批量写入）。 */
   private async _upsertUsersSimple(
@@ -495,7 +495,7 @@ export class PersonnelService {
   }
 }
 
-// ── 生命周期注册 ──
+/* 生命周期注册 */
 
 @Service({ name: 'personnel_bootstrap' })
 export class PersonnelBootstrap {

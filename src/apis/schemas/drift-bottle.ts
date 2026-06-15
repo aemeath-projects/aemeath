@@ -28,7 +28,7 @@ export const PoolGroupsResponseSchema = Type.Object({
   groupIds: Type.Array(Type.Number()),
 })
 
-// ── TypeScript 接口 ──
+/* TypeScript 接口 */
 
 export interface CreatePoolRequest {
   name: string

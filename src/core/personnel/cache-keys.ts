@@ -1,4 +1,3 @@
-// src/core/personnel/cache-keys.ts
 /** personnel 领域 cache key 自注册。 */
 import { cacheKeyRegistry } from '@/core/registries.js'
 

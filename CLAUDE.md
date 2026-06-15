@@ -205,7 +205,7 @@ import { Service, Inject, Provide, Startup } from '@/core/lifecycle/decorators/i
 
 // Service 类定义（纯业务逻辑）...
 
-// ── 生命周期注册 ──
+/* 生命周期注册 */
 
 @Service({ name: 'my_service_bootstrap' })
 export class MyServiceBootstrap {

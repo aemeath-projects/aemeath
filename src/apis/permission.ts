@@ -14,7 +14,7 @@ function getSettings(app: FastifyInstance): SettingsService {
   return state.settings as SettingsService
 }
 
-// ── 请求体接口 ──
+/* 请求体接口 */
 
 interface SetValueBody {
   value: unknown
@@ -28,7 +28,7 @@ interface BatchSetBody {
  * 配置管理路由插件。
  */
 const permissionRoutes: FastifyPluginAsync = async (app) => {
-  // ── Schema 查询 ──
+  /* Schema 查询 */
 
   /** GET /api/settings/schemas — 获取所有配置项 Schema（供前端渲染表单）。 */
   app.get(
@@ -40,7 +40,7 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
     },
   )
 
-  // ── 群级配置 ──
+  /* 群级配置 */
 
   /** GET /api/settings/groups/:groupId — 读取群级配置（含 Schema 默认值回退）。 */
   app.get(
@@ -91,7 +91,7 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
     },
   )
 
-  // ── 用户级配置 ──
+  /* 用户级配置 */
 
   /** GET /api/settings/users/:userId — 读取用户级配置（含 Schema 默认值回退）。 */
   app.get(

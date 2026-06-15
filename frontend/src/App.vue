@@ -99,7 +99,7 @@ const themePreference = computed({
 onMounted(() => {
   themeStore.initTheme(vuetifyTheme)
   botStore.startPolling()
-  // 全局预加载会话数据，供全站 GroupAutocomplete/UserAutocomplete Phase 1 本地搜索使用
+  // 全局预加载会话数据，供全站 GroupAutocomplete/UserAutocomplete 本地搜索使用
   personnelStore.loadSessionData()
 })
 

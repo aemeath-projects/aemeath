@@ -293,7 +293,7 @@ export class ChatHistoryService {
   }
 }
 
-// ── 生命周期注册 ──
+/* 生命周期注册 */
 
 @Service({ name: 'chat_bootstrap' })
 export class ChatBootstrap {

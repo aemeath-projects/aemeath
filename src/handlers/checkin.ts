@@ -17,7 +17,7 @@ import { Inject } from '@/core/lifecycle/decorators/index.js'
 import { MessageBuilder } from '@/core/utils/message-builder.js'
 import type { CheckinService } from '@/services/checkin.js'
 
-// ── 上海时区辅助 ──
+/* 上海时区辅助 */
 function getTodayShanghai(): Date {
   const now = new Date()
   const utc8 = new Date(now.getTime() + 8 * 60 * 60 * 1000)

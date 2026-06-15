@@ -114,7 +114,7 @@ import { usePagination } from '@/composables/usePagination'
 
 const personnelStore = usePersonnelStore()
 
-// ── 记录列表 ──
+/* 记录列表 */
 const loading = ref(false)
 const items = ref<CheckinRecord[]>([])
 const total = ref(0)
@@ -154,7 +154,7 @@ async function fetchRecords(p: number, size: number) {
 
 const { page, pageSize, loadPage, onPageSizeChange } = usePagination(fetchRecords)
 
-// ── 用户信息弹窗 ──
+/* 用户信息弹窗 */
 const userInfoDialog = ref(false)
 const userInfoQq = ref<number | null>(null)
 const userInfoGroupId = ref<number | null>(null)
@@ -165,7 +165,7 @@ function openUserInfo(qq: number, groupId: number) {
   userInfoDialog.value = true
 }
 
-// ── 群聊信息弹窗 ──
+/* 群聊信息弹窗 */
 const groupInfoDialog = ref(false)
 const groupInfoId = ref<number | null>(null)
 

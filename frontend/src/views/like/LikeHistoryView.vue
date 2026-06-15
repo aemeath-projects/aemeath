@@ -97,7 +97,7 @@ import UserAutocomplete from '@/components/UserAutocomplete.vue'
 import { usePagination } from '@/composables/usePagination'
 import { formatTime } from '@/utils/format'
 
-// ── 列表状态 ──
+/* 列表状态 */
 const loading = ref(false)
 const items = ref<LikeHistory[]>([])
 const total = ref(0)

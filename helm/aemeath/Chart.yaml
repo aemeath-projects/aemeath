@@ -26,3 +26,7 @@ dependencies:
     repository: https://charts.bitnami.com/bitnami
     alias: redis-cache
     condition: redis-cache.enabled
+  - name: minio
+    version: '~17.0'
+    repository: https://charts.bitnami.com/bitnami
+    condition: minio.enabled

@@ -144,10 +144,10 @@ secret:
   BULLMQ_REDIS_URL: 'redis://aemeath-redis-master:6379'
   CACHE_REDIS_URL: 'redis://aemeath-redis-cache-master:6379'
   PERSISTENT_REDIS_URL: 'redis://aemeath-redis-master:6379'
-  # S3
-  S3_ENDPOINT_URL: ''
-  S3_ACCESS_KEY_ID: ''
-  S3_SECRET_ACCESS_KEY: ''
+  # S3 / MinIO（当 minio.enabled=true 时默认值自动对齐内置 MinIO 凭证和 Service URL）
+  S3_ENDPOINT_URL: 'http://aemeath-minio:9000'
+  S3_ACCESS_KEY_ID: 'minioadmin'
+  S3_SECRET_ACCESS_KEY: 'minioadmin'
   S3_REGION: us-east-1
   S3_ARCHIVE_BUCKET: aemeath-chat-archive
   S3_ARCHIVE_PREFIX: v1
@@ -209,3 +209,15 @@ redis-cache:
     extraArgs:
       - '--maxmemory-policy'
       - 'allkeys-lru'
+
+# Bitnami MinIO 子 chart（对象存储：聊天归档、媒体文件）
+# 生产环境建议使用外部 MinIO / S3，将 minio.enabled 设为 false 并通过 existingSecret 注入凭证
+minio:
+  enabled: true
+  auth:
+    rootUser: minioadmin
+    rootPassword: minioadmin
+  defaultBuckets: 'aemeath-chat-archive'
+  persistence:
+    enabled: true
+    size: 20Gi

@@ -8,7 +8,6 @@
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-import type { NapCatClient, MessageApi, FriendApi, GroupApi } from '@aemeath-projects/napcat'
 import type {
   PrivateMessageEvent,
   GroupMessageEvent,
@@ -27,8 +26,7 @@ import { loadConfig } from './config.js'
 import { createMainDb, createChatDb } from './db.js'
 import type { ContextApis } from './dispatch/context.js'
 import { EventDispatcher } from './dispatch/dispatcher.js'
-import { LoggingInterceptor } from './dispatch/interceptors/logging.js'
-import { SessionInterceptor } from './dispatch/interceptors/session.js'
+import { LoggingInterceptor, SessionInterceptor } from './dispatch/interceptors/index.js'
 import { CompositeHandlerMapping } from './dispatch/mapping.js'
 import type { FeatureChecker } from './dispatch/mapping.js'
 import { buildHandlerMethod } from './dispatch/method-builder.js'
@@ -39,10 +37,9 @@ import { EchoLoader } from './echo/loader.js'
 import type { RouteEchoEntry, TaskEchoEntry } from './echo/loader.js'
 import { LifecycleOrchestrator } from './lifecycle/orchestrator.js'
 import { ServiceRegistry } from './lifecycle/service-registry.js'
-import { metricsRegistry } from './monitoring/metrics.js'
-import { authPlugin } from './plugins/auth.js'
-import { corsPlugin } from './plugins/cors.js'
-import { swaggerPlugin } from './plugins/swagger.js'
+import type { InfraServiceMap } from './lifecycle/types.js'
+import { metricsRegistry } from './monitoring/index.js'
+import { authPlugin, corsPlugin, swaggerPlugin } from './plugins/index.js'
 import { createRedis, checkRedisReachable } from './redis/factory.js'
 import { RedisStore } from './redis/store.js'
 import type { SessionManager } from './session/manager.js'
@@ -193,7 +190,7 @@ async function _startup(
 
   // 9. 生命周期编排器：按拓扑顺序启动所有业务模块
   _orchestrator = new LifecycleOrchestrator()
-  const infraServices: Record<string, unknown> = {
+  const infraServices = {
     db: mainDb,
     chat_db: chatDb,
     cache: cacheStore,
@@ -204,7 +201,7 @@ async function _startup(
     queue,
   }
 
-  const allServices = await _orchestrator.startup(infraServices)
+  const allServices: InfraServiceMap = await _orchestrator.startup(infraServices)
 
   // 10. 实例化所有新格式 handler（注入依赖）
   handlerRegistry.instantiateAll(allServices)
@@ -222,11 +219,11 @@ async function _startup(
   }
 
   // 13. 订阅 NapCat 事件，将事件分发给 Dispatcher
-  const botClient = allServices.bot_client as NapCatClient
+  const botClient = allServices.bot_client
   const apis: ContextApis = {
-    msgApi: allServices.msg_api as MessageApi,
-    friendApi: allServices.friend_api as FriendApi,
-    groupApi: allServices.group_api as GroupApi,
+    msgApi: allServices.msg_api,
+    friendApi: allServices.friend_api,
+    groupApi: allServices.group_api,
   }
   // 消息事件
   // 错误已由 EventDispatcher 内部捕获并记录，无需 await
@@ -254,10 +251,10 @@ async function _startup(
 
   // 15. 启动 TaskExecutor（监听 job completed 事件）
   const taskExecutor = new TaskExecutor(
-    allServices.msg_api as MessageApi,
-    allServices.friend_api as FriendApi,
-    allServices.group_api as GroupApi,
-    allServices.bot_client as NapCatClient,
+    allServices.msg_api,
+    allServices.friend_api,
+    allServices.group_api,
+    allServices.bot_client,
     cacheStore,
     bullConn,
     queueName,

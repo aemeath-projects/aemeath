@@ -2,15 +2,25 @@
  * 用户管理 REST API 路由 —— /api/personnel。
  */
 
+import { Type } from '@sinclair/typebox'
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 
 import { PersonnelQueryService } from './query.js'
+import {
+  UserIdParamSchema,
+  GroupIdParamSchema,
+  UserListQuerySchema,
+  GroupListQuerySchema,
+  MemberListQuerySchema,
+  AdminListDataSchema,
+  SyncStatusDataSchema,
+} from './schemas.js'
 import { SyncCoordinator } from './sync.js'
 
 import { PersonnelService } from './index.js'
 
 import { NotFoundError, ValidationError } from '@/core/errors.js'
-import { ok, fail } from '@/core/response.js'
+import { ok, fail, OkResponse } from '@/core/response.js'
 
 /** 安全解析 BigInt 路径/查询参数，格式无效时抛出 ValidationError。 */
 function parseBigIntParam(value: string, name: string): bigint {
@@ -43,6 +53,7 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
   /** 分页查询用户列表。 */
   app.get(
     '/api/personnel/users',
+    { schema: { querystring: UserListQuerySchema } },
     async (
       req: FastifyRequest<{
         Querystring: {
@@ -73,6 +84,7 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
   /** 获取单个用户详情。 */
   app.get(
     '/api/personnel/users/:userId',
+    { schema: { params: UserIdParamSchema } },
     async (req: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
       const svc = getPersonnelQueryService(app)
       const user = await svc.getUser(parseBigIntParam(req.params.userId, 'userId'))
@@ -86,6 +98,7 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
   /** 获取用户所属的所有群聊。 */
   app.get(
     '/api/personnel/users/:userId/groups',
+    { schema: { params: UserIdParamSchema } },
     async (req: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
       const svc = getPersonnelQueryService(app)
       const groups = await svc.getUserGroups(parseBigIntParam(req.params.userId, 'userId'))
@@ -98,6 +111,7 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
   /** 分页查询群列表。 */
   app.get(
     '/api/personnel/groups',
+    { schema: { querystring: GroupListQuerySchema } },
     async (
       req: FastifyRequest<{
         Querystring: {
@@ -125,6 +139,7 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
   /** 获取单个群聊详情。 */
   app.get(
     '/api/personnel/groups/:groupId',
+    { schema: { params: GroupIdParamSchema } },
     async (req: FastifyRequest<{ Params: { groupId: string } }>, reply: FastifyReply) => {
       const svc = getPersonnelQueryService(app)
       const group = await svc.getGroup(parseBigIntParam(req.params.groupId, 'groupId'))
@@ -138,6 +153,7 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
   /** 分页获取群成员列表。 */
   app.get(
     '/api/personnel/groups/:groupId/members',
+    { schema: { params: GroupIdParamSchema, querystring: MemberListQuerySchema } },
     async (
       req: FastifyRequest<{
         Params: { groupId: string }
@@ -166,15 +182,20 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
   /* 超级管理员管理 API */
 
   /** 获取所有超级管理员列表。 */
-  app.get('/api/personnel/admins', async (_req: FastifyRequest, reply: FastifyReply) => {
-    const svc = getPersonnelService(app)
-    const admins = await svc.getAdmins()
-    await reply.send(ok(admins))
-  })
+  app.get(
+    '/api/personnel/admins',
+    { schema: { response: { 200: OkResponse(AdminListDataSchema) } } },
+    async (_req: FastifyRequest, reply: FastifyReply) => {
+      const svc = getPersonnelService(app)
+      const admins = await svc.getAdmins()
+      await reply.send(ok(admins))
+    },
+  )
 
   /** 添加超级管理员。 */
   app.post(
     '/api/personnel/admins/:userId',
+    { schema: { params: UserIdParamSchema } },
     async (req: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
       const svc = getPersonnelService(app)
       const success = await svc.setAdmin(parseBigIntParam(req.params.userId, 'userId'))
@@ -189,6 +210,7 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
   /** 移除超级管理员。 */
   app.delete(
     '/api/personnel/admins/:userId',
+    { schema: { params: UserIdParamSchema } },
     async (req: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
       const svc = getPersonnelService(app)
       const success = await svc.removeAdmin(parseBigIntParam(req.params.userId, 'userId'))
@@ -203,20 +225,38 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
   /* 同步管理 API */
 
   /** 手动触发一次全量同步。 */
-  app.post('/api/personnel/sync', async (_req: FastifyRequest, reply: FastifyReply) => {
-    const coordinator = getSyncCoordinator(app)
-    const task = coordinator.requestSync('manual')
-    if (task === null) {
-      await reply.send(ok(null, 'Sync already in progress, skipped'))
-      return
-    }
-    await reply.send(ok(null, 'Sync triggered'))
-  })
+  app.post(
+    '/api/personnel/sync',
+    {
+      schema: {
+        response: {
+          200: Type.Object({
+            code: Type.Literal(0),
+            data: Type.Null(),
+            message: Type.String(),
+          }),
+        },
+      },
+    },
+    async (_req: FastifyRequest, reply: FastifyReply) => {
+      const coordinator = getSyncCoordinator(app)
+      const task = coordinator.requestSync('manual')
+      if (task === null) {
+        await reply.send(ok(null, 'Sync already in progress, skipped'))
+        return
+      }
+      await reply.send(ok(null, 'Sync triggered'))
+    },
+  )
 
   /** 获取最近一次同步的状态。 */
-  app.get('/api/personnel/sync/status', async (_req: FastifyRequest, reply: FastifyReply) => {
-    const svc = getPersonnelService(app)
-    const status = await svc.getSyncStatus()
-    await reply.send(ok(status))
-  })
+  app.get(
+    '/api/personnel/sync/status',
+    { schema: { response: { 200: OkResponse(SyncStatusDataSchema) } } },
+    async (_req: FastifyRequest, reply: FastifyReply) => {
+      const svc = getPersonnelService(app)
+      const status = await svc.getSyncStatus()
+      await reply.send(ok(status))
+    },
+  )
 }

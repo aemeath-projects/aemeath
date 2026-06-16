@@ -4,6 +4,21 @@
 
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
+import { OkResponse } from '@/apis/schemas/common.js'
+import {
+  CheckinRecordsQuerySchema,
+  CheckinLeaderboardQuerySchema,
+  CheckinTrendQuerySchema,
+  CheckinSummaryQuerySchema,
+  PaginatedCheckinsResponseSchema,
+  LeaderboardDataSchema,
+  TrendDataSchema,
+  SummaryResponseSchema,
+  type CheckinRecordsQuery,
+  type CheckinLeaderboardQuery,
+  type CheckinTrendQuery,
+  type CheckinSummaryQuery,
+} from '@/apis/schemas/index.js'
 import { ok } from '@/core/response.js'
 import type { CheckinService, LeaderEntry, DayCount } from '@/services/checkin.js'
 
@@ -20,25 +35,20 @@ const checkinRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/checkin/records — 分页查询签到记录。 */
   app.get(
     '/api/checkin/records',
-    async (
-      req: FastifyRequest<{
-        Querystring: {
-          groupId?: string
-          userId?: string
-          date?: string
-          page?: string
-          pageSize?: string
-        }
-      }>,
-      reply: FastifyReply,
-    ) => {
+    {
+      schema: {
+        querystring: CheckinRecordsQuerySchema,
+        response: { 200: OkResponse(PaginatedCheckinsResponseSchema) },
+      },
+    },
+    async (req: FastifyRequest<{ Querystring: CheckinRecordsQuery }>, reply: FastifyReply) => {
       const svc = await getCheckinSvc(app)
 
       const groupId = req.query.groupId ? BigInt(req.query.groupId) : undefined
       const userId = req.query.userId ? BigInt(req.query.userId) : undefined
       const recordDate = req.query.date ? new Date(req.query.date) : undefined
-      const page = req.query.page ? parseInt(req.query.page, 10) : 1
-      const pageSize = req.query.pageSize ? parseInt(req.query.pageSize, 10) : 20
+      const page = req.query.page ?? 1
+      const pageSize = req.query.pageSize ?? 20
 
       const [records, total] = await svc.listRecords({
         groupId,
@@ -66,17 +76,18 @@ const checkinRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/checkin/leaderboard — 查询排行榜（累计或连续）。 */
   app.get(
     '/api/checkin/leaderboard',
-    async (
-      req: FastifyRequest<{
-        Querystring: { groupId?: string; by?: string; limit?: string }
-      }>,
-      reply: FastifyReply,
-    ) => {
+    {
+      schema: {
+        querystring: CheckinLeaderboardQuerySchema,
+        response: { 200: OkResponse(LeaderboardDataSchema) },
+      },
+    },
+    async (req: FastifyRequest<{ Querystring: CheckinLeaderboardQuery }>, reply: FastifyReply) => {
       const svc = await getCheckinSvc(app)
 
       const groupId = req.query.groupId ? BigInt(req.query.groupId) : undefined
-      const by = (req.query.by ?? 'total') as 'total' | 'streak'
-      const limit = req.query.limit ? parseInt(req.query.limit, 10) : 20
+      const by = req.query.by ?? 'total'
+      const limit = req.query.limit ?? 20
 
       const entries: LeaderEntry[] = await svc.getLeaderboard({ groupId, by, limit })
       const result = entries.map((e, i) => ({
@@ -92,14 +103,17 @@ const checkinRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/checkin/trend — 查询最近 N 天每日签到人数趋势。 */
   app.get(
     '/api/checkin/trend',
-    async (
-      req: FastifyRequest<{ Querystring: { groupId?: string; days?: string } }>,
-      reply: FastifyReply,
-    ) => {
+    {
+      schema: {
+        querystring: CheckinTrendQuerySchema,
+        response: { 200: OkResponse(TrendDataSchema) },
+      },
+    },
+    async (req: FastifyRequest<{ Querystring: CheckinTrendQuery }>, reply: FastifyReply) => {
       const svc = await getCheckinSvc(app)
 
       const groupId = req.query.groupId ? BigInt(req.query.groupId) : undefined
-      const days = req.query.days ? parseInt(req.query.days, 10) : 30
+      const days = req.query.days ?? 30
 
       const trend: DayCount[] = await svc.getDailyTrend({ groupId, days })
       await reply.send(ok(trend))
@@ -109,7 +123,13 @@ const checkinRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/checkin/summary — 查询汇总卡片数据。 */
   app.get(
     '/api/checkin/summary',
-    async (req: FastifyRequest<{ Querystring: { groupId?: string } }>, reply: FastifyReply) => {
+    {
+      schema: {
+        querystring: CheckinSummaryQuerySchema,
+        response: { 200: OkResponse(SummaryResponseSchema) },
+      },
+    },
+    async (req: FastifyRequest<{ Querystring: CheckinSummaryQuery }>, reply: FastifyReply) => {
       const svc = await getCheckinSvc(app)
 
       const groupId = req.query.groupId ? BigInt(req.query.groupId) : undefined

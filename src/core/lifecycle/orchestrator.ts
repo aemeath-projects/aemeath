@@ -6,6 +6,7 @@ import { logger } from '@logger'
 
 import { serviceEntryRegistry } from './decorators/service.js'
 import type { ServiceEntry } from './service-entry.js'
+import type { InfraServiceMap } from './types.js'
 
 /**
  * 管理业务模块的启动与关闭。
@@ -33,7 +34,7 @@ export class LifecycleOrchestrator {
    * @param infraServices - 基础设施提供的初始服务字典（db、cache 等）
    * @returns 合并后的完整服务字典（含基础设施 + 所有业务服务）
    */
-  async startup(infraServices: Record<string, unknown>): Promise<Record<string, unknown>> {
+  async startup(infraServices: Record<string, unknown>): Promise<InfraServiceMap> {
     if (this._instances.length > 0) {
       throw new Error('LifecycleOrchestrator.startup() 已被调用，不可重复启动')
     }
@@ -76,7 +77,7 @@ export class LifecycleOrchestrator {
       logger.info({ name: entry.name }, '业务模块已启动')
     }
 
-    return { ...this._services }
+    return { ...this._services } as InfraServiceMap
   }
 
   /**

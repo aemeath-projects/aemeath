@@ -4,6 +4,11 @@
 
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
+import {
+  FeedbackIdParamSchema,
+  FeedbackListQuerySchema,
+  FeedbackUpdateBodySchema,
+} from '@/apis/schemas/index.js'
 import { ok, fail } from '@/core/response.js'
 import type { Feedback, FeedbackService } from '@/services/feedback.js'
 
@@ -46,6 +51,9 @@ const feedbackRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/feedbacks — 分页查询反馈列表。 */
   app.get(
     '/api/feedbacks',
+    {
+      schema: { querystring: FeedbackListQuerySchema },
+    },
     async (
       req: FastifyRequest<{
         Querystring: {
@@ -91,6 +99,9 @@ const feedbackRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/feedbacks/:feedbackId — 获取单个反馈详情。 */
   app.get(
     '/api/feedbacks/:feedbackId',
+    {
+      schema: { params: FeedbackIdParamSchema },
+    },
     async (req: FastifyRequest<{ Params: { feedbackId: string } }>, reply: FastifyReply) => {
       const svc = await getFeedbackSvc(app)
       const feedback = await svc.getFeedback(req.params.feedbackId)
@@ -107,6 +118,9 @@ const feedbackRoutes: FastifyPluginAsync = async (app) => {
   /** POST /api/feedbacks/:feedbackId/status — 更新反馈状态。 */
   app.post(
     '/api/feedbacks/:feedbackId/status',
+    {
+      schema: { params: FeedbackIdParamSchema, body: FeedbackUpdateBodySchema },
+    },
     async (
       req: FastifyRequest<{
         Params: { feedbackId: string }

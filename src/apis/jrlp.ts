@@ -3,8 +3,22 @@
  */
 
 import { getLogger } from '@logger'
+import { Type } from '@sinclair/typebox'
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
+import { OkResponse } from '@/apis/schemas/common.js'
+import {
+  JrlpRecordsQuerySchema,
+  SetWifeRequestSchema,
+  UpdateRecordRequestSchema,
+  DeleteRecordRequestSchema,
+  WifeRecordResponseSchema,
+  PaginatedRecordsResponseSchema,
+  type JrlpRecordsQuery,
+  type SetWifeRequest,
+  type UpdateRecordRequest,
+  type DeleteRecordRequest,
+} from '@/apis/schemas/index.js'
 import { ok, fail } from '@/core/response.js'
 import type { JrlpService, WifeRecord } from '@/services/jrlp.js'
 
@@ -38,25 +52,20 @@ const jrlpRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/jrlp/records — 分页查询抽取/预设记录。 */
   app.get(
     '/api/jrlp/records',
-    async (
-      req: FastifyRequest<{
-        Querystring: {
-          groupId?: string
-          userId?: string
-          date?: string
-          page?: string
-          pageSize?: string
-        }
-      }>,
-      reply: FastifyReply,
-    ) => {
+    {
+      schema: {
+        querystring: JrlpRecordsQuerySchema,
+        response: { 200: OkResponse(PaginatedRecordsResponseSchema) },
+      },
+    },
+    async (req: FastifyRequest<{ Querystring: JrlpRecordsQuery }>, reply: FastifyReply) => {
       const svc = await getJrlpSvc(app)
 
       const groupId = req.query.groupId ? BigInt(req.query.groupId) : undefined
       const userId = req.query.userId ? BigInt(req.query.userId) : undefined
       const recordDate = req.query.date ? new Date(req.query.date) : undefined
-      const page = req.query.page ? parseInt(req.query.page, 10) : 1
-      const pageSize = req.query.pageSize ? parseInt(req.query.pageSize, 10) : 20
+      const page = req.query.page ?? 1
+      const pageSize = req.query.pageSize ?? 20
 
       const [records, total] = await svc.listRecords({
         groupId,
@@ -82,12 +91,13 @@ const jrlpRoutes: FastifyPluginAsync = async (app) => {
   /** POST /api/jrlp/records/create — 手动设置老婆（创建预设）。 */
   app.post(
     '/api/jrlp/records/create',
-    async (
-      req: FastifyRequest<{
-        Body: { groupId: number; userId: number; wifeQq: number; date: string }
-      }>,
-      reply: FastifyReply,
-    ) => {
+    {
+      schema: {
+        body: SetWifeRequestSchema,
+        response: { 200: OkResponse(WifeRecordResponseSchema) },
+      },
+    },
+    async (req: FastifyRequest<{ Body: SetWifeRequest }>, reply: FastifyReply) => {
       const svc = await getJrlpSvc(app)
 
       try {
@@ -100,7 +110,7 @@ const jrlpRoutes: FastifyPluginAsync = async (app) => {
         await reply.send(ok(recordToDict(record), '设置成功'))
       } catch (err) {
         log.warn({ err }, '创建老婆预设失败')
-        await reply.send(fail('设置失败，请检查参数或记录是否已存在'))
+        await reply.status(409).send(fail('设置失败，请检查参数或记录是否已存在'))
       }
     },
   )
@@ -108,7 +118,13 @@ const jrlpRoutes: FastifyPluginAsync = async (app) => {
   /** POST /api/jrlp/records/update — 修改记录的老婆信息。 */
   app.post(
     '/api/jrlp/records/update',
-    async (req: FastifyRequest<{ Body: { id: number; wifeQq: number } }>, reply: FastifyReply) => {
+    {
+      schema: {
+        body: UpdateRecordRequestSchema,
+        response: { 200: OkResponse(WifeRecordResponseSchema) },
+      },
+    },
+    async (req: FastifyRequest<{ Body: UpdateRecordRequest }>, reply: FastifyReply) => {
       const svc = await getJrlpSvc(app)
 
       const record = await svc.updateRecord(req.body.id, { wifeQq: req.body.wifeQq })
@@ -123,12 +139,18 @@ const jrlpRoutes: FastifyPluginAsync = async (app) => {
   /** POST /api/jrlp/records/delete — 删除记录。 */
   app.post(
     '/api/jrlp/records/delete',
-    async (req: FastifyRequest<{ Body: { id: number } }>, reply: FastifyReply) => {
+    {
+      schema: {
+        body: DeleteRecordRequestSchema,
+        response: { 200: OkResponse(Type.Null()) },
+      },
+    },
+    async (req: FastifyRequest<{ Body: DeleteRecordRequest }>, reply: FastifyReply) => {
       const svc = await getJrlpSvc(app)
 
       const success = await svc.deleteRecord(req.body.id)
       if (!success) {
-        await reply.send(fail('记录不存在'))
+        await reply.status(404).send(fail('记录不存在'))
         return
       }
       await reply.send(ok(null, '删除成功'))

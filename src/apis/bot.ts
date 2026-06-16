@@ -5,7 +5,12 @@
 import { getLogger } from '@logger'
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
-import { BotProfileUpdateRequestSchema } from '@/apis/schemas/bot.js'
+import { OkResponse } from '@/apis/schemas/common.js'
+import {
+  BotProfileUpdateRequestSchema,
+  BotInfoDataSchema,
+  BotProfileDataSchema,
+} from '@/apis/schemas/index.js'
 import { ok, fail } from '@/core/response.js'
 
 const log = getLogger('bot')
@@ -24,80 +29,88 @@ interface BotProfileUpdateBody {
  */
 const botRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/bot/info — 获取 Bot 登录信息（昵称、QQ 号、头像）。 */
-  app.get('/api/bot/info', async (_req: FastifyRequest, reply: FastifyReply) => {
-    const connMgr = app.services.get('connectionManager') as { connected: boolean } | undefined
-    const botApi = app.services.get('botApi') as
-      | { getLoginInfo(): Promise<{ ok: boolean; data?: Record<string, unknown> }> }
-      | undefined
+  app.get(
+    '/api/bot/info',
+    { schema: { response: { 200: OkResponse(BotInfoDataSchema) } } },
+    async (_req: FastifyRequest, reply: FastifyReply) => {
+      const connMgr = app.services.get('connectionManager') as { connected: boolean } | undefined
+      const botApi = app.services.get('botApi') as
+        | { getLoginInfo(): Promise<{ ok: boolean; data?: Record<string, unknown> }> }
+        | undefined
 
-    let nickname: string | null = null
-    let userId: number | null = null
-    let avatarUrl: string | null = null
+      let nickname: string | null = null
+      let userId: number | null = null
+      let avatarUrl: string | null = null
 
-    if (connMgr?.connected === true && botApi !== undefined) {
-      try {
-        const resp = await botApi.getLoginInfo()
-        if (resp.ok && resp.data !== undefined) {
-          nickname = (resp.data.nickname as string | null | undefined) ?? null
-          userId = (resp.data.user_id as number | null | undefined) ?? null
-          if (userId !== null) {
-            avatarUrl = `https://q1.qlogo.cn/g?b=qq&nk=${String(userId)}&s=640`
+      if (connMgr?.connected === true && botApi !== undefined) {
+        try {
+          const resp = await botApi.getLoginInfo()
+          if (resp.ok && resp.data !== undefined) {
+            nickname = (resp.data.nickname as string | null | undefined) ?? null
+            userId = (resp.data.user_id as number | null | undefined) ?? null
+            if (userId !== null) {
+              avatarUrl = `https://q1.qlogo.cn/g?b=qq&nk=${String(userId)}&s=640`
+            }
           }
+        } catch (err) {
+          log.warn({ err }, '获取 Bot 登录信息失败')
         }
-      } catch (err) {
-        log.warn({ err }, '获取 Bot 登录信息失败')
       }
-    }
 
-    await reply.send(ok({ nickname, userId, avatarUrl }))
-  })
+      await reply.send(ok({ nickname, userId, avatarUrl }))
+    },
+  )
 
   /** GET /api/bot/profile — 获取 Bot 完整信息（含在线状态和版本）。 */
-  app.get('/api/bot/profile', async (_req: FastifyRequest, reply: FastifyReply) => {
-    const connMgr = app.services.get('connectionManager') as { connected: boolean } | undefined
-    const botApi = app.services.get('botApi') as
-      | {
-          getLoginInfo(): Promise<{ ok: boolean; data?: Record<string, unknown> }>
-          getVersionInfo(): Promise<{ ok: boolean; data?: Record<string, unknown> }>
-        }
-      | undefined
-
-    let nickname: string | null = null
-    let userId: number | null = null
-    let avatarUrl: string | null = null
-    const online = connMgr?.connected === true
-    let version: Record<string, string> = {}
-
-    if (online && botApi !== undefined) {
-      try {
-        const loginResp = await botApi.getLoginInfo()
-        if (loginResp.ok && loginResp.data !== undefined) {
-          nickname = (loginResp.data.nickname as string | null | undefined) ?? null
-          userId = (loginResp.data.user_id as number | null | undefined) ?? null
-          if (userId !== null) {
-            avatarUrl = `https://q1.qlogo.cn/g?b=qq&nk=${String(userId)}&s=640`
+  app.get(
+    '/api/bot/profile',
+    { schema: { response: { 200: OkResponse(BotProfileDataSchema) } } },
+    async (_req: FastifyRequest, reply: FastifyReply) => {
+      const connMgr = app.services.get('connectionManager') as { connected: boolean } | undefined
+      const botApi = app.services.get('botApi') as
+        | {
+            getLoginInfo(): Promise<{ ok: boolean; data?: Record<string, unknown> }>
+            getVersionInfo(): Promise<{ ok: boolean; data?: Record<string, unknown> }>
           }
+        | undefined
+
+      let nickname: string | null = null
+      let userId: number | null = null
+      let avatarUrl: string | null = null
+      const online = connMgr?.connected === true
+      let version: Record<string, string> = {}
+
+      if (online && botApi !== undefined) {
+        try {
+          const loginResp = await botApi.getLoginInfo()
+          if (loginResp.ok && loginResp.data !== undefined) {
+            nickname = (loginResp.data.nickname as string | null | undefined) ?? null
+            userId = (loginResp.data.user_id as number | null | undefined) ?? null
+            if (userId !== null) {
+              avatarUrl = `https://q1.qlogo.cn/g?b=qq&nk=${String(userId)}&s=640`
+            }
+          }
+        } catch (err) {
+          log.warn({ err }, '获取登录信息失败')
         }
-      } catch (err) {
-        log.warn({ err }, '获取登录信息失败')
+
+        try {
+          const verResp = await botApi.getVersionInfo()
+          if (verResp.ok && verResp.data !== undefined) {
+            version = {
+              appName: (verResp.data.app_name as string | undefined) ?? '',
+              appVersion: (verResp.data.app_version as string | undefined) ?? '',
+              protocolVersion: (verResp.data.protocol_version as string | undefined) ?? '',
+            }
+          }
+        } catch (err) {
+          log.warn({ err }, '获取版本信息失败')
+        }
       }
 
-      try {
-        const verResp = await botApi.getVersionInfo()
-        if (verResp.ok && verResp.data !== undefined) {
-          version = {
-            appName: (verResp.data.app_name as string | undefined) ?? '',
-            appVersion: (verResp.data.app_version as string | undefined) ?? '',
-            protocolVersion: (verResp.data.protocol_version as string | undefined) ?? '',
-          }
-        }
-      } catch (err) {
-        log.warn({ err }, '获取版本信息失败')
-      }
-    }
-
-    await reply.send(ok({ nickname, userId, avatarUrl, online, version }))
-  })
+      await reply.send(ok({ nickname, userId, avatarUrl, online, version }))
+    },
+  )
 
   /** PUT /api/bot/profile — 修改 Bot 昵称和个性签名。 */
   app.put(

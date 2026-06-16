@@ -4,6 +4,7 @@
 
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
+import { LogStreamQuerySchema } from '@/apis/schemas/index.js'
 import { logBroadcaster } from '@/core/logging/index.js'
 
 /**
@@ -17,6 +18,9 @@ const logsRoutes: FastifyPluginAsync = async (app) => {
    */
   app.get(
     '/api/logs',
+    {
+      schema: { querystring: LogStreamQuerySchema },
+    },
     async (req: FastifyRequest<{ Querystring: { level?: string } }>, reply: FastifyReply) => {
       const levelFilter = req.query.level?.toLowerCase()
 

@@ -16,3 +16,4 @@ export type {
   LifecycleEntry,
 } from './decorators/index.js'
 export type { ServiceEntry } from './service-entry.js'
+export type { InfraServiceMap } from './types.js'

@@ -5,6 +5,17 @@
 import { getLogger } from '@logger'
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
+import {
+  GroupIdParamSchema,
+  UserIdParamSchema,
+  MessageIdParamSchema,
+  GroupMessageQuerySchema,
+  PrivateMessageQuerySchema,
+  MessageContextQuerySchema,
+  ArchiveListQuerySchema,
+  ArchiveQuerySchema,
+  ArchiveTriggerBodySchema,
+} from '@/apis/schemas/index.js'
 import { ok, fail } from '@/core/response.js'
 
 const log = getLogger('chat')
@@ -23,6 +34,9 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/chat/messages/group/:groupId — 获取群聊消息列表（游标分页）。 */
   app.get(
     '/api/chat/messages/group/:groupId',
+    {
+      schema: { params: GroupIdParamSchema, querystring: GroupMessageQuerySchema },
+    },
     async (
       req: FastifyRequest<{
         Params: { groupId: string }
@@ -59,6 +73,9 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/chat/messages/private/:userId — 获取私聊消息列表。 */
   app.get(
     '/api/chat/messages/private/:userId',
+    {
+      schema: { params: UserIdParamSchema, querystring: PrivateMessageQuerySchema },
+    },
     async (
       req: FastifyRequest<{
         Params: { userId: string }
@@ -84,6 +101,12 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/chat/messages/:messageId/context — 获取消息上下文（前后 N 条）。 */
   app.get(
     '/api/chat/messages/:messageId/context',
+    {
+      schema: {
+        params: MessageIdParamSchema,
+        querystring: MessageContextQuerySchema,
+      },
+    },
     async (
       req: FastifyRequest<{
         Params: { messageId: string }
@@ -109,6 +132,9 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/chat/archives — 获取归档列表。 */
   app.get(
     '/api/chat/archives',
+    {
+      schema: { querystring: ArchiveListQuerySchema },
+    },
     async (
       req: FastifyRequest<{ Querystring: { page?: string; pageSize?: string } }>,
       reply: FastifyReply,
@@ -128,6 +154,9 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
   /** POST /api/chat/archives/trigger — 手动触发归档任务（发送 BullMQ job）。 */
   app.post(
     '/api/chat/archives/trigger',
+    {
+      schema: { body: ArchiveTriggerBodySchema },
+    },
     async (req: FastifyRequest<{ Body?: { partitionName?: string } }>, reply: FastifyReply) => {
       const queues = app.services.get('queues') as Record<string, ArchiveQueue> | undefined
 
@@ -151,6 +180,9 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/chat/archives/query — 查询已完成的归档记录（按起始时间过滤）。 */
   app.get(
     '/api/chat/archives/query',
+    {
+      schema: { querystring: ArchiveQuerySchema },
+    },
     async (
       req: FastifyRequest<{
         Querystring: { periodStart: string; groupId?: string; limit?: string }

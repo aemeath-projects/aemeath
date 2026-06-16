@@ -2,9 +2,17 @@
  * 漂流瓶管理 REST API —— /api/drift-bottle-pools。
  */
 
+import { Type } from '@sinclair/typebox'
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
-import { CreatePoolRequestSchema, GroupAssignRequestSchema } from '@/apis/schemas/drift-bottle.js'
+import { OkResponse } from '@/apis/schemas/common.js'
+import {
+  CreatePoolRequestSchema,
+  GroupAssignRequestSchema,
+  PoolIdParamSchema,
+  PoolListDataSchema,
+  PoolGroupsResponseSchema,
+} from '@/apis/schemas/index.js'
 import { ok, fail } from '@/core/response.js'
 import type { DriftBottleService, PoolInfo } from '@/services/drift-bottle.js'
 
@@ -19,26 +27,33 @@ async function getDriftSvc(app: FastifyInstance): Promise<DriftBottleService> {
  */
 const driftBottleRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/drift-bottle-pools — 列出所有漂流瓶池，含各池未捞取瓶数统计。 */
-  app.get('/api/drift-bottle-pools', async (_req: FastifyRequest, reply: FastifyReply) => {
-    const svc = await getDriftSvc(app)
+  app.get(
+    '/api/drift-bottle-pools',
+    { schema: { response: { 200: OkResponse(PoolListDataSchema) } } },
+    async (_req: FastifyRequest, reply: FastifyReply) => {
+      const svc = await getDriftSvc(app)
 
-    const pools: PoolInfo[] = await svc.listPools()
-    await reply.send(
-      ok(
-        pools.map((p) => ({
-          id: p.id,
-          name: p.name,
-          availableCount: p.availableCount,
-        })),
-      ),
-    )
-  })
+      const pools: PoolInfo[] = await svc.listPools()
+      await reply.send(
+        ok(
+          pools.map((p) => ({
+            id: p.id,
+            name: p.name,
+            availableCount: p.availableCount,
+          })),
+        ),
+      )
+    },
+  )
 
   /** POST /api/drift-bottle-pools — 创建新漂流瓶池。 */
   app.post(
     '/api/drift-bottle-pools',
     {
-      schema: { body: CreatePoolRequestSchema },
+      schema: {
+        body: CreatePoolRequestSchema,
+        response: { 201: OkResponse(Type.Object({ id: Type.Number(), name: Type.String() })) },
+      },
     },
     async (req: FastifyRequest<{ Body: { name: string } }>, reply: FastifyReply) => {
       const svc = await getDriftSvc(app)
@@ -59,6 +74,9 @@ const driftBottleRoutes: FastifyPluginAsync = async (app) => {
   /** POST /api/drift-bottle-pools/:poolId/delete — 删除漂流瓶池（id=0 的默认池不可删除）。 */
   app.post(
     '/api/drift-bottle-pools/:poolId/delete',
+    {
+      schema: { params: PoolIdParamSchema, response: { 200: OkResponse(Type.Null()) } },
+    },
     async (req: FastifyRequest<{ Params: { poolId: string } }>, reply: FastifyReply) => {
       const svc = await getDriftSvc(app)
 
@@ -80,6 +98,12 @@ const driftBottleRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/drift-bottle-pools/:poolId/groups — 列出指定池下所有群号。 */
   app.get(
     '/api/drift-bottle-pools/:poolId/groups',
+    {
+      schema: {
+        params: PoolIdParamSchema,
+        response: { 200: OkResponse(PoolGroupsResponseSchema) },
+      },
+    },
     async (req: FastifyRequest<{ Params: { poolId: string } }>, reply: FastifyReply) => {
       const svc = await getDriftSvc(app)
 
@@ -93,7 +117,7 @@ const driftBottleRoutes: FastifyPluginAsync = async (app) => {
   app.post(
     '/api/drift-bottle-pools/group-assign',
     {
-      schema: { body: GroupAssignRequestSchema },
+      schema: { body: GroupAssignRequestSchema, response: { 200: OkResponse(Type.Null()) } },
     },
     async (
       req: FastifyRequest<{ Body: { groupId: number; poolId: number } }>,

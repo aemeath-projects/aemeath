@@ -5,6 +5,16 @@
 import { getLogger } from '@logger'
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
+import { OkResponse } from '@/apis/schemas/common.js'
+import {
+  QueueStreamQuerySchema,
+  ScheduledTasksDataSchema,
+  ActiveTasksDataSchema,
+  ReservedTasksDataSchema,
+  WorkersDataSchema,
+  QueueLengthDataSchema,
+  PendingTasksDataSchema,
+} from '@/apis/schemas/index.js'
 import { ok, fail } from '@/core/response.js'
 
 const log = getLogger('queue')
@@ -159,168 +169,195 @@ async function collectQueueState(app: FastifyInstance): Promise<QueueStateResult
  */
 const queueRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/queue/scheduled-tasks — 获取已注册的定时任务列表。 */
-  app.get('/api/queue/scheduled-tasks', async (_req: FastifyRequest, reply: FastifyReply) => {
-    const scheduler = app.services.get('scheduler') as SchedulerApi | undefined
+  app.get(
+    '/api/queue/scheduled-tasks',
+    { schema: { response: { 200: OkResponse(ScheduledTasksDataSchema) } } },
+    async (_req: FastifyRequest, reply: FastifyReply) => {
+      const scheduler = app.services.get('scheduler') as SchedulerApi | undefined
 
-    const tasks: Record<string, unknown>[] = []
-    if (scheduler !== undefined) {
-      try {
-        const schedules = await scheduler.getSchedules()
-        for (const s of schedules) {
-          const funcName = (s.task_id as string | undefined) ?? (s.id as string | undefined) ?? ''
-          tasks.push({
-            name: displayTaskName(funcName),
-            task: funcName,
-            schedule: s.trigger ?? '',
-            scheduleRaw: null,
-            args: null,
-            kwargs: null,
-            options: { expires: null, queue: 'aemeath_queue' },
-            enabled: true,
-          })
+      const tasks: Record<string, unknown>[] = []
+      if (scheduler !== undefined) {
+        try {
+          const schedules = await scheduler.getSchedules()
+          for (const s of schedules) {
+            const funcName = (s.task_id as string | undefined) ?? (s.id as string | undefined) ?? ''
+            tasks.push({
+              name: displayTaskName(funcName),
+              task: funcName,
+              schedule: s.trigger ?? '',
+              scheduleRaw: null,
+              args: null,
+              kwargs: null,
+              options: { expires: null, queue: 'aemeath_queue' },
+              enabled: true,
+            })
+          }
+        } catch (err) {
+          log.warn({ err }, '获取定时任务失败')
         }
-      } catch (err) {
-        log.warn({ err }, '获取定时任务失败')
       }
-    }
 
-    await reply.send(ok(tasks))
-  })
+      await reply.send(ok(tasks))
+    },
+  )
 
   /** GET /api/queue/active-tasks — 获取当前正在执行的任务。 */
-  app.get('/api/queue/active-tasks', async (_req: FastifyRequest, reply: FastifyReply) => {
-    const queues = app.services.get('queues') as Record<string, BullQueue> | undefined
-    if (queues === undefined) {
-      await reply.send(ok([]))
-      return
-    }
-
-    const results: unknown[] = []
-    await Promise.all(
-      Object.entries(queues).map(async ([queueName, queue]) => {
-        try {
-          const jobs = await queue.getActive()
-          for (const job of jobs) {
-            results.push({
-              worker: queueName,
-              id: job.id ?? '',
-              name: displayTaskName(job.name),
-              args: JSON.stringify(job.data),
-              kwargs: '{}',
-              started: job.processedOn != null ? Math.floor(job.processedOn / 1000) : null,
-              acknowledged: true,
-            })
-          }
-        } catch (err) {
-          log.warn({ queueName, err }, '获取队列活跃任务失败')
-        }
-      }),
-    )
-    await reply.send(ok(results))
-  })
-
-  /** GET /api/queue/reserved-tasks — 获取已预取但未执行的任务。 */
-  app.get('/api/queue/reserved-tasks', async (_req: FastifyRequest, reply: FastifyReply) => {
-    await reply.send(ok([]))
-  })
-
-  /** GET /api/queue/workers — 获取在线 Worker 节点信息。 */
-  app.get('/api/queue/workers', async (_req: FastifyRequest, reply: FastifyReply) => {
-    const queues = app.services.get('queues') as Record<string, BullQueue> | undefined
-    if (queues === undefined) {
-      await reply.send(ok([]))
-      return
-    }
-
-    const seen = new Set<string>()
-    const results: unknown[] = []
-    await Promise.all(
-      Object.entries(queues).map(async ([queueName, queue]) => {
-        try {
-          const queueWorkers = await queue.getWorkers()
-          for (const w of queueWorkers) {
-            const key = w.addr ?? w.id
-            if (seen.has(key)) continue
-            seen.add(key)
-            const parts = (w.addr ?? '').split(':')
-            const pid = parts[2] ? parseInt(parts[2], 10) : null
-            results.push({
-              name: w.name ?? w.addr ?? w.id,
-              concurrency: null,
-              broker: queueName,
-              prefetch_count: null,
-              pid: pid !== null && Number.isFinite(pid) ? pid : null,
-              uptime: null,
-            })
-          }
-        } catch (err) {
-          log.warn({ queueName, err }, '获取队列 Worker 信息失败')
-        }
-      }),
-    )
-    await reply.send(ok(results))
-  })
-
-  /** GET /api/queue/queue-length — 获取队列中的消息数量。 */
-  app.get('/api/queue/queue-length', async (_req: FastifyRequest, reply: FastifyReply) => {
-    try {
+  app.get(
+    '/api/queue/active-tasks',
+    { schema: { response: { 200: OkResponse(ActiveTasksDataSchema) } } },
+    async (_req: FastifyRequest, reply: FastifyReply) => {
       const queues = app.services.get('queues') as Record<string, BullQueue> | undefined
       if (queues === undefined) {
-        await reply.send(fail('队列未就绪', { queue: 'bullmq', length: null }))
+        await reply.send(ok([]))
         return
       }
-      let total = 0
+
+      const results: unknown[] = []
       await Promise.all(
-        Object.values(queues).map(async (queue) => {
+        Object.entries(queues).map(async ([queueName, queue]) => {
           try {
-            const [active, waiting] = await Promise.all([queue.getActive(), queue.getWaiting()])
-            total += active.length + waiting.length
+            const jobs = await queue.getActive()
+            for (const job of jobs) {
+              results.push({
+                worker: queueName,
+                id: job.id ?? '',
+                name: displayTaskName(job.name),
+                args: JSON.stringify(job.data),
+                kwargs: '{}',
+                started: job.processedOn != null ? Math.floor(job.processedOn / 1000) : null,
+                acknowledged: true,
+              })
+            }
           } catch (err) {
-            log.warn({ err }, '获取队列长度失败，跳过该队列')
+            log.warn({ queueName, err }, '获取队列活跃任务失败')
           }
         }),
       )
-      await reply.send(ok({ queue: 'bullmq', length: total }))
-    } catch (err) {
-      log.warn({ err }, '获取队列长度失败')
-      await reply.send(fail('无法获取队列长度', { queue: 'bullmq', length: null }))
-    }
-  })
+      await reply.send(ok(results))
+    },
+  )
+
+  /** GET /api/queue/reserved-tasks — 获取已预取但未执行的任务。 */
+  app.get(
+    '/api/queue/reserved-tasks',
+    { schema: { response: { 200: OkResponse(ReservedTasksDataSchema) } } },
+    async (_req: FastifyRequest, reply: FastifyReply) => {
+      await reply.send(ok([]))
+    },
+  )
+
+  /** GET /api/queue/workers — 获取在线 Worker 节点信息。 */
+  app.get(
+    '/api/queue/workers',
+    { schema: { response: { 200: OkResponse(WorkersDataSchema) } } },
+    async (_req: FastifyRequest, reply: FastifyReply) => {
+      const queues = app.services.get('queues') as Record<string, BullQueue> | undefined
+      if (queues === undefined) {
+        await reply.send(ok([]))
+        return
+      }
+
+      const seen = new Set<string>()
+      const results: unknown[] = []
+      await Promise.all(
+        Object.entries(queues).map(async ([queueName, queue]) => {
+          try {
+            const queueWorkers = await queue.getWorkers()
+            for (const w of queueWorkers) {
+              const key = w.addr ?? w.id
+              if (seen.has(key)) continue
+              seen.add(key)
+              const parts = (w.addr ?? '').split(':')
+              const pid = parts[2] ? parseInt(parts[2], 10) : null
+              results.push({
+                name: w.name ?? w.addr ?? w.id,
+                concurrency: null,
+                broker: queueName,
+                prefetch_count: null,
+                pid: pid !== null && Number.isFinite(pid) ? pid : null,
+                uptime: null,
+              })
+            }
+          } catch (err) {
+            log.warn({ queueName, err }, '获取队列 Worker 信息失败')
+          }
+        }),
+      )
+      await reply.send(ok(results))
+    },
+  )
+
+  /** GET /api/queue/queue-length — 获取队列中的消息数量。 */
+  app.get(
+    '/api/queue/queue-length',
+    { schema: { response: { 200: OkResponse(QueueLengthDataSchema) } } },
+    async (_req: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const queues = app.services.get('queues') as Record<string, BullQueue> | undefined
+        if (queues === undefined) {
+          await reply.status(503).send(fail('队列未就绪', { queue: 'bullmq', length: null }))
+          return
+        }
+        let total = 0
+        await Promise.all(
+          Object.values(queues).map(async (queue) => {
+            try {
+              const [active, waiting] = await Promise.all([queue.getActive(), queue.getWaiting()])
+              total += active.length + waiting.length
+            } catch (err) {
+              log.warn({ err }, '获取队列长度失败，跳过该队列')
+            }
+          }),
+        )
+        await reply.send(ok({ queue: 'bullmq', length: total }))
+      } catch (err) {
+        log.warn({ err }, '获取队列长度失败')
+        await reply.status(500).send(fail('无法获取队列长度', { queue: 'bullmq', length: null }))
+      }
+    },
+  )
 
   /** GET /api/queue/pending-tasks — 获取队列中等待被消费的任务。 */
-  app.get('/api/queue/pending-tasks', async (_req: FastifyRequest, reply: FastifyReply) => {
-    const queues = app.services.get('queues') as Record<string, BullQueue> | undefined
-    if (queues === undefined) {
-      await reply.send(ok([]))
-      return
-    }
+  app.get(
+    '/api/queue/pending-tasks',
+    { schema: { response: { 200: OkResponse(PendingTasksDataSchema) } } },
+    async (_req: FastifyRequest, reply: FastifyReply) => {
+      const queues = app.services.get('queues') as Record<string, BullQueue> | undefined
+      if (queues === undefined) {
+        await reply.send(ok([]))
+        return
+      }
 
-    const results: unknown[] = []
-    await Promise.all(
-      Object.entries(queues).map(async ([_queueName, queue]) => {
-        try {
-          const jobs = await queue.getWaiting()
-          for (const job of jobs) {
-            results.push({
-              id: job.id ?? '',
-              name: displayTaskName(job.name),
-              args: JSON.stringify(job.data),
-              kwargs: null,
-            })
+      const results: unknown[] = []
+      await Promise.all(
+        Object.entries(queues).map(async ([_queueName, queue]) => {
+          try {
+            const jobs = await queue.getWaiting()
+            for (const job of jobs) {
+              results.push({
+                id: job.id ?? '',
+                name: displayTaskName(job.name),
+                args: JSON.stringify(job.data),
+                kwargs: null,
+              })
+            }
+          } catch (err) {
+            log.warn({ err }, '获取待处理任务失败')
           }
-        } catch (err) {
-          log.warn({ err }, '获取待处理任务失败')
-        }
-      }),
-    )
-    await reply.send(ok(results))
-  })
+        }),
+      )
+      await reply.send(ok(results))
+    },
+  )
 
   /**
    * GET /api/queue/stream — SSE 端点，实时推送队列状态数据。
    */
   app.get(
     '/api/queue/stream',
+    {
+      schema: { querystring: QueueStreamQuerySchema },
+    },
     async (req: FastifyRequest<{ Querystring: { interval?: string } }>, reply: FastifyReply) => {
       const intervalSecs = req.query.interval !== undefined ? parseFloat(req.query.interval) : 5.0
 

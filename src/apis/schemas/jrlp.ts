@@ -7,9 +7,9 @@ import { Type } from '@sinclair/typebox'
 /** 单条记录响应 Schema。 */
 export const WifeRecordResponseSchema = Type.Object({
   id: Type.Number(),
-  groupId: Type.Number(),
-  userId: Type.Number(),
-  wifeQq: Type.Number(),
+  groupId: Type.String(),
+  userId: Type.String(),
+  wifeQq: Type.String(),
   date: Type.String({ description: 'ISO date string' }),
   drawnAt: Type.Union([Type.String(), Type.Null()]),
 })
@@ -42,7 +42,24 @@ export const DeleteRecordRequestSchema = Type.Object({
   id: Type.Number({ description: '记录 ID' }),
 })
 
+/** 老婆记录列表查询参数 Schema。 */
+export const JrlpRecordsQuerySchema = Type.Object({
+  groupId: Type.Optional(Type.String({ pattern: '^\\d+$' })),
+  userId: Type.Optional(Type.String({ pattern: '^\\d+$' })),
+  date: Type.Optional(Type.String({ description: 'YYYY-MM-DD' })),
+  page: Type.Optional(Type.Number({ default: 1, minimum: 1 })),
+  pageSize: Type.Optional(Type.Number({ default: 20, minimum: 1, maximum: 100 })),
+})
+
 /* TypeScript 接口 */
+
+export interface JrlpRecordsQuery {
+  groupId?: string
+  userId?: string
+  date?: string
+  page?: number
+  pageSize?: number
+}
 
 export interface SetWifeRequest {
   groupId: number

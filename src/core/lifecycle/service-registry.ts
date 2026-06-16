@@ -34,6 +34,8 @@ export class ServiceRegistry {
    * 用法：`registry.getTyped(MyService, 'myService')`
    */
   getTyped<T>(
+    // any[] 是类型级幻影参数：_ctor 仅用于推断 T，从不实例化；unknown[] 会因
+    // 构造器参数逆变导致具体类（如 ChatHistoryService）不兼容。
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     _ctor: abstract new (...args: any[]) => T,
     name: string,

@@ -16,7 +16,7 @@ import {
   SettingNode,
 } from '@/core/dispatch/decorators/index.js'
 import { Inject } from '@/core/lifecycle/decorators/index.js'
-import { MessageBuilder } from '@/core/utils/message-builder.js'
+import { MessageBuilder } from '@/core/utils/index.js'
 import type { DriftBottleService } from '@/services/drift-bottle.js'
 
 const TRIGGER_THROW = '扔漂流瓶'

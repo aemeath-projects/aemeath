@@ -6,7 +6,15 @@
 
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
-import { SetValueRequestSchema, BatchSetRequestSchema } from '@/apis/schemas/permission.js'
+import {
+  SetValueRequestSchema,
+  BatchSetRequestSchema,
+  SettingsGroupIdParamSchema,
+  SettingsUserIdParamSchema,
+  SettingsGroupKeyParamsSchema,
+  SettingsUserKeyParamsSchema,
+  SettingsQuerySchema,
+} from '@/apis/schemas/index.js'
 import { ok, fail } from '@/core/response.js'
 import { SettingsService } from '@/core/settings/index.js'
 
@@ -33,6 +41,9 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/settings/schemas — 获取所有配置项 Schema（供前端渲染表单）。 */
   app.get(
     '/api/settings/schemas',
+    {
+      schema: { querystring: SettingsQuerySchema },
+    },
     async (req: FastifyRequest<{ Querystring: { prefix?: string } }>, reply: FastifyReply) => {
       const svc = getSettings(app)
       const schemas = svc.getSchemas(req.query.prefix)
@@ -45,6 +56,9 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/settings/groups/:groupId — 读取群级配置（含 Schema 默认值回退）。 */
   app.get(
     '/api/settings/groups/:groupId',
+    {
+      schema: { params: SettingsGroupIdParamSchema, querystring: SettingsQuerySchema },
+    },
     async (
       req: FastifyRequest<{ Params: { groupId: string }; Querystring: { prefix?: string } }>,
       reply: FastifyReply,
@@ -61,7 +75,7 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
   app.post(
     '/api/settings/groups/:groupId/:key',
     {
-      schema: { body: SetValueRequestSchema },
+      schema: { params: SettingsGroupKeyParamsSchema, body: SetValueRequestSchema },
     },
     async (
       req: FastifyRequest<{ Params: { groupId: string; key: string }; Body: SetValueBody }>,
@@ -81,7 +95,7 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
   app.post(
     '/api/settings/groups/:groupId/batch',
     {
-      schema: { body: BatchSetRequestSchema },
+      schema: { params: SettingsGroupIdParamSchema, body: BatchSetRequestSchema },
     },
     async (
       req: FastifyRequest<{ Params: { groupId: string }; Body: BatchSetBody }>,
@@ -102,6 +116,9 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/settings/users/:userId — 读取用户级配置（含 Schema 默认值回退）。 */
   app.get(
     '/api/settings/users/:userId',
+    {
+      schema: { params: SettingsUserIdParamSchema, querystring: SettingsQuerySchema },
+    },
     async (
       req: FastifyRequest<{ Params: { userId: string }; Querystring: { prefix?: string } }>,
       reply: FastifyReply,
@@ -118,7 +135,7 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
   app.post(
     '/api/settings/users/:userId/:key',
     {
-      schema: { body: SetValueRequestSchema },
+      schema: { params: SettingsUserKeyParamsSchema, body: SetValueRequestSchema },
     },
     async (
       req: FastifyRequest<{ Params: { userId: string; key: string }; Body: SetValueBody }>,

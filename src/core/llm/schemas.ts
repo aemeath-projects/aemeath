@@ -45,6 +45,9 @@ export const LlmProviderSchema = Type.Object({
   modelCount: Type.Integer(),
 })
 
+/** 提供商列表响应数据 Schema —— GET /api/llm/providers */
+export const ProviderListDataSchema = Type.Array(LlmProviderSchema)
+
 /* 模型 */
 
 /** 模型创建请求 Schema。 */
@@ -88,6 +91,9 @@ export const LlmModelSchema = Type.Object({
   extraParams: Type.Object({}, { additionalProperties: true }),
 })
 
+/** 模型列表响应数据 Schema —— GET /api/llm/models */
+export const ModelListDataSchema = Type.Array(LlmModelSchema)
+
 /* Chat */
 
 /** 单条对话消息 Schema。 */
@@ -105,6 +111,36 @@ export const ChatRequestSchema = Type.Object({
   temperature: Type.Optional(Type.Number({ minimum: 0, maximum: 2, description: '覆盖温度' })),
   maxTokens: Type.Optional(Type.Integer({ description: '覆盖最大 token 数' })),
   stream: Type.Boolean({ default: false, description: '是否流式输出' }),
+})
+
+/* ──── 路径参数 ──── */
+
+/** 提供商 ID 路径参数 —— UUID 格式。 */
+export const ProviderIdParamSchema = Type.Object({
+  id: Type.String({
+    pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+    description: '提供商 UUID',
+  }),
+})
+
+/** 模型 ID 路径参数 —— UUID 格式。 */
+export const ModelIdParamSchema = Type.Object({
+  id: Type.String({
+    pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+    description: '模型 UUID',
+  }),
+})
+
+/* ──── 查询参数 ──── */
+
+/** 模型列表查询参数 —— GET /api/llm/models?providerId= */
+export const ModelListQuerySchema = Type.Object({
+  providerId: Type.Optional(
+    Type.String({
+      pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+      description: '按提供商 UUID 筛选',
+    }),
+  ),
 })
 
 /* 工具函数 */

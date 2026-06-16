@@ -2,11 +2,23 @@
  * 点赞管理 REST API —— /api/like。
  */
 
+import { Type } from '@sinclair/typebox'
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
+import { OkResponse } from '@/apis/schemas/common.js'
+import {
+  CreateLikeTaskRequestSchema,
+  LikeTasksQuerySchema,
+  LikeHistoryQuerySchema,
+  LikeTaskParamsSchema,
+  PaginatedLikeTasksResponseSchema,
+  PaginatedLikeHistoryResponseSchema,
+  type CreateLikeTaskRequest,
+  type LikeTasksQuery,
+  type LikeHistoryQuery,
+} from '@/apis/schemas/index.js'
 import { ok } from '@/core/response.js'
 import type { LikeService } from '@/services/like.js'
-import { LIKE_SOURCE_VALUES } from '@/services/like.js'
 
 async function getLikeSvc(app: FastifyInstance): Promise<LikeService> {
   const { LikeService: Cls } = await import('@/services/like.js')
@@ -25,14 +37,17 @@ const likeRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/like/tasks — 分页查询已注册的定时点赞任务列表。 */
   app.get(
     '/api/like/tasks',
-    async (
-      req: FastifyRequest<{ Querystring: { page?: string; pageSize?: string } }>,
-      reply: FastifyReply,
-    ) => {
+    {
+      schema: {
+        querystring: LikeTasksQuerySchema,
+        response: { 200: OkResponse(PaginatedLikeTasksResponseSchema) },
+      },
+    },
+    async (req: FastifyRequest<{ Querystring: LikeTasksQuery }>, reply: FastifyReply) => {
       const svc = await getLikeSvc(app)
 
-      const page = req.query.page ? parseInt(req.query.page, 10) : 1
-      const pageSize = req.query.pageSize ? parseInt(req.query.pageSize, 10) : 20
+      const page = req.query.page ?? 1
+      const pageSize = req.query.pageSize ?? 20
 
       const [items, total] = await svc.listTasks({ page, pageSize })
       const taskItems = items.map((t: Record<string, unknown>) => ({
@@ -57,7 +72,13 @@ const likeRoutes: FastifyPluginAsync = async (app) => {
   /** POST /api/like/tasks — 新增定时点赞任务。 */
   app.post(
     '/api/like/tasks',
-    async (req: FastifyRequest<{ Body: { qq: number } }>, reply: FastifyReply) => {
+    {
+      schema: {
+        body: CreateLikeTaskRequestSchema,
+        response: { 200: OkResponse(Type.Object({ qq: Type.Number() })) },
+      },
+    },
+    async (req: FastifyRequest<{ Body: CreateLikeTaskRequest }>, reply: FastifyReply) => {
       const svc = await getLikeSvc(app)
 
       const result = await svc.registerTask(BigInt(req.body.qq), null)
@@ -72,6 +93,12 @@ const likeRoutes: FastifyPluginAsync = async (app) => {
   /** POST /api/like/tasks/:qq/cancel — 取消指定用户的定时点赞任务。 */
   app.post(
     '/api/like/tasks/:qq/cancel',
+    {
+      schema: {
+        params: LikeTaskParamsSchema,
+        response: { 200: OkResponse(Type.Object({ qq: Type.String() })) },
+      },
+    },
     async (req: FastifyRequest<{ Params: { qq: string } }>, reply: FastifyReply) => {
       const svc = await getLikeSvc(app)
 
@@ -88,32 +115,20 @@ const likeRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/like/history — 分页查询点赞执行历史。 */
   app.get(
     '/api/like/history',
-    async (
-      req: FastifyRequest<{
-        Querystring: {
-          qq?: string
-          source?: string
-          dateFrom?: string
-          dateTo?: string
-          page?: string
-          pageSize?: string
-        }
-      }>,
-      reply: FastifyReply,
-    ) => {
+    {
+      schema: {
+        querystring: LikeHistoryQuerySchema,
+        response: { 200: OkResponse(PaginatedLikeHistoryResponseSchema) },
+      },
+    },
+    async (req: FastifyRequest<{ Querystring: LikeHistoryQuery }>, reply: FastifyReply) => {
       const svc = await getLikeSvc(app)
       const qq = req.query.qq ? BigInt(req.query.qq) : undefined
-      // LikeSource 为数据库枚举：'manual'（手动）| 'scheduled'（定时）
-      const sourceStr = req.query.source
+      const source = req.query.source
       const dateFrom = req.query.dateFrom ? new Date(req.query.dateFrom) : undefined
       const dateTo = req.query.dateTo ? new Date(req.query.dateTo) : undefined
-      const page = req.query.page ? parseInt(req.query.page, 10) : 1
-      const pageSize = req.query.pageSize ? parseInt(req.query.pageSize, 10) : 20
-
-      const source =
-        sourceStr !== undefined && LIKE_SOURCE_VALUES.includes(sourceStr)
-          ? (sourceStr as 'manual' | 'scheduled')
-          : undefined
+      const page = req.query.page ?? 1
+      const pageSize = req.query.pageSize ?? 20
 
       const [items, total] = await svc.listHistory({ qq, source, dateFrom, dateTo, page, pageSize })
       const historyItems = items.map((h: Record<string, unknown>) => ({

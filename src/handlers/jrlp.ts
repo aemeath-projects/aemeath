@@ -7,7 +7,7 @@ import { logger } from '@logger'
 import { type Context } from '@/core/dispatch/context.js'
 import { Handler, OnRegex, Scope, SettingNode } from '@/core/dispatch/decorators/index.js'
 import { Inject } from '@/core/lifecycle/decorators/index.js'
-import { MessageBuilder } from '@/core/utils/message-builder.js'
+import { MessageBuilder } from '@/core/utils/index.js'
 import type { JrlpService } from '@/services/jrlp.js'
 
 // QQ 头像 URL 模板

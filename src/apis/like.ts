@@ -4,20 +4,14 @@
 
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
-import type { ServiceRegistry } from '@/core/lifecycle/index.js'
 import { ok } from '@/core/response.js'
 import type { LikeService } from '@/services/like.js'
 import { LIKE_SOURCE_VALUES } from '@/services/like.js'
 
-function getServiceRegistry(app: FastifyInstance): ServiceRegistry {
-  return app.state.serviceRegistry
-}
-
 async function getLikeSvc(app: FastifyInstance): Promise<LikeService> {
   const { LikeService: Cls } = await import('@/services/like.js')
-  const registry = getServiceRegistry(app)
 
-  return registry.getTyped(Cls, 'like_service')
+  return app.services.getTyped(Cls, 'like_service')
 }
 
 function ceilDiv(a: number, b: number): number {

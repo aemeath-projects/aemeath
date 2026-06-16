@@ -5,19 +5,13 @@
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
 import { CreatePoolRequestSchema, GroupAssignRequestSchema } from '@/apis/schemas/drift-bottle.js'
-import type { ServiceRegistry } from '@/core/lifecycle/index.js'
 import { ok, fail } from '@/core/response.js'
 import type { DriftBottleService, PoolInfo } from '@/services/drift-bottle.js'
 
-function getServiceRegistry(app: FastifyInstance): ServiceRegistry {
-  return app.state.serviceRegistry
-}
-
 async function getDriftSvc(app: FastifyInstance): Promise<DriftBottleService> {
   const { DriftBottleService: Cls } = await import('@/services/drift-bottle.js')
-  const registry = getServiceRegistry(app)
 
-  return registry.getTyped(Cls, 'drift_bottle_service')
+  return app.services.getTyped(Cls, 'drift_bottle_service')
 }
 
 /**

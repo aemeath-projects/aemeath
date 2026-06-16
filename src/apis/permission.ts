@@ -8,10 +8,10 @@ import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply 
 
 import { SetValueRequestSchema, BatchSetRequestSchema } from '@/apis/schemas/permission.js'
 import { ok, fail } from '@/core/response.js'
-import type { SettingsService } from '@/core/settings/index.js'
+import { SettingsService } from '@/core/settings/index.js'
 
 function getSettings(app: FastifyInstance): SettingsService {
-  return app.state.settings as SettingsService
+  return app.services.getTyped(SettingsService, 'settings')
 }
 
 /* 请求体接口 */

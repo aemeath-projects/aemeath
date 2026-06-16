@@ -5,21 +5,15 @@
 import { getLogger } from '@logger'
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
-import type { ServiceRegistry } from '@/core/lifecycle/index.js'
 import { ok, fail } from '@/core/response.js'
 import type { JrlpService, WifeRecord } from '@/services/jrlp.js'
 
 const log = getLogger('jrlp')
 
-function getServiceRegistry(app: FastifyInstance): ServiceRegistry {
-  return app.state.serviceRegistry
-}
-
 async function getJrlpSvc(app: FastifyInstance): Promise<JrlpService> {
   const { JrlpService: Cls } = await import('@/services/jrlp.js')
-  const registry = getServiceRegistry(app)
 
-  return registry.getTyped(Cls, 'jrlp_service')
+  return app.services.getTyped(Cls, 'jrlp_service')
 }
 
 function ceilDiv(a: number, b: number): number {

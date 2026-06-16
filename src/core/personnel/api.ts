@@ -4,10 +4,10 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 
-import type { PersonnelQueryService } from './query.js'
-import type { SyncCoordinator } from './sync.js'
+import { PersonnelQueryService } from './query.js'
+import { SyncCoordinator } from './sync.js'
 
-import type { PersonnelService } from './index.js'
+import { PersonnelService } from './index.js'
 
 import { NotFoundError, ValidationError } from '@/core/errors.js'
 import { ok, fail } from '@/core/response.js'
@@ -20,17 +20,16 @@ function parseBigIntParam(value: string, name: string): bigint {
   return BigInt(value)
 }
 
-/** 从 Fastify 请求中获取服务实例（服务挂载在 app.state 上）。 */
 function getPersonnelService(app: FastifyInstance): PersonnelService {
-  return app.state.personnelService as PersonnelService
+  return app.services.getTyped(PersonnelService, 'personnelService')
 }
 
 function getPersonnelQueryService(app: FastifyInstance): PersonnelQueryService {
-  return app.state.personnelQueryService as PersonnelQueryService
+  return app.services.getTyped(PersonnelQueryService, 'personnelQueryService')
 }
 
 function getSyncCoordinator(app: FastifyInstance): SyncCoordinator {
-  return app.state.syncCoordinator as SyncCoordinator
+  return app.services.getTyped(SyncCoordinator, 'syncCoordinator')
 }
 
 /**

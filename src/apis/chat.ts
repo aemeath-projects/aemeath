@@ -3,9 +3,8 @@
  */
 
 import { getLogger } from '@logger'
-import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
+import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
-import type { ServiceRegistry } from '@/core/lifecycle/index.js'
 import { ok, fail } from '@/core/response.js'
 
 const log = getLogger('chat')
@@ -13,14 +12,6 @@ const log = getLogger('chat')
 /** 触发归档任务的队列接口。 */
 interface ArchiveQueue {
   add(name: string, data: unknown): Promise<{ id?: string }>
-}
-
-function getServiceRegistry(app: FastifyInstance): ServiceRegistry {
-  return app.state.serviceRegistry
-}
-
-function getAppState(app: FastifyInstance): Record<string, unknown> {
-  return app.state
 }
 
 /**
@@ -47,9 +38,8 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
       reply: FastifyReply,
     ) => {
       const { ChatHistoryService } = await import('@/core/chat/index.js')
-      const registry = getServiceRegistry(app)
 
-      const svc = registry.getTyped(ChatHistoryService, 'chat_service')
+      const svc = app.services.getTyped(ChatHistoryService, 'chat_service')
 
       const groupId = BigInt(req.params.groupId)
       const q = req.query
@@ -77,9 +67,8 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
       reply: FastifyReply,
     ) => {
       const { ChatHistoryService } = await import('@/core/chat/index.js')
-      const registry = getServiceRegistry(app)
 
-      const svc = registry.getTyped(ChatHistoryService, 'chat_service')
+      const svc = app.services.getTyped(ChatHistoryService, 'chat_service')
 
       const userId = BigInt(req.params.userId)
       const q = req.query
@@ -103,9 +92,8 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
       reply: FastifyReply,
     ) => {
       const { ChatHistoryService } = await import('@/core/chat/index.js')
-      const registry = getServiceRegistry(app)
 
-      const svc = registry.getTyped(ChatHistoryService, 'chat_service')
+      const svc = app.services.getTyped(ChatHistoryService, 'chat_service')
 
       const messageId = BigInt(req.params.messageId)
       const createdAt = new Date(req.query.createdAt)
@@ -126,9 +114,8 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
       reply: FastifyReply,
     ) => {
       const { ArchiveService } = await import('@/core/chat/archive.js')
-      const registry = getServiceRegistry(app)
 
-      const svc = registry.getTyped(ArchiveService, 'archive_service')
+      const svc = app.services.getTyped(ArchiveService, 'archive_service')
 
       const page = req.query.page ? parseInt(req.query.page, 10) : 1
       const pageSize = req.query.pageSize ? parseInt(req.query.pageSize, 10) : 20
@@ -142,8 +129,7 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
   app.post(
     '/api/chat/archives/trigger',
     async (req: FastifyRequest<{ Body?: { partitionName?: string } }>, reply: FastifyReply) => {
-      const state = getAppState(app)
-      const queues = state.queues as Record<string, ArchiveQueue> | undefined
+      const queues = app.services.get('queues') as Record<string, ArchiveQueue> | undefined
 
       const archiveQueue = queues?.['chat-archive']
       if (archiveQueue === undefined) {
@@ -179,8 +165,7 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
       const limit = req.query.limit ? parseInt(req.query.limit, 10) : 50
 
       const { ArchiveService } = await import('@/core/chat/archive.js')
-      const registry = getServiceRegistry(app)
-      const svc = registry.getTyped(ArchiveService, 'archive_service')
+      const svc = app.services.getTyped(ArchiveService, 'archive_service')
 
       const result = await svc.listArchives({ periodStart, limit })
       await reply.send(ok(result))

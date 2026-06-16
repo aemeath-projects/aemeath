@@ -20,8 +20,6 @@ import type {
 import fastifyStatic from '@fastify/static'
 import { createLogger, setLogger, logger, getLogger } from '@logger'
 import Fastify, { type FastifyInstance, type FastifyPluginAsync } from 'fastify'
-import type { Redis } from 'ioredis'
-import type { Client } from 'minio'
 
 import pkg from '../../package.json' with { type: 'json' }
 
@@ -42,7 +40,6 @@ import type { RouteEchoEntry, TaskEchoEntry } from './echo/loader.js'
 import { LifecycleOrchestrator } from './lifecycle/orchestrator.js'
 import { ServiceRegistry } from './lifecycle/service-registry.js'
 import { metricsRegistry } from './monitoring/metrics.js'
-import type { OssBuckets } from './oss/client.js'
 import { authPlugin } from './plugins/auth.js'
 import { corsPlugin } from './plugins/cors.js'
 import { swaggerPlugin } from './plugins/swagger.js'
@@ -52,6 +49,8 @@ import type { SessionManager } from './session/manager.js'
 import { createBullMQConnection, getTaskQueue } from './tasks/broker.js'
 import { TaskExecutor } from './tasks/executor.js'
 import { setTaskDefinitions } from './tasks/scheduler.js'
+
+import type { InfraState } from '@/types/fastify.js'
 /**
  * 侧效应导入（Side-effect imports）
  *
@@ -75,35 +74,6 @@ import '@/core/session/bootstrap.js'
 
 /* 模块级生命周期编排器（startup 创建，shutdown 复用同一实例） */
 let _orchestrator: LifecycleOrchestrator | null = null
-
-/* 内部状态类型 */
-
-interface AppState {
-  // 基础设施
-  mainDb: ReturnType<typeof createMainDb>
-  chatDb: ReturnType<typeof createChatDb>
-  cacheRedis: Redis
-  persistentRedis: Redis
-  cacheStore: RedisStore
-  persistentStore: RedisStore
-  // 框架核心（SDK）
-  bot_client: NapCatClient
-  dispatcher: EventDispatcher
-  // 任务
-  taskExecutor: TaskExecutor
-  queue: ReturnType<typeof getTaskQueue>
-  // OSS
-  oss?: { client: Client; buckets: OssBuckets }
-  // 服务注册表（API 路由通过此访问业务服务）
-  serviceRegistry: ServiceRegistry
-  // 业务服务（由 orchestrator 填充）
-  [key: string]: unknown
-}
-
-/** 获取 app.state（类型断言辅助函数）。 */
-function getState(app: FastifyInstance): AppState {
-  return (app as unknown as { state: AppState }).state
-}
 
 /* EchoLoader 辅助函数 */
 
@@ -251,7 +221,7 @@ async function _startup(
     sessionInterceptor.setSessionManager(sessionManager)
   }
 
-  // 12. 订阅 NapCat 事件，将事件分发给 Dispatcher
+  // 13. 订阅 NapCat 事件，将事件分发给 Dispatcher
   const botClient = allServices.bot_client as NapCatClient
   const apis: ContextApis = {
     msgApi: allServices.msg_api as MessageApi,
@@ -275,14 +245,14 @@ async function _startup(
     void dispatcher.dispatch(event, apis)
   })
 
-  // 13. 构建 ServiceRegistry（API 路由通过 app.state.serviceRegistry 访问业务服务）
+  // 14. 构建 ServiceRegistry（API 路由通过 app.state.serviceRegistry 访问业务服务）
   const serviceRegistry = new ServiceRegistry()
   for (const [key, value] of Object.entries(allServices)) {
     serviceRegistry.register(key, value)
   }
   serviceRegistry.freeze()
 
-  // 14. 启动 TaskExecutor（监听 job completed 事件）
+  // 15. 启动 TaskExecutor（监听 job completed 事件）
   const taskExecutor = new TaskExecutor(
     allServices.msg_api as MessageApi,
     allServices.friend_api as FriendApi,
@@ -295,21 +265,23 @@ async function _startup(
   )
   taskExecutor.start()
 
-  // 15. 将所有服务挂载到 app.state
-  ;(app as unknown as { state: AppState }).state = {
-    mainDb,
-    chatDb,
-    cacheRedis,
-    persistentRedis,
-    cacheStore,
-    persistentStore,
-    bot_client: botClient,
-    dispatcher,
-    taskExecutor,
-    queue,
-    serviceRegistry,
-    ...allServices,
-  }
+  // 16. 通过 Fastify decorate 暴露服务（路由层访问入口）
+  app.decorate('services', serviceRegistry)
+  app.decorate(
+    'infra',
+    Object.freeze({
+      mainDb,
+      chatDb,
+      cacheRedis,
+      persistentRedis,
+      cacheStore,
+      persistentStore,
+      botClient,
+      dispatcher,
+      taskExecutor,
+      queue,
+    }) satisfies InfraState,
+  )
 
   app.log.info(`Aemeath 已启动，等待 NapCat 连接 (ws_port=${String(config.NAPCAT_WS_PORT)})`)
 }
@@ -319,10 +291,10 @@ async function _startup(
 async function _shutdown(app: FastifyInstance): Promise<void> {
   app.log.info('Aemeath 正在关闭...')
 
-  const state = getState(app)
+  const { taskExecutor, mainDb, chatDb, cacheRedis, persistentRedis, queue } = app.infra
 
   // 停止 TaskExecutor
-  await state.taskExecutor.close()
+  await taskExecutor.close()
 
   // 关闭业务模块（@Shutdown 按启动逆序，复用 startup 时创建的同一编排器实例）
   try {
@@ -332,15 +304,15 @@ async function _shutdown(app: FastifyInstance): Promise<void> {
   }
 
   // 关闭数据库连接
-  await state.mainDb.$disconnect()
-  await state.chatDb.$disconnect()
+  await mainDb.$disconnect()
+  await chatDb.$disconnect()
 
   // 关闭 Redis 连接
-  state.cacheRedis.disconnect()
-  state.persistentRedis.disconnect()
+  cacheRedis.disconnect()
+  persistentRedis.disconnect()
 
   // 关闭 BullMQ 队列
-  await (state.queue as { close(): Promise<void> }).close()
+  await queue.close()
 
   app.log.info('Aemeath 已停止')
 }
@@ -385,13 +357,12 @@ async function bootstrap(): Promise<void> {
 
   // 健康检查
   app.get('/health', async () => {
-    const state = (app as unknown as { state: Record<string, unknown> }).state
-    const botClient = state.bot_client as { transport?: { state?: string } } | undefined
+    const { botClient } = app.infra
     return {
       status: 'healthy',
       version: pkg.version,
       description: pkg.description,
-      ws_connected: botClient?.transport?.state === 'connected',
+      ws_connected: botClient.transport.state === 'connected',
     }
   })
 

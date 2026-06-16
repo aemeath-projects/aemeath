@@ -25,10 +25,6 @@ function displayTaskName(name: string): string {
   return TASK_DISPLAY_NAMES[short] ?? TASK_DISPLAY_NAMES[name] ?? name
 }
 
-function getState(app: FastifyInstance): Record<string, unknown> {
-  return app.state
-}
-
 /* BullMQ 队列操作接口（内联类型，避免引入 bullmq 运行时） */
 
 interface BullJob {
@@ -67,11 +63,9 @@ interface QueueStateResult {
 }
 
 async function collectQueueState(app: FastifyInstance): Promise<QueueStateResult> {
-  const state = getState(app)
-
   // 定时任务（从 scheduler 服务获取）
   const scheduledTasks: unknown[] = []
-  const scheduler = state.scheduler as SchedulerApi | undefined
+  const scheduler = app.services.get('scheduler') as SchedulerApi | undefined
   if (scheduler !== undefined) {
     try {
       const schedules = await scheduler.getSchedules()
@@ -94,7 +88,7 @@ async function collectQueueState(app: FastifyInstance): Promise<QueueStateResult
   }
 
   // BullMQ 队列数据
-  const queues = state.queues as Record<string, BullQueue> | undefined
+  const queues = app.services.get('queues') as Record<string, BullQueue> | undefined
   const activeTasks: unknown[] = []
   const pendingTasks: unknown[] = []
   const seenWorkers = new Set<string>()
@@ -166,8 +160,7 @@ async function collectQueueState(app: FastifyInstance): Promise<QueueStateResult
 const queueRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/queue/scheduled-tasks — 获取已注册的定时任务列表。 */
   app.get('/api/queue/scheduled-tasks', async (_req: FastifyRequest, reply: FastifyReply) => {
-    const state = getState(app)
-    const scheduler = state.scheduler as SchedulerApi | undefined
+    const scheduler = app.services.get('scheduler') as SchedulerApi | undefined
 
     const tasks: Record<string, unknown>[] = []
     if (scheduler !== undefined) {
@@ -196,8 +189,7 @@ const queueRoutes: FastifyPluginAsync = async (app) => {
 
   /** GET /api/queue/active-tasks — 获取当前正在执行的任务。 */
   app.get('/api/queue/active-tasks', async (_req: FastifyRequest, reply: FastifyReply) => {
-    const state = getState(app)
-    const queues = state.queues as Record<string, BullQueue> | undefined
+    const queues = app.services.get('queues') as Record<string, BullQueue> | undefined
     if (queues === undefined) {
       await reply.send(ok([]))
       return
@@ -234,8 +226,7 @@ const queueRoutes: FastifyPluginAsync = async (app) => {
 
   /** GET /api/queue/workers — 获取在线 Worker 节点信息。 */
   app.get('/api/queue/workers', async (_req: FastifyRequest, reply: FastifyReply) => {
-    const state = getState(app)
-    const queues = state.queues as Record<string, BullQueue> | undefined
+    const queues = app.services.get('queues') as Record<string, BullQueue> | undefined
     if (queues === undefined) {
       await reply.send(ok([]))
       return
@@ -273,8 +264,7 @@ const queueRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/queue/queue-length — 获取队列中的消息数量。 */
   app.get('/api/queue/queue-length', async (_req: FastifyRequest, reply: FastifyReply) => {
     try {
-      const state = getState(app)
-      const queues = state.queues as Record<string, BullQueue> | undefined
+      const queues = app.services.get('queues') as Record<string, BullQueue> | undefined
       if (queues === undefined) {
         await reply.send(fail('队列未就绪', { queue: 'bullmq', length: null }))
         return
@@ -299,8 +289,7 @@ const queueRoutes: FastifyPluginAsync = async (app) => {
 
   /** GET /api/queue/pending-tasks — 获取队列中等待被消费的任务。 */
   app.get('/api/queue/pending-tasks', async (_req: FastifyRequest, reply: FastifyReply) => {
-    const state = getState(app)
-    const queues = state.queues as Record<string, BullQueue> | undefined
+    const queues = app.services.get('queues') as Record<string, BullQueue> | undefined
     if (queues === undefined) {
       await reply.send(ok([]))
       return

@@ -3,18 +3,12 @@
  */
 
 import { getLogger } from '@logger'
-import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
+import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
 import { BotProfileUpdateRequestSchema } from '@/apis/schemas/bot.js'
 import { ok, fail } from '@/core/response.js'
 
 const log = getLogger('bot')
-
-/* 内部工具 */
-
-function getState(app: FastifyInstance): Record<string, unknown> {
-  return app.state
-}
 
 /* 请求类型 */
 
@@ -31,9 +25,8 @@ interface BotProfileUpdateBody {
 const botRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/bot/info — 获取 Bot 登录信息（昵称、QQ 号、头像）。 */
   app.get('/api/bot/info', async (_req: FastifyRequest, reply: FastifyReply) => {
-    const state = getState(app)
-    const connMgr = state.connectionManager as { connected: boolean } | undefined
-    const botApi = state.botApi as
+    const connMgr = app.services.get('connectionManager') as { connected: boolean } | undefined
+    const botApi = app.services.get('botApi') as
       | { getLoginInfo(): Promise<{ ok: boolean; data?: Record<string, unknown> }> }
       | undefined
 
@@ -61,9 +54,8 @@ const botRoutes: FastifyPluginAsync = async (app) => {
 
   /** GET /api/bot/profile — 获取 Bot 完整信息（含在线状态和版本）。 */
   app.get('/api/bot/profile', async (_req: FastifyRequest, reply: FastifyReply) => {
-    const state = getState(app)
-    const connMgr = state.connectionManager as { connected: boolean } | undefined
-    const botApi = state.botApi as
+    const connMgr = app.services.get('connectionManager') as { connected: boolean } | undefined
+    const botApi = app.services.get('botApi') as
       | {
           getLoginInfo(): Promise<{ ok: boolean; data?: Record<string, unknown> }>
           getVersionInfo(): Promise<{ ok: boolean; data?: Record<string, unknown> }>
@@ -114,9 +106,8 @@ const botRoutes: FastifyPluginAsync = async (app) => {
       schema: { body: BotProfileUpdateRequestSchema },
     },
     async (req: FastifyRequest<{ Body: BotProfileUpdateBody }>, reply: FastifyReply) => {
-      const state = getState(app)
-      const connMgr = state.connectionManager as { connected: boolean } | undefined
-      const botApi = state.botApi as
+      const connMgr = app.services.get('connectionManager') as { connected: boolean } | undefined
+      const botApi = app.services.get('botApi') as
         | {
             getLoginInfo(): Promise<{ ok: boolean; data?: Record<string, unknown> }>
             setQqProfile(opts: Record<string, unknown>): Promise<{ ok: boolean; message?: string }>

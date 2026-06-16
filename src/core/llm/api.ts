@@ -15,7 +15,7 @@ import {
   type UpdateProviderData,
 } from './schemas.js'
 
-import type { LLMService } from './index.js'
+import { LLMService } from './index.js'
 
 import { NotFoundError } from '@/core/errors.js'
 import { ok, fail } from '@/core/response.js'
@@ -23,9 +23,7 @@ import { ok, fail } from '@/core/response.js'
 /* 内部工具 */
 
 function getLlmService(request: FastifyRequest): LLMService {
-  // app.state 不是 Fastify 官方模式，但遵循项目约定
-  const server = request.server as FastifyInstance & { state?: Record<string, unknown> }
-  return server.state.llm_service as LLMService
+  return request.server.services.getTyped(LLMService, 'llm_service')
 }
 
 async function handleError(reply: FastifyReply, err: unknown): Promise<void> {

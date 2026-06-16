@@ -10,13 +10,13 @@ import type { ApiResponse } from './types'
 export interface ProviderItem {
   id: string
   name: string
-  api_base: string
-  api_key_masked: string
-  max_retries: number
+  apiBase: string
+  apiKeyMasked: string
+  maxRetries: number
   timeout: number
-  retry_interval: number
-  is_enabled: boolean
-  model_count: number
+  retryInterval: number
+  isEnabled: boolean
+  modelCount: number
 }
 
 export interface ProviderDetail extends ProviderItem {
@@ -25,56 +25,56 @@ export interface ProviderDetail extends ProviderItem {
 
 export interface ProviderCreateData {
   name: string
-  api_base: string
-  api_key: string
-  max_retries?: number
+  apiBase: string
+  apiKey: string
+  maxRetries?: number
   timeout?: number
-  retry_interval?: number
+  retryInterval?: number
 }
 
 export interface ProviderUpdateData {
   name?: string
-  api_base?: string
-  api_key?: string
-  max_retries?: number
+  apiBase?: string
+  apiKey?: string
+  maxRetries?: number
   timeout?: number
-  retry_interval?: number
+  retryInterval?: number
 }
 
 export interface ModelItem {
   id: string
-  provider_id: string
-  provider_name: string
-  model_name: string
-  display_name: string | null
-  input_price: number
-  output_price: number
+  providerId: string
+  providerName: string
+  modelName: string
+  displayName: string | null
+  inputPrice: number
+  outputPrice: number
   temperature: number
-  max_tokens: number | null
-  force_stream: boolean
-  extra_params: Record<string, unknown>
+  maxTokens: number | null
+  forceStream: boolean
+  extraParams: Record<string, unknown>
 }
 
 export interface ModelCreateData {
-  provider_id: string
-  model_name: string
-  display_name?: string | null
-  input_price?: number
-  output_price?: number
+  providerId: string
+  modelName: string
+  displayName?: string | null
+  inputPrice?: number
+  outputPrice?: number
   temperature?: number
-  max_tokens?: number | null
-  force_stream?: boolean
-  extra_params?: Record<string, unknown>
+  maxTokens?: number | null
+  forceStream?: boolean
+  extraParams?: Record<string, unknown>
 }
 
 export interface ModelUpdateData {
-  display_name?: string | null
-  input_price?: number
-  output_price?: number
+  displayName?: string | null
+  inputPrice?: number
+  outputPrice?: number
   temperature?: number
-  max_tokens?: number | null
-  force_stream?: boolean
-  extra_params?: Record<string, unknown>
+  maxTokens?: number | null
+  forceStream?: boolean
+  extraParams?: Record<string, unknown>
 }
 
 export interface ChatMessage {
@@ -83,9 +83,9 @@ export interface ChatMessage {
 }
 
 export interface ChatUsage {
-  prompt_tokens: number
-  completion_tokens: number
-  total_tokens: number
+  promptTokens: number
+  completionTokens: number
+  totalTokens: number
 }
 
 export interface ChatResponse {
@@ -142,7 +142,7 @@ export async function testProvider(id: string): Promise<TestResult> {
 
 export async function fetchModels(providerId?: string): Promise<ModelItem[]> {
   const params: Record<string, string> = {}
-  if (providerId) params.provider_id = providerId
+  if (providerId) params.providerId = providerId
   const { data } = await http.get<ApiResponse<ModelItem[]>>(`${BASE}/models`, { params })
   return data.data
 }
@@ -171,10 +171,10 @@ export async function deleteModel(id: string): Promise<void> {
 export async function chat(
   modelId: string,
   messages: ChatMessage[],
-  options?: { temperature?: number; max_tokens?: number },
+  options?: { temperature?: number; maxTokens?: number },
 ): Promise<ChatResponse> {
   const { data } = await http.post<ApiResponse<ChatResponse>>(`${BASE}/chat`, {
-    model_id: modelId,
+    modelId,
     messages,
     stream: false,
     ...options,
@@ -190,13 +190,13 @@ export async function chatStream(
   onChunk: (text: string) => void,
   onDone: () => void,
   onError?: (err: string) => void,
-  options?: { temperature?: number; max_tokens?: number },
+  options?: { temperature?: number; maxTokens?: number },
 ): Promise<void> {
   const response = await fetch(`${BASE}/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model_id: modelId,
+      modelId,
       messages,
       stream: true,
       ...options,

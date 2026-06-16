@@ -102,7 +102,7 @@
             <!-- 消息气泡列表 -->
             <MessageBubble
               v-for="msg in reversedMessages"
-              :key="`${msg.id}-${msg.created_at}`"
+              :key="`${msg.id}-${msg.createdAt}`"
               :msg="msg"
               :member-name-map="memberNameMap"
               @show-detail="showDetail"
@@ -185,9 +185,9 @@ const imagePreviewSrc = ref('')
 const memberNameMap = computed(() => {
   const map = new Map<number, string>()
   for (const msg of store.messages) {
-    if (msg.user_id && !map.has(msg.user_id)) {
-      const name = msg.sender_card || msg.sender_nickname
-      if (name) map.set(msg.user_id, name)
+    if (msg.userId && !map.has(msg.userId)) {
+      const name = msg.senderCard || msg.senderNickname
+      if (name) map.set(msg.userId, name)
     }
   }
   return map
@@ -247,9 +247,9 @@ async function loadMessages(scrollBottom = false) {
 function loadMore() {
   if (!currentSession.value || store.messages.length === 0) return
   const oldest = store.messages[store.messages.length - 1]
-  if (!oldest?.created_at) return
+  if (!oldest?.createdAt) return
 
-  const before = oldest.created_at
+  const before = oldest.createdAt
   if (currentSession.value.type === 'group') {
     const params = {
       before,

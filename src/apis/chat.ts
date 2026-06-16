@@ -239,7 +239,7 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
       const partitionName = req.body?.partitionName
       try {
         const job = await archiveQueue.add('archive_chat_history', { partitionName })
-        await reply.send(ok({ task_id: job.id ?? 'unknown' }, 'Archive task queued'))
+        await reply.send(ok({ taskId: job.id ?? 'unknown' }, 'Archive task queued'))
       } catch (err) {
         log.error({ err }, '归档任务入队失败')
         await reply.status(500).send(fail(`归档任务入队失败: ${String(err)}`))

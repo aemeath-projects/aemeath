@@ -126,11 +126,11 @@
               </tr>
               <tr>
                 <td class="text-caption font-weight-bold">入群时间</td>
-                <td class="text-caption">{{ formatTimestamp(memberData.join_time) }}</td>
+                <td class="text-caption">{{ formatTimestamp(memberData.joinTime) }}</td>
               </tr>
               <tr>
                 <td class="text-caption font-weight-bold">最后活跃</td>
-                <td class="text-caption">{{ formatTimestamp(memberData.last_active_time) }}</td>
+                <td class="text-caption">{{ formatTimestamp(memberData.lastActiveTime) }}</td>
               </tr>
             </tbody>
           </v-table>
@@ -167,7 +167,7 @@
         <v-row dense>
           <v-col cols="6" sm="4">
             <div class="text-caption text-medium-emphasis">所属群数</div>
-            <div class="text-body-1 font-weight-medium">{{ userData.group_count }}</div>
+            <div class="text-body-1 font-weight-medium">{{ userData.groupCount }}</div>
           </v-col>
           <v-col cols="6" sm="4">
             <div class="text-caption text-medium-emphasis">关系等级</div>
@@ -176,7 +176,7 @@
           <v-col cols="12" sm="4">
             <div class="text-caption text-medium-emphasis">最后同步</div>
             <div class="text-body-1 font-weight-medium">
-              {{ userData.last_synced ? formatTime(userData.last_synced) : '-' }}
+              {{ userData.lastSynced ? formatTime(userData.lastSynced) : '-' }}
             </div>
           </v-col>
         </v-row>
@@ -195,16 +195,16 @@
           <tbody>
             <tr
               v-for="g in userGroups"
-              :key="g.group_id"
+              :key="g.groupId"
               class="cursor-pointer"
-              @click="$emit('open-group', g.group_id)"
+              @click="$emit('open-group', g.groupId)"
             >
-              <td>{{ g.group_id }}</td>
-              <td>{{ g.group_name }}</td>
-              <td>{{ g.member_count }} / {{ g.max_member_count }}</td>
+              <td>{{ g.groupId }}</td>
+              <td>{{ g.groupName }}</td>
+              <td>{{ g.memberCount }} / {{ g.maxMemberCount }}</td>
               <td>
-                <v-chip :color="activeColor(g.is_active)" size="x-small" variant="elevated">
-                  {{ activeLabel(g.is_active) }}
+                <v-chip :color="activeColor(g.isActive)" size="x-small" variant="elevated">
+                  {{ activeLabel(g.isActive) }}
                 </v-chip>
               </td>
             </tr>

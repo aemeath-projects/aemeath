@@ -129,5 +129,5 @@ export const ArchiveQueryDataSchema = Type.Array(ArchiveLogSchema)
 
 /** 触发归档任务响应数据 Schema —— POST /api/chat/archives/trigger */
 export const ArchiveTriggerDataSchema = Type.Object({
-  task_id: Type.String({ description: 'BullMQ job ID' }),
+  taskId: Type.String({ description: 'BullMQ job ID' }),
 })

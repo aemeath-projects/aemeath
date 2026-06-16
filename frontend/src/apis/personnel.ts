@@ -13,8 +13,8 @@ export interface UserItem {
   qq: number
   nickname: string
   relation: string
-  group_count: number
-  last_synced: string | null
+  groupCount: number
+  lastSynced: string | null
 }
 
 export interface UserDetail extends UserItem {
@@ -22,12 +22,12 @@ export interface UserDetail extends UserItem {
 }
 
 export interface GroupItem {
-  group_id: number
-  group_name: string
-  member_count: number
-  max_member_count: number
-  is_active: boolean
-  last_synced: string | null
+  groupId: number
+  groupName: string
+  memberCount: number
+  maxMemberCount: number
+  isActive: boolean
+  lastSynced: string | null
 }
 
 export interface GroupMemberItem {
@@ -36,18 +36,18 @@ export interface GroupMemberItem {
   card: string
   role: string
   relation: string
-  join_time: number
-  last_active_time: number
+  joinTime: number
+  lastActiveTime: number
   title: string
   level: string
 }
 
 export interface GroupMembershipInfo {
-  group_id: number
-  group_name: string
+  groupId: number
+  groupName: string
   card: string
   role: string
-  is_active: boolean
+  isActive: boolean
 }
 
 export interface ResolvedUser {
@@ -56,7 +56,7 @@ export interface ResolvedUser {
 }
 
 export interface ResolvedGroup {
-  group_name: string
+  groupName: string
 }
 
 export interface ResolveResult {
@@ -65,12 +65,12 @@ export interface ResolveResult {
 }
 
 export interface SyncStatus {
-  last_sync_time: string | null
-  duration_seconds: number | null
+  lastSyncTime: string | null
+  durationSeconds: number | null
   status: string
-  users_synced: number
-  groups_synced: number
-  memberships_synced: number
+  usersSynced: number
+  groupsSynced: number
+  membershipsSynced: number
 }
 
 /* API 调用 */
@@ -110,15 +110,14 @@ export async function fetchUserGroups(qq: number): Promise<GroupItem[]> {
 export async function fetchGroups(params: {
   page?: number
   pageSize?: number
-  group_name?: string | null
-  is_active?: boolean | null
+  groupName?: string | null
+  isActive?: boolean | null
 }): Promise<PaginatedResult<GroupItem>> {
   const query: Record<string, string | number | boolean> = {}
   if (params.page) query.page = params.page
   if (params.pageSize) query.pageSize = params.pageSize
-  if (params.group_name) query.group_name = params.group_name
-  if (params.is_active !== null && params.is_active !== undefined)
-    query.is_active = params.is_active
+  if (params.groupName) query.groupName = params.groupName
+  if (params.isActive !== null && params.isActive !== undefined) query.isActive = params.isActive
 
   const { data } = await http.get<ApiResponse<PaginatedResult<GroupItem>>>(`${BASE}/groups`, {
     params: query,
@@ -160,8 +159,8 @@ export async function resolvePersonnel(
   groupIds: number[],
 ): Promise<ResolveResult> {
   const { data } = await http.post<ApiResponse<ResolveResult>>(`${BASE}/resolve`, {
-    user_ids: userIds,
-    group_ids: groupIds,
+    userIds: userIds,
+    groupIds: groupIds,
   })
   return data.data
 }

@@ -3,27 +3,27 @@ import http from '@/apis/client'
 
 export interface BotInfo {
   nickname: string | null
-  user_id: number | null
-  avatar_url: string | null
+  userId: number | null
+  avatarUrl: string | null
 }
 
 export interface BotVersionInfo {
-  app_name: string
-  app_version: string
-  protocol_version: string
+  appName: string
+  appVersion: string
+  protocolVersion: string
 }
 
 export interface BotProfile {
   nickname: string | null
-  user_id: number | null
-  avatar_url: string | null
+  userId: number | null
+  avatarUrl: string | null
   online: boolean
   version: BotVersionInfo
 }
 
 export interface BotProfileUpdate {
   nickname?: string
-  personal_note?: string
+  personalNote?: string
 }
 
 export function getBotInfo() {

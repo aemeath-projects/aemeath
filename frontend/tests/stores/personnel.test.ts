@@ -28,7 +28,7 @@ const mockPaginatedUsers = {
   pages: 1,
 }
 const mockPaginatedGroups = {
-  items: [{ group_id: 100, group_name: 'TestGroup' }],
+  items: [{ groupId: 100, groupName: 'TestGroup' }],
   total: 1,
   page: 1,
   page_size: 20,

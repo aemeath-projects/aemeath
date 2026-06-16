@@ -28,11 +28,11 @@
         hover
       >
         <!-- 模型名称列 -->
-        <template #[`item.model_name`]="{ item }">
+        <template #[`item.modelName`]="{ item }">
           <div>
-            <span class="font-weight-medium">{{ item.model_name }}</span>
-            <div v-if="item.display_name" class="text-caption text-medium-emphasis">
-              {{ item.display_name }}
+            <span class="font-weight-medium">{{ item.modelName }}</span>
+            <div v-if="item.displayName" class="text-caption text-medium-emphasis">
+              {{ item.displayName }}
             </div>
           </div>
         </template>
@@ -40,8 +40,8 @@
         <!-- 价格列 -->
         <template #[`item.price`]="{ item }">
           <div class="text-caption">
-            <div>入 &#xFFE5;{{ item.input_price.toFixed(2) }}/M</div>
-            <div>出 &#xFFE5;{{ item.output_price.toFixed(2) }}/M</div>
+            <div>入 &#xFFE5;{{ item.inputPrice.toFixed(2) }}/M</div>
+            <div>出 &#xFFE5;{{ item.outputPrice.toFixed(2) }}/M</div>
           </div>
         </template>
 
@@ -51,9 +51,9 @@
         </template>
 
         <!-- 流式列 -->
-        <template #[`item.force_stream`]="{ item }">
-          <v-icon :color="item.force_stream ? 'success' : 'grey'" size="small">
-            {{ item.force_stream ? 'mdi-check-circle' : 'mdi-close-circle' }}
+        <template #[`item.forceStream`]="{ item }">
+          <v-icon :color="item.forceStream ? 'success' : 'grey'" size="small">
+            {{ item.forceStream ? 'mdi-check-circle' : 'mdi-close-circle' }}
           </v-icon>
         </template>
 
@@ -82,7 +82,7 @@
               <!-- 提供商选择（仅创建时） -->
               <v-select
                 v-if="!isEditModel"
-                v-model="modelForm.provider_id"
+                v-model="modelForm.providerId"
                 :items="providerOptions"
                 label="所属提供商"
                 :rules="[rules.required]"
@@ -92,7 +92,7 @@
               />
 
               <v-text-field
-                v-model="modelForm.model_name"
+                v-model="modelForm.modelName"
                 label="模型标识"
                 :rules="[rules.required]"
                 :disabled="isEditModel"
@@ -103,7 +103,7 @@
               />
 
               <v-text-field
-                v-model="modelForm.display_name"
+                v-model="modelForm.displayName"
                 label="展示名称 (可选)"
                 variant="solo-filled"
                 density="compact"
@@ -114,7 +114,7 @@
               <v-row dense class="mb-3">
                 <v-col cols="6">
                   <v-text-field
-                    v-model.number="modelForm.input_price"
+                    v-model.number="modelForm.inputPrice"
                     label="输入价格 (&#xFFE5;/M tokens)"
                     variant="solo-filled"
                     density="compact"
@@ -125,7 +125,7 @@
                 </v-col>
                 <v-col cols="6">
                   <v-text-field
-                    v-model.number="modelForm.output_price"
+                    v-model.number="modelForm.outputPrice"
                     label="输出价格 (&#xFFE5;/M tokens)"
                     variant="solo-filled"
                     density="compact"
@@ -149,7 +149,7 @@
               />
 
               <v-text-field
-                v-model.number="modelForm.max_tokens"
+                v-model.number="modelForm.maxTokens"
                 label="最大输出 Token (可选)"
                 variant="solo-filled"
                 density="compact"
@@ -160,7 +160,7 @@
               />
 
               <v-switch
-                v-model="modelForm.force_stream"
+                v-model="modelForm.forceStream"
                 label="强制流式输出"
                 color="red"
                 density="compact"
@@ -197,7 +197,7 @@
         <v-card>
           <v-card-title>确认删除</v-card-title>
           <v-card-text>
-            确定要删除模型 <strong>{{ deletingModel?.model_name }}</strong> 吗？
+            确定要删除模型 <strong>{{ deletingModel?.modelName }}</strong> 吗？
           </v-card-text>
           <v-card-actions>
             <v-spacer />
@@ -241,12 +241,12 @@ function showSnackbar(text: string, color = 'error') {
 const providerOptions = computed(() => store.providers.map((p) => ({ title: p.name, value: p.id })))
 
 const headers = [
-  { title: '模型名称', key: 'model_name', sortable: false },
-  { title: '提供商', key: 'provider_name', sortable: false },
+  { title: '模型名称', key: 'modelName', sortable: false },
+  { title: '提供商', key: 'providerName', sortable: false },
   { title: '价格 (CNY/M tokens)', key: 'price', sortable: false },
   { title: '温度', key: 'temperature', sortable: false },
-  { title: '最大 Token', key: 'max_tokens', sortable: false },
-  { title: '强制流式', key: 'force_stream', sortable: false },
+  { title: '最大 Token', key: 'maxTokens', sortable: false },
+  { title: '强制流式', key: 'forceStream', sortable: false },
   { title: '操作', key: 'actions', sortable: false, align: 'end' as const },
 ]
 
@@ -258,14 +258,14 @@ const modelFormRef = ref()
 const jsonError = ref('')
 
 const modelForm = ref({
-  provider_id: '',
-  model_name: '',
-  display_name: '',
-  input_price: 0,
-  output_price: 0,
+  providerId: '',
+  modelName: '',
+  displayName: '',
+  inputPrice: 0,
+  outputPrice: 0,
   temperature: 0.7,
-  max_tokens: null as number | null,
-  force_stream: false,
+  maxTokens: null as number | null,
+  forceStream: false,
 })
 
 const extraParamsStr = ref('{}')
@@ -279,26 +279,26 @@ watch(formDialog, (open) => {
     jsonError.value = ''
     if (editingModel.value) {
       modelForm.value = {
-        provider_id: editingModel.value.provider_id,
-        model_name: editingModel.value.model_name,
-        display_name: editingModel.value.display_name ?? '',
-        input_price: editingModel.value.input_price,
-        output_price: editingModel.value.output_price,
+        providerId: editingModel.value.providerId,
+        modelName: editingModel.value.modelName,
+        displayName: editingModel.value.displayName ?? '',
+        inputPrice: editingModel.value.inputPrice,
+        outputPrice: editingModel.value.outputPrice,
         temperature: editingModel.value.temperature,
-        max_tokens: editingModel.value.max_tokens,
-        force_stream: editingModel.value.force_stream,
+        maxTokens: editingModel.value.maxTokens,
+        forceStream: editingModel.value.forceStream,
       }
-      extraParamsStr.value = JSON.stringify(editingModel.value.extra_params || {}, null, 2)
+      extraParamsStr.value = JSON.stringify(editingModel.value.extraParams || {}, null, 2)
     } else {
       modelForm.value = {
-        provider_id: '',
-        model_name: '',
-        display_name: '',
-        input_price: 0,
-        output_price: 0,
+        providerId: '',
+        modelName: '',
+        displayName: '',
+        inputPrice: 0,
+        outputPrice: 0,
         temperature: 0.7,
-        max_tokens: null,
-        force_stream: false,
+        maxTokens: null,
+        forceStream: false,
       }
       extraParamsStr.value = '{}'
     }
@@ -358,25 +358,25 @@ async function submitModelForm() {
   try {
     if (isEditModel.value && editingModel.value) {
       await store.updateModel(editingModel.value.id, {
-        display_name: modelForm.value.display_name || null,
-        input_price: modelForm.value.input_price,
-        output_price: modelForm.value.output_price,
+        displayName: modelForm.value.displayName || null,
+        inputPrice: modelForm.value.inputPrice,
+        outputPrice: modelForm.value.outputPrice,
         temperature: modelForm.value.temperature,
-        max_tokens: modelForm.value.max_tokens,
-        force_stream: modelForm.value.force_stream,
-        extra_params: extraParams,
+        maxTokens: modelForm.value.maxTokens,
+        forceStream: modelForm.value.forceStream,
+        extraParams: extraParams,
       })
     } else {
       await store.createModel({
-        provider_id: modelForm.value.provider_id,
-        model_name: modelForm.value.model_name,
-        display_name: modelForm.value.display_name || null,
-        input_price: modelForm.value.input_price,
-        output_price: modelForm.value.output_price,
+        providerId: modelForm.value.providerId,
+        modelName: modelForm.value.modelName,
+        displayName: modelForm.value.displayName || null,
+        inputPrice: modelForm.value.inputPrice,
+        outputPrice: modelForm.value.outputPrice,
         temperature: modelForm.value.temperature,
-        max_tokens: modelForm.value.max_tokens,
-        force_stream: modelForm.value.force_stream,
-        extra_params: extraParams,
+        maxTokens: modelForm.value.maxTokens,
+        forceStream: modelForm.value.forceStream,
+        extraParams: extraParams,
       })
     }
     loadPage()

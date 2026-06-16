@@ -362,7 +362,7 @@ async function bootstrap(): Promise<void> {
       return ok({
         status: 'healthy',
         version: pkg.version,
-        ws_connected: botClient.transport.state === 'connected',
+        wsConnected: botClient.transport.state === 'connected',
       })
     },
   )

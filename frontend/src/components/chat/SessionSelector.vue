@@ -42,23 +42,23 @@
         <template v-else>
           <v-list-item
             v-for="group in filteredGroups"
-            :key="group.group_id"
-            :active="activeType === 'group' && activeId === group.group_id"
+            :key="group.groupId"
+            :active="activeType === 'group' && activeId === group.groupId"
             rounded="lg"
-            @click="emit('select', 'group', group.group_id, group.group_name)"
+            @click="emit('select', 'group', group.groupId, group.groupName)"
           >
             <template #prepend>
               <v-avatar size="32">
-                <v-img :src="`https://p.qlogo.cn/gh/${group.group_id}/${group.group_id}/100`">
+                <v-img :src="`https://p.qlogo.cn/gh/${group.groupId}/${group.groupId}/100`">
                   <template #error>
                     <v-icon>mdi-account-group</v-icon>
                   </template>
                 </v-img>
               </v-avatar>
             </template>
-            <v-list-item-title class="text-body-2">{{ group.group_name }}</v-list-item-title>
+            <v-list-item-title class="text-body-2">{{ group.groupName }}</v-list-item-title>
             <v-list-item-subtitle class="text-caption">
-              {{ group.group_id }} &middot; {{ group.member_count }} 人
+              {{ group.groupId }} &middot; {{ group.memberCount }} 人
             </v-list-item-subtitle>
           </v-list-item>
           <v-list-item v-if="filteredGroups.length === 0">
@@ -128,7 +128,7 @@ const filteredGroups = computed(() => {
   if (!searchQuery.value) return props.groups
   const q = searchQuery.value.toLowerCase()
   return props.groups.filter(
-    (g) => g.group_name.toLowerCase().includes(q) || String(g.group_id).includes(q),
+    (g) => g.groupName.toLowerCase().includes(q) || String(g.groupId).includes(q),
   )
 })
 

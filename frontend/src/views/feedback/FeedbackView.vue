@@ -81,9 +81,9 @@
         </template>
 
         <!-- 类型列 -->
-        <template #[`item.feedback_type`]="{ item }">
-          <v-chip :color="typeColor(item.feedback_type)" size="small" variant="elevated">
-            {{ item.feedback_type || '未分类' }}
+        <template #[`item.feedbackType`]="{ item }">
+          <v-chip :color="typeColor(item.feedbackType)" size="small" variant="elevated">
+            {{ item.feedbackType || '未分类' }}
           </v-chip>
         </template>
 
@@ -95,13 +95,13 @@
         </template>
 
         <!-- 提交者列 -->
-        <template #[`item.user_id`]="{ item }">
+        <template #[`item.userId`]="{ item }">
           <div class="d-flex align-center ga-2">
             <v-avatar size="24">
-              <v-img :src="`https://q1.qlogo.cn/g?b=qq&nk=${item.user_id}&s=40`" />
+              <v-img :src="`https://q1.qlogo.cn/g?b=qq&nk=${item.userId}&s=40`" />
             </v-avatar>
             <span class="text-caption">
-              {{ personnelStore.getUserName(item.user_id) }}（{{ item.user_id }}）
+              {{ personnelStore.getUserName(item.userId) }}（{{ item.userId }}）
             </span>
           </div>
         </template>
@@ -112,8 +112,8 @@
         </template>
 
         <!-- 提交时间列 -->
-        <template #[`item.created_at`]="{ item }">
-          <span class="text-caption text-medium-emphasis">{{ formatTime(item.created_at) }}</span>
+        <template #[`item.createdAt`]="{ item }">
+          <span class="text-caption text-medium-emphasis">{{ formatTime(item.createdAt) }}</span>
         </template>
 
         <!-- 操作列 -->
@@ -175,11 +175,11 @@ const exportDialog = ref(false)
 
 const headers = [
   { title: 'ID', key: 'id', sortable: false },
-  { title: '类型', key: 'feedback_type', sortable: false },
+  { title: '类型', key: 'feedbackType', sortable: false },
   { title: '状态', key: 'status', sortable: false },
-  { title: '提交者', key: 'user_id', sortable: false },
+  { title: '提交者', key: 'userId', sortable: false },
   { title: '来源', key: 'source', sortable: false },
-  { title: '提交时间', key: 'created_at', sortable: false },
+  { title: '提交时间', key: 'createdAt', sortable: false },
   { title: '操作', key: 'actions', sortable: false, align: 'center' as const },
 ]
 
@@ -188,18 +188,18 @@ async function fetchFeedbacks(p: number, size: number) {
   try {
     const result = await feedbackApi.list({
       page: p,
-      page_size: size,
+      pageSize: size,
       status: filterStatus.value,
-      feedback_type: filterType.value,
+      feedbackType: filterType.value,
       source: filterSource.value,
       search: searchKeyword.value,
     })
     items.value = result.items
     total.value = result.total
     // 预取用户和群昵称，减少渲染闪烁
-    const userIds = [...new Set(result.items.map((f) => f.user_id))]
+    const userIds = [...new Set(result.items.map((f) => f.userId))]
     const groupIds = [
-      ...new Set(result.items.map((f) => f.group_id).filter((id): id is number => id != null)),
+      ...new Set(result.items.map((f) => f.groupId).filter((id): id is number => id != null)),
     ]
     personnelStore.prefetchIds(userIds, groupIds)
   } catch {

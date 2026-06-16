@@ -21,7 +21,7 @@
             placeholder="如 OpenAI、DeepSeek"
           />
           <v-text-field
-            v-model="form.api_base"
+            v-model="form.apiBase"
             label="API 基础地址"
             :rules="[rules.required]"
             variant="solo-filled"
@@ -30,7 +30,7 @@
             placeholder="https://api.openai.com/v1"
           />
           <v-text-field
-            v-model="form.api_key"
+            v-model="form.apiKey"
             :label="isEdit ? 'API Key (留空则不修改)' : 'API Key'"
             :rules="isEdit ? [] : [rules.required]"
             variant="solo-filled"
@@ -44,7 +44,7 @@
           <v-row dense class="mb-3">
             <v-col cols="4">
               <v-text-field
-                v-model.number="form.max_retries"
+                v-model.number="form.maxRetries"
                 label="最大重试"
                 type="number"
                 variant="solo-filled"
@@ -70,7 +70,7 @@
             </v-col>
             <v-col cols="4">
               <v-text-field
-                v-model.number="form.retry_interval"
+                v-model.number="form.retryInterval"
                 label="重试间隔"
                 type="number"
                 variant="solo-filled"
@@ -120,7 +120,7 @@ const saving = ref(false)
 const formRef = ref()
 
 function defaultForm() {
-  return { name: '', api_base: '', api_key: '', max_retries: 2, timeout: 60, retry_interval: 1 }
+  return { name: '', apiBase: '', apiKey: '', maxRetries: 2, timeout: 60, retryInterval: 1 }
 }
 
 const form = ref(defaultForm())
@@ -138,11 +138,11 @@ watch(
       if (props.provider) {
         form.value = {
           name: props.provider.name,
-          api_base: props.provider.api_base,
-          api_key: '',
-          max_retries: props.provider.max_retries,
+          apiBase: props.provider.apiBase,
+          apiKey: '',
+          maxRetries: props.provider.maxRetries,
           timeout: props.provider.timeout,
-          retry_interval: props.provider.retry_interval,
+          retryInterval: props.provider.retryInterval,
         }
       } else {
         form.value = defaultForm()
@@ -161,22 +161,22 @@ async function submitForm() {
     if (isEdit.value && props.provider) {
       const payload: Record<string, unknown> = {}
       if (form.value.name !== props.provider.name) payload.name = form.value.name
-      if (form.value.api_base !== props.provider.api_base) payload.api_base = form.value.api_base
-      if (form.value.api_key) payload.api_key = form.value.api_key
-      if (form.value.max_retries !== props.provider.max_retries)
-        payload.max_retries = form.value.max_retries
+      if (form.value.apiBase !== props.provider.apiBase) payload.apiBase = form.value.apiBase
+      if (form.value.apiKey) payload.apiKey = form.value.apiKey
+      if (form.value.maxRetries !== props.provider.maxRetries)
+        payload.maxRetries = form.value.maxRetries
       if (form.value.timeout !== props.provider.timeout) payload.timeout = form.value.timeout
-      if (form.value.retry_interval !== props.provider.retry_interval)
-        payload.retry_interval = form.value.retry_interval
+      if (form.value.retryInterval !== props.provider.retryInterval)
+        payload.retryInterval = form.value.retryInterval
       await store.updateProvider(props.provider.id, payload)
     } else {
       await store.createProvider({
         name: form.value.name,
-        api_base: form.value.api_base,
-        api_key: form.value.api_key,
-        max_retries: form.value.max_retries,
+        apiBase: form.value.apiBase,
+        apiKey: form.value.apiKey,
+        maxRetries: form.value.maxRetries,
         timeout: form.value.timeout,
-        retry_interval: form.value.retry_interval,
+        retryInterval: form.value.retryInterval,
       })
     }
     emit('update:modelValue', false)

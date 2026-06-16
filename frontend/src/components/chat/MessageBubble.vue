@@ -2,7 +2,7 @@
   <div class="message-bubble px-1 d-flex align-start mb-3">
     <!-- 头像 -->
     <v-avatar size="36" class="flex-shrink-0 mr-2">
-      <v-img :src="`https://q1.qlogo.cn/g?b=qq&nk=${msg.user_id}&s=100`" :alt="msg.sender_nickname">
+      <v-img :src="`https://q1.qlogo.cn/g?b=qq&nk=${msg.userId}&s=100`" :alt="msg.senderNickname">
         <template #error>
           <v-icon>mdi-account-circle</v-icon>
         </template>
@@ -14,15 +14,15 @@
       <!-- 昵称与时间 -->
       <div class="d-flex align-center ga-2 mb-1">
         <span class="text-caption font-weight-medium">
-          {{ msg.sender_card || msg.sender_nickname || String(msg.user_id) }}
+          {{ msg.senderCard || msg.senderNickname || String(msg.userId) }}
         </span>
-        <span v-if="msg.sender_role && msg.sender_role !== 'member'" class="text-caption">
-          <v-chip size="x-small" variant="elevated" :color="roleColor(msg.sender_role)">
-            {{ roleLabel(msg.sender_role) }}
+        <span v-if="msg.senderRole && msg.senderRole !== 'member'" class="text-caption">
+          <v-chip size="x-small" variant="elevated" :color="roleColor(msg.senderRole)">
+            {{ roleLabel(msg.senderRole) }}
           </v-chip>
         </span>
         <span class="text-caption text-medium-emphasis">
-          {{ formatMsgTime(msg.created_at) }}
+          {{ formatMsgTime(msg.createdAt) }}
         </span>
       </div>
 
@@ -89,7 +89,7 @@ const emit = defineEmits<{
   openImage: [src: string]
 }>()
 
-const isSelf = computed(() => props.msg.message_type === 3)
+const isSelf = computed(() => props.msg.messageType === 3)
 
 function formatMsgTime(iso: string | null): string {
   if (!iso) return ''

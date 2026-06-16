@@ -62,7 +62,7 @@ let watchSeq = 0
 const suggestionMap = computed<Map<number, GroupItem>>(() => {
   const map = new Map<number, GroupItem>()
   for (const g of suggestions.value) {
-    map.set(g.group_id, g)
+    map.set(g.groupId, g)
   }
   return map
 })
@@ -72,8 +72,8 @@ watch(
   () => props.modelValue,
   async (id) => {
     if (id === null) return
-    if (suggestions.value.some((g) => g.group_id === id)) return
-    const local = store.sessionGroups.find((g) => g.group_id === id)
+    if (suggestions.value.some((g) => g.groupId === id)) return
+    const local = store.sessionGroups.find((g) => g.groupId === id)
     if (local) {
       suggestions.value = [local, ...suggestions.value]
       return
@@ -114,15 +114,15 @@ watch(
     // Vuetify 4 文档守卫：focus 时会将 search 设为当前已选条目的 title，
     // 若 search 与已选群聊的 title 匹配则跳过，避免无意义 API 请求
     if (props.modelValue !== null) {
-      const selectedItem = suggestions.value.find((g) => g.group_id === props.modelValue)
-      if (selectedItem && q === `${selectedItem.group_name}（${selectedItem.group_id}）`) return
+      const selectedItem = suggestions.value.find((g) => g.groupId === props.modelValue)
+      if (selectedItem && q === `${selectedItem.groupName}（${selectedItem.groupId}）`) return
     }
 
     const qLower = q.toLowerCase()
 
     // 本地即时过滤
     const localResults = store.sessionGroups.filter(
-      (g) => g.group_name.toLowerCase().includes(qLower) || String(g.group_id).includes(q),
+      (g) => g.groupName.toLowerCase().includes(qLower) || String(g.groupId).includes(q),
     )
     suggestions.value = localResults.slice(0, 10)
 
@@ -141,15 +141,15 @@ watch(
             // 纯数字：精确查询单条群组
             const exactGroup = await fetchGroup(numericId).catch(() => null)
             if (requestSeq !== seq) return
-            if (exactGroup && !suggestions.value.some((g) => g.group_id === exactGroup.group_id)) {
+            if (exactGroup && !suggestions.value.some((g) => g.groupId === exactGroup.groupId)) {
               suggestions.value = [...suggestions.value, exactGroup].slice(0, 10)
             }
           } else {
             // 文字：按群名模糊搜索
-            const result = await fetchGroups({ group_name: q, pageSize: 10 })
+            const result = await fetchGroups({ groupName: q, pageSize: 10 })
             if (requestSeq !== seq) return
-            const existingIds = new Set(suggestions.value.map((g) => g.group_id))
-            const newItems = result.items.filter((g) => !existingIds.has(g.group_id))
+            const existingIds = new Set(suggestions.value.map((g) => g.groupId))
+            const newItems = result.items.filter((g) => !existingIds.has(g.groupId))
             suggestions.value = [...suggestions.value, ...newItems].slice(0, 10)
           }
         } catch {
@@ -185,8 +185,8 @@ function onSelect(value: unknown) {
     :clearable="clearable"
     :rules="rules"
     :autofocus="autofocus"
-    item-value="group_id"
-    :item-title="(item: GroupItem) => `${item.group_name}（${item.group_id}）`"
+    item-value="groupId"
+    :item-title="(item: GroupItem) => `${item.groupName}（${item.groupId}）`"
     no-filter
     @update:model-value="onSelect"
   >
@@ -200,7 +200,7 @@ function onSelect(value: unknown) {
           <v-avatar size="40" class="mr-2">
             <v-img
               :src="`https://p.qlogo.cn/gh/${itemProps.value}/${itemProps.value}/40`"
-              :alt="(suggestionMap.get(itemProps.value as number) as GroupItem).group_name"
+              :alt="(suggestionMap.get(itemProps.value as number) as GroupItem).groupName"
             >
               <template #error>
                 <v-icon>mdi-account-group</v-icon>
@@ -211,7 +211,7 @@ function onSelect(value: unknown) {
         <v-list-item-title>
           <span class="font-weight-medium">
             {{
-              (suggestionMap.get(itemProps.value as number) as GroupItem | undefined)?.group_name ??
+              (suggestionMap.get(itemProps.value as number) as GroupItem | undefined)?.groupName ??
               itemProps.title
             }}
           </span>

@@ -27,45 +27,45 @@
             </tr>
             <tr>
               <td class="text-caption font-weight-bold">Message ID</td>
-              <td class="text-caption">{{ message?.message_id }}</td>
+              <td class="text-caption">{{ message?.messageId }}</td>
             </tr>
             <tr>
               <td class="text-caption font-weight-bold">消息类型</td>
-              <td class="text-caption">{{ formatMessageType(message?.message_type) }}</td>
+              <td class="text-caption">{{ formatMessageType(message?.messageType) }}</td>
             </tr>
             <tr>
               <td class="text-caption font-weight-bold">群号</td>
-              <td class="text-caption">{{ message?.group_id ?? '-' }}</td>
+              <td class="text-caption">{{ message?.groupId ?? '-' }}</td>
             </tr>
             <tr>
               <td class="text-caption font-weight-bold">发送者 QQ</td>
-              <td class="text-caption">{{ message?.user_id }}</td>
+              <td class="text-caption">{{ message?.userId }}</td>
             </tr>
             <tr>
               <td class="text-caption font-weight-bold">昵称</td>
-              <td class="text-caption">{{ message?.sender_nickname }}</td>
+              <td class="text-caption">{{ message?.senderNickname }}</td>
             </tr>
             <tr>
               <td class="text-caption font-weight-bold">群名片</td>
-              <td class="text-caption">{{ message?.sender_card ?? '-' }}</td>
+              <td class="text-caption">{{ message?.senderCard ?? '-' }}</td>
             </tr>
             <tr>
               <td class="text-caption font-weight-bold">角色</td>
-              <td class="text-caption">{{ message?.sender_role ?? '-' }}</td>
+              <td class="text-caption">{{ message?.senderRole ?? '-' }}</td>
             </tr>
             <tr>
               <td class="text-caption font-weight-bold">原始消息</td>
               <td class="text-caption" style="white-space: pre-wrap; word-break: break-all">
-                {{ message?.raw_message }}
+                {{ message?.rawMessage }}
               </td>
             </tr>
             <tr>
               <td class="text-caption font-weight-bold">创建时间</td>
-              <td class="text-caption">{{ message?.created_at ?? '-' }}</td>
+              <td class="text-caption">{{ message?.createdAt ?? '-' }}</td>
             </tr>
             <tr>
               <td class="text-caption font-weight-bold">存储时间</td>
-              <td class="text-caption">{{ message?.stored_at ?? '-' }}</td>
+              <td class="text-caption">{{ message?.storedAt ?? '-' }}</td>
             </tr>
           </tbody>
         </v-table>

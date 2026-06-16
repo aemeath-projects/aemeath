@@ -8,7 +8,7 @@ export interface ScheduledTask {
   name: string
   task: string
   schedule: string
-  schedule_raw: number | null
+  scheduleRaw: number | null
   args: unknown[] | null
   kwargs: Record<string, unknown> | null
   options: {
@@ -48,7 +48,7 @@ export interface WorkerInfo {
   name: string
   concurrency: number | null
   broker: string | null
-  prefetch_count: number | null
+  prefetchCount: number | null
   pid: number | null
   uptime: number | null
 }

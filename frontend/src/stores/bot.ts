@@ -7,7 +7,7 @@ import type { BotProfile, BotProfileUpdate, BotVersionInfo } from '@/apis/bot'
 
 export interface HealthStatus {
   status: string
-  ws_connected: boolean
+  wsConnected: boolean
 }
 
 export const useBotStore = defineStore(
@@ -22,10 +22,10 @@ export const useBotStore = defineStore(
     // 完整 profile（含版本信息），用于 BotView
     const profile = reactive<BotProfile>({
       nickname: null,
-      user_id: null,
-      avatar_url: null,
+      userId: null,
+      avatarUrl: null,
       online: false,
-      version: { app_name: '', app_version: '', protocol_version: '' } as BotVersionInfo,
+      version: { appName: '', appVersion: '', protocolVersion: '' } as BotVersionInfo,
     })
     const profileLoading = ref(false)
     const profileSaving = ref(false)
@@ -36,7 +36,7 @@ export const useBotStore = defineStore(
     async function fetchHealth() {
       try {
         const { data } = await http.get<HealthStatus>('/health')
-        online.value = data.ws_connected
+        online.value = data.wsConnected
       } catch {
         online.value = false
       }
@@ -47,8 +47,8 @@ export const useBotStore = defineStore(
         const { data } = await getBotInfo()
         if (data.code === 0) {
           nickname.value = data.data.nickname
-          userId.value = data.data.user_id
-          avatarUrl.value = data.data.avatar_url
+          userId.value = data.data.userId
+          avatarUrl.value = data.data.avatarUrl
         }
       } catch {
         // 获取失败时不清空缓存，保留上次的信息
@@ -81,8 +81,8 @@ export const useBotStore = defineStore(
           Object.assign(profile, data.data)
           // 同步基础缓存字段
           nickname.value = data.data.nickname
-          userId.value = data.data.user_id
-          avatarUrl.value = data.data.avatar_url
+          userId.value = data.data.userId
+          avatarUrl.value = data.data.avatarUrl
           online.value = data.data.online
         }
       } finally {

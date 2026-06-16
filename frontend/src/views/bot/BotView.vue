@@ -12,7 +12,7 @@
     </template>
 
     <!-- 骨架屏：初次加载 -->
-    <v-row v-if="botStore.profileLoading && !botStore.profile.user_id">
+    <v-row v-if="botStore.profileLoading && !botStore.profile.userId">
       <v-col cols="12" md="5" lg="4">
         <v-skeleton-loader type="card" rounded="lg" />
       </v-col>
@@ -28,8 +28,8 @@
           <v-card-text class="d-flex flex-column align-center pa-6">
             <v-avatar size="96" class="mb-4">
               <v-img
-                v-if="botStore.profile.avatar_url"
-                :src="botStore.profile.avatar_url"
+                v-if="botStore.profile.avatarUrl"
+                :src="botStore.profile.avatarUrl"
                 :alt="botStore.profile.nickname ?? 'Bot'"
               ></v-img>
               <v-icon v-else icon="mdi-robot" size="56"></v-icon>
@@ -53,7 +53,7 @@
               {{ botStore.profile.nickname ?? '未连接' }}
             </div>
             <div class="text-body-2 text-medium-emphasis">
-              {{ botStore.profile.user_id ? `QQ: ${botStore.profile.user_id}` : '-' }}
+              {{ botStore.profile.userId ? `QQ: ${botStore.profile.userId}` : '-' }}
             </div>
           </v-card-text>
 
@@ -73,7 +73,7 @@
               class="mb-2"
             ></v-text-field>
             <v-text-field
-              v-model="editForm.personal_note"
+              v-model="editForm.personalNote"
               label="个性签名"
               density="compact"
               variant="outlined"
@@ -111,7 +111,7 @@
                   >协议版本</v-list-item-title
                 >
                 <v-list-item-subtitle class="text-body-1">
-                  {{ botStore.profile.version?.protocol_version || '-' }}
+                  {{ botStore.profile.version?.protocolVersion || '-' }}
                 </v-list-item-subtitle>
               </v-list-item>
               <v-list-item>
@@ -122,12 +122,12 @@
                   >客户端</v-list-item-title
                 >
                 <v-list-item-subtitle class="text-body-1">
-                  {{ botStore.profile.version?.app_name || '-' }}
+                  {{ botStore.profile.version?.appName || '-' }}
                   <span
-                    v-if="botStore.profile.version?.app_version"
+                    v-if="botStore.profile.version?.appVersion"
                     class="text-medium-emphasis text-body-2"
                   >
-                    v{{ botStore.profile.version.app_version }}
+                    v{{ botStore.profile.version.appVersion }}
                   </span>
                 </v-list-item-subtitle>
               </v-list-item>
@@ -170,7 +170,7 @@ const botStore = useBotStore()
 
 const editForm = reactive({
   nickname: '',
-  personal_note: '',
+  personalNote: '',
 })
 
 const snackbar = reactive({
@@ -183,7 +183,7 @@ const snackbar = reactive({
 const hasChanges = computed(() => {
   return (
     editForm.nickname.trim() !== (botStore.profile.nickname ?? '') ||
-    editForm.personal_note.trim() !== ''
+    editForm.personalNote.trim() !== ''
   )
 })
 
@@ -191,7 +191,7 @@ async function refresh() {
   try {
     await botStore.fetchProfile()
     editForm.nickname = botStore.profile.nickname ?? ''
-    editForm.personal_note = ''
+    editForm.personalNote = ''
   } catch {
     snackbar.message = '获取 Bot 信息失败，请重试'
     snackbar.color = 'error'
@@ -202,13 +202,13 @@ async function refresh() {
 async function saveProfile() {
   const payload: Record<string, string> = {}
   const trimmedNickname = editForm.nickname.trim()
-  const trimmedNote = editForm.personal_note.trim()
+  const trimmedNote = editForm.personalNote.trim()
 
   if (trimmedNickname && trimmedNickname !== (botStore.profile.nickname ?? '')) {
     payload.nickname = trimmedNickname
   }
   if (trimmedNote) {
-    payload.personal_note = trimmedNote
+    payload.personalNote = trimmedNote
   }
 
   const success = await botStore.saveProfile(payload)
@@ -217,7 +217,7 @@ async function saveProfile() {
     snackbar.color = 'success'
     snackbar.show = true
     editForm.nickname = botStore.profile.nickname ?? ''
-    editForm.personal_note = ''
+    editForm.personalNote = ''
   } else {
     snackbar.message = '修改失败，请重试'
     snackbar.color = 'error'

@@ -55,7 +55,7 @@ const WorkerInfoSchema = Type.Object({
   name: Type.String(),
   concurrency: Type.Null(),
   broker: Type.String(),
-  prefetch_count: Type.Null(),
+  prefetchCount: Type.Null(),
   pid: Type.Union([Type.Number(), Type.Null()]),
   uptime: Type.Null(),
 })

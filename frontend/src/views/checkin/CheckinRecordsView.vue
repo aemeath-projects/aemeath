@@ -4,13 +4,13 @@
       <!-- 筛选栏 -->
       <v-card-title class="d-flex align-center flex-wrap ga-2 pt-3">
         <GroupAutocomplete
-          v-model="filter.group_id"
+          v-model="filter.groupId"
           label="群号"
           style="max-width: 200px"
           @update:model-value="loadPage(1)"
         />
         <UserAutocomplete
-          v-model="filter.user_id"
+          v-model="filter.userId"
           label="用户 QQ"
           style="max-width: 200px"
           @update:model-value="loadPage(1)"
@@ -43,46 +43,43 @@
         @update:items-per-page="onPageSizeChange"
       >
         <!-- 群聊列 -->
-        <template #[`item.group_id`]="{ item }">
-          <div
-            class="d-flex align-center ga-2 cursor-pointer"
-            @click="openGroupInfo(item.group_id)"
-          >
+        <template #[`item.groupId`]="{ item }">
+          <div class="d-flex align-center ga-2 cursor-pointer" @click="openGroupInfo(item.groupId)">
             <v-avatar size="24">
-              <v-img :src="`https://p.qlogo.cn/gh/${item.group_id}/${item.group_id}/40`">
+              <v-img :src="`https://p.qlogo.cn/gh/${item.groupId}/${item.groupId}/40`">
                 <template #error>
                   <v-icon size="20">mdi-account-group</v-icon>
                 </template>
               </v-img>
             </v-avatar>
             <span class="text-caption"
-              >{{ personnelStore.getGroupName(item.group_id) }}（{{ item.group_id }}）</span
+              >{{ personnelStore.getGroupName(item.groupId) }}（{{ item.groupId }}）</span
             >
           </div>
         </template>
 
         <!-- 用户列 -->
-        <template #[`item.user_id`]="{ item }">
+        <template #[`item.userId`]="{ item }">
           <div
             class="d-flex align-center ga-2 cursor-pointer"
-            @click="openUserInfo(item.user_id, item.group_id)"
+            @click="openUserInfo(item.userId, item.groupId)"
           >
             <v-avatar size="24">
-              <v-img :src="`https://q1.qlogo.cn/g?b=qq&nk=${item.user_id}&s=40`">
+              <v-img :src="`https://q1.qlogo.cn/g?b=qq&nk=${item.userId}&s=40`">
                 <template #error>
                   <v-icon size="20">mdi-account-circle</v-icon>
                 </template>
               </v-img>
             </v-avatar>
             <span class="text-caption"
-              >{{ personnelStore.getUserName(item.user_id) }}（{{ item.user_id }}）</span
+              >{{ personnelStore.getUserName(item.userId) }}（{{ item.userId }}）</span
             >
           </div>
         </template>
 
         <!-- 签到时间列 -->
-        <template #[`item.checkin_at`]="{ item }">
-          <span class="text-caption text-medium-emphasis">{{ formatTime(item.checkin_at) }}</span>
+        <template #[`item.checkinAt`]="{ item }">
+          <span class="text-caption text-medium-emphasis">{{ formatTime(item.checkinAt) }}</span>
         </template>
       </v-data-table>
     </v-card>
@@ -118,34 +115,34 @@ const personnelStore = usePersonnelStore()
 const loading = ref(false)
 const items = ref<CheckinRecord[]>([])
 const total = ref(0)
-const filter = ref<{ group_id: number | null; user_id: number | null; date: string | null }>({
-  group_id: null,
-  user_id: null,
+const filter = ref<{ groupId: number | null; userId: number | null; date: string | null }>({
+  groupId: null,
+  userId: null,
   date: null,
 })
 
 const headers = [
-  { title: '群聊', key: 'group_id', sortable: false },
-  { title: '用户', key: 'user_id', sortable: false },
-  { title: '签到日期', key: 'checkin_date', sortable: false },
-  { title: '签到时间', key: 'checkin_at', sortable: false },
+  { title: '群聊', key: 'groupId', sortable: false },
+  { title: '用户', key: 'userId', sortable: false },
+  { title: '签到日期', key: 'checkinDate', sortable: false },
+  { title: '签到时间', key: 'checkinAt', sortable: false },
 ]
 
 async function fetchRecords(p: number, size: number) {
   loading.value = true
   try {
     const result = await checkinApi.listRecords({
-      group_id: filter.value.group_id ?? undefined,
-      user_id: filter.value.user_id ?? undefined,
+      groupId: filter.value.groupId ?? undefined,
+      userId: filter.value.userId ?? undefined,
       date: filter.value.date ?? undefined,
       page: p,
-      page_size: size,
+      pageSize: size,
     })
     items.value = result.items
     total.value = result.total
     // 预取本页所有 ID，减少名称解析闪烁
-    const userIds = [...new Set(result.items.map((r) => r.user_id))]
-    const groupIds = [...new Set(result.items.map((r) => r.group_id))]
+    const userIds = [...new Set(result.items.map((r) => r.userId))]
+    const groupIds = [...new Set(result.items.map((r) => r.groupId))]
     personnelStore.prefetchIds(userIds, groupIds)
   } finally {
     loading.value = false

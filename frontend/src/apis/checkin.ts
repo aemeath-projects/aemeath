@@ -9,15 +9,15 @@ import type { ApiResponse, PaginatedResult } from './types'
 
 export interface CheckinRecord {
   id: number
-  group_id: number
-  user_id: number
-  checkin_date: string
-  checkin_at: string
+  groupId: number
+  userId: number
+  checkinDate: string
+  checkinAt: string
 }
 
 export interface LeaderEntry {
   rank: number
-  user_id: number
+  userId: number
   value: number
 }
 
@@ -27,17 +27,17 @@ export interface DayCount {
 }
 
 export interface Summary {
-  total_checkins: number
-  today_checkins: number
-  active_users: number
+  totalCheckins: number
+  todayCheckins: number
+  activeUsers: number
 }
 
 export interface ListRecordsParams {
-  group_id?: number | null
-  user_id?: number | null
+  groupId?: number | null
+  userId?: number | null
   date?: string | null
   page?: number
-  page_size?: number
+  pageSize?: number
 }
 
 /* API 调用 */
@@ -48,11 +48,11 @@ export async function listRecords(
   params: ListRecordsParams,
 ): Promise<PaginatedResult<CheckinRecord>> {
   const query: Record<string, string | number> = {}
-  if (params.group_id != null) query.group_id = params.group_id
-  if (params.user_id != null) query.user_id = params.user_id
+  if (params.groupId != null) query.groupId = params.groupId
+  if (params.userId != null) query.userId = params.userId
   if (params.date) query.date = params.date
   if (params.page) query.page = params.page
-  if (params.page_size) query.page_size = params.page_size
+  if (params.pageSize) query.pageSize = params.pageSize
 
   const { data } = await http.get<ApiResponse<PaginatedResult<CheckinRecord>>>(`${BASE}/records`, {
     params: query,
@@ -66,7 +66,7 @@ export async function getLeaderboard(
   limit = 20,
 ): Promise<LeaderEntry[]> {
   const params: Record<string, string | number> = { by, limit }
-  if (groupId != null) params.group_id = groupId
+  if (groupId != null) params.groupId = groupId
   const { data } = await http.get<ApiResponse<LeaderEntry[]>>(`${BASE}/leaderboard`, { params })
   return data.data
 }
@@ -76,14 +76,14 @@ export async function getDailyTrend(
   days = 30,
 ): Promise<DayCount[]> {
   const params: Record<string, string | number> = { days }
-  if (groupId != null) params.group_id = groupId
+  if (groupId != null) params.groupId = groupId
   const { data } = await http.get<ApiResponse<DayCount[]>>(`${BASE}/trend`, { params })
   return data.data
 }
 
 export async function getSummary(groupId: number | null | undefined): Promise<Summary> {
   const params: Record<string, string | number> = {}
-  if (groupId != null) params.group_id = groupId
+  if (groupId != null) params.groupId = groupId
   const { data } = await http.get<ApiResponse<Summary>>(`${BASE}/summary`, { params })
   return data.data
 }

@@ -63,7 +63,7 @@ enum LikeSource {
   manual
   scheduled
 
-  @@map("likesource")
+  @@map("like_source")
 }
 
 /// 聊天归档任务状态
@@ -94,9 +94,9 @@ model User {
   /* Relations */
   memberships              GroupMembership[]
   feedbacks                Feedback[]           @relation("FeedbackUser")
-  checkinRecords           CheckinRecord[]      @relation("CheckinUser")
-  jrlpAsUser               WifeRecord[]         @relation("JrlpUser")
-  jrlpAsWife               WifeRecord[]         @relation("JrlpWife")
+  checkin_records          CheckinRecord[]      @relation("CheckinUser")
+  jrlp_as_user             WifeRecord[]         @relation("JrlpUser")
+  jrlp_as_wife             WifeRecord[]         @relation("JrlpWife")
   @@map("users")
 }
 
@@ -114,8 +114,8 @@ model Group {
   /* Relations */
   memberships    GroupMembership[]
   feedbacks      Feedback[]      @relation("FeedbackGroup")
-  checkinRecords CheckinRecord[] @relation("CheckinGroup")
-  jrlpRecords    WifeRecord[]    @relation("JrlpGroup")
+  checkin_records CheckinRecord[] @relation("CheckinGroup")
+  jrlp_records    WifeRecord[]    @relation("JrlpGroup")
 
   @@index([isActive])
   @@map("groups")
@@ -279,7 +279,7 @@ model DriftBottlePool {
   name String @unique @db.VarChar(64)
 
   /* Relations */
-  groupPools DriftBottleGroupPool[]
+  group_pools DriftBottleGroupPool[]
   items      DriftBottleItem[]
 
   @@map("drift_bottle_pools")

@@ -38,8 +38,8 @@ export const GroupListQuerySchema = Type.Object({
   pageSize: Type.Optional(
     Type.String({ pattern: '^\\d+$', description: '每页条数（默认 20，最大 100）' }),
   ),
-  group_name: Type.Optional(Type.String({ description: '按群名模糊查找' })),
-  is_active: Type.Optional(
+  groupName: Type.Optional(Type.String({ description: '按群名模糊查找' })),
+  isActive: Type.Optional(
     Type.Union([Type.Literal('true'), Type.Literal('false')], {
       description: '是否活跃：true / false',
     }),

@@ -154,19 +154,19 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
         Querystring: {
           page?: string
           pageSize?: string
-          group_name?: string
-          is_active?: string
+          groupName?: string
+          isActive?: string
         }
       }>,
       reply: FastifyReply,
     ) => {
       const svc = getPersonnelQueryService(app)
       const isActive =
-        req.query.is_active === 'true' ? true : req.query.is_active === 'false' ? false : undefined
+        req.query.isActive === 'true' ? true : req.query.isActive === 'false' ? false : undefined
       const result = await svc.listGroups({
         page: Math.max(1, Number(req.query.page ?? 1)),
         pageSize: Math.min(100, Math.max(1, Number(req.query.pageSize ?? 20))),
-        groupName: req.query.group_name,
+        groupName: req.query.groupName,
         isActive,
       })
       await reply.send(ok(result))

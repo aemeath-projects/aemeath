@@ -33,15 +33,15 @@
 
             <v-card-text>
               <div class="text-caption text-medium-emphasis mb-1">API 地址</div>
-              <div class="text-body-2 text-truncate mb-3">{{ provider.api_base }}</div>
+              <div class="text-body-2 text-truncate mb-3">{{ provider.apiBase }}</div>
 
               <div class="text-caption text-medium-emphasis mb-1">API Key</div>
-              <div class="text-body-2 mb-3 font-weight-medium">{{ provider.api_key_masked }}</div>
+              <div class="text-body-2 mb-3 font-weight-medium">{{ provider.apiKeyMasked }}</div>
 
               <div class="d-flex ga-3 mb-3">
                 <div>
                   <div class="text-caption text-medium-emphasis">最大重试</div>
-                  <div class="text-body-2">{{ provider.max_retries }} 次</div>
+                  <div class="text-body-2">{{ provider.maxRetries }} 次</div>
                 </div>
                 <div>
                   <div class="text-caption text-medium-emphasis">超时</div>
@@ -49,13 +49,13 @@
                 </div>
                 <div>
                   <div class="text-caption text-medium-emphasis">重试间隔</div>
-                  <div class="text-body-2">{{ provider.retry_interval }} 秒</div>
+                  <div class="text-body-2">{{ provider.retryInterval }} 秒</div>
                 </div>
               </div>
 
               <v-chip size="small" variant="elevated" color="blue">
                 <v-icon start size="x-small">mdi-brain</v-icon>
-                {{ provider.model_count }} 个模型
+                {{ provider.modelCount }} 个模型
               </v-chip>
             </v-card-text>
 

@@ -77,8 +77,8 @@ export const usePersonnelStore = defineStore('personnel', () => {
   async function loadGroups(params: {
     page?: number
     pageSize?: number
-    group_name?: string | null
-    is_active?: boolean | null
+    groupName?: string | null
+    isActive?: boolean | null
   }) {
     groupsLoading.value = true
     try {
@@ -232,7 +232,7 @@ export const usePersonnelStore = defineStore('personnel', () => {
    */
   function getGroupName(groupId: number): string {
     const cached = groupCache.value.get(groupId)
-    if (cached) return cached.group_name
+    if (cached) return cached.groupName
     pendingGroupIds.add(groupId)
     _scheduleFlush()
     return String(groupId)

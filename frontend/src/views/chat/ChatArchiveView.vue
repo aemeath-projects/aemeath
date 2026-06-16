@@ -57,28 +57,28 @@
         </template>
 
         <!-- 行数列 -->
-        <template #item.total_rows="{ item }">
-          {{ formatNumber(item.total_rows) }}
+        <template #item.totalRows="{ item }">
+          {{ formatNumber(item.totalRows) }}
         </template>
 
         <!-- 大小列 -->
-        <template #item.compressed_bytes="{ item }">
-          <span v-if="item.compressed_bytes > 0">
-            {{ formatBytes(item.compressed_bytes) }}
-            <span class="text-caption text-medium-emphasis ml-1" v-if="item.original_bytes > 0">
-              ({{ (item.original_bytes / item.compressed_bytes).toFixed(1) }}:1)
+        <template #item.compressedBytes="{ item }">
+          <span v-if="item.compressedBytes > 0">
+            {{ formatBytes(item.compressedBytes) }}
+            <span class="text-caption text-medium-emphasis ml-1" v-if="item.originalBytes > 0">
+              ({{ (item.originalBytes / item.compressedBytes).toFixed(1) }}:1)
             </span>
           </span>
           <span v-else>-</span>
         </template>
 
         <!-- 时间列 -->
-        <template #item.created_at="{ item }">
-          {{ formatTime(item.created_at) }}
+        <template #item.createdAt="{ item }">
+          {{ formatTime(item.createdAt) }}
         </template>
 
-        <template #item.completed_at="{ item }">
-          {{ formatTime(item.completed_at) }}
+        <template #item.completedAt="{ item }">
+          {{ formatTime(item.completedAt) }}
         </template>
 
         <!-- 操作列 -->
@@ -133,14 +133,14 @@
             <v-list-item>
               <v-list-item-title class="text-medium-emphasis">分区名称</v-list-item-title>
               <v-list-item-subtitle class="font-weight-medium">{{
-                selectedArchive.partition_name
+                selectedArchive.partitionName
               }}</v-list-item-subtitle>
             </v-list-item>
             <v-list-item>
               <v-list-item-title class="text-medium-emphasis">归档周期</v-list-item-title>
               <v-list-item-subtitle
-                >{{ selectedArchive.period_start }} 至
-                {{ selectedArchive.period_end }}</v-list-item-subtitle
+                >{{ selectedArchive.periodStart }} 至
+                {{ selectedArchive.periodEnd }}</v-list-item-subtitle
               >
             </v-list-item>
             <v-list-item>
@@ -158,55 +158,53 @@
             <v-list-item>
               <v-list-item-title class="text-medium-emphasis">总行数</v-list-item-title>
               <v-list-item-subtitle>{{
-                formatNumber(selectedArchive.total_rows)
+                formatNumber(selectedArchive.totalRows)
               }}</v-list-item-subtitle>
             </v-list-item>
             <v-list-item>
               <v-list-item-title class="text-medium-emphasis">原始大小</v-list-item-title>
               <v-list-item-subtitle>{{
-                formatBytes(selectedArchive.original_bytes)
+                formatBytes(selectedArchive.originalBytes)
               }}</v-list-item-subtitle>
             </v-list-item>
             <v-list-item>
               <v-list-item-title class="text-medium-emphasis">压缩后大小</v-list-item-title>
               <v-list-item-subtitle>{{
-                formatBytes(selectedArchive.compressed_bytes)
+                formatBytes(selectedArchive.compressedBytes)
               }}</v-list-item-subtitle>
             </v-list-item>
             <v-list-item
-              v-if="selectedArchive.original_bytes > 0 && selectedArchive.compressed_bytes > 0"
+              v-if="selectedArchive.originalBytes > 0 && selectedArchive.compressedBytes > 0"
             >
               <v-list-item-title class="text-medium-emphasis">压缩率</v-list-item-title>
               <v-list-item-subtitle>
-                {{
-                  (selectedArchive.original_bytes / selectedArchive.compressed_bytes).toFixed(1)
-                }}:1
+                {{ (selectedArchive.originalBytes / selectedArchive.compressedBytes).toFixed(1) }}:1
               </v-list-item-subtitle>
             </v-list-item>
             <v-list-item>
               <v-list-item-title class="text-medium-emphasis">S3 路径</v-list-item-title>
               <v-list-item-subtitle class="text-caption" style="word-break: break-all">
-                s3://{{ selectedArchive.s3_bucket }}/{{ selectedArchive.s3_key }}
+                s3://{{ selectedArchive.s3Bucket }}/{{ selectedArchive.s3Key }}
               </v-list-item-subtitle>
             </v-list-item>
             <v-list-item>
               <v-list-item-title class="text-medium-emphasis">创建时间</v-list-item-title>
               <v-list-item-subtitle>{{
-                formatTime(selectedArchive.created_at)
+                formatTime(selectedArchive.createdAt)
               }}</v-list-item-subtitle>
             </v-list-item>
-            <v-list-item v-if="selectedArchive.completed_at">
+            <v-list-item v-if="selectedArchive.completedAt">
               <v-list-item-title class="text-medium-emphasis">完成时间</v-list-item-title>
               <v-list-item-subtitle>{{
-                formatTime(selectedArchive.completed_at)
+                formatTime(selectedArchive.completedAt)
               }}</v-list-item-subtitle>
             </v-list-item>
-            <v-list-item v-if="selectedArchive.error_message">
+            <v-list-item v-if="selectedArchive.errorMessage">
               <v-list-item-title class="text-medium-emphasis text-error"
                 >错误信息</v-list-item-title
               >
               <v-list-item-subtitle class="text-error">{{
-                selectedArchive.error_message
+                selectedArchive.errorMessage
               }}</v-list-item-subtitle>
             </v-list-item>
           </v-list>
@@ -232,13 +230,13 @@ const detailDialog = ref(false)
 const selectedArchive = ref<ArchiveLog | null>(null)
 
 const headers = [
-  { title: '分区', key: 'partition_name', sortable: false },
-  { title: '周期', key: 'period_start', sortable: false },
+  { title: '分区', key: 'partitionName', sortable: false },
+  { title: '周期', key: 'periodStart', sortable: false },
   { title: '状态', key: 'status', sortable: false },
-  { title: '行数', key: 'total_rows', sortable: false },
-  { title: '压缩后大小', key: 'compressed_bytes', sortable: false },
-  { title: '创建时间', key: 'created_at', sortable: false },
-  { title: '完成时间', key: 'completed_at', sortable: false },
+  { title: '行数', key: 'totalRows', sortable: false },
+  { title: '压缩后大小', key: 'compressedBytes', sortable: false },
+  { title: '创建时间', key: 'createdAt', sortable: false },
+  { title: '完成时间', key: 'completedAt', sortable: false },
   { title: '操作', key: 'actions', sortable: false, width: 80 },
 ]
 
@@ -272,7 +270,7 @@ async function onTriggerArchive() {
     const result = await store.doTriggerArchive()
     archiveResult.value = {
       type: 'success',
-      message: `归档任务已提交，任务 ID: ${result.task_id}`,
+      message: `归档任务已提交，任务 ID: ${result.taskId}`,
     }
     // 刷新列表
     setTimeout(() => loadPage(1), 2000)

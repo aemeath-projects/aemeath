@@ -10,17 +10,17 @@ export interface ArchiveManifest {
   version: number
   partition: string
   period: { start: string; end: string }
-  stats: { total_rows: number }
+  stats: { totalRows: number }
   archive: {
     format: string
     compression: string
-    original_size_bytes: number
-    compressed_size_bytes: number
-    compression_ratio: number
+    originalSizeBytes: number
+    compressedSizeBytes: number
+    compressionRatio: number
     sha256: string
   }
-  archived_at: string
-  archived_by: string
+  archivedAt: string
+  archivedBy: string
 }
 
 /**
@@ -98,17 +98,17 @@ export class ArchiveS3 {
         start: periodStart.toISOString().slice(0, 10),
         end: periodEnd.toISOString().slice(0, 10),
       },
-      stats: { total_rows: totalRows },
+      stats: { totalRows },
       archive: {
         format: 'parquet',
         compression: 'zstd (built-in)',
-        original_size_bytes: originalBytes,
-        compressed_size_bytes: compressedBytes,
-        compression_ratio: ratio,
+        originalSizeBytes: originalBytes,
+        compressedSizeBytes: compressedBytes,
+        compressionRatio: ratio,
         sha256: sha256Hex,
       },
-      archived_at: new Date().toISOString(),
-      archived_by: 'aemeath-worker',
+      archivedAt: new Date().toISOString(),
+      archivedBy: 'aemeath-worker',
     }
   }
 }

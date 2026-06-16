@@ -9,31 +9,31 @@ import type { ApiResponse, PaginatedResult } from './types'
 
 export interface WifeRecord {
   id: number
-  group_id: number
-  user_id: number
-  wife_qq: number
+  groupId: number
+  userId: number
+  wifeQq: number
   date: string
-  drawn_at: string | null
+  drawnAt: string | null
 }
 
 export interface ListRecordsParams {
-  group_id?: number | null
-  user_id?: number | null
+  groupId?: number | null
+  userId?: number | null
   date?: string | null
   page?: number
-  page_size?: number
+  pageSize?: number
 }
 
 export interface SetWifeRequest {
-  group_id: number
-  user_id: number
-  wife_qq: number
+  groupId: number
+  userId: number
+  wifeQq: number
   date: string
 }
 
 export interface UpdateRecordRequest {
   id: number
-  wife_qq: number
+  wifeQq: number
 }
 
 export interface DeleteRecordRequest {
@@ -46,11 +46,11 @@ const BASE = '/api/jrlp'
 
 export async function listRecords(params: ListRecordsParams): Promise<PaginatedResult<WifeRecord>> {
   const query: Record<string, string | number> = {}
-  if (params.group_id != null) query.group_id = params.group_id
-  if (params.user_id != null) query.user_id = params.user_id
+  if (params.groupId != null) query.groupId = params.groupId
+  if (params.userId != null) query.userId = params.userId
   if (params.date) query.date = params.date
   if (params.page) query.page = params.page
-  if (params.page_size) query.page_size = params.page_size
+  if (params.pageSize) query.pageSize = params.pageSize
 
   const { data } = await http.get<ApiResponse<PaginatedResult<WifeRecord>>>(`${BASE}/records`, {
     params: query,

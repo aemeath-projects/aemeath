@@ -14,22 +14,22 @@
       <!-- 群信息头部 -->
       <v-card-title v-else-if="groupInfo" class="d-flex align-center ga-3 pa-4">
         <v-avatar size="48">
-          <v-img :src="`https://p.qlogo.cn/gh/${groupInfo.group_id}/${groupInfo.group_id}/100`">
+          <v-img :src="`https://p.qlogo.cn/gh/${groupInfo.groupId}/${groupInfo.groupId}/100`">
             <template #error>
               <v-icon size="32">mdi-account-group</v-icon>
             </template>
           </v-img>
         </v-avatar>
         <div>
-          <div class="text-h6">{{ groupInfo.group_name || '未知群聊' }}</div>
+          <div class="text-h6">{{ groupInfo.groupName || '未知群聊' }}</div>
           <div class="text-caption text-medium-emphasis">
-            群号: {{ groupInfo.group_id }} &middot; 成员: {{ groupInfo.member_count }} /
-            {{ groupInfo.max_member_count }}
+            群号: {{ groupInfo.groupId }} &middot; 成员: {{ groupInfo.memberCount }} /
+            {{ groupInfo.maxMemberCount }}
           </div>
         </div>
         <v-spacer />
-        <v-chip :color="activeColor(groupInfo.is_active)" variant="elevated" size="small">
-          {{ activeLabel(groupInfo.is_active) }}
+        <v-chip :color="activeColor(groupInfo.isActive)" variant="elevated" size="small">
+          {{ activeLabel(groupInfo.isActive) }}
         </v-chip>
         <v-btn
           icon="mdi-close"
@@ -122,7 +122,7 @@
         <!-- 入群时间 -->
         <template #[`item.join_time`]="{ item }">
           <span class="text-caption">
-            {{ item.join_time ? formatTimestamp(item.join_time) : '-' }}
+            {{ item.joinTime ? formatTimestamp(item.joinTime) : '-' }}
           </span>
         </template>
 

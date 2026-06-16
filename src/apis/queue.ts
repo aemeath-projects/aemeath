@@ -146,7 +146,7 @@ async function collectQueueState(app: FastifyInstance): Promise<QueueStateResult
               name: w.name ?? w.addr ?? w.id,
               concurrency: null,
               broker: queueName,
-              prefetch_count: null,
+              prefetchCount: null,
               pid: pid !== null && Number.isFinite(pid) ? pid : null,
               uptime: null,
             })
@@ -300,7 +300,7 @@ const queueRoutes: FastifyPluginAsync = async (app) => {
                 name: w.name ?? w.addr ?? w.id,
                 concurrency: null,
                 broker: queueName,
-                prefetch_count: null,
+                prefetchCount: null,
                 pid: pid !== null && Number.isFinite(pid) ? pid : null,
                 uptime: null,
               })

@@ -78,9 +78,9 @@
         </template>
 
         <!-- 最后同步时间 -->
-        <template #[`item.last_synced`]="{ item }">
+        <template #[`item.lastSynced`]="{ item }">
           <span class="text-caption text-medium-emphasis">
-            {{ item.last_synced ? formatTime(item.last_synced) : '-' }}
+            {{ item.lastSynced ? formatTime(item.lastSynced) : '-' }}
           </span>
         </template>
 
@@ -159,8 +159,8 @@ const headers = [
   { title: 'QQ', key: 'qq', sortable: false },
   { title: '昵称', key: 'nickname', sortable: false },
   { title: '关系等级', key: 'relation', sortable: false },
-  { title: '所属群数', key: 'group_count', sortable: false, align: 'center' as const },
-  { title: '最后同步', key: 'last_synced', sortable: false },
+  { title: '所属群数', key: 'groupCount', sortable: false, align: 'center' as const },
+  { title: '最后同步', key: 'lastSynced', sortable: false },
   { title: '操作', key: 'actions', sortable: false, align: 'center' as const },
 ]
 

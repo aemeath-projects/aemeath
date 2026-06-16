@@ -28,9 +28,9 @@
             <div class="text-caption text-medium-emphasis">提交者</div>
             <div class="d-flex align-center ga-2 mt-1">
               <v-avatar size="24">
-                <v-img :src="`https://q1.qlogo.cn/g?b=qq&nk=${feedback.user_id}&s=40`" />
+                <v-img :src="`https://q1.qlogo.cn/g?b=qq&nk=${feedback.userId}&s=40`" />
               </v-avatar>
-              <span class="text-body-2">{{ feedback.user_id }}</span>
+              <span class="text-body-2">{{ feedback.userId }}</span>
             </div>
           </v-col>
           <v-col cols="6">
@@ -39,8 +39,8 @@
           </v-col>
           <v-col cols="6">
             <div class="text-caption text-medium-emphasis">类型</div>
-            <v-chip :color="typeColor(feedback.feedback_type)" size="small" variant="elevated">
-              {{ feedback.feedback_type || '未分类' }}
+            <v-chip :color="typeColor(feedback.feedbackType)" size="small" variant="elevated">
+              {{ feedback.feedbackType || '未分类' }}
             </v-chip>
           </v-col>
           <v-col cols="6">
@@ -51,11 +51,11 @@
           </v-col>
           <v-col cols="12">
             <div class="text-caption text-medium-emphasis">提交时间</div>
-            <div class="text-body-2">{{ formatTime(feedback.created_at) }}</div>
+            <div class="text-body-2">{{ formatTime(feedback.createdAt) }}</div>
           </v-col>
-          <v-col v-if="feedback.processed_at" cols="12">
+          <v-col v-if="feedback.processedAt" cols="12">
             <div class="text-caption text-medium-emphasis">处理时间</div>
-            <div class="text-body-2">{{ formatTime(feedback.processed_at) }}</div>
+            <div class="text-body-2">{{ formatTime(feedback.processedAt) }}</div>
           </v-col>
         </v-row>
 
@@ -66,10 +66,10 @@
           <div class="text-body-2">{{ feedback.content }}</div>
         </v-card>
 
-        <div v-if="feedback.admin_reply" class="mb-4">
+        <div v-if="feedback.adminReply" class="mb-4">
           <div class="text-subtitle-2 mb-2">管理员回复</div>
           <v-card variant="elevated" color="blue-lighten-5" class="pa-3">
-            <div class="text-body-2">{{ feedback.admin_reply }}</div>
+            <div class="text-body-2">{{ feedback.adminReply }}</div>
           </v-card>
         </div>
 
@@ -143,7 +143,7 @@ watch(
   (fb) => {
     if (fb) {
       editStatus.value = fb.status
-      editReply.value = fb.admin_reply || ''
+      editReply.value = fb.adminReply || ''
     }
   },
   { immediate: true },
@@ -156,7 +156,7 @@ async function saveAndNotify() {
   try {
     await feedbackApi.updateStatus(props.feedback.id, {
       status: editStatus.value,
-      admin_reply: editReply.value || null,
+      adminReply: editReply.value || null,
     })
     emit('update:modelValue', false)
     emit('saved')

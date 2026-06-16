@@ -12,31 +12,31 @@ export type LikeSource = 'manual' | 'scheduled'
 export interface LikeTask {
   id: number
   qq: number
-  registered_at: string
-  registered_group_id: number | null
+  registeredAt: string
+  registeredGroupId: number | null
 }
 
 export interface LikeHistory {
   id: number
   qq: number
   times: number
-  triggered_at: string
+  triggeredAt: string
   source: LikeSource
   success: boolean
 }
 
 export interface ListTasksParams {
   page?: number
-  page_size?: number
+  pageSize?: number
 }
 
 export interface ListHistoryParams {
   qq?: number | null
   source?: LikeSource | null
-  date_from?: string | null
-  date_to?: string | null
+  dateFrom?: string | null
+  dateTo?: string | null
   page?: number
-  page_size?: number
+  pageSize?: number
 }
 
 /* API 调用 */
@@ -66,10 +66,10 @@ export async function listHistory(
   const query: Record<string, string | number> = {}
   if (params.qq != null) query.qq = params.qq
   if (params.source) query.source = params.source
-  if (params.date_from) query.date_from = params.date_from
-  if (params.date_to) query.date_to = params.date_to
+  if (params.dateFrom) query.dateFrom = params.dateFrom
+  if (params.dateTo) query.dateTo = params.dateTo
   if (params.page != null) query.page = params.page
-  if (params.page_size != null) query.page_size = params.page_size
+  if (params.pageSize != null) query.pageSize = params.pageSize
 
   const { data } = await http.get<ApiResponse<PaginatedResult<LikeHistory>>>(`${BASE}/history`, {
     params: query,

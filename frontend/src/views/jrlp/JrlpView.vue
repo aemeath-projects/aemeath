@@ -15,13 +15,13 @@
       <!-- 筛选栏 -->
       <v-card-title class="d-flex align-center flex-wrap ga-2 pt-3">
         <GroupAutocomplete
-          v-model="filter.group_id"
+          v-model="filter.groupId"
           label="群号"
           style="max-width: 200px"
           @update:model-value="loadPage(1)"
         />
         <UserAutocomplete
-          v-model="filter.user_id"
+          v-model="filter.userId"
           label="用户 QQ"
           style="max-width: 200px"
           @update:model-value="loadPage(1)"
@@ -54,66 +54,63 @@
         @update:items-per-page="onPageSizeChange"
       >
         <!-- 群聊列 -->
-        <template #[`item.group_id`]="{ item }">
-          <div
-            class="d-flex align-center ga-2 cursor-pointer"
-            @click="openGroupInfo(item.group_id)"
-          >
+        <template #[`item.groupId`]="{ item }">
+          <div class="d-flex align-center ga-2 cursor-pointer" @click="openGroupInfo(item.groupId)">
             <v-avatar size="24">
-              <v-img :src="`https://p.qlogo.cn/gh/${item.group_id}/${item.group_id}/40`">
+              <v-img :src="`https://p.qlogo.cn/gh/${item.groupId}/${item.groupId}/40`">
                 <template #error>
                   <v-icon size="20">mdi-account-group</v-icon>
                 </template>
               </v-img>
             </v-avatar>
             <span class="text-caption"
-              >{{ personnelStore.getGroupName(item.group_id) }}（{{ item.group_id }}）</span
+              >{{ personnelStore.getGroupName(item.groupId) }}（{{ item.groupId }}）</span
             >
           </div>
         </template>
 
         <!-- 抽取者列 -->
-        <template #[`item.user_id`]="{ item }">
+        <template #[`item.userId`]="{ item }">
           <div
             class="d-flex align-center ga-2 cursor-pointer"
-            @click="openUserInfo(item.user_id, item.group_id)"
+            @click="openUserInfo(item.userId, item.groupId)"
           >
             <v-avatar size="24">
-              <v-img :src="`https://q1.qlogo.cn/g?b=qq&nk=${item.user_id}&s=40`">
+              <v-img :src="`https://q1.qlogo.cn/g?b=qq&nk=${item.userId}&s=40`">
                 <template #error>
                   <v-icon size="20">mdi-account-circle</v-icon>
                 </template>
               </v-img>
             </v-avatar>
             <span class="text-caption"
-              >{{ personnelStore.getUserName(item.user_id) }}（{{ item.user_id }}）</span
+              >{{ personnelStore.getUserName(item.userId) }}（{{ item.userId }}）</span
             >
           </div>
         </template>
 
         <!-- 老婆列 -->
-        <template #[`item.wife_qq`]="{ item }">
+        <template #[`item.wifeQq`]="{ item }">
           <div
             class="d-flex align-center ga-2 cursor-pointer"
-            @click="openUserInfo(item.wife_qq, item.group_id)"
+            @click="openUserInfo(item.wifeQq, item.groupId)"
           >
             <v-avatar size="24">
-              <v-img :src="`https://q1.qlogo.cn/g?b=qq&nk=${item.wife_qq}&s=40`">
+              <v-img :src="`https://q1.qlogo.cn/g?b=qq&nk=${item.wifeQq}&s=40`">
                 <template #error>
                   <v-icon size="20">mdi-account-circle</v-icon>
                 </template>
               </v-img>
             </v-avatar>
             <span class="text-caption"
-              >{{ personnelStore.getUserName(item.wife_qq) }}（{{ item.wife_qq }}）</span
+              >{{ personnelStore.getUserName(item.wifeQq) }}（{{ item.wifeQq }}）</span
             >
           </div>
         </template>
 
         <!-- 抽取时间列 -->
-        <template #[`item.drawn_at`]="{ item }">
-          <v-chip :color="item.drawn_at ? 'success' : 'warning'" size="small" variant="tonal">
-            {{ item.drawn_at ? formatTime(item.drawn_at) : '预设中' }}
+        <template #[`item.drawnAt`]="{ item }">
+          <v-chip :color="item.drawnAt ? 'success' : 'warning'" size="small" variant="tonal">
+            {{ item.drawnAt ? formatTime(item.drawnAt) : '预设中' }}
           </v-chip>
         </template>
 
@@ -138,21 +135,21 @@
         <v-card-text>
           <v-form ref="setWifeFormRef">
             <GroupAutocomplete
-              v-model="setWifeData.group_id"
+              v-model="setWifeData.groupId"
               label="群号"
               :hide-details="false"
               :rules="[required]"
               class="mb-2"
             />
             <UserAutocomplete
-              v-model="setWifeData.user_id"
+              v-model="setWifeData.userId"
               label="抽取者 QQ"
               :hide-details="false"
               :rules="[required]"
               class="mb-2"
             />
             <UserAutocomplete
-              v-model="setWifeData.wife_qq"
+              v-model="setWifeData.wifeQq"
               label="老婆 QQ"
               :hide-details="false"
               :rules="[required]"
@@ -176,7 +173,7 @@
         <v-card-text>
           <v-form ref="editFormRef">
             <UserAutocomplete
-              v-model="editData.wife_qq"
+              v-model="editData.wifeQq"
               label="新老婆 QQ"
               :hide-details="false"
               :rules="[required]"
@@ -196,7 +193,7 @@
       <v-card>
         <v-card-title>确认删除</v-card-title>
         <v-card-text>
-          确定删除用户 {{ deleteTarget?.user_id }} 在群 {{ deleteTarget?.group_id }}
+          确定删除用户 {{ deleteTarget?.userId }} 在群 {{ deleteTarget?.groupId }}
           {{ deleteTarget?.date }} 的老婆记录吗？
         </v-card-text>
         <v-card-actions>
@@ -235,18 +232,18 @@ const personnelStore = usePersonnelStore()
 const loading = ref(false)
 const items = ref<WifeRecord[]>([])
 const total = ref(0)
-const filter = ref<{ group_id: number | null; user_id: number | null; date: string | null }>({
-  group_id: null,
-  user_id: null,
+const filter = ref<{ groupId: number | null; userId: number | null; date: string | null }>({
+  groupId: null,
+  userId: null,
   date: null,
 })
 
 const headers = [
-  { title: '群聊', key: 'group_id', sortable: false },
-  { title: '抽取者', key: 'user_id', sortable: false },
-  { title: '老婆', key: 'wife_qq', sortable: false },
+  { title: '群聊', key: 'groupId', sortable: false },
+  { title: '抽取者', key: 'userId', sortable: false },
+  { title: '老婆', key: 'wifeQq', sortable: false },
   { title: '日期', key: 'date', sortable: false },
-  { title: '状态', key: 'drawn_at', sortable: false },
+  { title: '状态', key: 'drawnAt', sortable: false },
   { title: '操作', key: 'actions', sortable: false },
 ]
 
@@ -254,17 +251,17 @@ async function fetchRecords(p: number, size: number) {
   loading.value = true
   try {
     const result = await jrlpApi.listRecords({
-      group_id: filter.value.group_id ?? undefined,
-      user_id: filter.value.user_id ?? undefined,
+      groupId: filter.value.groupId ?? undefined,
+      userId: filter.value.userId ?? undefined,
       date: filter.value.date ?? undefined,
       page: p,
-      page_size: size,
+      pageSize: size,
     })
     items.value = result.items
     total.value = result.total
     // 预取本页所有 ID，减少名称解析闪烁
-    const userIds = [...new Set(result.items.flatMap((r) => [r.user_id, r.wife_qq]))]
-    const groupIds = [...new Set(result.items.map((r) => r.group_id))]
+    const userIds = [...new Set(result.items.flatMap((r) => [r.userId, r.wifeQq]))]
+    const groupIds = [...new Set(result.items.map((r) => r.groupId))]
     personnelStore.prefetchIds(userIds, groupIds)
   } finally {
     loading.value = false
@@ -281,14 +278,14 @@ const setWifeDialog = ref(false)
 const setWifeLoading = ref(false)
 const setWifeFormRef = ref<{ validate: () => Promise<{ valid: boolean }> } | null>(null)
 const setWifeData = ref({
-  group_id: null as number | null,
-  user_id: null as number | null,
-  wife_qq: null as number | null,
+  groupId: null as number | null,
+  userId: null as number | null,
+  wifeQq: null as number | null,
   date: '',
 })
 
 function openSetWifeDialog() {
-  setWifeData.value = { group_id: null, user_id: null, wife_qq: null, date: '' }
+  setWifeData.value = { groupId: null, userId: null, wifeQq: null, date: '' }
   setWifeDialog.value = true
 }
 
@@ -298,9 +295,9 @@ async function submitSetWife() {
   setWifeLoading.value = true
   try {
     await jrlpApi.setWife({
-      group_id: setWifeData.value.group_id!,
-      user_id: setWifeData.value.user_id!,
-      wife_qq: setWifeData.value.wife_qq!,
+      groupId: setWifeData.value.groupId!,
+      userId: setWifeData.value.userId!,
+      wifeQq: setWifeData.value.wifeQq!,
       date: setWifeData.value.date,
     })
     setWifeDialog.value = false
@@ -315,11 +312,11 @@ const editDialog = ref(false)
 const editLoading = ref(false)
 const editingId = ref<number | null>(null)
 const editFormRef = ref<{ validate: () => Promise<{ valid: boolean }> } | null>(null)
-const editData = ref({ wife_qq: null as number | null })
+const editData = ref({ wifeQq: null as number | null })
 
 function openEditDialog(item: WifeRecord) {
   editingId.value = item.id
-  editData.value = { wife_qq: item.wife_qq }
+  editData.value = { wifeQq: item.wifeQq }
   editDialog.value = true
 }
 
@@ -329,7 +326,7 @@ async function submitEdit() {
   if (editingId.value == null) return
   editLoading.value = true
   try {
-    await jrlpApi.updateRecord({ id: editingId.value, wife_qq: editData.value.wife_qq! })
+    await jrlpApi.updateRecord({ id: editingId.value, wifeQq: editData.value.wifeQq! })
     editDialog.value = false
     await refreshPage()
   } finally {

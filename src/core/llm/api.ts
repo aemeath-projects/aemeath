@@ -147,9 +147,9 @@ export async function llmRoutes(fastify: FastifyInstance): Promise<void> {
     },
   )
 
-  /** DELETE /providers/:id — 删除提供商 */
-  fastify.delete<{ Params: { id: string } }>(
-    '/providers/:id',
+  /** POST /providers/:id/delete — 删除提供商 */
+  fastify.post<{ Params: { id: string } }>(
+    '/providers/:id/delete',
     {
       schema: {
         params: ProviderIdParamSchema,
@@ -262,9 +262,9 @@ export async function llmRoutes(fastify: FastifyInstance): Promise<void> {
     },
   )
 
-  /** DELETE /models/:id — 删除模型 */
-  fastify.delete<{ Params: { id: string } }>(
-    '/models/:id',
+  /** POST /models/:id/delete — 删除模型 */
+  fastify.post<{ Params: { id: string } }>(
+    '/models/:id/delete',
     {
       schema: {
         params: ModelIdParamSchema,

@@ -25,13 +25,13 @@
         @update:items-per-page="onPageSizeChange"
       >
         <!-- 来源群列 -->
-        <template #[`item.registered_group_id`]="{ item }">
-          {{ item.registered_group_id ?? '私聊' }}
+        <template #[`item.registeredGroupId`]="{ item }">
+          {{ item.registeredGroupId ?? '私聊' }}
         </template>
 
         <!-- 注册时间列 -->
-        <template #[`item.registered_at`]="{ item }">
-          {{ formatTime(item.registered_at) }}
+        <template #[`item.registeredAt`]="{ item }">
+          {{ formatTime(item.registeredAt) }}
         </template>
 
         <!-- 操作列 -->
@@ -107,15 +107,15 @@ const total = ref(0)
 
 const headers = [
   { title: 'QQ', key: 'qq', sortable: false },
-  { title: '注册时间', key: 'registered_at', sortable: false },
-  { title: '来源群', key: 'registered_group_id', sortable: false },
+  { title: '注册时间', key: 'registeredAt', sortable: false },
+  { title: '来源群', key: 'registeredGroupId', sortable: false },
   { title: '操作', key: 'actions', sortable: false, align: 'end' as const },
 ]
 
 async function fetchTasks(p: number, size: number) {
   loading.value = true
   try {
-    const result = await listTasks({ page: p, page_size: size })
+    const result = await listTasks({ page: p, pageSize: size })
     items.value = result.items
     total.value = result.total
   } finally {

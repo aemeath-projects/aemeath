@@ -48,34 +48,34 @@
         @update:items-per-page="onPageSizeChange"
       >
         <!-- 群号列 -->
-        <template #[`item.group_id`]="{ item }">
+        <template #[`item.groupId`]="{ item }">
           <div class="d-flex align-center ga-2">
             <v-avatar size="32">
-              <v-img :src="`https://p.qlogo.cn/gh/${item.group_id}/${item.group_id}/100`" />
+              <v-img :src="`https://p.qlogo.cn/gh/${item.groupId}/${item.groupId}/100`" />
             </v-avatar>
-            <span class="font-weight-medium">{{ item.group_id }}</span>
+            <span class="font-weight-medium">{{ item.groupId }}</span>
           </div>
         </template>
 
         <!-- 成员数 -->
-        <template #[`item.member_count`]="{ item }">
-          <span>{{ item.member_count }} / {{ item.max_member_count }}</span>
+        <template #[`item.memberCount`]="{ item }">
+          <span>{{ item.memberCount }} / {{ item.maxMemberCount }}</span>
         </template>
 
         <!-- 状态 -->
-        <template #[`item.is_active`]="{ item }">
-          <v-chip :color="activeColor(item.is_active)" size="small" variant="elevated">
+        <template #[`item.isActive`]="{ item }">
+          <v-chip :color="activeColor(item.isActive)" size="small" variant="elevated">
             <v-icon start size="x-small">{{
-              item.is_active ? 'mdi-check-circle' : 'mdi-close-circle'
+              item.isActive ? 'mdi-check-circle' : 'mdi-close-circle'
             }}</v-icon>
-            {{ activeLabel(item.is_active) }}
+            {{ activeLabel(item.isActive) }}
           </v-chip>
         </template>
 
         <!-- 最后同步 -->
-        <template #[`item.last_synced`]="{ item }">
+        <template #[`item.lastSynced`]="{ item }">
           <span class="text-caption text-medium-emphasis">
-            {{ item.last_synced ? formatTime(item.last_synced) : '-' }}
+            {{ item.lastSynced ? formatTime(item.lastSynced) : '-' }}
           </span>
         </template>
 
@@ -139,11 +139,11 @@ const activeOptions = [
 ]
 
 const headers = [
-  { title: '群号', key: 'group_id', sortable: false },
-  { title: '群名', key: 'group_name', sortable: false },
-  { title: '成员数', key: 'member_count', sortable: false, align: 'center' as const },
-  { title: '状态', key: 'is_active', sortable: false, align: 'center' as const },
-  { title: '最后同步', key: 'last_synced', sortable: false },
+  { title: '群号', key: 'groupId', sortable: false },
+  { title: '群名', key: 'groupName', sortable: false },
+  { title: '成员数', key: 'memberCount', sortable: false, align: 'center' as const },
+  { title: '状态', key: 'isActive', sortable: false, align: 'center' as const },
+  { title: '最后同步', key: 'lastSynced', sortable: false },
   { title: '操作', key: 'actions', sortable: false, align: 'center' as const },
 ]
 
@@ -151,14 +151,14 @@ const { page, pageSize, loadPage, onPageSizeChange, debouncedLoad } = usePaginat
   store.loadGroups({
     page: p,
     pageSize: size,
-    group_name: filterName.value,
-    is_active: filterActive.value,
+    groupName: filterName.value,
+    isActive: filterActive.value,
   }),
 )
 
 function openMembers(group: GroupItem) {
   selectedGroup.value = group
-  selectedGroupId.value = group.group_id
+  selectedGroupId.value = group.groupId
   memberDialog.value = true
 }
 

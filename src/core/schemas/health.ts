@@ -8,5 +8,5 @@ import { Type } from '@sinclair/typebox'
 export const HealthDataSchema = Type.Object({
   status: Type.String(),
   version: Type.String(),
-  ws_connected: Type.Boolean(),
+  wsConnected: Type.Boolean(),
 })

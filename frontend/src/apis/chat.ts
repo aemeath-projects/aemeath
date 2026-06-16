@@ -11,17 +11,17 @@ export type { PaginatedResult } from './types'
 
 export interface ChatMessage {
   id: number
-  message_id: number
-  message_type: number
-  group_id: number | null
-  user_id: number
-  raw_message: string
+  messageId: number
+  messageType: number
+  groupId: number | null
+  userId: number
+  rawMessage: string
   segments: MessageSegment[]
-  sender_nickname: string
-  sender_card: string | null
-  sender_role: string | null
-  created_at: string | null
-  stored_at: string | null
+  senderNickname: string
+  senderCard: string | null
+  senderRole: string | null
+  createdAt: string | null
+  storedAt: string | null
 }
 
 export interface MessageSegment {
@@ -37,18 +37,18 @@ export interface MessageContext {
 
 export interface ArchiveLog {
   id: string
-  partition_name: string
-  period_start: string
-  period_end: string
-  total_rows: number
-  original_bytes: number
-  compressed_bytes: number
-  s3_bucket: string
-  s3_key: string
+  partitionName: string
+  periodStart: string
+  periodEnd: string
+  totalRows: number
+  originalBytes: number
+  compressedBytes: number
+  s3Bucket: string
+  s3Key: string
   status: string
-  error_message: string | null
-  created_at: string | null
-  completed_at: string | null
+  errorMessage: string | null
+  createdAt: string | null
+  completedAt: string | null
 }
 
 /* API 调用 */
@@ -72,9 +72,9 @@ export async function fetchGroupMessages(
   if (params?.before) query.before = params.before
   if (params?.limit) query.limit = params.limit
   if (params?.keyword) query.keyword = params.keyword
-  if (params?.userId) query.user_id = params.userId
-  if (params?.startDate) query.start_date = params.startDate
-  if (params?.endDate) query.end_date = params.endDate
+  if (params?.userId) query.userId = params.userId
+  if (params?.startDate) query.startDate = params.startDate
+  if (params?.endDate) query.endDate = params.endDate
   const { data } = await http.get<ApiResponse<ChatMessage[]>>(`${BASE}/messages/group/${groupId}`, {
     params: query,
   })
@@ -100,7 +100,7 @@ export async function fetchMessageContext(
   createdAt: string,
   context?: number,
 ): Promise<MessageContext> {
-  const params: Record<string, string | number> = { created_at: createdAt }
+  const params: Record<string, string | number> = { createdAt }
   if (context) params.context = context
   const { data } = await http.get<ApiResponse<MessageContext>>(
     `${BASE}/messages/${messageId}/context`,
@@ -117,16 +117,16 @@ export async function fetchArchives(
 ): Promise<PaginatedResult<ArchiveLog>> {
   const params: Record<string, number> = {}
   if (page) params.page = page
-  if (pageSize) params.page_size = pageSize
+  if (pageSize) params.pageSize = pageSize
   const { data } = await http.get<ApiResponse<PaginatedResult<ArchiveLog>>>(`${BASE}/archives`, {
     params,
   })
   return data.data
 }
 
-export async function triggerArchive(partitionName?: string): Promise<{ task_id: string }> {
-  const body = partitionName ? { partition_name: partitionName } : {}
-  const { data } = await http.post<ApiResponse<{ task_id: string }>>(
+export async function triggerArchive(partitionName?: string): Promise<{ taskId: string }> {
+  const body = partitionName ? { partitionName } : {}
+  const { data } = await http.post<ApiResponse<{ taskId: string }>>(
     `${BASE}/archives/trigger`,
     body,
   )
@@ -138,8 +138,8 @@ export async function queryArchive(
   groupId?: number,
   limit?: number,
 ): Promise<ChatMessage[]> {
-  const params: Record<string, string | number> = { period_start: periodStart }
-  if (groupId) params.group_id = groupId
+  const params: Record<string, string | number> = { periodStart }
+  if (groupId) params.groupId = groupId
   if (limit) params.limit = limit
   const { data } = await http.get<ApiResponse<ChatMessage[]>>(`${BASE}/archives/query`, {
     params,

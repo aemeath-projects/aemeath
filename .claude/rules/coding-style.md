@@ -41,11 +41,33 @@
 
 ## 命名规范
 
+## 命名规范
+
+### 全栈命名规则速查
+
+| 层                     | 规则                       | 正确示例                                              | 错误示例                                  |
+| ---------------------- | -------------------------- | ----------------------------------------------------- | ----------------------------------------- |
+| 数据库表/列/枚举       | `snake_case`               | `chat_messages`, `group_id`, `like_source`            | `ChatMessage`, `groupId`, `likesource`    |
+| Redis key              | `snake_case`（段间 `:` 分隔） | `aemeath:personnel:sync_status`, `aemeath:render:result` | `aemeath:personnel:syncStatus`        |
+| API 端点路由           | `kebab-case`               | `/api/chat-history`, `/api/drift-bottle-pools`        | `/api/chatHistory`, `/api/drift_bottle`   |
+| TypeScript 变量/函数   | `camelCase`                | `groupId`, `userName`, `fetchGroups()`                | `group_id`, `user_name`, `fetch_groups()` |
+| 类/接口/类型           | `PascalCase`               | `UserDetail`, `ChatMessageSchema`                     | `userDetail`, `chat_message_schema`       |
+| 常量                   | `UPPER_SNAKE_CASE`         | `MAX_RETRY_COUNT`, `BASE_URL`                         | `maxRetryCount`, `baseUrl`                |
+| API 请求体/响应 data   | `camelCase`                | `{ "taskId": "...", "groupName": "..." }`             | `{ "task_id": "...", "group_name": "..." }` |
+| API 响应 `message`     | 自由文本（可含空格）       | `"Archive task queued"`, `"同步已触发"`               | —                                         |
+| Vue 组件 props/模板    | `camelCase`                | `:groupName`, `v-model:isActive`                      | `:group_name`, `v-model:is_active`        |
+
+### 各层详细约定
+
+- **数据库**：Prisma 模型字段使用 `camelCase`，通过 `@map` / `@@map` 映射到数据库的 `snake_case`。枚举 `@@map` 名称同样使用 `snake_case`
+- **Redis key**：遵循与数据库相同的 `snake_case` 命名，段间用 `:` 分隔，参数占位符用 `${}` 包裹。示例：`aemeath:checkin:${groupId}:${dateStr}`；通过 `CacheKeyRegistry` 统一注册
+- **API 端点路由**：URL 路径段全部小写 + 连字符（`kebab-case`），不使用下划线或驼峰
 - **TypeScript**：变量/函数 `camelCase`，类/接口/类型 `PascalCase`，常量 `UPPER_SNAKE_CASE`，私有成员 `_prefix` 或 TypeScript `private`
+- **Prisma 模型字段**：`camelCase`（通过 `@map` 映射到数据库 `snake_case`）。后端查询结果序列化为 JSON 时直接使用 Prisma 字段名，即 `camelCase`
+- **API 请求体 / 响应 data 字段**：一律 `camelCase`，由 TypeBox schema 强制校验。**禁止**在 REST API 的请求/响应 JSON 中出现 `snake_case` 键名
+- **API 响应 `message`**：自由文本，可包含空格和中英文，用于前端直接展示
 - **Handler 装饰器**：`@Handler`、`@OnCommand`、`@OnKeyword` 等均为 **PascalCase**
-- **Vue 组件**：文件名 `PascalCase.vue`，组件内部变量遵循 camelCase
-- **API 路由路径**：使用 kebab-case（`/api/chat-history`，非 `/api/chatHistory`）
-- **数据库表名**（Prisma `@@map`）：`snake_case` 复数形式（`chat_messages`，非 `ChatMessage`）
+- **Vue 组件**：文件名 `PascalCase.vue`，组件内变量/props/模板绑定均遵循 `camelCase`
 
 ## 路径别名（后端强制）
 

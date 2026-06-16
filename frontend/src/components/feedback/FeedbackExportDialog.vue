@@ -62,14 +62,14 @@ function generateFullMarkdown(feedbacks: Feedback[]): string {
   ]
   feedbacks.forEach((fb, index) => {
     lines.push(`## ${index + 1}. 反馈 #${fb.id}`, '')
-    lines.push(`- **提交者 ID**: ${fb.user_id}`)
-    lines.push(`- **类型**: ${fb.feedback_type || '未分类'}`)
+    lines.push(`- **提交者 ID**: ${fb.userId}`)
+    lines.push(`- **类型**: ${fb.feedbackType || '未分类'}`)
     lines.push(`- **来源**: ${fb.source}`)
     lines.push(`- **状态**: ${fb.status}`)
-    lines.push(`- **提交时间**: ${fb.created_at}`)
-    if (fb.processed_at) lines.push(`- **处理时间**: ${fb.processed_at}`)
+    lines.push(`- **提交时间**: ${fb.createdAt}`)
+    if (fb.processedAt) lines.push(`- **处理时间**: ${fb.processedAt}`)
     lines.push('', '**内容**:', '', fb.content, '')
-    if (fb.admin_reply) lines.push('**管理员回复**:', '', fb.admin_reply, '')
+    if (fb.adminReply) lines.push('**管理员回复**:', '', fb.adminReply, '')
     lines.push('---', '')
   })
   return lines.join('\n')
@@ -87,7 +87,7 @@ function generateRequirementsOnlyMarkdown(feedbacks: Feedback[]): string {
   ]
   const groups: Record<string, Feedback[]> = { Bug: [], 建议: [], 投诉: [], 其他: [] }
   feedbacks.forEach((fb) => {
-    const type = fb.feedback_type || '其他'
+    const type = fb.feedbackType || '其他'
     ;(groups[type] ?? groups['其他']!).push(fb)
   })
   for (const type of ['Bug', '建议', '投诉', '其他']) {

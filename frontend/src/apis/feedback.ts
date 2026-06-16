@@ -1,5 +1,5 @@
 /**
- * 用户反馈 API 接口层 —— 封装 /api/v1/feedback 所有后端接口调用。
+ * 用户反馈 API 接口层 —— 封装 /api/feedbacks 所有后端接口调用。
  */
 
 import http from './client'
@@ -11,31 +11,31 @@ export type { PaginatedResult } from './types'
 
 export interface Feedback {
   id: string
-  user_id: number
-  group_id: number | null
+  userId: number
+  groupId: number | null
   content: string
   status: string
-  feedback_type: string | null
+  feedbackType: string | null
   source: string
-  admin_reply: string | null
-  created_at: string
-  updated_at: string
-  processed_at: string | null
+  adminReply: string | null
+  createdAt: string
+  updatedAt: string
+  processedAt: string | null
 }
 
 export interface FeedbackListParams {
   page?: number
-  page_size?: number
+  pageSize?: number
   status?: string | null
-  feedback_type?: string | null
-  user_id?: number | null
+  feedbackType?: string | null
+  userId?: number | null
   source?: string | null
   search?: string | null
 }
 
 export interface UpdateStatusRequest {
   status: string
-  admin_reply?: string | null
+  adminReply?: string | null
 }
 
 /* API 调用 */
@@ -45,10 +45,10 @@ const BASE = '/api/feedbacks'
 export async function list(params: FeedbackListParams): Promise<PaginatedResult<Feedback>> {
   const query: Record<string, string | number> = {}
   if (params.page) query.page = params.page
-  if (params.page_size) query.page_size = params.page_size
+  if (params.pageSize) query.pageSize = params.pageSize
   if (params.status) query.status = params.status
-  if (params.feedback_type) query.feedback_type = params.feedback_type
-  if (params.user_id) query.user_id = params.user_id
+  if (params.feedbackType) query.feedbackType = params.feedbackType
+  if (params.userId) query.userId = params.userId
   if (params.source) query.source = params.source
   if (params.search) query.search = params.search
 

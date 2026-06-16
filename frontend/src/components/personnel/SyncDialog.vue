@@ -29,12 +29,12 @@
                 <span class="text-caption">最后同步时间</span>
               </div>
               <div class="text-body-1 font-weight-medium">
-                {{ status.last_sync_time ? formatTime(status.last_sync_time) : '从未同步' }}
+                {{ status.lastSyncTime ? formatTime(status.lastSyncTime) : '从未同步' }}
                 <span
-                  v-if="status.duration_seconds != null"
+                  v-if="status.durationSeconds != null"
                   class="text-caption text-medium-emphasis ml-2"
                 >
-                  耗时 {{ status.duration_seconds.toFixed(2) }} 秒
+                  耗时 {{ status.durationSeconds.toFixed(2) }} 秒
                 </span>
               </div>
             </v-card>
@@ -50,21 +50,21 @@
                     <v-icon color="blue" size="16">mdi-account-group</v-icon>
                     <span class="text-caption text-medium-emphasis">用户</span>
                   </div>
-                  <div class="text-h6 font-weight-bold">{{ status.users_synced }}</div>
+                  <div class="text-h6 font-weight-bold">{{ status.usersSynced }}</div>
                 </v-col>
                 <v-col cols="4">
                   <div class="d-flex align-center ga-1 mb-1">
                     <v-icon color="green" size="16">mdi-forum</v-icon>
                     <span class="text-caption text-medium-emphasis">群聊</span>
                   </div>
-                  <div class="text-h6 font-weight-bold">{{ status.groups_synced }}</div>
+                  <div class="text-h6 font-weight-bold">{{ status.groupsSynced }}</div>
                 </v-col>
                 <v-col cols="4">
                   <div class="d-flex align-center ga-1 mb-1">
                     <v-icon color="orange" size="16">mdi-link-variant</v-icon>
                     <span class="text-caption text-medium-emphasis">成员关系</span>
                   </div>
-                  <div class="text-h6 font-weight-bold">{{ status.memberships_synced }}</div>
+                  <div class="text-h6 font-weight-bold">{{ status.membershipsSynced }}</div>
                 </v-col>
               </v-row>
             </v-card>

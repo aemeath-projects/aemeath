@@ -45,12 +45,12 @@
       <v-list v-else lines="one" density="compact">
         <v-list-item
           v-for="entry in leaderboard"
-          :key="entry.user_id"
-          :subtitle="`${personnelStore.getUserName(entry.user_id)}（${entry.user_id}）`"
+          :key="entry.userId"
+          :subtitle="`${personnelStore.getUserName(entry.userId)}（${entry.userId}）`"
         >
           <template #prepend>
             <v-avatar size="32" class="mr-2">
-              <v-img :src="`https://q1.qlogo.cn/g?b=qq&nk=${entry.user_id}&s=40`">
+              <v-img :src="`https://q1.qlogo.cn/g?b=qq&nk=${entry.userId}&s=40`">
                 <template #error><v-icon>mdi-account-circle</v-icon></template>
               </v-img>
             </v-avatar>
@@ -112,9 +112,9 @@ const summaryLoading = ref(false)
 const summary = ref<Summary | null>(null)
 
 const summaryCards = computed(() => [
-  { label: '历史签到总人次', value: summary.value?.total_checkins ?? 0, color: 'primary' },
-  { label: '今日签到人数', value: summary.value?.today_checkins ?? 0, color: 'success' },
-  { label: '近 30 天活跃用户', value: summary.value?.active_users ?? 0, color: 'info' },
+  { label: '历史签到总人次', value: summary.value?.totalCheckins ?? 0, color: 'primary' },
+  { label: '今日签到人数', value: summary.value?.todayCheckins ?? 0, color: 'success' },
+  { label: '近 30 天活跃用户', value: summary.value?.activeUsers ?? 0, color: 'info' },
 ])
 
 /* 排行榜 */
@@ -170,7 +170,7 @@ async function loadLeaderboard() {
   leaderLoading.value = true
   try {
     leaderboard.value = await checkinApi.getLeaderboard(groupId.value, leaderBy.value)
-    const userIds = leaderboard.value.map((e) => e.user_id)
+    const userIds = leaderboard.value.map((e) => e.userId)
     personnelStore.prefetchIds(userIds, [])
   } finally {
     leaderLoading.value = false

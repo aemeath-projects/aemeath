@@ -47,6 +47,7 @@ import { createBullMQConnection, getTaskQueue } from './tasks/broker.js'
 import { TaskExecutor } from './tasks/executor.js'
 import { setTaskDefinitions } from './tasks/scheduler.js'
 
+import { ok, OkResponse, FailResponse, HealthDataSchema } from '@/core/schemas/index.js'
 import type { InfraState } from '@/types/fastify.js'
 /**
  * 侧效应导入（Side-effect imports）
@@ -353,18 +354,21 @@ async function bootstrap(): Promise<void> {
   /* 系统端点 */
 
   // 健康检查
-  app.get('/health', async () => {
-    const { botClient } = app.infra
-    return {
-      status: 'healthy',
-      version: pkg.version,
-      description: pkg.description,
-      ws_connected: botClient.transport.state === 'connected',
-    }
-  })
+  app.get(
+    '/health',
+    { schema: { response: { 200: OkResponse(HealthDataSchema), 503: FailResponse() } } },
+    async () => {
+      const { botClient } = app.infra
+      return ok({
+        status: 'healthy',
+        version: pkg.version,
+        ws_connected: botClient.transport.state === 'connected',
+      })
+    },
+  )
 
   // Prometheus 指标
-  app.get('/metrics', async (_req, reply) => {
+  app.get('/metrics', { schema: { hide: true } }, async (_req, reply) => {
     const metrics = await metricsRegistry.metrics()
     void reply.header('content-type', metricsRegistry.contentType)
     return reply.send(metrics)

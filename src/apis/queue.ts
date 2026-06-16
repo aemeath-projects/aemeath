@@ -170,7 +170,14 @@ const queueRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/queue/scheduled-tasks — 获取已注册的定时任务列表。 */
   app.get(
     '/api/queue/scheduled-tasks',
-    { schema: { response: { 200: OkResponse(ScheduledTasksDataSchema) } } },
+    {
+      schema: {
+        response: {
+          200: OkResponse(ScheduledTasksDataSchema),
+          500: FailResponse(),
+        },
+      },
+    },
     async (_req: FastifyRequest, reply: FastifyReply) => {
       const scheduler = app.services.get('scheduler') as SchedulerApi | undefined
 
@@ -203,7 +210,14 @@ const queueRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/queue/active-tasks — 获取当前正在执行的任务。 */
   app.get(
     '/api/queue/active-tasks',
-    { schema: { response: { 200: OkResponse(ActiveTasksDataSchema) } } },
+    {
+      schema: {
+        response: {
+          200: OkResponse(ActiveTasksDataSchema),
+          500: FailResponse(),
+        },
+      },
+    },
     async (_req: FastifyRequest, reply: FastifyReply) => {
       const queues = app.services.get('queues') as Record<string, BullQueue> | undefined
       if (queues === undefined) {
@@ -239,7 +253,14 @@ const queueRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/queue/reserved-tasks — 获取已预取但未执行的任务。 */
   app.get(
     '/api/queue/reserved-tasks',
-    { schema: { response: { 200: OkResponse(ReservedTasksDataSchema) } } },
+    {
+      schema: {
+        response: {
+          200: OkResponse(ReservedTasksDataSchema),
+          500: FailResponse(),
+        },
+      },
+    },
     async (_req: FastifyRequest, reply: FastifyReply) => {
       await reply.send(ok([]))
     },
@@ -248,7 +269,14 @@ const queueRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/queue/workers — 获取在线 Worker 节点信息。 */
   app.get(
     '/api/queue/workers',
-    { schema: { response: { 200: OkResponse(WorkersDataSchema) } } },
+    {
+      schema: {
+        response: {
+          200: OkResponse(WorkersDataSchema),
+          500: FailResponse(),
+        },
+      },
+    },
     async (_req: FastifyRequest, reply: FastifyReply) => {
       const queues = app.services.get('queues') as Record<string, BullQueue> | undefined
       if (queues === undefined) {
@@ -327,7 +355,14 @@ const queueRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/queue/pending-tasks — 获取队列中等待被消费的任务。 */
   app.get(
     '/api/queue/pending-tasks',
-    { schema: { response: { 200: OkResponse(PendingTasksDataSchema) } } },
+    {
+      schema: {
+        response: {
+          200: OkResponse(PendingTasksDataSchema),
+          500: FailResponse(),
+        },
+      },
+    },
     async (_req: FastifyRequest, reply: FastifyReply) => {
       const queues = app.services.get('queues') as Record<string, BullQueue> | undefined
       if (queues === undefined) {
@@ -363,7 +398,7 @@ const queueRoutes: FastifyPluginAsync = async (app) => {
   app.get(
     '/api/queue/stream',
     {
-      schema: { querystring: QueueStreamQuerySchema },
+      schema: { querystring: QueueStreamQuerySchema, hide: true },
     },
     async (req: FastifyRequest<{ Querystring: { interval?: string } }>, reply: FastifyReply) => {
       const intervalSecs = req.query.interval !== undefined ? parseFloat(req.query.interval) : 5.0

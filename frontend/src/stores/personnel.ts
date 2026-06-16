@@ -22,14 +22,14 @@ export const usePersonnelStore = defineStore('personnel', () => {
     items: [],
     total: 0,
     page: 1,
-    page_size: 20,
+    pageSize: 20,
     pages: 0,
   })
   const usersLoading = ref(false)
 
   async function loadUsers(params: {
     page?: number
-    page_size?: number
+    pageSize?: number
     relation?: string | null
     qq?: number | null
     nickname?: string | null
@@ -69,14 +69,14 @@ export const usePersonnelStore = defineStore('personnel', () => {
     items: [],
     total: 0,
     page: 1,
-    page_size: 20,
+    pageSize: 20,
     pages: 0,
   })
   const groupsLoading = ref(false)
 
   async function loadGroups(params: {
     page?: number
-    page_size?: number
+    pageSize?: number
     group_name?: string | null
     is_active?: boolean | null
   }) {
@@ -93,7 +93,7 @@ export const usePersonnelStore = defineStore('personnel', () => {
     items: [],
     total: 0,
     page: 1,
-    page_size: 20,
+    pageSize: 20,
     pages: 0,
   })
   const membersLoading = ref(false)
@@ -102,7 +102,7 @@ export const usePersonnelStore = defineStore('personnel', () => {
     groupId: number,
     params: {
       page?: number
-      page_size?: number
+      pageSize?: number
       role?: string | null
       nickname?: string | null
       qq?: number | null
@@ -125,8 +125,8 @@ export const usePersonnelStore = defineStore('personnel', () => {
     sessionLoading.value = true
     try {
       const [groupResult, userResult] = await Promise.all([
-        api.fetchGroups({ page: 1, page_size: 100 }),
-        api.fetchUsers({ page: 1, page_size: 100, relation: 'friend' }),
+        api.fetchGroups({ page: 1, pageSize: 100 }),
+        api.fetchUsers({ page: 1, pageSize: 100, relation: 'friend' }),
       ])
       sessionGroups.value = groupResult.items
       sessionUsers.value = userResult.items
@@ -145,7 +145,7 @@ export const usePersonnelStore = defineStore('personnel', () => {
   }
 
   async function fetchMemberDetail(groupId: number, qq: number): Promise<GroupMemberItem | null> {
-    const result = await api.fetchGroupMembers(groupId, { page: 1, page_size: 1, qq })
+    const result = await api.fetchGroupMembers(groupId, { page: 1, pageSize: 1, qq })
     return result.items[0] ?? null
   }
 

@@ -39,14 +39,18 @@ const likeRoutes: FastifyPluginAsync = async (app) => {
     {
       schema: {
         querystring: LikeTasksQuerySchema,
-        response: { 200: OkResponse(PaginatedLikeTasksResponseSchema) },
+        response: {
+          200: OkResponse(PaginatedLikeTasksResponseSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (req: FastifyRequest<{ Querystring: LikeTasksQuery }>, reply: FastifyReply) => {
       const svc = await getLikeSvc(app)
 
-      const page = req.query.page ?? 1
-      const pageSize = req.query.pageSize ?? 20
+      const page = req.query.page ? parseInt(req.query.page, 10) : 1
+      const pageSize = req.query.pageSize ? parseInt(req.query.pageSize, 10) : 20
 
       const [items, total] = await svc.listTasks({ page, pageSize })
       const taskItems = items.map((t: Record<string, unknown>) => ({
@@ -74,7 +78,12 @@ const likeRoutes: FastifyPluginAsync = async (app) => {
     {
       schema: {
         body: CreateLikeTaskRequestSchema,
-        response: { 200: OkResponse(Type.Object({ qq: Type.Number() })), 409: FailResponse() },
+        response: {
+          200: OkResponse(Type.Object({ qq: Type.Number() })),
+          400: FailResponse(),
+          409: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (req: FastifyRequest<{ Body: CreateLikeTaskRequest }>, reply: FastifyReply) => {
@@ -95,7 +104,12 @@ const likeRoutes: FastifyPluginAsync = async (app) => {
     {
       schema: {
         params: LikeTaskParamsSchema,
-        response: { 200: OkResponse(Type.Object({ qq: Type.String() })), 404: FailResponse() },
+        response: {
+          200: OkResponse(Type.Object({ qq: Type.String() })),
+          400: FailResponse(),
+          404: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (req: FastifyRequest<{ Params: { qq: string } }>, reply: FastifyReply) => {
@@ -117,7 +131,11 @@ const likeRoutes: FastifyPluginAsync = async (app) => {
     {
       schema: {
         querystring: LikeHistoryQuerySchema,
-        response: { 200: OkResponse(PaginatedLikeHistoryResponseSchema) },
+        response: {
+          200: OkResponse(PaginatedLikeHistoryResponseSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (req: FastifyRequest<{ Querystring: LikeHistoryQuery }>, reply: FastifyReply) => {
@@ -126,8 +144,8 @@ const likeRoutes: FastifyPluginAsync = async (app) => {
       const source = req.query.source
       const dateFrom = req.query.dateFrom ? new Date(req.query.dateFrom) : undefined
       const dateTo = req.query.dateTo ? new Date(req.query.dateTo) : undefined
-      const page = req.query.page ?? 1
-      const pageSize = req.query.pageSize ?? 20
+      const page = req.query.page ? parseInt(req.query.page, 10) : 1
+      const pageSize = req.query.pageSize ? parseInt(req.query.pageSize, 10) : 20
 
       const [items, total] = await svc.listHistory({ qq, source, dateFrom, dateTo, page, pageSize })
       const historyItems = items.map((h: Record<string, unknown>) => ({

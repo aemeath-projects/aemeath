@@ -47,8 +47,10 @@ export const PaginatedLikeHistoryResponseSchema = Type.Object({
 
 /** 点赞任务列表查询参数 Schema。 */
 export const LikeTasksQuerySchema = Type.Object({
-  page: Type.Optional(Type.Number({ default: 1, minimum: 1 })),
-  pageSize: Type.Optional(Type.Number({ default: 20, minimum: 1, maximum: 100 })),
+  page: Type.Optional(Type.String({ pattern: '^\\d+$', description: '页码（默认 1）' })),
+  pageSize: Type.Optional(
+    Type.String({ pattern: '^\\d+$', description: '每页条数（默认 20，最大 100）' }),
+  ),
 })
 
 /** 点赞历史查询参数 Schema。 */
@@ -57,8 +59,10 @@ export const LikeHistoryQuerySchema = Type.Object({
   source: Type.Optional(Type.Union([Type.Literal('manual'), Type.Literal('scheduled')])),
   dateFrom: Type.Optional(Type.String()),
   dateTo: Type.Optional(Type.String()),
-  page: Type.Optional(Type.Number({ default: 1, minimum: 1 })),
-  pageSize: Type.Optional(Type.Number({ default: 20, minimum: 1, maximum: 100 })),
+  page: Type.Optional(Type.String({ pattern: '^\\d+$', description: '页码（默认 1）' })),
+  pageSize: Type.Optional(
+    Type.String({ pattern: '^\\d+$', description: '每页条数（默认 20，最大 100）' }),
+  ),
 })
 
 /** 取消点赞任务路径参数 Schema。 */
@@ -73,8 +77,8 @@ export interface CreateLikeTaskRequest {
 }
 
 export interface LikeTasksQuery {
-  page?: number
-  pageSize?: number
+  page?: string
+  pageSize?: string
 }
 
 export interface LikeHistoryQuery {
@@ -82,6 +86,6 @@ export interface LikeHistoryQuery {
   source?: 'manual' | 'scheduled'
   dateFrom?: string
   dateTo?: string
-  page?: number
-  pageSize?: number
+  page?: string
+  pageSize?: string
 }

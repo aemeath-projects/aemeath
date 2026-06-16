@@ -19,7 +19,7 @@ const logsRoutes: FastifyPluginAsync = async (app) => {
   app.get(
     '/api/logs',
     {
-      schema: { querystring: LogStreamQuerySchema },
+      schema: { querystring: LogStreamQuerySchema, hide: true },
     },
     async (req: FastifyRequest<{ Querystring: { level?: string } }>, reply: FastifyReply) => {
       const levelFilter = req.query.level?.toLowerCase()

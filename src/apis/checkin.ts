@@ -18,7 +18,7 @@ import {
   type CheckinTrendQuery,
   type CheckinSummaryQuery,
 } from '@/apis/schemas/index.js'
-import { ok, OkResponse } from '@/core/schemas/index.js'
+import { ok, OkResponse, FailResponse } from '@/core/schemas/index.js'
 import type { CheckinService, LeaderEntry, DayCount } from '@/services/checkin.js'
 
 async function getCheckinSvc(app: FastifyInstance): Promise<CheckinService> {
@@ -37,7 +37,11 @@ const checkinRoutes: FastifyPluginAsync = async (app) => {
     {
       schema: {
         querystring: CheckinRecordsQuerySchema,
-        response: { 200: OkResponse(PaginatedCheckinsResponseSchema) },
+        response: {
+          200: OkResponse(PaginatedCheckinsResponseSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (req: FastifyRequest<{ Querystring: CheckinRecordsQuery }>, reply: FastifyReply) => {
@@ -46,8 +50,8 @@ const checkinRoutes: FastifyPluginAsync = async (app) => {
       const groupId = req.query.groupId ? BigInt(req.query.groupId) : undefined
       const userId = req.query.userId ? BigInt(req.query.userId) : undefined
       const recordDate = req.query.date ? new Date(req.query.date) : undefined
-      const page = req.query.page ?? 1
-      const pageSize = req.query.pageSize ?? 20
+      const page = req.query.page ? parseInt(req.query.page, 10) : 1
+      const pageSize = req.query.pageSize ? parseInt(req.query.pageSize, 10) : 20
 
       const [records, total] = await svc.listRecords({
         groupId,
@@ -78,7 +82,11 @@ const checkinRoutes: FastifyPluginAsync = async (app) => {
     {
       schema: {
         querystring: CheckinLeaderboardQuerySchema,
-        response: { 200: OkResponse(LeaderboardDataSchema) },
+        response: {
+          200: OkResponse(LeaderboardDataSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (req: FastifyRequest<{ Querystring: CheckinLeaderboardQuery }>, reply: FastifyReply) => {
@@ -86,7 +94,7 @@ const checkinRoutes: FastifyPluginAsync = async (app) => {
 
       const groupId = req.query.groupId ? BigInt(req.query.groupId) : undefined
       const by = req.query.by ?? 'total'
-      const limit = req.query.limit ?? 20
+      const limit = req.query.limit ? parseInt(req.query.limit, 10) : 20
 
       const entries: LeaderEntry[] = await svc.getLeaderboard({ groupId, by, limit })
       const result = entries.map((e, i) => ({
@@ -105,14 +113,18 @@ const checkinRoutes: FastifyPluginAsync = async (app) => {
     {
       schema: {
         querystring: CheckinTrendQuerySchema,
-        response: { 200: OkResponse(TrendDataSchema) },
+        response: {
+          200: OkResponse(TrendDataSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (req: FastifyRequest<{ Querystring: CheckinTrendQuery }>, reply: FastifyReply) => {
       const svc = await getCheckinSvc(app)
 
       const groupId = req.query.groupId ? BigInt(req.query.groupId) : undefined
-      const days = req.query.days ?? 30
+      const days = req.query.days ? parseInt(req.query.days, 10) : 30
 
       const trend: DayCount[] = await svc.getDailyTrend({ groupId, days })
       await reply.send(ok(trend))
@@ -125,7 +137,11 @@ const checkinRoutes: FastifyPluginAsync = async (app) => {
     {
       schema: {
         querystring: CheckinSummaryQuerySchema,
-        response: { 200: OkResponse(SummaryResponseSchema) },
+        response: {
+          200: OkResponse(SummaryResponseSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (req: FastifyRequest<{ Querystring: CheckinSummaryQuery }>, reply: FastifyReply) => {

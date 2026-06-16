@@ -218,8 +218,8 @@ onMounted(async () => {
   queueStore.connect(30)
 
   await Promise.allSettled([
-    personnelStore.loadUsers({ page: 1, page_size: 1 }),
-    personnelStore.loadGroups({ page: 1, page_size: 1 }),
+    personnelStore.loadUsers({ page: 1, pageSize: 1 }),
+    personnelStore.loadGroups({ page: 1, pageSize: 1 }),
   ])
   personnelLoading.value = false
 })

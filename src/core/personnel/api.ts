@@ -10,7 +10,7 @@ import { SyncCoordinator } from './sync.js'
 
 import { PersonnelService } from './index.js'
 
-import { NotFoundError, ValidationError } from '@/core/errors.js'
+import { ValidationError } from '@/core/errors.js'
 import { ok, fail, OkResponse, FailResponse } from '@/core/schemas/index.js'
 import {
   UserIdParamSchema,
@@ -60,14 +60,18 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
     {
       schema: {
         querystring: UserListQuerySchema,
-        response: { 200: OkResponse(PaginatedUsersDataSchema) },
+        response: {
+          200: OkResponse(PaginatedUsersDataSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (
       req: FastifyRequest<{
         Querystring: {
           page?: string
-          page_size?: string
+          pageSize?: string
           relation?: string
           qq?: string
           nickname?: string
@@ -77,7 +81,7 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
     ) => {
       const svc = getPersonnelQueryService(app)
       const page = Math.max(1, Number(req.query.page ?? 1))
-      const pageSize = Math.min(100, Math.max(1, Number(req.query.page_size ?? 20)))
+      const pageSize = Math.min(100, Math.max(1, Number(req.query.pageSize ?? 20)))
       const qq = req.query.qq !== undefined ? parseBigIntParam(req.query.qq, 'qq') : undefined
       const result = await svc.listUsers({
         page,
@@ -93,12 +97,18 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
   /** 获取单个用户详情。 */
   app.get(
     '/api/personnel/users/:userId',
-    { schema: { params: UserIdParamSchema, response: { 200: OkResponse(UserDetailSchema) } } },
+    {
+      schema: {
+        params: UserIdParamSchema,
+        response: { 200: OkResponse(UserDetailSchema), 404: FailResponse(), 500: FailResponse() },
+      },
+    },
     async (req: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
       const svc = getPersonnelQueryService(app)
       const user = await svc.getUser(parseBigIntParam(req.params.userId, 'userId'))
       if (!user) {
-        throw new NotFoundError('User not found')
+        await reply.status(404).send(fail('User not found'))
+        return
       }
       await reply.send(ok(user))
     },
@@ -107,7 +117,16 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
   /** 获取用户所属的所有群聊。 */
   app.get(
     '/api/personnel/users/:userId/groups',
-    { schema: { params: UserIdParamSchema, response: { 200: OkResponse(UserGroupsDataSchema) } } },
+    {
+      schema: {
+        params: UserIdParamSchema,
+        response: {
+          200: OkResponse(UserGroupsDataSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
+      },
+    },
     async (req: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
       const svc = getPersonnelQueryService(app)
       const groups = await svc.getUserGroups(parseBigIntParam(req.params.userId, 'userId'))
@@ -123,14 +142,18 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
     {
       schema: {
         querystring: GroupListQuerySchema,
-        response: { 200: OkResponse(PaginatedGroupsDataSchema) },
+        response: {
+          200: OkResponse(PaginatedGroupsDataSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (
       req: FastifyRequest<{
         Querystring: {
           page?: string
-          page_size?: string
+          pageSize?: string
           group_name?: string
           is_active?: string
         }
@@ -142,7 +165,7 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
         req.query.is_active === 'true' ? true : req.query.is_active === 'false' ? false : undefined
       const result = await svc.listGroups({
         page: Math.max(1, Number(req.query.page ?? 1)),
-        pageSize: Math.min(100, Math.max(1, Number(req.query.page_size ?? 20))),
+        pageSize: Math.min(100, Math.max(1, Number(req.query.pageSize ?? 20))),
         groupName: req.query.group_name,
         isActive,
       })
@@ -153,12 +176,18 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
   /** 获取单个群聊详情。 */
   app.get(
     '/api/personnel/groups/:groupId',
-    { schema: { params: GroupIdParamSchema, response: { 200: OkResponse(GroupDetailSchema) } } },
+    {
+      schema: {
+        params: GroupIdParamSchema,
+        response: { 200: OkResponse(GroupDetailSchema), 404: FailResponse(), 500: FailResponse() },
+      },
+    },
     async (req: FastifyRequest<{ Params: { groupId: string } }>, reply: FastifyReply) => {
       const svc = getPersonnelQueryService(app)
       const group = await svc.getGroup(parseBigIntParam(req.params.groupId, 'groupId'))
       if (!group) {
-        throw new NotFoundError('Group not found')
+        await reply.status(404).send(fail('Group not found'))
+        return
       }
       await reply.send(ok(group))
     },
@@ -171,7 +200,11 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
       schema: {
         params: GroupIdParamSchema,
         querystring: MemberListQuerySchema,
-        response: { 200: OkResponse(PaginatedMembersDataSchema) },
+        response: {
+          200: OkResponse(PaginatedMembersDataSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (
@@ -179,7 +212,7 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
         Params: { groupId: string }
         Querystring: {
           page?: string
-          page_size?: string
+          pageSize?: string
           role?: string
           nickname?: string
           qq?: string
@@ -190,7 +223,7 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
       const svc = getPersonnelQueryService(app)
       const result = await svc.listGroupMembers(parseBigIntParam(req.params.groupId, 'groupId'), {
         page: Math.max(1, Number(req.query.page ?? 1)),
-        pageSize: Math.min(100, Math.max(1, Number(req.query.page_size ?? 20))),
+        pageSize: Math.min(100, Math.max(1, Number(req.query.pageSize ?? 20))),
         role: req.query.role,
         nickname: req.query.nickname,
         qq: req.query.qq !== undefined ? parseBigIntParam(req.query.qq, 'qq') : undefined,
@@ -204,7 +237,15 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
   /** 获取所有超级管理员列表。 */
   app.get(
     '/api/personnel/admins',
-    { schema: { response: { 200: OkResponse(AdminListDataSchema) } } },
+    {
+      schema: {
+        response: {
+          200: OkResponse(AdminListDataSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
+      },
+    },
     async (_req: FastifyRequest, reply: FastifyReply) => {
       const svc = getPersonnelService(app)
       const admins = await svc.getAdmins()
@@ -218,7 +259,12 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
     {
       schema: {
         params: UserIdParamSchema,
-        response: { 200: OkResponse(Type.Null()), 404: FailResponse() },
+        response: {
+          200: OkResponse(Type.Null()),
+          400: FailResponse(),
+          404: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (req: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
@@ -238,7 +284,12 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
     {
       schema: {
         params: UserIdParamSchema,
-        response: { 200: OkResponse(Type.Null()), 404: FailResponse() },
+        response: {
+          200: OkResponse(Type.Null()),
+          400: FailResponse(),
+          404: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (req: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
@@ -260,11 +311,9 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
     {
       schema: {
         response: {
-          200: Type.Object({
-            code: Type.Literal(0),
-            data: Type.Null(),
-            message: Type.String(),
-          }),
+          200: OkResponse(Type.Null()),
+          409: FailResponse(),
+          500: FailResponse(),
         },
       },
     },
@@ -282,7 +331,15 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
   /** 获取最近一次同步的状态。 */
   app.get(
     '/api/personnel/sync/status',
-    { schema: { response: { 200: OkResponse(SyncStatusDataSchema) } } },
+    {
+      schema: {
+        response: {
+          200: OkResponse(SyncStatusDataSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
+      },
+    },
     async (_req: FastifyRequest, reply: FastifyReply) => {
       const svc = getPersonnelService(app)
       const status = await svc.getSyncStatus()

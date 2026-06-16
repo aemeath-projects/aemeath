@@ -31,7 +31,15 @@ const botRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/bot/info — 获取 Bot 登录信息（昵称、QQ 号、头像）。 */
   app.get(
     '/api/bot/info',
-    { schema: { response: { 200: OkResponse(BotInfoDataSchema) } } },
+    {
+      schema: {
+        response: {
+          200: OkResponse(BotInfoDataSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
+      },
+    },
     async (_req: FastifyRequest, reply: FastifyReply) => {
       const connMgr = app.services.get('connectionManager') as { connected: boolean } | undefined
       const botApi = app.services.get('botApi') as
@@ -64,7 +72,15 @@ const botRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/bot/profile — 获取 Bot 完整信息（含在线状态和版本）。 */
   app.get(
     '/api/bot/profile',
-    { schema: { response: { 200: OkResponse(BotProfileDataSchema) } } },
+    {
+      schema: {
+        response: {
+          200: OkResponse(BotProfileDataSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
+      },
+    },
     async (_req: FastifyRequest, reply: FastifyReply) => {
       const connMgr = app.services.get('connectionManager') as { connected: boolean } | undefined
       const botApi = app.services.get('botApi') as

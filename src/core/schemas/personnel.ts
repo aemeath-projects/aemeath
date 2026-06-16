@@ -24,7 +24,7 @@ export const GroupIdParamSchema = Type.Object({
 /** 分页查询用户列表 —— GET /api/personnel/users */
 export const UserListQuerySchema = Type.Object({
   page: Type.Optional(Type.String({ pattern: '^\\d+$', description: '页码（默认 1）' })),
-  page_size: Type.Optional(
+  pageSize: Type.Optional(
     Type.String({ pattern: '^\\d+$', description: '每页条数（默认 20，最大 100）' }),
   ),
   relation: Type.Optional(Type.String({ description: '关系筛选' })),
@@ -35,7 +35,7 @@ export const UserListQuerySchema = Type.Object({
 /** 分页查询群列表 —— GET /api/personnel/groups */
 export const GroupListQuerySchema = Type.Object({
   page: Type.Optional(Type.String({ pattern: '^\\d+$', description: '页码（默认 1）' })),
-  page_size: Type.Optional(
+  pageSize: Type.Optional(
     Type.String({ pattern: '^\\d+$', description: '每页条数（默认 20，最大 100）' }),
   ),
   group_name: Type.Optional(Type.String({ description: '按群名模糊查找' })),
@@ -49,7 +49,7 @@ export const GroupListQuerySchema = Type.Object({
 /** 分页查询群成员 —— GET /api/personnel/groups/:groupId/members */
 export const MemberListQuerySchema = Type.Object({
   page: Type.Optional(Type.String({ pattern: '^\\d+$', description: '页码（默认 1）' })),
-  page_size: Type.Optional(
+  pageSize: Type.Optional(
     Type.String({ pattern: '^\\d+$', description: '每页条数（默认 20，最大 100）' }),
   ),
   role: Type.Optional(Type.String({ description: '按角色筛选' })),

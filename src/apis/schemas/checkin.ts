@@ -11,21 +11,23 @@ export const CheckinRecordsQuerySchema = Type.Object({
   groupId: Type.Optional(Type.String({ pattern: '^\\d+$' })),
   userId: Type.Optional(Type.String({ pattern: '^\\d+$' })),
   date: Type.Optional(Type.String({ description: 'YYYY-MM-DD' })),
-  page: Type.Optional(Type.Number({ default: 1, minimum: 1 })),
-  pageSize: Type.Optional(Type.Number({ default: 20, minimum: 1, maximum: 100 })),
+  page: Type.Optional(Type.String({ pattern: '^\\d+$', description: '页码（默认 1）' })),
+  pageSize: Type.Optional(
+    Type.String({ pattern: '^\\d+$', description: '每页条数（默认 20，最大 100）' }),
+  ),
 })
 
 /** 排行榜查询参数 Schema。 */
 export const CheckinLeaderboardQuerySchema = Type.Object({
   groupId: Type.Optional(Type.String({ pattern: '^\\d+$' })),
   by: Type.Optional(Type.Union([Type.Literal('total'), Type.Literal('streak')])),
-  limit: Type.Optional(Type.Number({ minimum: 1, maximum: 100, default: 20 })),
+  limit: Type.Optional(Type.String({ pattern: '^\\d+$', description: '返回条数（默认 20）' })),
 })
 
 /** 每日趋势查询参数 Schema。 */
 export const CheckinTrendQuerySchema = Type.Object({
   groupId: Type.Optional(Type.String({ pattern: '^\\d+$' })),
-  days: Type.Optional(Type.Number({ minimum: 1, maximum: 365, default: 30 })),
+  days: Type.Optional(Type.String({ pattern: '^\\d+$', description: '天数（默认 30）' })),
 })
 
 /** 汇总数据查询参数 Schema。 */
@@ -39,19 +41,19 @@ export interface CheckinRecordsQuery {
   groupId?: string
   userId?: string
   date?: string
-  page?: number
-  pageSize?: number
+  page?: string
+  pageSize?: string
 }
 
 export interface CheckinLeaderboardQuery {
   groupId?: string
   by?: 'total' | 'streak'
-  limit?: number
+  limit?: string
 }
 
 export interface CheckinTrendQuery {
   groupId?: string
-  days?: number
+  days?: string
 }
 
 export interface CheckinSummaryQuery {

@@ -146,7 +146,7 @@ watch(
             }
           } else {
             // 文字：按群名模糊搜索
-            const result = await fetchGroups({ group_name: q, page_size: 10 })
+            const result = await fetchGroups({ group_name: q, pageSize: 10 })
             if (requestSeq !== seq) return
             const existingIds = new Set(suggestions.value.map((g) => g.group_id))
             const newItems = result.items.filter((g) => !existingIds.has(g.group_id))

@@ -236,7 +236,7 @@ function loadMembers(page: number) {
   memberPage.value = page
   store.loadGroupMembers(props.groupId, {
     page,
-    page_size: memberPageSize.value,
+    pageSize: memberPageSize.value,
     role: filterRole.value,
     nickname: filterNickname.value,
   })

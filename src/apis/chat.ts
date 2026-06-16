@@ -25,6 +25,30 @@ import { ok, fail, OkResponse, FailResponse } from '@/core/schemas/index.js'
 
 const log = getLogger('chat')
 
+/**
+ * 将 Prisma ChatMessage（含 bigint 字段）转换为 JSON-safe 对象。
+ *
+ * BigInt.prototype.toJSON 全局 polyfill 可保证 JSON.stringify 不抛错，
+ * 但 AJV response schema 校验要求 integer 字段为 number 类型，bigint 会不通过。
+ * 此处显式转换保证校验结果与序列化输出一致。
+ */
+function serializeChatMessage(m: Record<string, unknown>): Record<string, unknown> {
+  return {
+    id: Number(m.id),
+    createdAt: m.createdAt instanceof Date ? m.createdAt.toISOString() : m.createdAt,
+    messageId: Number(m.messageId),
+    messageType: Number(m.messageType),
+    groupId: m.groupId != null ? Number(m.groupId) : null,
+    userId: Number(m.userId),
+    rawMessage: m.rawMessage,
+    segments: m.segments,
+    senderNickname: m.senderNickname,
+    senderCard: m.senderCard ?? null,
+    senderRole: m.senderRole ?? null,
+    storedAt: m.storedAt instanceof Date ? m.storedAt.toISOString() : m.storedAt,
+  }
+}
+
 /** 触发归档任务的队列接口。 */
 interface ArchiveQueue {
   add(name: string, data: unknown): Promise<{ id?: string }>
@@ -43,7 +67,11 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
       schema: {
         params: GroupIdParamSchema,
         querystring: GroupMessageQuerySchema,
-        response: { 200: OkResponse(MessageListDataSchema) },
+        response: {
+          200: OkResponse(MessageListDataSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (
@@ -75,7 +103,7 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
         startDate: q.startDate ? new Date(q.startDate) : undefined,
         endDate: q.endDate ? new Date(q.endDate) : undefined,
       })
-      await reply.send(ok(result))
+      await reply.send(ok(result.map(serializeChatMessage)))
     },
   )
 
@@ -86,7 +114,11 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
       schema: {
         params: UserIdParamSchema,
         querystring: PrivateMessageQuerySchema,
-        response: { 200: OkResponse(MessageListDataSchema) },
+        response: {
+          200: OkResponse(MessageListDataSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (
@@ -107,7 +139,7 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
         before: q.before ? new Date(q.before) : undefined,
         limit: q.limit ? parseInt(q.limit, 10) : 50,
       })
-      await reply.send(ok(result))
+      await reply.send(ok(result.map(serializeChatMessage)))
     },
   )
 
@@ -118,7 +150,11 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
       schema: {
         params: MessageIdParamSchema,
         querystring: MessageContextQuerySchema,
-        response: { 200: OkResponse(MessageContextDataSchema) },
+        response: {
+          200: OkResponse(MessageContextDataSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (
@@ -137,7 +173,13 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
       const contextSize = req.query.context ? parseInt(req.query.context, 10) : 5
 
       const result = await svc.getMessageContext(messageId, createdAt, contextSize)
-      await reply.send(ok(result))
+      await reply.send(
+        ok({
+          before: result.before.map(serializeChatMessage),
+          current: result.current.map(serializeChatMessage),
+          after: result.after.map(serializeChatMessage),
+        }),
+      )
     },
   )
 
@@ -149,7 +191,11 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
     {
       schema: {
         querystring: ArchiveListQuerySchema,
-        response: { 200: OkResponse(PaginatedArchivesDataSchema) },
+        response: {
+          200: OkResponse(PaginatedArchivesDataSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (
@@ -207,11 +253,17 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
     {
       schema: {
         querystring: ArchiveQuerySchema,
-        response: { 200: OkResponse(ArchiveQueryDataSchema), 400: FailResponse() },
+        response: {
+          200: OkResponse(ArchiveQueryDataSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (
       req: FastifyRequest<{
+        // TODO: groupId 参数已由 querystring schema 定义但未在 handler 中使用，
+        // 待 ArchiveService.listArchives 支持 groupId 筛选后接入
         Querystring: { periodStart: string; groupId?: string; limit?: string }
       }>,
       reply: FastifyReply,

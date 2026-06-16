@@ -28,7 +28,15 @@ const driftBottleRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/drift-bottle-pools — 列出所有漂流瓶池，含各池未捞取瓶数统计。 */
   app.get(
     '/api/drift-bottle-pools',
-    { schema: { response: { 200: OkResponse(PoolListDataSchema) } } },
+    {
+      schema: {
+        response: {
+          200: OkResponse(PoolListDataSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
+      },
+    },
     async (_req: FastifyRequest, reply: FastifyReply) => {
       const svc = await getDriftSvc(app)
 
@@ -53,7 +61,9 @@ const driftBottleRoutes: FastifyPluginAsync = async (app) => {
         body: CreatePoolRequestSchema,
         response: {
           201: OkResponse(Type.Object({ id: Type.Number(), name: Type.String() })),
+          400: FailResponse(),
           409: FailResponse(),
+          500: FailResponse(),
         },
       },
     },
@@ -79,7 +89,12 @@ const driftBottleRoutes: FastifyPluginAsync = async (app) => {
     {
       schema: {
         params: PoolIdParamSchema,
-        response: { 200: OkResponse(Type.Null()), 400: FailResponse() },
+        response: {
+          200: OkResponse(Type.Null()),
+          400: FailResponse(),
+          409: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (req: FastifyRequest<{ Params: { poolId: string } }>, reply: FastifyReply) => {
@@ -106,7 +121,11 @@ const driftBottleRoutes: FastifyPluginAsync = async (app) => {
     {
       schema: {
         params: PoolIdParamSchema,
-        response: { 200: OkResponse(PoolGroupsResponseSchema) },
+        response: {
+          200: OkResponse(PoolGroupsResponseSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (req: FastifyRequest<{ Params: { poolId: string } }>, reply: FastifyReply) => {
@@ -124,7 +143,11 @@ const driftBottleRoutes: FastifyPluginAsync = async (app) => {
     {
       schema: {
         body: GroupAssignRequestSchema,
-        response: { 200: OkResponse(Type.Null()), 400: FailResponse() },
+        response: {
+          200: OkResponse(Type.Null()),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (

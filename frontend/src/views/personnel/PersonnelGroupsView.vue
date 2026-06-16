@@ -150,7 +150,7 @@ const headers = [
 const { page, pageSize, loadPage, onPageSizeChange, debouncedLoad } = usePagination((p, size) =>
   store.loadGroups({
     page: p,
-    page_size: size,
+    pageSize: size,
     group_name: filterName.value,
     is_active: filterActive.value,
   }),

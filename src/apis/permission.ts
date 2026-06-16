@@ -47,7 +47,11 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
     {
       schema: {
         querystring: SettingsQuerySchema,
-        response: { 200: OkResponse(SettingsSchemaListDataSchema) },
+        response: {
+          200: OkResponse(SettingsSchemaListDataSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (req: FastifyRequest<{ Querystring: { prefix?: string } }>, reply: FastifyReply) => {
@@ -66,7 +70,11 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
       schema: {
         params: SettingsGroupIdParamSchema,
         querystring: SettingsQuerySchema,
-        response: { 200: OkResponse(SettingsRecordDataSchema) },
+        response: {
+          200: OkResponse(SettingsRecordDataSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (
@@ -88,7 +96,11 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
       schema: {
         params: SettingsGroupKeyParamsSchema,
         body: SetValueRequestSchema,
-        response: { 200: OkResponse(Type.Null()), 400: FailResponse() },
+        response: {
+          200: OkResponse(Type.Null()),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (
@@ -112,7 +124,11 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
       schema: {
         params: SettingsGroupIdParamSchema,
         body: BatchSetRequestSchema,
-        response: { 200: OkResponse(Type.Null()), 400: FailResponse() },
+        response: {
+          200: OkResponse(Type.Null()),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (
@@ -138,7 +154,11 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
       schema: {
         params: SettingsUserIdParamSchema,
         querystring: SettingsQuerySchema,
-        response: { 200: OkResponse(SettingsRecordDataSchema) },
+        response: {
+          200: OkResponse(SettingsRecordDataSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (
@@ -160,7 +180,11 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
       schema: {
         params: SettingsUserKeyParamsSchema,
         body: SetValueRequestSchema,
-        response: { 200: OkResponse(Type.Null()), 400: FailResponse() },
+        response: {
+          200: OkResponse(Type.Null()),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (

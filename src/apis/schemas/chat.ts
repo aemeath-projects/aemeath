@@ -57,6 +57,7 @@ export const ArchiveListQuerySchema = Type.Object({
 /** 归档查询参数 —— GET /api/chat/archives/query */
 export const ArchiveQuerySchema = Type.Object({
   periodStart: Type.String({ description: '起始月份（ISO 8601，必填）' }),
+  // TODO: groupId 参数已由 schema 定义但 handler 中未传递给 listArchives，待服务支持后接入
   groupId: Type.Optional(Type.String({ pattern: '^\\d+$', description: '按群号筛选' })),
   limit: Type.Optional(Type.String({ pattern: '^\\d+$', description: '返回条数（默认 50）' })),
 })

@@ -71,7 +71,7 @@ export const useChatStore = defineStore('chat', () => {
     items: [],
     total: 0,
     page: 1,
-    page_size: 20,
+    pageSize: 20,
     pages: 0,
   })
   const archivesLoading = ref(false)

@@ -54,7 +54,11 @@ const jrlpRoutes: FastifyPluginAsync = async (app) => {
     {
       schema: {
         querystring: JrlpRecordsQuerySchema,
-        response: { 200: OkResponse(PaginatedRecordsResponseSchema) },
+        response: {
+          200: OkResponse(PaginatedRecordsResponseSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (req: FastifyRequest<{ Querystring: JrlpRecordsQuery }>, reply: FastifyReply) => {
@@ -63,8 +67,8 @@ const jrlpRoutes: FastifyPluginAsync = async (app) => {
       const groupId = req.query.groupId ? BigInt(req.query.groupId) : undefined
       const userId = req.query.userId ? BigInt(req.query.userId) : undefined
       const recordDate = req.query.date ? new Date(req.query.date) : undefined
-      const page = req.query.page ?? 1
-      const pageSize = req.query.pageSize ?? 20
+      const page = req.query.page ? parseInt(req.query.page, 10) : 1
+      const pageSize = req.query.pageSize ? parseInt(req.query.pageSize, 10) : 20
 
       const [records, total] = await svc.listRecords({
         groupId,
@@ -93,7 +97,12 @@ const jrlpRoutes: FastifyPluginAsync = async (app) => {
     {
       schema: {
         body: SetWifeRequestSchema,
-        response: { 200: OkResponse(WifeRecordResponseSchema), 409: FailResponse() },
+        response: {
+          200: OkResponse(WifeRecordResponseSchema),
+          400: FailResponse(),
+          409: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (req: FastifyRequest<{ Body: SetWifeRequest }>, reply: FastifyReply) => {
@@ -120,7 +129,12 @@ const jrlpRoutes: FastifyPluginAsync = async (app) => {
     {
       schema: {
         body: UpdateRecordRequestSchema,
-        response: { 200: OkResponse(WifeRecordResponseSchema), 404: FailResponse() },
+        response: {
+          200: OkResponse(WifeRecordResponseSchema),
+          400: FailResponse(),
+          404: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (req: FastifyRequest<{ Body: UpdateRecordRequest }>, reply: FastifyReply) => {
@@ -141,7 +155,12 @@ const jrlpRoutes: FastifyPluginAsync = async (app) => {
     {
       schema: {
         body: DeleteRecordRequestSchema,
-        response: { 200: OkResponse(Type.Null()), 404: FailResponse() },
+        response: {
+          200: OkResponse(Type.Null()),
+          400: FailResponse(),
+          404: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (req: FastifyRequest<{ Body: DeleteRecordRequest }>, reply: FastifyReply) => {

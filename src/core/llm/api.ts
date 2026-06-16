@@ -101,7 +101,11 @@ export async function llmRoutes(fastify: FastifyInstance): Promise<void> {
     {
       schema: {
         body: CreateProviderSchema,
-        response: { 201: OkResponse(LlmProviderSchema), 404: FailResponse(), 500: FailResponse() },
+        response: {
+          201: OkResponse(LlmProviderSchema),
+          404: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (request, reply) => {
@@ -123,7 +127,11 @@ export async function llmRoutes(fastify: FastifyInstance): Promise<void> {
       schema: {
         params: ProviderIdParamSchema,
         body: UpdateProviderSchema,
-        response: { 200: OkResponse(LlmProviderSchema), 404: FailResponse(), 500: FailResponse() },
+        response: {
+          200: OkResponse(LlmProviderSchema),
+          404: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (request, reply) => {
@@ -210,7 +218,11 @@ export async function llmRoutes(fastify: FastifyInstance): Promise<void> {
     {
       schema: {
         body: CreateModelSchema,
-        response: { 201: OkResponse(LlmModelSchema), 404: FailResponse(), 500: FailResponse() },
+        response: {
+          201: OkResponse(LlmModelSchema),
+          404: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (request, reply) => {
@@ -230,7 +242,11 @@ export async function llmRoutes(fastify: FastifyInstance): Promise<void> {
       schema: {
         params: ModelIdParamSchema,
         body: UpdateModelSchema,
-        response: { 200: OkResponse(LlmModelSchema), 404: FailResponse(), 500: FailResponse() },
+        response: {
+          200: OkResponse(LlmModelSchema),
+          404: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (request, reply) => {

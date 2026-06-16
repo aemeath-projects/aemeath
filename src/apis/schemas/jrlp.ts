@@ -47,8 +47,10 @@ export const JrlpRecordsQuerySchema = Type.Object({
   groupId: Type.Optional(Type.String({ pattern: '^\\d+$' })),
   userId: Type.Optional(Type.String({ pattern: '^\\d+$' })),
   date: Type.Optional(Type.String({ description: 'YYYY-MM-DD' })),
-  page: Type.Optional(Type.Number({ default: 1, minimum: 1 })),
-  pageSize: Type.Optional(Type.Number({ default: 20, minimum: 1, maximum: 100 })),
+  page: Type.Optional(Type.String({ pattern: '^\\d+$', description: '页码（默认 1）' })),
+  pageSize: Type.Optional(
+    Type.String({ pattern: '^\\d+$', description: '每页条数（默认 20，最大 100）' }),
+  ),
 })
 
 /* TypeScript 接口 */
@@ -57,8 +59,8 @@ export interface JrlpRecordsQuery {
   groupId?: string
   userId?: string
   date?: string
-  page?: number
-  pageSize?: number
+  page?: string
+  pageSize?: string
 }
 
 export interface SetWifeRequest {

@@ -57,7 +57,11 @@ const feedbackRoutes: FastifyPluginAsync = async (app) => {
     {
       schema: {
         querystring: FeedbackListQuerySchema,
-        response: { 200: OkResponse(PaginatedFeedbacksDataSchema) },
+        response: {
+          200: OkResponse(PaginatedFeedbacksDataSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (
@@ -108,7 +112,12 @@ const feedbackRoutes: FastifyPluginAsync = async (app) => {
     {
       schema: {
         params: FeedbackIdParamSchema,
-        response: { 200: OkResponse(FeedbackDetailDataSchema), 404: FailResponse() },
+        response: {
+          200: OkResponse(FeedbackDetailDataSchema),
+          400: FailResponse(),
+          404: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (req: FastifyRequest<{ Params: { feedbackId: string } }>, reply: FastifyReply) => {
@@ -131,7 +140,12 @@ const feedbackRoutes: FastifyPluginAsync = async (app) => {
       schema: {
         params: FeedbackIdParamSchema,
         body: FeedbackUpdateBodySchema,
-        response: { 200: OkResponse(Type.Null()), 404: FailResponse() },
+        response: {
+          200: OkResponse(Type.Null()),
+          400: FailResponse(),
+          404: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (

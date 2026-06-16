@@ -145,7 +145,7 @@ watch(
             }
           } else {
             // 文字：按昵称模糊搜索
-            const result = await fetchUsers({ nickname: q, page_size: 10 })
+            const result = await fetchUsers({ nickname: q, pageSize: 10 })
             if (requestSeq !== seq) return
             const existingQqs = new Set(suggestions.value.map((u) => u.qq))
             const newItems = result.items.filter((u) => !existingQqs.has(u.qq))

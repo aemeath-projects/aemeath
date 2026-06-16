@@ -167,7 +167,7 @@ const headers = [
 const { page, pageSize, loadPage, onPageSizeChange, debouncedLoad } = usePagination((p, size) =>
   store.loadUsers({
     page: p,
-    page_size: size,
+    pageSize: size,
     relation: filterRelation.value,
     qq: filterQQ.value ? Number(filterQQ.value) : null,
     nickname: filterNickname.value,

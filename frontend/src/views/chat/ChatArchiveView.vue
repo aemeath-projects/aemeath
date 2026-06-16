@@ -45,7 +45,7 @@
         :headers="headers"
         :items="store.archives.items"
         :loading="store.archivesLoading"
-        :items-per-page="store.archives.page_size"
+        :items-per-page="store.archives.pageSize"
         hide-default-footer
         hover
       >

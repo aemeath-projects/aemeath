@@ -79,14 +79,14 @@ const BASE = '/api/personnel'
 
 export async function fetchUsers(params: {
   page?: number
-  page_size?: number
+  pageSize?: number
   relation?: string | null
   qq?: number | null
   nickname?: string | null
 }): Promise<PaginatedResult<UserItem>> {
   const query: Record<string, string | number> = {}
   if (params.page) query.page = params.page
-  if (params.page_size) query.page_size = params.page_size
+  if (params.pageSize) query.pageSize = params.pageSize
   if (params.relation) query.relation = params.relation
   if (params.qq) query.qq = params.qq
   if (params.nickname) query.nickname = params.nickname
@@ -109,13 +109,13 @@ export async function fetchUserGroups(qq: number): Promise<GroupItem[]> {
 
 export async function fetchGroups(params: {
   page?: number
-  page_size?: number
+  pageSize?: number
   group_name?: string | null
   is_active?: boolean | null
 }): Promise<PaginatedResult<GroupItem>> {
   const query: Record<string, string | number | boolean> = {}
   if (params.page) query.page = params.page
-  if (params.page_size) query.page_size = params.page_size
+  if (params.pageSize) query.pageSize = params.pageSize
   if (params.group_name) query.group_name = params.group_name
   if (params.is_active !== null && params.is_active !== undefined)
     query.is_active = params.is_active
@@ -135,7 +135,7 @@ export async function fetchGroupMembers(
   groupId: number,
   params: {
     page?: number
-    page_size?: number
+    pageSize?: number
     role?: string | null
     nickname?: string | null
     qq?: number | null
@@ -143,7 +143,7 @@ export async function fetchGroupMembers(
 ): Promise<PaginatedResult<GroupMemberItem>> {
   const query: Record<string, string | number> = {}
   if (params.page) query.page = params.page
-  if (params.page_size) query.page_size = params.page_size
+  if (params.pageSize) query.pageSize = params.pageSize
   if (params.role) query.role = params.role
   if (params.nickname) query.nickname = params.nickname
   if (params.qq) query.qq = params.qq

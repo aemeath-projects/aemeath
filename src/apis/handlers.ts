@@ -6,7 +6,7 @@ import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
 import { HandlerListDataSchema } from '@/apis/schemas/index.js'
 import { handlerRegistry } from '@/core/dispatch/index.js'
-import { ok, OkResponse } from '@/core/schemas/index.js'
+import { ok, OkResponse, FailResponse } from '@/core/schemas/index.js'
 
 /**
  * 处理器管理路由插件。
@@ -15,7 +15,15 @@ const handlerRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/handlers — 列出所有已注册的控制器及其处理器。 */
   app.get(
     '/api/handlers',
-    { schema: { response: { 200: OkResponse(HandlerListDataSchema) } } },
+    {
+      schema: {
+        response: {
+          200: OkResponse(HandlerListDataSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
+      },
+    },
     async (_req: FastifyRequest, reply: FastifyReply) => {
       const controllers = [...handlerRegistry.values()].map((entry) => {
         const methods: Record<string, unknown>[] = entry.methods.map((methodMeta) => ({

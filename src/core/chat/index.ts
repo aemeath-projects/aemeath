@@ -334,7 +334,13 @@ export class ChatBootstrap {
       compression: 'zstd' as const,
     }
     const archiveS3 = new ArchiveS3(client, buckets.archive, config.S3_ARCHIVE_PREFIX)
-    this.archiveService = new ArchiveService(this.chatDb, this.mainDb, exporterSettings, archiveS3)
+    this.archiveService = new ArchiveService(
+      this.chatDb,
+      this.mainDb,
+      exporterSettings,
+      archiveS3,
+      config.TMPDIR,
+    )
   }
 
   @Shutdown

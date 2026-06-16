@@ -6,9 +6,9 @@ import type { ServiceRegistry } from '@/core/lifecycle/service-registry.js'
 
 declare module 'fastify' {
   interface FastifyInstance {
-    /** 运行时服务注册表（由生命周期编排器挂载）。 */
-    state?: {
-      serviceRegistry?: ServiceRegistry
+    /** 运行时应用状态（由生命周期编排器挂载，路由注册后保证非空）。 */
+    state: {
+      serviceRegistry: ServiceRegistry
       [key: string]: unknown
     }
   }

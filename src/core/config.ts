@@ -26,7 +26,7 @@ export const ConfigSchema = Type.Object({
   IMAGE_URL_TTL: Type.Number({ minimum: 1, default: 7200 }),
   ENABLE_RKEY_REFRESH: Type.Boolean({ default: true }),
 
-  // NapCat 역방향 WebSocket 서버 포트 (Fastify PORT와 분리)
+  // NapCat 反向 WebSocket 服务器端口（与 Fastify PORT 分离）
   NAPCAT_WS_PORT: Type.Number({ minimum: 1, maximum: 65535, default: 3001 }),
 
   // PostgreSQL
@@ -81,6 +81,13 @@ export const ConfigSchema = Type.Object({
     default: 'json',
   }),
 
+  // 认证与安全
+  ADMIN_TOKEN: Type.String({ default: '', description: '管理后台 Bearer token，为空时跳过认证' }),
+  CORS_ORIGINS: Type.String({
+    default: 'http://localhost:5173',
+    description: 'CORS 允许来源（逗号分隔）',
+  }),
+
   // 服务器
   NODE_ENV: Type.Union([Type.Literal('development'), Type.Literal('production')], {
     default: 'development',
@@ -88,6 +95,9 @@ export const ConfigSchema = Type.Object({
   HOST: Type.String({ default: '0.0.0.0' }),
   PORT: Type.Number({ minimum: 1, maximum: 65535, default: 8000 }),
   FRONTEND_DIST_DIR: Type.String({ default: 'frontend/dist' }),
+
+  // 临时文件目录
+  TMPDIR: Type.String({ default: '/tmp', description: '临时文件根目录' }),
 })
 
 /** 编译后的校验器（模块级单例，复用以提升性能）。 */

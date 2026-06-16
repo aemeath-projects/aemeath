@@ -6,12 +6,12 @@
 
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
+import { SetValueRequestSchema, BatchSetRequestSchema } from '@/apis/schemas/permission.js'
 import { ok, fail } from '@/core/response.js'
 import type { SettingsService } from '@/core/settings/index.js'
 
 function getSettings(app: FastifyInstance): SettingsService {
-  const state = (app as unknown as { state: Record<string, unknown> }).state
-  return state.settings as SettingsService
+  return app.state.settings as SettingsService
 }
 
 /* 请求体接口 */
@@ -60,6 +60,9 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
   /** POST /api/settings/groups/:groupId/:key — 设置群级单项配置。 */
   app.post(
     '/api/settings/groups/:groupId/:key',
+    {
+      schema: { body: SetValueRequestSchema },
+    },
     async (
       req: FastifyRequest<{ Params: { groupId: string; key: string }; Body: SetValueBody }>,
       reply: FastifyReply,
@@ -77,6 +80,9 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
   /** POST /api/settings/groups/:groupId/batch — 批量设置群级配置。 */
   app.post(
     '/api/settings/groups/:groupId/batch',
+    {
+      schema: { body: BatchSetRequestSchema },
+    },
     async (
       req: FastifyRequest<{ Params: { groupId: string }; Body: BatchSetBody }>,
       reply: FastifyReply,
@@ -111,6 +117,9 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
   /** POST /api/settings/users/:userId/:key — 设置用户级单项配置。 */
   app.post(
     '/api/settings/users/:userId/:key',
+    {
+      schema: { body: SetValueRequestSchema },
+    },
     async (
       req: FastifyRequest<{ Params: { userId: string; key: string }; Body: SetValueBody }>,
       reply: FastifyReply,

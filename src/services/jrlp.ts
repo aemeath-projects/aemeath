@@ -6,6 +6,7 @@ import type { WifeRecord, Prisma } from '#prisma/main'
 
 import type { MainPrismaClient } from '@/core/db.js'
 import { isPrismaKnownError } from '@/core/db.js'
+import { AppError, ValidationError } from '@/core/errors.js'
 import { Service, Inject, Provide, Startup } from '@/core/lifecycle/decorators/index.js'
 
 export type { WifeRecord }
@@ -87,13 +88,13 @@ export class JrlpService {
     })
 
     if (members.length === 0) {
-      throw new Error('该群暂无可抽取的活跃成员')
+      throw new ValidationError('该群暂无可抽取的活跃成员')
     }
 
     const memberIdx = Math.floor(Math.random() * members.length)
     const member = members[memberIdx]
     if (member === undefined) {
-      throw new Error('该群暂无可抽取的活跃成员')
+      throw new ValidationError('该群暂无可抽取的活跃成员')
     }
     const wifeDisplayName =
       (member.card.trim() !== '' ? member.card.trim() : null) ??
@@ -117,7 +118,7 @@ export class JrlpService {
         // 并发冲突：重查
         const refound = await this._findRecord(groupId, userId, today)
         if (refound === null) {
-          throw new Error('并发写入后仍未找到记录，请重试', { cause: err })
+          throw new AppError(-1, '并发写入后仍未找到记录，请重试', 409)
         }
         const wifeUser = await this.db.user.findUnique({
           where: { qq: refound.wifeQq },
@@ -176,7 +177,7 @@ export class JrlpService {
 
     const existing = await this._findRecord(groupId, userId, recordDate)
     if (existing !== null) {
-      throw new Error(
+      throw new ValidationError(
         `用户 ${String(userId)} 在群 ${String(groupId)} 于 ${recordDate.toISOString().slice(0, 10)} 已有记录`,
       )
     }

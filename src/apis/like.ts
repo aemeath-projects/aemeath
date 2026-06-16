@@ -7,10 +7,10 @@ import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply 
 import type { ServiceRegistry } from '@/core/lifecycle/index.js'
 import { ok } from '@/core/response.js'
 import type { LikeService } from '@/services/like.js'
+import { LIKE_SOURCE_VALUES } from '@/services/like.js'
 
 function getServiceRegistry(app: FastifyInstance): ServiceRegistry {
-  const state = (app as unknown as { state: { serviceRegistry: ServiceRegistry } }).state
-  return state.serviceRegistry
+  return app.state.serviceRegistry
 }
 
 async function getLikeSvc(app: FastifyInstance): Promise<LikeService> {
@@ -116,10 +116,9 @@ const likeRoutes: FastifyPluginAsync = async (app) => {
       const page = req.query.page ? parseInt(req.query.page, 10) : 1
       const pageSize = req.query.pageSize ? parseInt(req.query.pageSize, 10) : 20
 
-      const { LikeSource } = await import('#prisma/main')
       const source =
-        sourceStr !== undefined && Object.values(LikeSource).includes(sourceStr as never)
-          ? (sourceStr as (typeof LikeSource)[keyof typeof LikeSource])
+        sourceStr !== undefined && LIKE_SOURCE_VALUES.includes(sourceStr)
+          ? (sourceStr as 'manual' | 'scheduled')
           : undefined
 
       const [items, total] = await svc.listHistory({ qq, source, dateFrom, dateTo, page, pageSize })

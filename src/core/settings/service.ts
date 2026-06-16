@@ -7,6 +7,7 @@ import type { Redis } from 'ioredis'
 import type { SettingNodeSchema } from './schema.js'
 
 import type { MainPrismaClient } from '@/core/db.js'
+import { ValidationError } from '@/core/errors.js'
 
 /* 常量 */
 
@@ -114,7 +115,7 @@ export class SettingsService {
     }
 
     const schema = this.schemaMap.get(key)
-    if (!schema) throw new Error(`[settings] 未知配置项: ${key}`)
+    if (!schema) throw new ValidationError(`[settings] 未知配置项: ${key}`)
 
     const serialized = this._validate(key, value, schema)
     const { type, scopeId } = this._resolveScope(scope)
@@ -164,9 +165,9 @@ export class SettingsService {
   /** 将 enum 标签解析为数值。 */
   resolveEnum(key: string, label: string): number {
     const schema = this.schemaMap.get(key)
-    if (!schema?.enumOptions) throw new Error(`[settings] ${key} 不是 enum 类型`)
+    if (!schema?.enumOptions) throw new ValidationError(`[settings] ${key} 不是 enum 类型`)
     const value = schema.enumOptions[label]
-    if (value === undefined) throw new Error(`[settings] ${key} 无效枚举标签: ${label}`)
+    if (value === undefined) throw new ValidationError(`[settings] ${key} 无效枚举标签: ${label}`)
     return value
   }
 
@@ -226,20 +227,22 @@ export class SettingsService {
   private _validate(key: string, value: unknown, schema: SettingNodeSchema): string {
     switch (schema.type) {
       case 'boolean':
-        if (typeof value !== 'boolean') throw new Error(`[settings] ${key} 必须为 boolean`)
+        if (typeof value !== 'boolean')
+          throw new ValidationError(`[settings] ${key} 必须为 boolean`)
         return String(value)
       case 'number':
         if (typeof value !== 'number' || !Number.isFinite(value))
-          throw new Error(`[settings] ${key} 必须为有限数值`)
+          throw new ValidationError(`[settings] ${key} 必须为有限数值`)
         return String(value)
       case 'string':
         if (typeof value !== 'string' || value.length === 0 || value.length > 512)
-          throw new Error(`[settings] ${key} 必须为 1-512 字符的字符串`)
+          throw new ValidationError(`[settings] ${key} 必须为 1-512 字符的字符串`)
         return value
       case 'enum': {
-        if (typeof value !== 'string') throw new Error(`[settings] ${key} 必须为枚举标签字符串`)
+        if (typeof value !== 'string')
+          throw new ValidationError(`[settings] ${key} 必须为枚举标签字符串`)
         if (!schema.enumOptions?.[value] && schema.enumOptions?.[value] !== 0)
-          throw new Error(`[settings] ${key} 无效枚举值: ${value}`)
+          throw new ValidationError(`[settings] ${key} 无效枚举值: ${value}`)
         return value
       }
     }
@@ -249,6 +252,6 @@ export class SettingsService {
   private _resolveScope(scope: SettingsScope): { type: string; scopeId: bigint } {
     if (scope.group) return { type: 'group', scopeId: scope.group }
     if (scope.user) return { type: 'user', scopeId: scope.user }
-    throw new Error('[settings] scope 必须指定 group 或 user')
+    throw new ValidationError('[settings] scope 必须指定 group 或 user')
   }
 }

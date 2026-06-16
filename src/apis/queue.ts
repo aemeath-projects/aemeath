@@ -26,7 +26,7 @@ function displayTaskName(name: string): string {
 }
 
 function getState(app: FastifyInstance): Record<string, unknown> {
-  return (app as unknown as { state: Record<string, unknown> }).state
+  return app.state
 }
 
 /* BullMQ 队列操作接口（内联类型，避免引入 bullmq 运行时） */
@@ -285,8 +285,8 @@ const queueRoutes: FastifyPluginAsync = async (app) => {
           try {
             const [active, waiting] = await Promise.all([queue.getActive(), queue.getWaiting()])
             total += active.length + waiting.length
-          } catch {
-            // 单个队列失败不影响整体
+          } catch (err) {
+            log.warn({ err }, '获取队列长度失败，跳过该队列')
           }
         }),
       )

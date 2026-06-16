@@ -14,9 +14,7 @@ import { fail } from '@/core/response.js'
  *
  * 注意：/api/bot/info 和 /api/bot/profile GET 请求为公开端点，不需要认证。
  */
-export async function authPlugin(app: FastifyInstance): Promise<void> {
-  const adminToken = process.env.ADMIN_TOKEN
-
+export async function authPlugin(app: FastifyInstance, adminToken: string): Promise<void> {
   if (!adminToken) {
     // 未配置 ADMIN_TOKEN 时跳过认证（开发环境）
     return

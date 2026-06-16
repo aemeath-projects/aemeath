@@ -47,6 +47,7 @@ export class ArchiveService {
     private readonly mainDb: MainPrismaClient,
     private readonly exporterSettings: ArchiveExporterSettings,
     private readonly s3: ArchiveS3,
+    private readonly tmpDir: string,
   ) {
     this.exporter = new ArchiveExporter(chatDb, exporterSettings)
   }
@@ -239,8 +240,7 @@ export class ArchiveService {
     try {
       await this._updateArchiveStatus(archiveId, 'exporting')
 
-      const tmpDir = process.env.TMPDIR ?? '/tmp'
-      const tmpPath = `${tmpDir}/${partitionName}_${Date.now().toString()}.parquet`
+      const tmpPath = `${this.tmpDir}/${partitionName}_${Date.now().toString()}.parquet`
 
       const [totalRows, originalBytes, compressedBytes, sha256Hex] =
         await this.exporter.exportPartition(partitionName, tmpPath)

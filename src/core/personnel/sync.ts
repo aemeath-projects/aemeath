@@ -6,6 +6,7 @@
  */
 
 import type { FriendApi, GroupApi } from '@aemeath-projects/napcat'
+import { logger, type Logger } from '@logger'
 
 import type { PersonnelService } from './index.js'
 
@@ -46,6 +47,7 @@ export class SyncCoordinator {
   private readonly _intervalMs: number
   private readonly _initialDelayMs: number
   private readonly _apiDelayMs: number
+  private readonly _log: Logger = logger.child({ name: 'SyncCoordinator' })
 
   constructor(
     private readonly friendApi: FriendApi,
@@ -138,6 +140,9 @@ export class SyncCoordinator {
       const groupsData = groupsResult.ok ? (groupsResult.data as unknown[]) : null
 
       // 3. 逐群获取成员列表
+      // 注意：此处有意使用串行循环而非 Promise.all 并发，原因是 NapCat/QQ API
+      // 对频繁请求有速率限制，apiDelayMs（默认 500ms）在每次请求间插入等待时间，
+      // 确保不因并发请求触发限流或封禁。
       const membersData: Record<number, unknown[]> = {}
 
       if (Array.isArray(groupsData)) {
@@ -176,8 +181,8 @@ export class SyncCoordinator {
           ? (membersData as Parameters<PersonnelService['persistSyncData']>[2])
           : null,
       )
-    } catch {
-      // 同步失败，由调用方负责日志记录
+    } catch (err) {
+      this._log.error({ err }, '用户数据全量同步失败')
     }
   }
 }

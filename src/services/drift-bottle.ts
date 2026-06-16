@@ -7,6 +7,7 @@ import { Prisma } from '#prisma/main'
 
 import type { MainPrismaClient } from '@/core/db.js'
 import { isPrismaKnownError } from '@/core/db.js'
+import { NotFoundError, ValidationError } from '@/core/errors.js'
 import { Service, Inject, Provide, Startup } from '@/core/lifecycle/decorators/index.js'
 
 export type { DriftBottleItem, DriftBottlePool, DriftBottleGroupPool }
@@ -189,7 +190,7 @@ export class DriftBottleService {
       return await this.db.driftBottlePool.create({ data: { id: nextId, name } })
     } catch (err) {
       if (isPrismaKnownError(err) && err.code === 'P2002') {
-        throw new Error(`漂流瓶池名称已存在：${name}`, { cause: err })
+        throw new ValidationError(`漂流瓶池名称已存在：${name}`)
       }
       throw err
     }
@@ -203,21 +204,21 @@ export class DriftBottleService {
    */
   async deletePool(poolId: number): Promise<void> {
     if (poolId === DRIFT_BOTTLE_DEFAULT_POOL_ID) {
-      throw new Error('默认漂流瓶池不可删除')
+      throw new ValidationError('默认漂流瓶池不可删除')
     }
 
     const pool = await this.db.driftBottlePool.findUnique({
       where: { id: poolId },
     })
     if (pool === null) {
-      throw new Error(`漂流瓶池不存在：${String(poolId)}`)
+      throw new NotFoundError(`漂流瓶池不存在：${String(poolId)}`)
     }
 
     try {
       await this.db.driftBottlePool.delete({ where: { id: poolId } })
     } catch (err) {
       if (isPrismaKnownError(err) && err.code === 'P2003') {
-        throw new Error('该池下仍有群归属，无法删除', { cause: err })
+        throw new ValidationError('该池下仍有群归属，无法删除')
       }
       throw err
     }
@@ -247,7 +248,7 @@ export class DriftBottleService {
         where: { id: poolId },
       })
       if (pool === null) {
-        throw new Error(`漂流瓶池不存在：${String(poolId)}`)
+        throw new NotFoundError(`漂流瓶池不存在：${String(poolId)}`)
       }
     }
 

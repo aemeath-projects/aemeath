@@ -5,6 +5,7 @@
 import { getLogger } from '@logger'
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
+import { BotProfileUpdateRequestSchema } from '@/apis/schemas/bot.js'
 import { ok, fail } from '@/core/response.js'
 
 const log = getLogger('bot')
@@ -12,7 +13,7 @@ const log = getLogger('bot')
 /* 内部工具 */
 
 function getState(app: FastifyInstance): Record<string, unknown> {
-  return (app as unknown as { state: Record<string, unknown> }).state
+  return app.state
 }
 
 /* 请求类型 */
@@ -109,6 +110,9 @@ const botRoutes: FastifyPluginAsync = async (app) => {
   /** PUT /api/bot/profile — 修改 Bot 昵称和个性签名。 */
   app.put(
     '/api/bot/profile',
+    {
+      schema: { body: BotProfileUpdateRequestSchema },
+    },
     async (req: FastifyRequest<{ Body: BotProfileUpdateBody }>, reply: FastifyReply) => {
       const state = getState(app)
       const connMgr = state.connectionManager as { connected: boolean } | undefined

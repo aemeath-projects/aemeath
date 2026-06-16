@@ -9,8 +9,7 @@ import { ok } from '@/core/response.js'
 import type { CheckinService, LeaderEntry, DayCount } from '@/services/checkin.js'
 
 function getServiceRegistry(app: FastifyInstance): ServiceRegistry {
-  const state = (app as unknown as { state: { serviceRegistry: ServiceRegistry } }).state
-  return state.serviceRegistry
+  return app.state.serviceRegistry
 }
 
 async function getCheckinSvc(app: FastifyInstance): Promise<CheckinService> {

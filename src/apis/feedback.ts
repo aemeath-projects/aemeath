@@ -6,11 +6,10 @@ import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply 
 
 import type { ServiceRegistry } from '@/core/lifecycle/index.js'
 import { ok, fail } from '@/core/response.js'
-import type { FeedbackService } from '@/services/feedback.js'
+import type { Feedback, FeedbackService } from '@/services/feedback.js'
 
 function getServiceRegistry(app: FastifyInstance): ServiceRegistry {
-  const state = (app as unknown as { state: { serviceRegistry: ServiceRegistry } }).state
-  return state.serviceRegistry
+  return app.state.serviceRegistry
 }
 
 async function getFeedbackSvc(app: FastifyInstance): Promise<FeedbackService> {
@@ -29,14 +28,12 @@ function ceilDiv(a: number, b: number): number {
   return Math.ceil(a / b)
 }
 
-function feedbackToDict(f: Record<string, unknown>): Record<string, unknown> {
+function feedbackToDict(f: Feedback): Record<string, unknown> {
   return {
     id: f.id,
     userId: String(f.userId),
 
-    groupId:
-      // eslint-disable-next-line @typescript-eslint/no-base-to-string
-      f.groupId != null ? String(f.groupId) : null,
+    groupId: f.groupId != null ? String(f.groupId) : null,
     content: f.content,
     status: f.status,
     feedbackType: f.feedbackType ?? null,
@@ -44,8 +41,7 @@ function feedbackToDict(f: Record<string, unknown>): Record<string, unknown> {
     adminReply: f.adminReply ?? null,
     createdAt: f.createdAt instanceof Date ? f.createdAt.toISOString() : f.createdAt,
     updatedAt: f.updatedAt instanceof Date ? f.updatedAt.toISOString() : f.updatedAt,
-    processedAt:
-      f.processedAt instanceof Date ? f.processedAt.toISOString() : (f.processedAt ?? null),
+    processedAt: f.processedAt instanceof Date ? f.processedAt.toISOString() : f.processedAt,
   }
 }
 
@@ -75,9 +71,7 @@ const feedbackRoutes: FastifyPluginAsync = async (app) => {
       const page = req.query.page ? parseInt(req.query.page, 10) : 1
       const pageSize = req.query.pageSize ? parseInt(req.query.pageSize, 10) : 20
 
-      // listFeedbacks 返回 PageResult<Feedback>，格式为 { items, total }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call
-      const result = (await (svc.listFeedbacks as any)({
+      const [items, total] = await svc.listFeedbacks({
         page,
         pageSize,
         status: req.query.status,
@@ -85,14 +79,13 @@ const feedbackRoutes: FastifyPluginAsync = async (app) => {
         userId: req.query.userId ? BigInt(req.query.userId) : undefined,
         source: req.query.source,
         search: req.query.search,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      })) as { items: any[]; total: number }
+      })
 
-      const pages = ceilDiv(result.total, pageSize)
+      const pages = ceilDiv(total, pageSize)
       await reply.send(
         ok({
-          items: result.items.map((f) => feedbackToDict(f as Record<string, unknown>)),
-          total: result.total,
+          items: items.map((f) => feedbackToDict(f)),
+          total,
           page,
           pageSize,
           pages,
@@ -113,7 +106,7 @@ const feedbackRoutes: FastifyPluginAsync = async (app) => {
         return
       }
 
-      await reply.send(ok(feedbackToDict(feedback as unknown as Record<string, unknown>)))
+      await reply.send(ok(feedbackToDict(feedback)))
     },
   )
 
@@ -130,12 +123,11 @@ const feedbackRoutes: FastifyPluginAsync = async (app) => {
       const svc = await getFeedbackSvc(app)
       const { status, adminReply } = req.body
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call
-      const feedback = (await (svc.updateStatus as any)(
+      const feedback = await svc.updateStatus(
         req.params.feedbackId,
         status,
         adminReply ?? undefined,
-      )) as Record<string, unknown> | null
+      )
       if (feedback === null) {
         await reply.status(404).send(fail('Feedback not found'))
         return

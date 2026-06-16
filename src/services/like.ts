@@ -13,6 +13,9 @@ import { Service, Inject, Provide, Startup } from '@/core/lifecycle/decorators/i
 
 export type { LikeTask, LikeHistory, LikeSource }
 
+/** 点赞来源枚举有效值集合。 */
+export const LIKE_SOURCE_VALUES: readonly string[] = ['manual', 'scheduled']
+
 /* 常量 */
 
 /** 每次点赞的默认次数。 */

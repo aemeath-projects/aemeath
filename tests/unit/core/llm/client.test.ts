@@ -1,8 +1,8 @@
 /* eslint-disable import-x/order */
-// vitest の vi.mock() はホイスティングのため、通常のインポート順序ルールの例外として扱う
+// vitest 的 vi.mock() 由于提升机制，作为常规导入顺序规则的例外处理
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-// vi.mock() は vitest によりファイル先頭にホイスティングされる
+// vi.mock() 会被 vitest 提升到文件顶部
 vi.mock('@langchain/openai', () => {
   const ChatOpenAI = vi.fn().mockImplementation(function (
     this: { _opts: unknown; invoke: unknown; stream: unknown },

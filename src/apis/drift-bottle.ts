@@ -4,13 +4,13 @@
 
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
+import { CreatePoolRequestSchema, GroupAssignRequestSchema } from '@/apis/schemas/drift-bottle.js'
 import type { ServiceRegistry } from '@/core/lifecycle/index.js'
 import { ok, fail } from '@/core/response.js'
 import type { DriftBottleService, PoolInfo } from '@/services/drift-bottle.js'
 
 function getServiceRegistry(app: FastifyInstance): ServiceRegistry {
-  const state = (app as unknown as { state: { serviceRegistry: ServiceRegistry } }).state
-  return state.serviceRegistry
+  return app.state.serviceRegistry
 }
 
 async function getDriftSvc(app: FastifyInstance): Promise<DriftBottleService> {
@@ -43,6 +43,9 @@ const driftBottleRoutes: FastifyPluginAsync = async (app) => {
   /** POST /api/drift-bottle-pools — 创建新漂流瓶池。 */
   app.post(
     '/api/drift-bottle-pools',
+    {
+      schema: { body: CreatePoolRequestSchema },
+    },
     async (req: FastifyRequest<{ Body: { name: string } }>, reply: FastifyReply) => {
       const svc = await getDriftSvc(app)
 
@@ -95,6 +98,9 @@ const driftBottleRoutes: FastifyPluginAsync = async (app) => {
   /** POST /api/drift-bottle-pools/group-assign — 将群分配到指定池；poolId=0 表示移回默认池。 */
   app.post(
     '/api/drift-bottle-pools/group-assign',
+    {
+      schema: { body: GroupAssignRequestSchema },
+    },
     async (
       req: FastifyRequest<{ Body: { groupId: number; poolId: number } }>,
       reply: FastifyReply,

@@ -9,23 +9,28 @@ import type { SyncCoordinator } from './sync.js'
 
 import type { PersonnelService } from './index.js'
 
-import { NotFoundError } from '@/core/errors.js'
+import { NotFoundError, ValidationError } from '@/core/errors.js'
 import { ok, fail } from '@/core/response.js'
+
+/** 安全解析 BigInt 路径/查询参数，格式无效时抛出 ValidationError。 */
+function parseBigIntParam(value: string, name: string): bigint {
+  if (!/^\d+$/.test(value)) {
+    throw new ValidationError(`参数 ${name} 必须为非负整数，收到：${value}`)
+  }
+  return BigInt(value)
+}
 
 /** 从 Fastify 请求中获取服务实例（服务挂载在 app.state 上）。 */
 function getPersonnelService(app: FastifyInstance): PersonnelService {
-  const state = (app as unknown as { state: Record<string, unknown> }).state
-  return state.personnelService as PersonnelService
+  return app.state.personnelService as PersonnelService
 }
 
 function getPersonnelQueryService(app: FastifyInstance): PersonnelQueryService {
-  const state = (app as unknown as { state: Record<string, unknown> }).state
-  return state.personnelQueryService as PersonnelQueryService
+  return app.state.personnelQueryService as PersonnelQueryService
 }
 
 function getSyncCoordinator(app: FastifyInstance): SyncCoordinator {
-  const state = (app as unknown as { state: Record<string, unknown> }).state
-  return state.syncCoordinator as SyncCoordinator
+  return app.state.syncCoordinator as SyncCoordinator
 }
 
 /**
@@ -52,13 +57,14 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
       reply: FastifyReply,
     ) => {
       const svc = getPersonnelQueryService(app)
-      const page = Number(req.query.page ?? 1)
-      const pageSize = Number(req.query.page_size ?? 20)
+      const page = Math.max(1, Number(req.query.page ?? 1))
+      const pageSize = Math.min(100, Math.max(1, Number(req.query.page_size ?? 20)))
+      const qq = req.query.qq !== undefined ? parseBigIntParam(req.query.qq, 'qq') : undefined
       const result = await svc.listUsers({
         page,
         pageSize,
         relation: req.query.relation,
-        qq: req.query.qq ? BigInt(req.query.qq) : undefined,
+        qq,
         nickname: req.query.nickname,
       })
       await reply.send(ok(result))
@@ -70,7 +76,7 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
     '/api/personnel/users/:userId',
     async (req: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
       const svc = getPersonnelQueryService(app)
-      const user = await svc.getUser(BigInt(req.params.userId))
+      const user = await svc.getUser(parseBigIntParam(req.params.userId, 'userId'))
       if (!user) {
         throw new NotFoundError('User not found')
       }
@@ -83,7 +89,7 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
     '/api/personnel/users/:userId/groups',
     async (req: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
       const svc = getPersonnelQueryService(app)
-      const groups = await svc.getUserGroups(BigInt(req.params.userId))
+      const groups = await svc.getUserGroups(parseBigIntParam(req.params.userId, 'userId'))
       await reply.send(ok(groups))
     },
   )
@@ -108,8 +114,8 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
       const isActive =
         req.query.is_active === 'true' ? true : req.query.is_active === 'false' ? false : undefined
       const result = await svc.listGroups({
-        page: Number(req.query.page ?? 1),
-        pageSize: Number(req.query.page_size ?? 20),
+        page: Math.max(1, Number(req.query.page ?? 1)),
+        pageSize: Math.min(100, Math.max(1, Number(req.query.page_size ?? 20))),
         groupName: req.query.group_name,
         isActive,
       })
@@ -122,7 +128,7 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
     '/api/personnel/groups/:groupId',
     async (req: FastifyRequest<{ Params: { groupId: string } }>, reply: FastifyReply) => {
       const svc = getPersonnelQueryService(app)
-      const group = await svc.getGroup(BigInt(req.params.groupId))
+      const group = await svc.getGroup(parseBigIntParam(req.params.groupId, 'groupId'))
       if (!group) {
         throw new NotFoundError('Group not found')
       }
@@ -147,12 +153,12 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
       reply: FastifyReply,
     ) => {
       const svc = getPersonnelQueryService(app)
-      const result = await svc.listGroupMembers(BigInt(req.params.groupId), {
-        page: Number(req.query.page ?? 1),
-        pageSize: Number(req.query.page_size ?? 20),
+      const result = await svc.listGroupMembers(parseBigIntParam(req.params.groupId, 'groupId'), {
+        page: Math.max(1, Number(req.query.page ?? 1)),
+        pageSize: Math.min(100, Math.max(1, Number(req.query.page_size ?? 20))),
         role: req.query.role,
         nickname: req.query.nickname,
-        qq: req.query.qq ? BigInt(req.query.qq) : undefined,
+        qq: req.query.qq !== undefined ? parseBigIntParam(req.query.qq, 'qq') : undefined,
       })
       await reply.send(ok(result))
     },
@@ -172,7 +178,7 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
     '/api/personnel/admins/:userId',
     async (req: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
       const svc = getPersonnelService(app)
-      const success = await svc.setAdmin(BigInt(req.params.userId))
+      const success = await svc.setAdmin(parseBigIntParam(req.params.userId, 'userId'))
       if (!success) {
         await reply.status(404).send(fail('User not found'))
         return
@@ -186,7 +192,7 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
     '/api/personnel/admins/:userId',
     async (req: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
       const svc = getPersonnelService(app)
-      const success = await svc.removeAdmin(BigInt(req.params.userId))
+      const success = await svc.removeAdmin(parseBigIntParam(req.params.userId, 'userId'))
       if (!success) {
         await reply.status(404).send(fail('User not found or not an admin'))
         return

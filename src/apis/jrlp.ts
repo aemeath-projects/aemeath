@@ -7,13 +7,12 @@ import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply 
 
 import type { ServiceRegistry } from '@/core/lifecycle/index.js'
 import { ok, fail } from '@/core/response.js'
-import type { JrlpService } from '@/services/jrlp.js'
+import type { JrlpService, WifeRecord } from '@/services/jrlp.js'
 
 const log = getLogger('jrlp')
 
 function getServiceRegistry(app: FastifyInstance): ServiceRegistry {
-  const state = (app as unknown as { state: { serviceRegistry: ServiceRegistry } }).state
-  return state.serviceRegistry
+  return app.state.serviceRegistry
 }
 
 async function getJrlpSvc(app: FastifyInstance): Promise<JrlpService> {
@@ -27,14 +26,14 @@ function ceilDiv(a: number, b: number): number {
   return Math.ceil(a / b)
 }
 
-function recordToDict(r: Record<string, unknown>): Record<string, unknown> {
+function recordToDict(r: WifeRecord): Record<string, unknown> {
   return {
     id: r.id,
     groupId: String(r.groupId),
     userId: String(r.userId),
     wifeQq: String(r.wifeQq),
     date: r.date instanceof Date ? r.date.toISOString().slice(0, 10) : r.date,
-    drawnAt: r.drawnAt instanceof Date ? r.drawnAt.toISOString() : (r.drawnAt ?? null),
+    drawnAt: r.drawnAt instanceof Date ? r.drawnAt.toISOString() : r.drawnAt,
   }
 }
 
@@ -76,7 +75,7 @@ const jrlpRoutes: FastifyPluginAsync = async (app) => {
 
       await reply.send(
         ok({
-          items: records.map((r) => recordToDict(r as unknown as Record<string, unknown>)),
+          items: records.map((r) => recordToDict(r)),
           total,
           page,
           pageSize,
@@ -104,7 +103,7 @@ const jrlpRoutes: FastifyPluginAsync = async (app) => {
           wifeQq: req.body.wifeQq,
           recordDate: new Date(req.body.date),
         })
-        await reply.send(ok(recordToDict(record as unknown as Record<string, unknown>), '设置成功'))
+        await reply.send(ok(recordToDict(record), '设置成功'))
       } catch (err) {
         log.warn({ err }, '创建老婆预设失败')
         await reply.send(fail('设置失败，请检查参数或记录是否已存在'))
@@ -123,7 +122,7 @@ const jrlpRoutes: FastifyPluginAsync = async (app) => {
         await reply.status(404).send(fail('记录不存在'))
         return
       }
-      await reply.send(ok(recordToDict(record as unknown as Record<string, unknown>), '修改成功'))
+      await reply.send(ok(recordToDict(record), '修改成功'))
     },
   )
 

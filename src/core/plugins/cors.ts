@@ -11,9 +11,8 @@ import type { FastifyInstance } from 'fastify'
  * 允许的来源从环境变量 CORS_ORIGINS 读取（逗号分隔），
  * 默认为 http://localhost:5173（Vite 开发服务器）。
  */
-export async function corsPlugin(app: FastifyInstance): Promise<void> {
-  const originsEnv = process.env.CORS_ORIGINS ?? 'http://localhost:5173'
-  const origins = originsEnv.split(',').map((o) => o.trim())
+export async function corsPlugin(app: FastifyInstance, corsOrigins: string): Promise<void> {
+  const origins = corsOrigins.split(',').map((o) => o.trim())
 
   await app.register(cors, {
     origin: origins,

@@ -10,13 +10,17 @@ import { ok, fail } from '@/core/response.js'
 
 const log = getLogger('chat')
 
+/** 触发归档任务的队列接口。 */
+interface ArchiveQueue {
+  add(name: string, data: unknown): Promise<{ id?: string }>
+}
+
 function getServiceRegistry(app: FastifyInstance): ServiceRegistry {
-  const state = (app as unknown as { state: { serviceRegistry: ServiceRegistry } }).state
-  return state.serviceRegistry
+  return app.state.serviceRegistry
 }
 
 function getAppState(app: FastifyInstance): Record<string, unknown> {
-  return (app as unknown as { state: Record<string, unknown> }).state
+  return app.state
 }
 
 /**
@@ -139,9 +143,7 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
     '/api/chat/archives/trigger',
     async (req: FastifyRequest<{ Body?: { partitionName?: string } }>, reply: FastifyReply) => {
       const state = getAppState(app)
-      const queues = state.queues as
-        | Record<string, { add(name: string, data: unknown): Promise<{ id?: string }> }>
-        | undefined
+      const queues = state.queues as Record<string, ArchiveQueue> | undefined
 
       const archiveQueue = queues?.['chat-archive']
       if (archiveQueue === undefined) {

@@ -353,18 +353,17 @@ export class CheckinService {
 
     const where: Prisma.CheckinRecordWhereInput = gid != null ? { groupId: gid } : {}
 
-    const [totalCheckins, todayCheckins, activeUsers] = await Promise.all([
+    const [totalCheckins, todayCheckins, activeUserRows] = await Promise.all([
       this.db.checkinRecord.count({ where }),
       this.db.checkinRecord.count({
         where: { ...where, checkinDate: today },
       }),
-      this.db.checkinRecord
-        .groupBy({
-          by: ['userId'],
-          where: { ...where, checkinDate: { gte: cutoff } },
-        })
-        .then((rows) => rows.length),
+      this.db.checkinRecord.groupBy({
+        by: ['userId'],
+        where: { ...where, checkinDate: { gte: cutoff } },
+      }),
     ])
+    const activeUsers = activeUserRows.length
 
     return { totalCheckins, todayCheckins, activeUsers }
   }

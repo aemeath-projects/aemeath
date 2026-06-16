@@ -48,9 +48,20 @@ import { corsPlugin } from './plugins/cors.js'
 import { swaggerPlugin } from './plugins/swagger.js'
 import { createRedis, checkRedisReachable } from './redis/factory.js'
 import { RedisStore } from './redis/store.js'
+import type { SessionManager } from './session/manager.js'
 import { createBullMQConnection, getTaskQueue } from './tasks/broker.js'
 import { TaskExecutor } from './tasks/executor.js'
 import { setTaskDefinitions } from './tasks/scheduler.js'
+/**
+ * 侧效应导入（Side-effect imports）
+ *
+ * EchoLoader 仅扫描 aemeath.config.ts 中声明的业务目录（src/handlers、src/services 等），
+ * 不扫描 src/core/ 框架内部目录。以下导入的唯一作用是触发各模块中
+ * @Service/@Startup 装饰器的执行，将 Bootstrap 类注册到全局注册表，
+ * 之后 LifecycleOrchestrator 才能感知并排序启动这些服务。
+ *
+ * 新增框架级服务时：若其 Bootstrap 类位于 src/core/ 下，须在此处添加对应的侧效应导入。
+ */
 // 触发 PersonnelService 的 Startup 注册（EchoLoader 不扫描 src/core/，需手动引入）
 import '@/core/personnel/index.js'
 // 触发 OSS 模块的 Startup 注册
@@ -59,6 +70,8 @@ import '@/core/oss/bootstrap.js'
 import '@/core/chat/media.js'
 // 触发 BotClientBootstrap 的 Startup 注册
 import '@/core/bot-client.js'
+// 触发 SessionManagerBootstrap 的 Startup 注册
+import '@/core/session/bootstrap.js'
 
 /* 模块级生命周期编排器（startup 创建，shutdown 复用同一实例） */
 let _orchestrator: LifecycleOrchestrator | null = null
@@ -195,22 +208,20 @@ async function _startup(
   const echoConfig = await _loadEchoes(composite)
 
   // 6. 构建 Dispatcher
-  const dispatcher = new EventDispatcher(composite, [
-    new LoggingInterceptor(),
-    new SessionInterceptor(),
-  ])
+  const sessionInterceptor = new SessionInterceptor()
+  const dispatcher = new EventDispatcher(composite, [new LoggingInterceptor(), sessionInterceptor])
 
-  // 8.5. 预检所有 Redis 连接可达性（连接不可用时立即抛出，避免后续操作无声挂起）
+  // 7. 预检所有 Redis 连接可达性（连接不可用时立即抛出，避免后续操作无声挂起）
   await checkRedisReachable(config.CACHE_REDIS_URL, 'Cache Redis')
   await checkRedisReachable(config.PERSISTENT_REDIS_URL, 'Persistent Redis')
   await checkRedisReachable(config.BULLMQ_REDIS_URL, 'BullMQ Redis')
 
-  // 9. 创建 BullMQ 单队列
+  // 8. 创建 BullMQ 单队列
   const bullConn = createBullMQConnection(config.BULLMQ_REDIS_URL)
   const queue = getTaskQueue(bullConn)
   const queueName = echoConfig.app?.queueName ?? 'aemeath-tasks'
 
-  // 10. 生命周期编排器：按拓扑顺序启动所有业务模块
+  // 9. 生命周期编排器：按拓扑顺序启动所有业务模块
   _orchestrator = new LifecycleOrchestrator()
   const infraServices: Record<string, unknown> = {
     db: mainDb,
@@ -225,16 +236,22 @@ async function _startup(
 
   const allServices = await _orchestrator.startup(infraServices)
 
-  // 10.1. 实例化所有新格式 handler（注入依赖）
+  // 10. 实例化所有新格式 handler（注入依赖）
   handlerRegistry.instantiateAll(allServices)
 
-  // 10.5. 注入 Settings 权限检查器到 Dispatcher（延迟绑定）
+  // 11. 注入 Settings 权限检查器到 Dispatcher（延迟绑定）
   const settingsChecker = allServices.settings_checker as FeatureChecker | undefined
   if (settingsChecker) {
     dispatcher.setFeatureChecker(settingsChecker)
   }
 
-  // 10.6. 订阅 NapCat 事件，将事件分发给 Dispatcher
+  // 12. 注入 SessionManager 到会话拦截器（延迟绑定）
+  const sessionManager = allServices.session_manager as SessionManager | undefined
+  if (sessionManager) {
+    sessionInterceptor.setSessionManager(sessionManager)
+  }
+
+  // 12. 订阅 NapCat 事件，将事件分发给 Dispatcher
   const botClient = allServices.bot_client as NapCatClient
   const apis: ContextApis = {
     msgApi: allServices.msg_api as MessageApi,
@@ -242,6 +259,7 @@ async function _startup(
     groupApi: allServices.group_api as GroupApi,
   }
   // 消息事件
+  // 错误已由 EventDispatcher 内部捕获并记录，无需 await
   botClient.on('message', (event: PrivateMessageEvent | GroupMessageEvent) => {
     void dispatcher.dispatch(event, apis)
   })
@@ -257,14 +275,14 @@ async function _startup(
     void dispatcher.dispatch(event, apis)
   })
 
-  // 11. 构建 ServiceRegistry（API 路由通过 app.state.serviceRegistry 访问业务服务）
+  // 13. 构建 ServiceRegistry（API 路由通过 app.state.serviceRegistry 访问业务服务）
   const serviceRegistry = new ServiceRegistry()
   for (const [key, value] of Object.entries(allServices)) {
     serviceRegistry.register(key, value)
   }
   serviceRegistry.freeze()
 
-  // 13. 启动 TaskExecutor（监听 job completed 事件）
+  // 14. 启动 TaskExecutor（监听 job completed 事件）
   const taskExecutor = new TaskExecutor(
     allServices.msg_api as MessageApi,
     allServices.friend_api as FriendApi,
@@ -349,7 +367,7 @@ async function bootstrap(): Promise<void> {
   /* 注册插件 */
 
   // CORS
-  await corsPlugin(app)
+  await corsPlugin(app, config.CORS_ORIGINS)
 
   // Swagger 文档（仅非生产环境）
   if (!config.isProduction) {
@@ -357,7 +375,7 @@ async function bootstrap(): Promise<void> {
   }
 
   // Bearer token 认证
-  await authPlugin(app)
+  await authPlugin(app, config.ADMIN_TOKEN)
 
   /* 注册 API 路由 */
   await _registerEchoRoutes(app)

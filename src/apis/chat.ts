@@ -15,8 +15,13 @@ import {
   ArchiveListQuerySchema,
   ArchiveQuerySchema,
   ArchiveTriggerBodySchema,
+  MessageListDataSchema,
+  MessageContextDataSchema,
+  PaginatedArchivesDataSchema,
+  ArchiveQueryDataSchema,
+  ArchiveTriggerDataSchema,
 } from '@/apis/schemas/index.js'
-import { ok, fail } from '@/core/response.js'
+import { ok, fail, OkResponse, FailResponse } from '@/core/schemas/index.js'
 
 const log = getLogger('chat')
 
@@ -35,7 +40,11 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
   app.get(
     '/api/chat/messages/group/:groupId',
     {
-      schema: { params: GroupIdParamSchema, querystring: GroupMessageQuerySchema },
+      schema: {
+        params: GroupIdParamSchema,
+        querystring: GroupMessageQuerySchema,
+        response: { 200: OkResponse(MessageListDataSchema) },
+      },
     },
     async (
       req: FastifyRequest<{
@@ -74,7 +83,11 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
   app.get(
     '/api/chat/messages/private/:userId',
     {
-      schema: { params: UserIdParamSchema, querystring: PrivateMessageQuerySchema },
+      schema: {
+        params: UserIdParamSchema,
+        querystring: PrivateMessageQuerySchema,
+        response: { 200: OkResponse(MessageListDataSchema) },
+      },
     },
     async (
       req: FastifyRequest<{
@@ -105,6 +118,7 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
       schema: {
         params: MessageIdParamSchema,
         querystring: MessageContextQuerySchema,
+        response: { 200: OkResponse(MessageContextDataSchema) },
       },
     },
     async (
@@ -133,7 +147,10 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
   app.get(
     '/api/chat/archives',
     {
-      schema: { querystring: ArchiveListQuerySchema },
+      schema: {
+        querystring: ArchiveListQuerySchema,
+        response: { 200: OkResponse(PaginatedArchivesDataSchema) },
+      },
     },
     async (
       req: FastifyRequest<{ Querystring: { page?: string; pageSize?: string } }>,
@@ -155,7 +172,14 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
   app.post(
     '/api/chat/archives/trigger',
     {
-      schema: { body: ArchiveTriggerBodySchema },
+      schema: {
+        body: ArchiveTriggerBodySchema,
+        response: {
+          200: OkResponse(ArchiveTriggerDataSchema),
+          500: FailResponse(),
+          503: FailResponse(),
+        },
+      },
     },
     async (req: FastifyRequest<{ Body?: { partitionName?: string } }>, reply: FastifyReply) => {
       const queues = app.services.get('queues') as Record<string, ArchiveQueue> | undefined
@@ -181,7 +205,10 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
   app.get(
     '/api/chat/archives/query',
     {
-      schema: { querystring: ArchiveQuerySchema },
+      schema: {
+        querystring: ArchiveQuerySchema,
+        response: { 200: OkResponse(ArchiveQueryDataSchema), 400: FailResponse() },
+      },
     },
     async (
       req: FastifyRequest<{

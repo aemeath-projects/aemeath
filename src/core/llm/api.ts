@@ -2,8 +2,13 @@
  * LLM REST API 路由 —— Fastify 插件，挂载于 /api/llm。
  */
 
+import { Type } from '@sinclair/typebox'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 
+import { LLMService } from './index.js'
+
+import { NotFoundError } from '@/core/errors.js'
+import { ok, fail, OkResponse, FailResponse } from '@/core/schemas/index.js'
 import {
   CreateModelSchema,
   CreateProviderSchema,
@@ -14,16 +19,13 @@ import {
   ModelListQuerySchema,
   ProviderListDataSchema,
   ModelListDataSchema,
+  LlmProviderSchema,
+  LlmModelSchema,
   type CreateModelData,
   type CreateProviderData,
   type UpdateModelData,
   type UpdateProviderData,
-} from './schemas.js'
-
-import { LLMService } from './index.js'
-
-import { NotFoundError } from '@/core/errors.js'
-import { ok, fail, OkResponse } from '@/core/response.js'
+} from '@/core/schemas/llm.js'
 
 /* 内部工具 */
 
@@ -55,7 +57,15 @@ export async function llmRoutes(fastify: FastifyInstance): Promise<void> {
   /** GET /providers — 列出所有提供商 */
   fastify.get(
     '/providers',
-    { schema: { response: { 200: OkResponse(ProviderListDataSchema) } } },
+    {
+      schema: {
+        response: {
+          200: OkResponse(ProviderListDataSchema),
+          404: FailResponse(),
+          500: FailResponse(),
+        },
+      },
+    },
     async (request, reply) => {
       try {
         const providers = await getLlmService(request).listProviders()
@@ -69,7 +79,12 @@ export async function llmRoutes(fastify: FastifyInstance): Promise<void> {
   /** GET /providers/:id — 获取单个提供商详情 */
   fastify.get<{ Params: { id: string } }>(
     '/providers/:id',
-    { schema: { params: ProviderIdParamSchema } },
+    {
+      schema: {
+        params: ProviderIdParamSchema,
+        response: { 200: OkResponse(LlmProviderSchema), 404: FailResponse(), 500: FailResponse() },
+      },
+    },
     async (request, reply) => {
       try {
         const provider = await getLlmService(request).getProvider(request.params.id)
@@ -81,21 +96,36 @@ export async function llmRoutes(fastify: FastifyInstance): Promise<void> {
   )
 
   /** POST /providers — 创建提供商 */
-  fastify.post('/providers', { schema: { body: CreateProviderSchema } }, async (request, reply) => {
-    try {
-      const provider = await getLlmService(request).createProvider(
-        request.body as CreateProviderData,
-      )
-      await reply.status(201).send(ok(provider))
-    } catch (err) {
-      await handleError(reply, err)
-    }
-  })
+  fastify.post(
+    '/providers',
+    {
+      schema: {
+        body: CreateProviderSchema,
+        response: { 201: OkResponse(LlmProviderSchema), 404: FailResponse(), 500: FailResponse() },
+      },
+    },
+    async (request, reply) => {
+      try {
+        const provider = await getLlmService(request).createProvider(
+          request.body as CreateProviderData,
+        )
+        await reply.status(201).send(ok(provider))
+      } catch (err) {
+        await handleError(reply, err)
+      }
+    },
+  )
 
   /** PUT /providers/:id — 更新提供商 */
   fastify.put<{ Params: { id: string } }>(
     '/providers/:id',
-    { schema: { params: ProviderIdParamSchema, body: UpdateProviderSchema } },
+    {
+      schema: {
+        params: ProviderIdParamSchema,
+        body: UpdateProviderSchema,
+        response: { 200: OkResponse(LlmProviderSchema), 404: FailResponse(), 500: FailResponse() },
+      },
+    },
     async (request, reply) => {
       try {
         const provider = await getLlmService(request).updateProvider(
@@ -112,7 +142,12 @@ export async function llmRoutes(fastify: FastifyInstance): Promise<void> {
   /** DELETE /providers/:id — 删除提供商 */
   fastify.delete<{ Params: { id: string } }>(
     '/providers/:id',
-    { schema: { params: ProviderIdParamSchema } },
+    {
+      schema: {
+        params: ProviderIdParamSchema,
+        response: { 200: OkResponse(Type.Null()), 404: FailResponse(), 500: FailResponse() },
+      },
+    },
     async (request, reply) => {
       try {
         await getLlmService(request).deleteProvider(request.params.id)
@@ -133,7 +168,11 @@ export async function llmRoutes(fastify: FastifyInstance): Promise<void> {
     {
       schema: {
         querystring: ModelListQuerySchema,
-        response: { 200: OkResponse(ModelListDataSchema) },
+        response: {
+          200: OkResponse(ModelListDataSchema),
+          404: FailResponse(),
+          500: FailResponse(),
+        },
       },
     },
     async (request, reply) => {
@@ -149,7 +188,12 @@ export async function llmRoutes(fastify: FastifyInstance): Promise<void> {
   /** GET /models/:id — 获取单个模型详情 */
   fastify.get<{ Params: { id: string } }>(
     '/models/:id',
-    { schema: { params: ModelIdParamSchema } },
+    {
+      schema: {
+        params: ModelIdParamSchema,
+        response: { 200: OkResponse(LlmModelSchema), 404: FailResponse(), 500: FailResponse() },
+      },
+    },
     async (request, reply) => {
       try {
         const model = await getLlmService(request).getModel(request.params.id)
@@ -161,19 +205,34 @@ export async function llmRoutes(fastify: FastifyInstance): Promise<void> {
   )
 
   /** POST /models — 创建模型 */
-  fastify.post('/models', { schema: { body: CreateModelSchema } }, async (request, reply) => {
-    try {
-      const model = await getLlmService(request).createModel(request.body as CreateModelData)
-      await reply.status(201).send(ok(model))
-    } catch (err) {
-      await handleError(reply, err)
-    }
-  })
+  fastify.post(
+    '/models',
+    {
+      schema: {
+        body: CreateModelSchema,
+        response: { 201: OkResponse(LlmModelSchema), 404: FailResponse(), 500: FailResponse() },
+      },
+    },
+    async (request, reply) => {
+      try {
+        const model = await getLlmService(request).createModel(request.body as CreateModelData)
+        await reply.status(201).send(ok(model))
+      } catch (err) {
+        await handleError(reply, err)
+      }
+    },
+  )
 
   /** PUT /models/:id — 更新模型 */
   fastify.put<{ Params: { id: string } }>(
     '/models/:id',
-    { schema: { params: ModelIdParamSchema, body: UpdateModelSchema } },
+    {
+      schema: {
+        params: ModelIdParamSchema,
+        body: UpdateModelSchema,
+        response: { 200: OkResponse(LlmModelSchema), 404: FailResponse(), 500: FailResponse() },
+      },
+    },
     async (request, reply) => {
       try {
         const model = await getLlmService(request).updateModel(
@@ -190,7 +249,12 @@ export async function llmRoutes(fastify: FastifyInstance): Promise<void> {
   /** DELETE /models/:id — 删除模型 */
   fastify.delete<{ Params: { id: string } }>(
     '/models/:id',
-    { schema: { params: ModelIdParamSchema } },
+    {
+      schema: {
+        params: ModelIdParamSchema,
+        response: { 200: OkResponse(Type.Null()), 404: FailResponse(), 500: FailResponse() },
+      },
+    },
     async (request, reply) => {
       try {
         await getLlmService(request).deleteModel(request.params.id)

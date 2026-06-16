@@ -5,7 +5,6 @@
 import { Type } from '@sinclair/typebox'
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
-import { OkResponse } from '@/apis/schemas/common.js'
 import {
   CreatePoolRequestSchema,
   GroupAssignRequestSchema,
@@ -13,7 +12,7 @@ import {
   PoolListDataSchema,
   PoolGroupsResponseSchema,
 } from '@/apis/schemas/index.js'
-import { ok, fail } from '@/core/response.js'
+import { fail, ok, FailResponse, OkResponse } from '@/core/schemas/index.js'
 import type { DriftBottleService, PoolInfo } from '@/services/drift-bottle.js'
 
 async function getDriftSvc(app: FastifyInstance): Promise<DriftBottleService> {
@@ -52,7 +51,10 @@ const driftBottleRoutes: FastifyPluginAsync = async (app) => {
     {
       schema: {
         body: CreatePoolRequestSchema,
-        response: { 201: OkResponse(Type.Object({ id: Type.Number(), name: Type.String() })) },
+        response: {
+          201: OkResponse(Type.Object({ id: Type.Number(), name: Type.String() })),
+          409: FailResponse(),
+        },
       },
     },
     async (req: FastifyRequest<{ Body: { name: string } }>, reply: FastifyReply) => {
@@ -75,7 +77,10 @@ const driftBottleRoutes: FastifyPluginAsync = async (app) => {
   app.post(
     '/api/drift-bottle-pools/:poolId/delete',
     {
-      schema: { params: PoolIdParamSchema, response: { 200: OkResponse(Type.Null()) } },
+      schema: {
+        params: PoolIdParamSchema,
+        response: { 200: OkResponse(Type.Null()), 400: FailResponse() },
+      },
     },
     async (req: FastifyRequest<{ Params: { poolId: string } }>, reply: FastifyReply) => {
       const svc = await getDriftSvc(app)
@@ -117,7 +122,10 @@ const driftBottleRoutes: FastifyPluginAsync = async (app) => {
   app.post(
     '/api/drift-bottle-pools/group-assign',
     {
-      schema: { body: GroupAssignRequestSchema, response: { 200: OkResponse(Type.Null()) } },
+      schema: {
+        body: GroupAssignRequestSchema,
+        response: { 200: OkResponse(Type.Null()), 400: FailResponse() },
+      },
     },
     async (
       req: FastifyRequest<{ Body: { groupId: number; poolId: number } }>,

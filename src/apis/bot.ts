@@ -5,13 +5,13 @@
 import { getLogger } from '@logger'
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
-import { OkResponse } from '@/apis/schemas/common.js'
 import {
   BotProfileUpdateRequestSchema,
   BotInfoDataSchema,
   BotProfileDataSchema,
+  BotProfileUpdateDataSchema,
 } from '@/apis/schemas/index.js'
-import { ok, fail } from '@/core/response.js'
+import { fail, ok, FailResponse, OkResponse } from '@/core/schemas/index.js'
 
 const log = getLogger('bot')
 
@@ -116,7 +116,14 @@ const botRoutes: FastifyPluginAsync = async (app) => {
   app.put(
     '/api/bot/profile',
     {
-      schema: { body: BotProfileUpdateRequestSchema },
+      schema: {
+        body: BotProfileUpdateRequestSchema,
+        response: {
+          200: OkResponse(BotProfileUpdateDataSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
+      },
     },
     async (req: FastifyRequest<{ Body: BotProfileUpdateBody }>, reply: FastifyReply) => {
       const connMgr = app.services.get('connectionManager') as { connected: boolean } | undefined

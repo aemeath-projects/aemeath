@@ -8,17 +8,17 @@ import type { LlmModel, LlmProvider } from '#prisma/main'
 
 import { LLMClient } from './client.js'
 import type { ChatMessage } from './completion.js'
+
+import type { MainPrismaClient } from '@/core/db.js'
+import { NotFoundError } from '@/core/errors.js'
+import { Service, Inject, Provide, Startup, Shutdown } from '@/core/lifecycle/decorators/index.js'
 import {
   maskApiKey,
   type CreateModelData,
   type CreateProviderData,
   type UpdateModelData,
   type UpdateProviderData,
-} from './schemas.js'
-
-import type { MainPrismaClient } from '@/core/db.js'
-import { NotFoundError } from '@/core/errors.js'
-import { Service, Inject, Provide, Startup, Shutdown } from '@/core/lifecycle/decorators/index.js'
+} from '@/core/schemas/llm.js'
 
 export type { LlmProvider, LlmModel }
 

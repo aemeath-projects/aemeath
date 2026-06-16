@@ -6,6 +6,12 @@ import { Type } from '@sinclair/typebox'
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 
 import { PersonnelQueryService } from './query.js'
+import { SyncCoordinator } from './sync.js'
+
+import { PersonnelService } from './index.js'
+
+import { NotFoundError, ValidationError } from '@/core/errors.js'
+import { ok, fail, OkResponse, FailResponse } from '@/core/schemas/index.js'
 import {
   UserIdParamSchema,
   GroupIdParamSchema,
@@ -14,15 +20,13 @@ import {
   MemberListQuerySchema,
   AdminListDataSchema,
   SyncStatusDataSchema,
-} from './schemas.js'
-import { SyncCoordinator } from './sync.js'
-
-import { PersonnelService } from './index.js'
-
-import { NotFoundError, ValidationError } from '@/core/errors.js'
-import { ok, fail, OkResponse } from '@/core/response.js'
-
-/** 安全解析 BigInt 路径/查询参数，格式无效时抛出 ValidationError。 */
+  PaginatedUsersDataSchema,
+  UserDetailSchema,
+  UserGroupsDataSchema,
+  PaginatedGroupsDataSchema,
+  GroupDetailSchema,
+  PaginatedMembersDataSchema,
+} from '@/core/schemas/personnel.js'
 function parseBigIntParam(value: string, name: string): bigint {
   if (!/^\d+$/.test(value)) {
     throw new ValidationError(`参数 ${name} 必须为非负整数，收到：${value}`)
@@ -53,7 +57,12 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
   /** 分页查询用户列表。 */
   app.get(
     '/api/personnel/users',
-    { schema: { querystring: UserListQuerySchema } },
+    {
+      schema: {
+        querystring: UserListQuerySchema,
+        response: { 200: OkResponse(PaginatedUsersDataSchema) },
+      },
+    },
     async (
       req: FastifyRequest<{
         Querystring: {
@@ -84,7 +93,7 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
   /** 获取单个用户详情。 */
   app.get(
     '/api/personnel/users/:userId',
-    { schema: { params: UserIdParamSchema } },
+    { schema: { params: UserIdParamSchema, response: { 200: OkResponse(UserDetailSchema) } } },
     async (req: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
       const svc = getPersonnelQueryService(app)
       const user = await svc.getUser(parseBigIntParam(req.params.userId, 'userId'))
@@ -98,7 +107,7 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
   /** 获取用户所属的所有群聊。 */
   app.get(
     '/api/personnel/users/:userId/groups',
-    { schema: { params: UserIdParamSchema } },
+    { schema: { params: UserIdParamSchema, response: { 200: OkResponse(UserGroupsDataSchema) } } },
     async (req: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
       const svc = getPersonnelQueryService(app)
       const groups = await svc.getUserGroups(parseBigIntParam(req.params.userId, 'userId'))
@@ -111,7 +120,12 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
   /** 分页查询群列表。 */
   app.get(
     '/api/personnel/groups',
-    { schema: { querystring: GroupListQuerySchema } },
+    {
+      schema: {
+        querystring: GroupListQuerySchema,
+        response: { 200: OkResponse(PaginatedGroupsDataSchema) },
+      },
+    },
     async (
       req: FastifyRequest<{
         Querystring: {
@@ -139,7 +153,7 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
   /** 获取单个群聊详情。 */
   app.get(
     '/api/personnel/groups/:groupId',
-    { schema: { params: GroupIdParamSchema } },
+    { schema: { params: GroupIdParamSchema, response: { 200: OkResponse(GroupDetailSchema) } } },
     async (req: FastifyRequest<{ Params: { groupId: string } }>, reply: FastifyReply) => {
       const svc = getPersonnelQueryService(app)
       const group = await svc.getGroup(parseBigIntParam(req.params.groupId, 'groupId'))
@@ -153,7 +167,13 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
   /** 分页获取群成员列表。 */
   app.get(
     '/api/personnel/groups/:groupId/members',
-    { schema: { params: GroupIdParamSchema, querystring: MemberListQuerySchema } },
+    {
+      schema: {
+        params: GroupIdParamSchema,
+        querystring: MemberListQuerySchema,
+        response: { 200: OkResponse(PaginatedMembersDataSchema) },
+      },
+    },
     async (
       req: FastifyRequest<{
         Params: { groupId: string }
@@ -195,7 +215,12 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
   /** 添加超级管理员。 */
   app.post(
     '/api/personnel/admins/:userId',
-    { schema: { params: UserIdParamSchema } },
+    {
+      schema: {
+        params: UserIdParamSchema,
+        response: { 200: OkResponse(Type.Null()), 404: FailResponse() },
+      },
+    },
     async (req: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
       const svc = getPersonnelService(app)
       const success = await svc.setAdmin(parseBigIntParam(req.params.userId, 'userId'))
@@ -210,7 +235,12 @@ export async function registerPersonnelRoutes(app: FastifyInstance): Promise<voi
   /** 移除超级管理员。 */
   app.delete(
     '/api/personnel/admins/:userId',
-    { schema: { params: UserIdParamSchema } },
+    {
+      schema: {
+        params: UserIdParamSchema,
+        response: { 200: OkResponse(Type.Null()), 404: FailResponse() },
+      },
+    },
     async (req: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
       const svc = getPersonnelService(app)
       const success = await svc.removeAdmin(parseBigIntParam(req.params.userId, 'userId'))

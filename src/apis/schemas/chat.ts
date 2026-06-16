@@ -67,3 +67,66 @@ export const ArchiveQuerySchema = Type.Object({
 export const ArchiveTriggerBodySchema = Type.Object({
   partitionName: Type.Optional(Type.String({ description: '指定分区名称，不传则自动归档上月' })),
 })
+
+/* ──── 响应数据 Schema ──── */
+
+/** 聊天消息 Schema —— 对应 ChatMessage 模型。 */
+export const ChatMessageSchema = Type.Object({
+  id: Type.Number({ description: '自增 ID' }),
+  createdAt: Type.String({ description: '消息创建时间（ISO 8601）' }),
+  messageId: Type.Number({ description: '消息 ID' }),
+  messageType: Type.Number({ description: '消息类型（1=私聊 2=群聊 3=自发送）' }),
+  groupId: Type.Union([Type.Number(), Type.Null()], { description: '群号（私聊时为 null）' }),
+  userId: Type.Number({ description: '发送者 QQ' }),
+  rawMessage: Type.String({ description: '原始消息文本' }),
+  segments: Type.Unknown({ description: '消息段 JSON' }),
+  senderNickname: Type.String({ description: '发送者昵称' }),
+  senderCard: Type.Union([Type.String(), Type.Null()], { description: '群名片' }),
+  senderRole: Type.Union([Type.String(), Type.Null()], { description: '群角色' }),
+  storedAt: Type.String({ description: '入库时间（ISO 8601）' }),
+})
+
+/** 群聊/私聊消息列表响应数据 Schema —— GET /api/chat/messages/group/:groupId, /messages/private/:userId */
+export const MessageListDataSchema = Type.Array(ChatMessageSchema)
+
+/** 消息上下文响应数据 Schema —— GET /api/chat/messages/:messageId/context */
+export const MessageContextDataSchema = Type.Object({
+  before: Type.Array(ChatMessageSchema, { description: '锚点之前的消息' }),
+  current: Type.Array(ChatMessageSchema, { description: '锚点消息' }),
+  after: Type.Array(ChatMessageSchema, { description: '锚点之后的消息' }),
+})
+
+/** 归档日志 Schema —— 对应 ChatArchiveLog 模型。 */
+export const ArchiveLogSchema = Type.Object({
+  id: Type.String({ description: '归档记录 UUID' }),
+  partitionName: Type.String({ description: '分区名称' }),
+  periodStart: Type.String({ description: '起始日期（ISO 8601）' }),
+  periodEnd: Type.String({ description: '截止日期（ISO 8601）' }),
+  totalRows: Type.Number({ description: '归档行数' }),
+  originalBytes: Type.Number({ description: '原始字节数' }),
+  compressedBytes: Type.Number({ description: '压缩后字节数' }),
+  s3Bucket: Type.String({ description: 'S3 存储桶' }),
+  s3Key: Type.String({ description: 'S3 对象 key' }),
+  s3Sha256: Type.String({ description: 'S3 对象 SHA-256' }),
+  status: Type.String({ description: '状态（pending/running/completed/failed）' }),
+  errorMessage: Type.Union([Type.String(), Type.Null()], { description: '错误信息' }),
+  createdAt: Type.String({ description: '创建时间（ISO 8601）' }),
+  completedAt: Type.Union([Type.String(), Type.Null()], { description: '完成时间（ISO 8601）' }),
+})
+
+/** 分页归档日志响应数据 Schema —— GET /api/chat/archives */
+export const PaginatedArchivesDataSchema = Type.Object({
+  items: Type.Array(ArchiveLogSchema),
+  total: Type.Number(),
+  page: Type.Number(),
+  pageSize: Type.Number(),
+  pages: Type.Number(),
+})
+
+/** 归档查询响应数据 Schema —— GET /api/chat/archives/query */
+export const ArchiveQueryDataSchema = Type.Array(ArchiveLogSchema)
+
+/** 触发归档任务响应数据 Schema —— POST /api/chat/archives/trigger */
+export const ArchiveTriggerDataSchema = Type.Object({
+  task_id: Type.String({ description: 'BullMQ job ID' }),
+})

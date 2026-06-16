@@ -5,7 +5,6 @@
 import { Type } from '@sinclair/typebox'
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
-import { OkResponse } from '@/apis/schemas/common.js'
 import {
   CreateLikeTaskRequestSchema,
   LikeTasksQuerySchema,
@@ -17,7 +16,7 @@ import {
   type LikeTasksQuery,
   type LikeHistoryQuery,
 } from '@/apis/schemas/index.js'
-import { ok } from '@/core/response.js'
+import { fail, ok, FailResponse, OkResponse } from '@/core/schemas/index.js'
 import type { LikeService } from '@/services/like.js'
 
 async function getLikeSvc(app: FastifyInstance): Promise<LikeService> {
@@ -75,7 +74,7 @@ const likeRoutes: FastifyPluginAsync = async (app) => {
     {
       schema: {
         body: CreateLikeTaskRequestSchema,
-        response: { 200: OkResponse(Type.Object({ qq: Type.Number() })) },
+        response: { 200: OkResponse(Type.Object({ qq: Type.Number() })), 409: FailResponse() },
       },
     },
     async (req: FastifyRequest<{ Body: CreateLikeTaskRequest }>, reply: FastifyReply) => {
@@ -83,7 +82,7 @@ const likeRoutes: FastifyPluginAsync = async (app) => {
 
       const result = await svc.registerTask(BigInt(req.body.qq), null)
       if (result.alreadyExists) {
-        await reply.status(409).send({ code: -1, data: null, message: '该用户已存在定时点赞任务' })
+        await reply.status(409).send(fail('该用户已存在定时点赞任务'))
         return
       }
       await reply.send(ok({ qq: req.body.qq }))
@@ -96,7 +95,7 @@ const likeRoutes: FastifyPluginAsync = async (app) => {
     {
       schema: {
         params: LikeTaskParamsSchema,
-        response: { 200: OkResponse(Type.Object({ qq: Type.String() })) },
+        response: { 200: OkResponse(Type.Object({ qq: Type.String() })), 404: FailResponse() },
       },
     },
     async (req: FastifyRequest<{ Params: { qq: string } }>, reply: FastifyReply) => {
@@ -105,7 +104,7 @@ const likeRoutes: FastifyPluginAsync = async (app) => {
       const qq = BigInt(req.params.qq)
       const deleted = await svc.cancelTask(qq)
       if (!deleted) {
-        await reply.status(404).send({ code: -1, data: null, message: '任务不存在' })
+        await reply.status(404).send(fail('任务不存在'))
         return
       }
       await reply.send(ok({ qq: req.params.qq }))

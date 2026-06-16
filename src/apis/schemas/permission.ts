@@ -64,3 +64,33 @@ export interface SetValueRequest {
 export interface BatchSetRequest {
   entries: { key: string; value: unknown }[]
 }
+
+/* ──── 响应数据 Schema ──── */
+
+/** 配置项 Schema 元信息 —— GET /api/settings/schemas */
+export const SettingNodeSchemaItem = Type.Object({
+  key: Type.String({ description: '配置项 key' }),
+  type: Type.Union(
+    [Type.Literal('boolean'), Type.Literal('number'), Type.Literal('string'), Type.Literal('enum')],
+    { description: '值类型' },
+  ),
+  default: Type.Unknown({ description: '默认值' }),
+  description: Type.String({ description: '描述' }),
+  enumOptions: Type.Optional(Type.Record(Type.String(), Type.Number())),
+  scope: Type.Union([Type.Literal('all'), Type.Literal('group'), Type.Literal('user')]),
+  owner: Type.String({ description: '所属组件名' }),
+  ownerDisplayName: Type.String({ description: '所属组件显示名称' }),
+  category: Type.Union([Type.Literal('permission'), Type.Literal('config')]),
+})
+
+/** Schema 列表响应数据 —— GET /api/settings/schemas */
+export const SettingsSchemaListDataSchema = Type.Array(SettingNodeSchemaItem)
+
+/** 单项配置条目 Schema —— { value, overridden } */
+export const SettingsEntrySchema = Type.Object({
+  value: Type.Unknown({ description: '当前生效值' }),
+  overridden: Type.Boolean({ description: '是否已被覆盖（非默认值）' }),
+})
+
+/** 配置 Record 响应数据 —— GET /api/settings/groups/:groupId, /users/:userId */
+export const SettingsRecordDataSchema = Type.Record(Type.String(), SettingsEntrySchema)

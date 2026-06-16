@@ -28,6 +28,9 @@ export const BotProfileDataSchema = Type.Object({
   version: Type.Record(Type.String(), Type.String()),
 })
 
+/** 修改 Bot 资料响应数据 Schema —— PUT /api/bot/profile */
+export const BotProfileUpdateDataSchema = Type.Object({})
+
 /* TypeScript 接口 */
 
 export interface BotProfileUpdateRequest {

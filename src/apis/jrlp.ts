@@ -6,7 +6,6 @@ import { getLogger } from '@logger'
 import { Type } from '@sinclair/typebox'
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
-import { OkResponse } from '@/apis/schemas/common.js'
 import {
   JrlpRecordsQuerySchema,
   SetWifeRequestSchema,
@@ -19,7 +18,7 @@ import {
   type UpdateRecordRequest,
   type DeleteRecordRequest,
 } from '@/apis/schemas/index.js'
-import { ok, fail } from '@/core/response.js'
+import { fail, ok, FailResponse, OkResponse } from '@/core/schemas/index.js'
 import type { JrlpService, WifeRecord } from '@/services/jrlp.js'
 
 const log = getLogger('jrlp')
@@ -94,7 +93,7 @@ const jrlpRoutes: FastifyPluginAsync = async (app) => {
     {
       schema: {
         body: SetWifeRequestSchema,
-        response: { 200: OkResponse(WifeRecordResponseSchema) },
+        response: { 200: OkResponse(WifeRecordResponseSchema), 409: FailResponse() },
       },
     },
     async (req: FastifyRequest<{ Body: SetWifeRequest }>, reply: FastifyReply) => {
@@ -121,7 +120,7 @@ const jrlpRoutes: FastifyPluginAsync = async (app) => {
     {
       schema: {
         body: UpdateRecordRequestSchema,
-        response: { 200: OkResponse(WifeRecordResponseSchema) },
+        response: { 200: OkResponse(WifeRecordResponseSchema), 404: FailResponse() },
       },
     },
     async (req: FastifyRequest<{ Body: UpdateRecordRequest }>, reply: FastifyReply) => {
@@ -142,7 +141,7 @@ const jrlpRoutes: FastifyPluginAsync = async (app) => {
     {
       schema: {
         body: DeleteRecordRequestSchema,
-        response: { 200: OkResponse(Type.Null()) },
+        response: { 200: OkResponse(Type.Null()), 404: FailResponse() },
       },
     },
     async (req: FastifyRequest<{ Body: DeleteRecordRequest }>, reply: FastifyReply) => {

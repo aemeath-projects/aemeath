@@ -4,6 +4,7 @@
  * 替代原 /api/permissions 路由，通过 SettingsService 读写配置项。
  */
 
+import { Type } from '@sinclair/typebox'
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
 import {
@@ -14,8 +15,10 @@ import {
   SettingsGroupKeyParamsSchema,
   SettingsUserKeyParamsSchema,
   SettingsQuerySchema,
+  SettingsSchemaListDataSchema,
+  SettingsRecordDataSchema,
 } from '@/apis/schemas/index.js'
-import { ok, fail } from '@/core/response.js'
+import { ok, fail, OkResponse, FailResponse } from '@/core/schemas/index.js'
 import { SettingsService } from '@/core/settings/index.js'
 
 function getSettings(app: FastifyInstance): SettingsService {
@@ -42,7 +45,10 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
   app.get(
     '/api/settings/schemas',
     {
-      schema: { querystring: SettingsQuerySchema },
+      schema: {
+        querystring: SettingsQuerySchema,
+        response: { 200: OkResponse(SettingsSchemaListDataSchema) },
+      },
     },
     async (req: FastifyRequest<{ Querystring: { prefix?: string } }>, reply: FastifyReply) => {
       const svc = getSettings(app)
@@ -57,7 +63,11 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
   app.get(
     '/api/settings/groups/:groupId',
     {
-      schema: { params: SettingsGroupIdParamSchema, querystring: SettingsQuerySchema },
+      schema: {
+        params: SettingsGroupIdParamSchema,
+        querystring: SettingsQuerySchema,
+        response: { 200: OkResponse(SettingsRecordDataSchema) },
+      },
     },
     async (
       req: FastifyRequest<{ Params: { groupId: string }; Querystring: { prefix?: string } }>,
@@ -75,7 +85,11 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
   app.post(
     '/api/settings/groups/:groupId/:key',
     {
-      schema: { params: SettingsGroupKeyParamsSchema, body: SetValueRequestSchema },
+      schema: {
+        params: SettingsGroupKeyParamsSchema,
+        body: SetValueRequestSchema,
+        response: { 200: OkResponse(Type.Null()), 400: FailResponse() },
+      },
     },
     async (
       req: FastifyRequest<{ Params: { groupId: string; key: string }; Body: SetValueBody }>,
@@ -95,7 +109,11 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
   app.post(
     '/api/settings/groups/:groupId/batch',
     {
-      schema: { params: SettingsGroupIdParamSchema, body: BatchSetRequestSchema },
+      schema: {
+        params: SettingsGroupIdParamSchema,
+        body: BatchSetRequestSchema,
+        response: { 200: OkResponse(Type.Null()), 400: FailResponse() },
+      },
     },
     async (
       req: FastifyRequest<{ Params: { groupId: string }; Body: BatchSetBody }>,
@@ -117,7 +135,11 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
   app.get(
     '/api/settings/users/:userId',
     {
-      schema: { params: SettingsUserIdParamSchema, querystring: SettingsQuerySchema },
+      schema: {
+        params: SettingsUserIdParamSchema,
+        querystring: SettingsQuerySchema,
+        response: { 200: OkResponse(SettingsRecordDataSchema) },
+      },
     },
     async (
       req: FastifyRequest<{ Params: { userId: string }; Querystring: { prefix?: string } }>,
@@ -135,7 +157,11 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
   app.post(
     '/api/settings/users/:userId/:key',
     {
-      schema: { params: SettingsUserKeyParamsSchema, body: SetValueRequestSchema },
+      schema: {
+        params: SettingsUserKeyParamsSchema,
+        body: SetValueRequestSchema,
+        response: { 200: OkResponse(Type.Null()), 400: FailResponse() },
+      },
     },
     async (
       req: FastifyRequest<{ Params: { userId: string; key: string }; Body: SetValueBody }>,

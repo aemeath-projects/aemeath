@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { fail, ok } from '@/core/response.js'
+import { fail, ok } from '@/core/schemas/index.js'
 
 describe('ok', () => {
   it('应当返回 code=0 和默认 message', () => {

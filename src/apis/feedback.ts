@@ -2,14 +2,17 @@
  * 用户反馈 REST API 路由 —— /api/feedbacks。
  */
 
+import { Type } from '@sinclair/typebox'
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
 import {
   FeedbackIdParamSchema,
   FeedbackListQuerySchema,
   FeedbackUpdateBodySchema,
+  PaginatedFeedbacksDataSchema,
+  FeedbackDetailDataSchema,
 } from '@/apis/schemas/index.js'
-import { ok, fail } from '@/core/response.js'
+import { ok, fail, OkResponse, FailResponse } from '@/core/schemas/index.js'
 import type { Feedback, FeedbackService } from '@/services/feedback.js'
 
 async function getFeedbackSvc(app: FastifyInstance): Promise<FeedbackService> {
@@ -52,7 +55,10 @@ const feedbackRoutes: FastifyPluginAsync = async (app) => {
   app.get(
     '/api/feedbacks',
     {
-      schema: { querystring: FeedbackListQuerySchema },
+      schema: {
+        querystring: FeedbackListQuerySchema,
+        response: { 200: OkResponse(PaginatedFeedbacksDataSchema) },
+      },
     },
     async (
       req: FastifyRequest<{
@@ -100,7 +106,10 @@ const feedbackRoutes: FastifyPluginAsync = async (app) => {
   app.get(
     '/api/feedbacks/:feedbackId',
     {
-      schema: { params: FeedbackIdParamSchema },
+      schema: {
+        params: FeedbackIdParamSchema,
+        response: { 200: OkResponse(FeedbackDetailDataSchema), 404: FailResponse() },
+      },
     },
     async (req: FastifyRequest<{ Params: { feedbackId: string } }>, reply: FastifyReply) => {
       const svc = await getFeedbackSvc(app)
@@ -119,7 +128,11 @@ const feedbackRoutes: FastifyPluginAsync = async (app) => {
   app.post(
     '/api/feedbacks/:feedbackId/status',
     {
-      schema: { params: FeedbackIdParamSchema, body: FeedbackUpdateBodySchema },
+      schema: {
+        params: FeedbackIdParamSchema,
+        body: FeedbackUpdateBodySchema,
+        response: { 200: OkResponse(Type.Null()), 404: FailResponse() },
+      },
     },
     async (
       req: FastifyRequest<{

@@ -5,7 +5,6 @@
 import { getLogger } from '@logger'
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
-import { OkResponse } from '@/apis/schemas/common.js'
 import {
   QueueStreamQuerySchema,
   ScheduledTasksDataSchema,
@@ -15,7 +14,7 @@ import {
   QueueLengthDataSchema,
   PendingTasksDataSchema,
 } from '@/apis/schemas/index.js'
-import { ok, fail } from '@/core/response.js'
+import { fail, ok, FailResponse, OkResponse } from '@/core/schemas/index.js'
 
 const log = getLogger('queue')
 
@@ -290,7 +289,15 @@ const queueRoutes: FastifyPluginAsync = async (app) => {
   /** GET /api/queue/queue-length — 获取队列中的消息数量。 */
   app.get(
     '/api/queue/queue-length',
-    { schema: { response: { 200: OkResponse(QueueLengthDataSchema) } } },
+    {
+      schema: {
+        response: {
+          200: OkResponse(QueueLengthDataSchema),
+          500: FailResponse(),
+          503: FailResponse(),
+        },
+      },
+    },
     async (_req: FastifyRequest, reply: FastifyReply) => {
       try {
         const queues = app.services.get('queues') as Record<string, BullQueue> | undefined

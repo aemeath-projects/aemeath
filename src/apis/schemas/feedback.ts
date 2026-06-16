@@ -41,3 +41,32 @@ export const FeedbackUpdateBodySchema = Type.Object({
     Type.Union([Type.String(), Type.Null()], { description: '管理员回复内容' }),
   ),
 })
+
+/* ──── 响应数据 Schema ──── */
+
+/** 反馈条目 Schema —— 对应 Feedback 模型 + feedbackToDict 转换。 */
+export const FeedbackItemSchema = Type.Object({
+  id: Type.String({ description: '反馈记录 UUID' }),
+  userId: Type.String({ description: '提交者 QQ' }),
+  groupId: Type.Union([Type.String(), Type.Null()], { description: '来源群号' }),
+  content: Type.String({ description: '反馈内容' }),
+  status: Type.String({ description: '状态（pending/processing/resolved/rejected）' }),
+  feedbackType: Type.Union([Type.String(), Type.Null()], { description: '反馈类型' }),
+  source: Type.String({ description: '来源（group/private）' }),
+  adminReply: Type.Union([Type.String(), Type.Null()], { description: '管理员回复' }),
+  createdAt: Type.String({ description: '创建时间（ISO 8601）' }),
+  updatedAt: Type.String({ description: '更新时间（ISO 8601）' }),
+  processedAt: Type.Union([Type.String(), Type.Null()], { description: '处理时间（ISO 8601）' }),
+})
+
+/** 分页反馈列表响应数据 Schema —— GET /api/feedbacks */
+export const PaginatedFeedbacksDataSchema = Type.Object({
+  items: Type.Array(FeedbackItemSchema),
+  total: Type.Number(),
+  page: Type.Number(),
+  pageSize: Type.Number(),
+  pages: Type.Number(),
+})
+
+/** 反馈详情响应数据 Schema —— GET /api/feedbacks/:feedbackId */
+export const FeedbackDetailDataSchema = FeedbackItemSchema

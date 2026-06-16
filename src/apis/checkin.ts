@@ -4,7 +4,6 @@
 
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
-import { OkResponse } from '@/apis/schemas/common.js'
 import {
   CheckinRecordsQuerySchema,
   CheckinLeaderboardQuerySchema,
@@ -19,7 +18,7 @@ import {
   type CheckinTrendQuery,
   type CheckinSummaryQuery,
 } from '@/apis/schemas/index.js'
-import { ok } from '@/core/response.js'
+import { ok, OkResponse } from '@/core/schemas/index.js'
 import type { CheckinService, LeaderEntry, DayCount } from '@/services/checkin.js'
 
 async function getCheckinSvc(app: FastifyInstance): Promise<CheckinService> {

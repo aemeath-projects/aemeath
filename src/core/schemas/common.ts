@@ -9,5 +9,3 @@ export const PaginationSchema = Type.Object({
   page: Type.Optional(Type.Number({ default: 1, minimum: 1 })),
   pageSize: Type.Optional(Type.Number({ default: 20, minimum: 1, maximum: 100 })),
 })
-
-export { OkResponse, FailResponse } from '@/core/response.js'

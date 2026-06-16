@@ -59,6 +59,81 @@ export const MemberListQuerySchema = Type.Object({
 
 /* ──── 响应数据 Schema ──── */
 
+/** 用户详情 Schema —— 对应 UserView。 */
+export const UserDetailSchema = Type.Object({
+  qq: Type.Number({ description: 'QQ 号' }),
+  nickname: Type.String({ description: '昵称' }),
+  relation: Type.String({ description: '关系' }),
+  groupCount: Type.Number({ description: '所在活跃群数' }),
+  lastSynced: Type.Union([Type.String(), Type.Null()]),
+})
+
+/** 分页用户列表响应数据 Schema —— GET /api/personnel/users */
+export const PaginatedUsersDataSchema = Type.Object({
+  items: Type.Array(UserDetailSchema),
+  total: Type.Number(),
+  page: Type.Number(),
+  pageSize: Type.Number(),
+  pages: Type.Number(),
+})
+
+/** 用户所属群信息 Schema —— 对应 UserGroupView。 */
+export const UserGroupSchema = Type.Object({
+  groupId: Type.Number({ description: '群号' }),
+  groupName: Type.String({ description: '群名称' }),
+  memberCount: Type.Number({ description: '当前成员数' }),
+  maxMemberCount: Type.Number({ description: '最大成员数' }),
+  isActive: Type.Boolean({ description: '是否活跃' }),
+  lastSynced: Type.Union([Type.String(), Type.Null()]),
+  card: Type.String({ description: '群名片' }),
+  role: Type.String({ description: '角色' }),
+  joinTime: Type.Number({ description: '入群时间戳' }),
+})
+
+/** 用户群列表响应数据 Schema —— GET /api/personnel/users/:userId/groups */
+export const UserGroupsDataSchema = Type.Array(UserGroupSchema)
+
+/** 群聊详情 Schema —— 对应 GroupView。 */
+export const GroupDetailSchema = Type.Object({
+  groupId: Type.Number({ description: '群号' }),
+  groupName: Type.String({ description: '群名称' }),
+  memberCount: Type.Number({ description: '当前成员数' }),
+  maxMemberCount: Type.Number({ description: '最大成员数' }),
+  isActive: Type.Boolean({ description: '是否活跃' }),
+  lastSynced: Type.Union([Type.String(), Type.Null()]),
+})
+
+/** 分页群列表响应数据 Schema —— GET /api/personnel/groups */
+export const PaginatedGroupsDataSchema = Type.Object({
+  items: Type.Array(GroupDetailSchema),
+  total: Type.Number(),
+  page: Type.Number(),
+  pageSize: Type.Number(),
+  pages: Type.Number(),
+})
+
+/** 群成员详情 Schema —— 对应 GroupMemberView。 */
+export const MemberDetailSchema = Type.Object({
+  qq: Type.Number({ description: 'QQ 号' }),
+  nickname: Type.String({ description: '昵称' }),
+  card: Type.String({ description: '群名片' }),
+  role: Type.String({ description: '角色（owner/admin/member）' }),
+  relation: Type.String({ description: '关系' }),
+  joinTime: Type.Number({ description: '入群时间戳' }),
+  lastActiveTime: Type.Number({ description: '最后活跃时间戳' }),
+  title: Type.String({ description: '头衔' }),
+  level: Type.String({ description: '等级' }),
+})
+
+/** 分页群成员列表响应数据 Schema —— GET /api/personnel/groups/:groupId/members */
+export const PaginatedMembersDataSchema = Type.Object({
+  items: Type.Array(MemberDetailSchema),
+  total: Type.Number(),
+  page: Type.Number(),
+  pageSize: Type.Number(),
+  pages: Type.Number(),
+})
+
 /** 管理员信息 Schema。 */
 export const AdminInfoSchema = Type.Object({
   qq: Type.Number({ description: 'QQ 号' }),

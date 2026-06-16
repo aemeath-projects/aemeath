@@ -4,7 +4,7 @@
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 
-import { fail } from '@/core/response.js'
+import { fail, FailResponse } from '@/core/schemas/index.js'
 
 /**
  * 注册 Bearer token 认证钩子。
@@ -22,6 +22,17 @@ export async function authPlugin(app: FastifyInstance, adminToken: string): Prom
 
   /** 不需要认证的公开端点前缀集合。 */
   const PUBLIC_PREFIXES = ['/docs', '/health', '/metrics']
+
+  // 为所有 /api/ 路由自动注入 401/403 错误响应 Schema
+  app.addHook('onRoute', (routeOptions) => {
+    if (routeOptions.url.startsWith('/api/')) {
+      routeOptions.schema = routeOptions.schema ?? {}
+      const resp = (routeOptions.schema.response ?? {}) as Record<number, unknown>
+      resp[401] ??= FailResponse()
+      resp[403] ??= FailResponse()
+      routeOptions.schema.response = resp
+    }
+  })
 
   app.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
     const url = request.url

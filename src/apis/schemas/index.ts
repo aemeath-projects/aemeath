@@ -4,6 +4,7 @@ export {
   BotProfileUpdateRequestSchema,
   BotInfoDataSchema,
   BotProfileDataSchema,
+  BotProfileUpdateDataSchema,
   type BotProfileUpdateRequest,
 } from './bot.js'
 
@@ -25,7 +26,7 @@ export {
   type CheckinSummaryQuery,
 } from './checkin.js'
 
-export { PaginationSchema, OkResponse, FailResponse } from './common.js'
+export { PaginationSchema, OkResponse, FailResponse } from '@/core/schemas/index.js'
 
 export {
   CreatePoolRequestSchema,
@@ -74,6 +75,8 @@ export {
   SettingsGroupKeyParamsSchema,
   SettingsUserKeyParamsSchema,
   SettingsQuerySchema,
+  SettingsSchemaListDataSchema,
+  SettingsRecordDataSchema,
   type SetValueRequest,
   type BatchSetRequest,
 } from './permission.js'
@@ -88,12 +91,19 @@ export {
   ArchiveListQuerySchema,
   ArchiveQuerySchema,
   ArchiveTriggerBodySchema,
+  MessageListDataSchema,
+  MessageContextDataSchema,
+  PaginatedArchivesDataSchema,
+  ArchiveQueryDataSchema,
+  ArchiveTriggerDataSchema,
 } from './chat.js'
 
 export {
   FeedbackIdParamSchema,
   FeedbackListQuerySchema,
   FeedbackUpdateBodySchema,
+  PaginatedFeedbacksDataSchema,
+  FeedbackDetailDataSchema,
 } from './feedback.js'
 
 export {

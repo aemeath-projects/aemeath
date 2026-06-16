@@ -4,10 +4,9 @@
 
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
-import { OkResponse } from '@/apis/schemas/common.js'
 import { HandlerListDataSchema } from '@/apis/schemas/index.js'
 import { handlerRegistry } from '@/core/dispatch/index.js'
-import { ok } from '@/core/response.js'
+import { ok, OkResponse } from '@/core/schemas/index.js'
 
 /**
  * 处理器管理路由插件。

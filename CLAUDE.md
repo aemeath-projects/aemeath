@@ -248,6 +248,7 @@ export class MyServiceBootstrap {
 ```
 src/
 ├── core/        # 框架基础设施
+│   ├── schemas/     # 共享 TypeBox schemas（common、llm、personnel、response）
 │   ├── chat/        # 聊天领域（archive、exporter、media、s3、main）
 │   ├── dispatch/    # 事件分发框架（dispatcher、mapping、decorators、registry、context）
 │   ├── echo/        # EchoLoader 扫描加载器（config、loader）
@@ -269,7 +270,6 @@ src/
 │   errors.ts        # 业务异常类定义
 │   main.ts          # Fastify 应用入口
 │   registries.ts    # 注册表聚合导出（handlerRegistry、cacheKeyRegistry 等）
-│   response.ts      # 统一响应格式（ok/fail）
 │   worker.ts        # BullMQ Worker 进程入口
 ├── apis/        # HTTP API 路由（Fastify 路由 + TypeBox schema）
 │   ├── plugins/     # Fastify 插件（auth、cors、swagger）
@@ -284,6 +284,16 @@ aemeath.config.ts    # EchoLoader 扫描路径配置（echoes: handler/service/t
 ```
 
 ### 核心领域包 (`src/core/<domain>/`)
+
+**`src/core/schemas/`** — 共享 TypeBox Schema
+
+| 文件           | 职责                                       |
+| -------------- | ------------------------------------------ |
+| `common.ts`    | 通用分页、ID 等基础 schema                 |
+| `llm.ts`       | LLM 配置相关请求/响应 schema               |
+| `personnel.ts` | 人员查询相关 schema                        |
+| `response.ts`  | 统一响应格式 TypeBox schema（`ok`/`fail`） |
+| `index.ts`     | 统一导出入口                               |
 
 **`src/core/chat/`** — 聊天领域
 
@@ -317,9 +327,9 @@ aemeath.config.ts    # EchoLoader 扫描路径配置（echoes: handler/service/t
 **`src/core/llm/`** — LLM 领域
 
 | 文件            | 职责                                         |
+| --------------- | -------------------------------------------- |
 | `client.ts`     | `LLMClient`：LangChain OpenAI 兼容客户端封装 |
 | `completion.ts` | `llmComplete`/`llmStream`：高层 LLM 调用接口 |
-| `schemas.ts`    | TypeBox schemas：LLM 配置相关请求/响应模型   |
 | `api.ts`        | Fastify 路由：LLM 提供商/模型 CRUD           |
 
 **`src/core/personnel/`** — 人员领域

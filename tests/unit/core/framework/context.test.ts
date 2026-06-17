@@ -16,8 +16,8 @@ interface MockApis {
 }
 
 function makeMockApis(): MockApis {
-  const sendGroupMsg = vi.fn().mockResolvedValue({ ok: true, data: { message_id: 100 } })
-  const sendPrivateMsg = vi.fn().mockResolvedValue({ ok: true, data: { message_id: 101 } })
+  const sendGroupMsg = vi.fn().mockResolvedValue({ ok: true, data: { messageId: 100 } })
+  const sendPrivateMsg = vi.fn().mockResolvedValue({ ok: true, data: { messageId: 101 } })
   const deleteMsg = vi.fn().mockResolvedValue({ ok: true, data: undefined })
   return {
     apis: {
@@ -36,17 +36,17 @@ function makeMockApis(): MockApis {
 function makeGroupMsgEvent(text: string): AnyOneBotEvent {
   const event = {
     time: 1700000000,
-    self_id: 10000,
-    post_type: 'message' as const,
-    message_type: 'group' as const,
-    sub_type: 'normal',
-    message_id: 42,
-    group_id: 99999,
-    user_id: 11111,
+    selfId: 10000,
+    postType: 'message' as const,
+    messageType: 'group' as const,
+    subType: 'normal',
+    messageId: 42,
+    groupId: 99999,
+    userId: 11111,
     message: [{ type: 'text' as const, data: { text } }],
-    raw_message: text,
+    rawMessage: text,
     font: 0,
-    sender: { user_id: 11111, nickname: 'tester', role: 'member' },
+    sender: { userId: 11111, nickname: 'tester', role: 'member' },
   }
   return event
 }
@@ -54,16 +54,16 @@ function makeGroupMsgEvent(text: string): AnyOneBotEvent {
 function makePrivateMsgEvent(text: string): AnyOneBotEvent {
   const event = {
     time: 1700000001,
-    self_id: 10000,
-    post_type: 'message' as const,
-    message_type: 'private' as const,
-    sub_type: 'friend',
-    message_id: 43,
-    user_id: 22222,
+    selfId: 10000,
+    postType: 'message' as const,
+    messageType: 'private' as const,
+    subType: 'friend',
+    messageId: 43,
+    userId: 22222,
     message: [{ type: 'text' as const, data: { text } }],
-    raw_message: text,
+    rawMessage: text,
     font: 0,
-    sender: { user_id: 22222, nickname: 'friend' },
+    sender: { userId: 22222, nickname: 'friend' },
   }
   return event
 }
@@ -71,10 +71,10 @@ function makePrivateMsgEvent(text: string): AnyOneBotEvent {
 function makeNoticeEvent(noticeType: string): AnyOneBotEvent {
   const event = {
     time: 1700000002,
-    self_id: 10000,
-    post_type: 'notice' as const,
-    notice_type: noticeType,
-    sub_type: '',
+    selfId: 10000,
+    postType: 'notice' as const,
+    noticeType: noticeType,
+    subType: '',
   }
   return event
 }

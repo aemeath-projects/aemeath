@@ -19,17 +19,17 @@ import {
 function makeGroupMsgEvent(text: string): AnyOneBotEvent {
   const event = {
     time: 1700000000,
-    self_id: 10000,
-    post_type: 'message' as const,
-    message_type: 'group' as const,
-    sub_type: 'normal',
-    message_id: 1,
-    group_id: 99999,
-    user_id: 11111,
+    selfId: 10000,
+    postType: 'message' as const,
+    messageType: 'group' as const,
+    subType: 'normal',
+    messageId: 1,
+    groupId: 99999,
+    userId: 11111,
     message: [{ type: 'text' as const, data: { text } }],
-    raw_message: text,
+    rawMessage: text,
     font: 0,
-    sender: { user_id: 11111, nickname: 'tester', role: 'member' },
+    sender: { userId: 11111, nickname: 'tester', role: 'member' },
   }
   return event
 }
@@ -37,16 +37,16 @@ function makeGroupMsgEvent(text: string): AnyOneBotEvent {
 function makePrivateMsgEvent(text: string): AnyOneBotEvent {
   const event = {
     time: 1700000001,
-    self_id: 10000,
-    post_type: 'message' as const,
-    message_type: 'private' as const,
-    sub_type: 'friend',
-    message_id: 2,
-    user_id: 22222,
+    selfId: 10000,
+    postType: 'message' as const,
+    messageType: 'private' as const,
+    subType: 'friend',
+    messageId: 2,
+    userId: 22222,
     message: [{ type: 'text' as const, data: { text } }],
-    raw_message: text,
+    rawMessage: text,
     font: 0,
-    sender: { user_id: 22222, nickname: 'friend' },
+    sender: { userId: 22222, nickname: 'friend' },
   }
   return event
 }
@@ -54,10 +54,10 @@ function makePrivateMsgEvent(text: string): AnyOneBotEvent {
 function makeNoticeEvent(noticeType: string, subType?: string): AnyOneBotEvent {
   const event = {
     time: 1700000002,
-    self_id: 10000,
-    post_type: 'notice' as const,
-    notice_type: noticeType,
-    sub_type: subType ?? '',
+    selfId: 10000,
+    postType: 'notice' as const,
+    noticeType: noticeType,
+    subType: subType ?? '',
   }
   return event
 }
@@ -65,10 +65,10 @@ function makeNoticeEvent(noticeType: string, subType?: string): AnyOneBotEvent {
 function makeRequestEvent(requestType: string): AnyOneBotEvent {
   const event = {
     time: 1700000003,
-    self_id: 10000,
-    post_type: 'request' as const,
-    request_type: requestType,
-    user_id: 33333,
+    selfId: 10000,
+    postType: 'request' as const,
+    requestType: requestType,
+    userId: 33333,
     comment: '',
     flag: 'test',
   }

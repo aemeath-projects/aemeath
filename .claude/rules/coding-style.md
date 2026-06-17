@@ -56,6 +56,7 @@
 | API 请求体/响应 data   | `camelCase`                | `{ "taskId": "...", "groupName": "..." }`             | `{ "task_id": "...", "group_name": "..." }` |
 | API 响应 `message`     | 自由文本（可含空格）       | `"Archive task queued"`, `"同步已触发"`               | —                                         |
 | Vue 组件 props/模板    | `camelCase`                | `:groupName`, `v-model:isActive`                      | `:group_name`, `v-model:is_active`        |
+| OneBot 协议字段        | SDK 暴露 camelCase         | 字段名 camelCase；仅协议字面量值（如 `'friend_add'`）保持 snake | —                                  |
 
 ### 各层详细约定
 

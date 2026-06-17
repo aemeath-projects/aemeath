@@ -44,11 +44,11 @@ export interface ResolvedHandler {
 /* 类型守卫 */
 
 function isMessageEvent(event: AnyOneBotEvent): boolean {
-  return event.post_type === 'message' || event.post_type === 'message_sent'
+  return event.postType === 'message' || event.postType === 'message_sent'
 }
 
 function isGroupMessageEvent(event: AnyOneBotEvent): boolean {
-  return isMessageEvent(event) && (event as Record<string, unknown>).message_type === 'group'
+  return isMessageEvent(event) && (event as { messageType?: string }).messageType === 'group'
 }
 
 /* HandlerMapping 接口 */
@@ -62,7 +62,7 @@ interface HandlerMapping {
 
 /** 从消息事件中提取纯文本。 */
 function extractPlaintext(event: AnyOneBotEvent): string {
-  if (event.post_type !== 'message' && event.post_type !== 'message_sent') {
+  if (event.postType !== 'message' && event.postType !== 'message_sent') {
     return ''
   }
   const msg = (event as { message?: unknown }).message
@@ -258,7 +258,7 @@ export class FullMatchHandlerMapping implements HandlerMapping {
   }
 }
 
-/** 按事件 post_type / notice_type / sub_type / request_type 匹配。 */
+/** 按事件 postType / noticeType / subType / requestType 匹配。 */
 export class EventTypeHandlerMapping implements HandlerMapping {
   private readonly handlers: HandlerMethod[] = []
 
@@ -268,25 +268,24 @@ export class EventTypeHandlerMapping implements HandlerMapping {
 
   resolve(event: AnyOneBotEvent): ResolvedHandler[] {
     const results: ResolvedHandler[] = []
-    const eventRecord = event as Record<string, unknown>
     for (const handler of this.handlers) {
       const { meta } = handler
       const targetEventType = meta.eventType ?? ''
 
-      if (event.post_type !== targetEventType) continue
+      if (event.postType !== targetEventType) continue
 
-      // 对于通知事件，可选择按 notice_type 和 sub_type 过滤
+      // 对于通知事件，可选择按 noticeType 和 subType 过滤
       if (meta.noticeType != null) {
-        if (eventRecord.notice_type !== meta.noticeType) continue
+        if ((event as { noticeType?: string }).noticeType !== meta.noticeType) continue
       }
 
       if (meta.subType != null) {
-        if (eventRecord.sub_type !== meta.subType) continue
+        if ((event as { subType?: string }).subType !== meta.subType) continue
       }
 
-      // 对于请求事件，可选择按 request_type 过滤
+      // 对于请求事件，可选择按 requestType 过滤
       if (meta.requestType != null) {
-        if (eventRecord.request_type !== meta.requestType) continue
+        if ((event as { requestType?: string }).requestType !== meta.requestType) continue
       }
 
       results.push({ handler, regexMatch: null })

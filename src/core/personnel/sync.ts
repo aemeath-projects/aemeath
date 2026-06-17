@@ -6,6 +6,7 @@
  */
 
 import type { FriendApi, GroupApi } from '@aemeath-projects/napcat'
+import type { FriendInfo, GroupInfo, GroupMember } from '@aemeath-projects/napcat/types'
 import { logger, type Logger } from '@logger'
 
 import type { PersonnelService } from './index.js'
@@ -133,31 +134,30 @@ export class SyncCoordinator {
     try {
       // 1. 获取好友列表
       const friendsResult = await this.friendApi.getFriendList()
-      const friendsData = friendsResult.ok ? (friendsResult.data as unknown[]) : null
+      const friendsData: FriendInfo[] | null = friendsResult.ok ? friendsResult.data : null
 
       // 2. 获取群列表
       const groupsResult = await this.groupApi.getGroupList()
-      const groupsData = groupsResult.ok ? (groupsResult.data as unknown[]) : null
+      const groupsData: GroupInfo[] | null = groupsResult.ok ? groupsResult.data : null
 
       // 3. 逐群获取成员列表
       // 注意：此处有意使用串行循环而非 Promise.all 并发，原因是 NapCat/QQ API
       // 对频繁请求有速率限制，apiDelayMs（默认 500ms）在每次请求间插入等待时间，
       // 确保不因并发请求触发限流或封禁。
-      const membersData: Record<number, unknown[]> = {}
+      const membersData: Record<number, GroupMember[]> = {}
 
       if (Array.isArray(groupsData)) {
         for (const group of groupsData) {
           // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
           if (!this.connStatus.connected) break
 
-          const groupRecord = group as Record<string, unknown>
-          const groupId = groupRecord.group_id
-          if (typeof groupId !== 'number' && typeof groupId !== 'bigint') continue
+          const groupId = group.groupId
+          if (!groupId) continue
 
           try {
-            const memberResult = await this.groupApi.getGroupMemberList(Number(groupId))
+            const memberResult = await this.groupApi.getGroupMemberList(groupId)
             if (memberResult.ok && Array.isArray(memberResult.data)) {
-              membersData[Number(groupId)] = memberResult.data
+              membersData[groupId] = memberResult.data
             }
           } catch {
             // 获取某群成员失败，跳过该群
@@ -171,15 +171,9 @@ export class SyncCoordinator {
 
       // 4. 持久化到数据库
       await this.personnelService.persistSyncData(
-        Array.isArray(friendsData)
-          ? (friendsData as Parameters<PersonnelService['persistSyncData']>[0])
-          : null,
-        Array.isArray(groupsData)
-          ? (groupsData as Parameters<PersonnelService['persistSyncData']>[1])
-          : null,
-        Object.keys(membersData).length > 0
-          ? (membersData as Parameters<PersonnelService['persistSyncData']>[2])
-          : null,
+        Array.isArray(friendsData) ? friendsData : null,
+        Array.isArray(groupsData) ? groupsData : null,
+        Object.keys(membersData).length > 0 ? membersData : null,
       )
     } catch (err) {
       this._log.error({ err }, '用户数据全量同步失败')

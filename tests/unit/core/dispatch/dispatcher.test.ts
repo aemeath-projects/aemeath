@@ -37,17 +37,17 @@ function makeResolved(interceptors: InterceptorEntry[] = []): ResolvedHandler {
 function makeEvent(): AnyOneBotEvent {
   return {
     time: 0,
-    self_id: 0,
-    post_type: 'message',
-    message_type: 'group',
-    sub_type: 'normal',
-    message_id: 1,
-    group_id: 1,
-    user_id: 1,
+    selfId: 0,
+    postType: 'message',
+    messageType: 'group',
+    subType: 'normal',
+    messageId: 1,
+    groupId: 1,
+    userId: 1,
     message: [{ type: 'text', data: { text: '/test' } }],
-    raw_message: '/test',
+    rawMessage: '/test',
     font: 0,
-    sender: { user_id: 1, nickname: 'test', role: 'member' },
+    sender: { userId: 1, nickname: 'test', role: 'member' },
   }
 }
 

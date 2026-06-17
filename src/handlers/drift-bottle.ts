@@ -2,7 +2,7 @@
  * 漂流瓶 Bot 处理器 —— 响应「扔漂流瓶」和「捞漂流瓶」关键词。
  */
 
-import { Seg } from '@aemeath-projects/napcat'
+import { seg } from '@aemeath-projects/napcat'
 import type { MessageSegment } from '@aemeath-projects/napcat/types'
 import { logger } from '@logger'
 
@@ -144,7 +144,7 @@ class DriftBottleHandler {
     }
 
     const replySegs: MessageSegment[] = [
-      Seg.text('捞到了一个漂流瓶：\n'),
+      seg.text('捞到了一个漂流瓶：\n'),
       ...(bottle.content as { type: string; data: Record<string, unknown> }[]).map((s) => ({
         type: s.type,
         data: s.data,

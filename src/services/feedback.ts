@@ -2,7 +2,7 @@
  * 用户反馈业务逻辑 —— 反馈创建、查询、状态更新、通知。
  */
 
-import { Seg } from '@aemeath-projects/napcat'
+import { seg } from '@aemeath-projects/napcat'
 import type { MessageApi } from '@aemeath-projects/napcat'
 import { logger, type Logger } from '@logger'
 
@@ -192,7 +192,7 @@ export class FeedbackService {
     // 并发通知所有管理员
     const sendTasks = admins.map(async (admin) => {
       try {
-        await this.msgApi.sendPrivateMsg(Number(admin.qq), [Seg.text(message)])
+        await this.msgApi.sendPrivateMsg(Number(admin.qq), [seg.text(message)])
       } catch (err: unknown) {
         this._log.warn({ adminQq: admin.qq, feedbackId: feedback.id, err }, '通知管理员失败')
       }
@@ -212,9 +212,9 @@ export class FeedbackService {
 
     try {
       if (feedback.source === 'group' && feedback.groupId != null) {
-        await this.msgApi.sendGroupMsg(Number(feedback.groupId), [Seg.text(message)])
+        await this.msgApi.sendGroupMsg(Number(feedback.groupId), [seg.text(message)])
       } else {
-        await this.msgApi.sendPrivateMsg(Number(feedback.userId), [Seg.text(message)])
+        await this.msgApi.sendPrivateMsg(Number(feedback.userId), [seg.text(message)])
       }
     } catch (err) {
       this._log.warn({ userId: feedback.userId, feedbackId: feedback.id, err }, '通知用户失败')

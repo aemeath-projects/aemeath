@@ -5,6 +5,8 @@
  * 增量事件处理已迁移至 PersonnelEventService（events.ts）。
  */
 
+import type { FriendInfo, GroupInfo, GroupMember } from '@aemeath-projects/napcat/types'
+
 import { USER_RELATION_GLOB } from './cache-keys.js'
 import './metrics.js'
 
@@ -52,35 +54,6 @@ export function computeRelation(
   return 'stranger'
 }
 
-/** 批量同步的好友数据条目。 */
-export interface FriendData {
-  user_id?: number
-  qq?: number
-  nickname?: string
-  nick?: string
-}
-
-/** 批量同步的群数据条目。 */
-export interface GroupData {
-  group_id?: number
-  group_name?: string
-  member_count?: number
-  max_member_count?: number
-}
-
-/** 批量同步的群成员数据条目。 */
-export interface MemberData {
-  user_id?: number
-  nickname?: string
-  card?: string
-  role?: string
-  join_time?: number
-  last_sent_time?: number
-  title?: string
-  title_expire_time?: number
-  level?: string
-}
-
 /**
  * 用户管理核心服务 —— 封装 upsert、同步编排、缓存管理。
  */
@@ -97,15 +70,15 @@ export class PersonnelService {
    *
    * 若用户当前 relation 为 admin，则跳过 relation 更新。
    */
-  async upsertUsers(usersData: FriendData[], relation: UserRelation = 'stranger'): Promise<number> {
+  async upsertUsers(usersData: FriendInfo[], relation: UserRelation = 'stranger'): Promise<number> {
     if (usersData.length === 0) return 0
     const now = new Date()
     let total = 0
 
     for (const u of usersData) {
-      const qq = BigInt(u.user_id ?? u.qq ?? 0)
+      const qq = BigInt(u.userId)
       if (!qq) continue
-      const nickname = u.nickname ?? u.nick ?? ''
+      const nickname = u.nickname
 
       await this.db.user.upsert({
         where: { qq },
@@ -136,29 +109,29 @@ export class PersonnelService {
   }
 
   /** 批量 upsert 群聊。 */
-  async upsertGroups(groupsData: GroupData[]): Promise<number> {
+  async upsertGroups(groupsData: GroupInfo[]): Promise<number> {
     if (groupsData.length === 0) return 0
     const now = new Date()
     let total = 0
 
     for (const g of groupsData) {
-      const groupId = BigInt(g.group_id ?? 0)
+      const groupId = BigInt(g.groupId)
       if (!groupId) continue
 
       await this.db.group.upsert({
         where: { groupId },
         create: {
           groupId,
-          groupName: g.group_name ?? '',
-          memberCount: g.member_count ?? 0,
-          maxMemberCount: g.max_member_count ?? 0,
+          groupName: g.groupName,
+          memberCount: g.memberCount,
+          maxMemberCount: g.maxMemberCount,
           isActive: true,
           lastSynced: now,
         },
         update: {
-          groupName: g.group_name ?? '',
-          memberCount: g.member_count ?? 0,
-          maxMemberCount: g.max_member_count ?? 0,
+          groupName: g.groupName,
+          memberCount: g.memberCount,
+          maxMemberCount: g.maxMemberCount,
           isActive: true,
           lastSynced: now,
         },
@@ -172,30 +145,30 @@ export class PersonnelService {
   /**
    * 批量 upsert 群成员关系，并确保用户存在。
    */
-  async upsertMemberships(groupId: bigint, membersData: MemberData[]): Promise<number> {
+  async upsertMemberships(groupId: bigint, membersData: GroupMember[]): Promise<number> {
     if (membersData.length === 0) return 0
     const now = new Date()
     let total = 0
 
     for (const m of membersData) {
-      const qq = BigInt(m.user_id ?? 0)
+      const qq = BigInt(m.userId)
       if (!qq) continue
 
       // 确保用户存在（admin/friend 关系不降级）
       const existing = await this.db.user.findUnique({ where: { qq }, select: { relation: true } })
       if (!existing) {
         await this.db.user.create({
-          data: { qq, nickname: m.nickname ?? '', relation: 'group_member', lastSynced: now },
+          data: { qq, nickname: m.nickname, relation: 'group_member', lastSynced: now },
         })
       } else if (existing.relation !== 'admin' && existing.relation !== 'friend') {
         await this.db.user.update({
           where: { qq },
-          data: { nickname: m.nickname ?? '', relation: 'group_member', lastSynced: now },
+          data: { nickname: m.nickname, relation: 'group_member', lastSynced: now },
         })
       } else {
         await this.db.user.update({
           where: { qq },
-          data: { nickname: m.nickname ?? '', lastSynced: now },
+          data: { nickname: m.nickname, lastSynced: now },
         })
       }
 
@@ -206,21 +179,21 @@ export class PersonnelService {
           userId: qq,
           groupId,
           card: m.card ?? '',
-          role: (m.role ?? 'member') as GroupRole,
-          joinTime: m.join_time ?? 0,
-          lastActiveTime: m.last_sent_time ?? 0,
+          role: m.role,
+          joinTime: m.joinTime ?? 0,
+          lastActiveTime: m.lastSentTime ?? 0,
           title: m.title ?? '',
-          titleExpireTime: m.title_expire_time ?? 0,
+          titleExpireTime: (m.titleExpireTime as number | undefined) ?? 0,
           level: m.level ?? '',
           isActive: true,
         },
         update: {
           card: m.card ?? '',
-          role: (m.role ?? 'member') as GroupRole,
-          joinTime: m.join_time ?? 0,
-          lastActiveTime: m.last_sent_time ?? 0,
+          role: m.role,
+          joinTime: m.joinTime ?? 0,
+          lastActiveTime: m.lastSentTime ?? 0,
           title: m.title ?? '',
-          titleExpireTime: m.title_expire_time ?? 0,
+          titleExpireTime: (m.titleExpireTime as number | undefined) ?? 0,
           level: m.level ?? '',
           isActive: true,
         },
@@ -268,9 +241,9 @@ export class PersonnelService {
    * 将采集到的用户数据批量持久化到数据库。
    */
   async persistSyncData(
-    friends: FriendData[] | null,
-    groups: GroupData[] | null,
-    members: Record<number, MemberData[]> | null,
+    friends: FriendInfo[] | null,
+    groups: GroupInfo[] | null,
+    members: Record<number, GroupMember[]> | null,
   ): Promise<SyncResult> {
     const startTime = Date.now()
     let usersSynced = 0
@@ -283,7 +256,7 @@ export class PersonnelService {
     if (friends && friends.length > 0) {
       usersSynced = await this._upsertUsersSimple(friends, 'friend')
       for (const f of friends) {
-        const qq = BigInt(f.user_id ?? f.qq ?? 0)
+        const qq = BigInt(f.userId)
         if (qq) friendQqSet.add(qq)
       }
     }
@@ -293,7 +266,7 @@ export class PersonnelService {
     if (groups && groups.length > 0) {
       groupsSynced = await this.upsertGroups(groups)
       for (const g of groups) {
-        const gid = BigInt(g.group_id ?? 0)
+        const gid = BigInt(g.groupId)
         if (gid) activeGroupIds.add(gid)
       }
     }
@@ -304,7 +277,7 @@ export class PersonnelService {
         const gid = BigInt(gidStr)
         membershipsSynced += await this.upsertMemberships(gid, memberList)
         const activeUserIds = new Set<bigint>(
-          memberList.map((m) => BigInt(m.user_id ?? 0)).filter((q) => q > 0n),
+          memberList.map((m) => BigInt(m.userId)).filter((q) => q > 0n),
         )
         await this.deactivateStateMemberships(gid, activeUserIds)
       }
@@ -431,7 +404,7 @@ export class PersonnelService {
 
   /** 简化版 upsertUsers（不进行 admin 保护判断，直接批量写入）。 */
   private async _upsertUsersSimple(
-    usersData: FriendData[],
+    usersData: FriendInfo[],
     relation: UserRelation,
   ): Promise<number> {
     if (usersData.length === 0) return 0
@@ -439,9 +412,9 @@ export class PersonnelService {
     let total = 0
 
     for (const u of usersData) {
-      const qq = BigInt(u.user_id ?? u.qq ?? 0)
+      const qq = BigInt(u.userId)
       if (!qq) continue
-      const nickname = u.nickname ?? u.nick ?? ''
+      const nickname = u.nickname
 
       const existing = await this.db.user.findUnique({ where: { qq }, select: { relation: true } })
       if (!existing) {

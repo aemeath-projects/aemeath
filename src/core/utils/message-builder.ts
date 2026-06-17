@@ -1,6 +1,6 @@
 /** 链式消息段构造器工具。 */
 
-import { Seg } from '@aemeath-projects/napcat'
+import { seg } from '@aemeath-projects/napcat'
 import type { ImageSegment, MessageSegment } from '@aemeath-projects/napcat/types'
 
 /**
@@ -20,27 +20,27 @@ export class MessageBuilder {
 
   /** 追加文本消息段。 */
   text(content: string): this {
-    return this.add(Seg.text(content))
+    return this.add(seg.text(content))
   }
 
   /** 追加表情消息段。 */
   face(id: number): this {
-    return this.add(Seg.face(id))
+    return this.add(seg.face(id))
   }
 
   /** 追加图片消息段。 */
   image(file: string, opts?: Partial<ImageSegment['data']>): this {
-    return this.add(Seg.image(file, opts))
+    return this.add(seg.image(file, opts))
   }
 
   /** 追加 @提及消息段。qq 为 number 或 'all'。 */
   at(qq: number | 'all'): this {
-    return this.add(Seg.at(qq))
+    return this.add(seg.at(qq))
   }
 
   /** 追加引用回复消息段。 */
   reply(id: number): this {
-    return this.add(Seg.reply(id))
+    return this.add(seg.reply(id))
   }
 
   /** 构建并返回消息段数组（副本）。 */

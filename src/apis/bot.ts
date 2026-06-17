@@ -55,7 +55,7 @@ const botRoutes: FastifyPluginAsync = async (app) => {
           const resp = await botApi.getLoginInfo()
           if (resp.ok && resp.data !== undefined) {
             nickname = (resp.data.nickname as string | null | undefined) ?? null
-            userId = (resp.data.user_id as number | null | undefined) ?? null
+            userId = (resp.data.userId as number | null | undefined) ?? null
             if (userId !== null) {
               avatarUrl = `https://q1.qlogo.cn/g?b=qq&nk=${String(userId)}&s=640`
             }
@@ -101,7 +101,7 @@ const botRoutes: FastifyPluginAsync = async (app) => {
           const loginResp = await botApi.getLoginInfo()
           if (loginResp.ok && loginResp.data !== undefined) {
             nickname = (loginResp.data.nickname as string | null | undefined) ?? null
-            userId = (loginResp.data.user_id as number | null | undefined) ?? null
+            userId = (loginResp.data.userId as number | null | undefined) ?? null
             if (userId !== null) {
               avatarUrl = `https://q1.qlogo.cn/g?b=qq&nk=${String(userId)}&s=640`
             }
@@ -114,9 +114,9 @@ const botRoutes: FastifyPluginAsync = async (app) => {
           const verResp = await botApi.getVersionInfo()
           if (verResp.ok && verResp.data !== undefined) {
             version = {
-              appName: (verResp.data.app_name as string | undefined) ?? '',
-              appVersion: (verResp.data.app_version as string | undefined) ?? '',
-              protocolVersion: (verResp.data.protocol_version as string | undefined) ?? '',
+              appName: (verResp.data.appName as string | undefined) ?? '',
+              appVersion: (verResp.data.appVersion as string | undefined) ?? '',
+              protocolVersion: (verResp.data.protocolVersion as string | undefined) ?? '',
             }
           }
         } catch (err) {
@@ -146,7 +146,11 @@ const botRoutes: FastifyPluginAsync = async (app) => {
       const botApi = app.services.get('botApi') as
         | {
             getLoginInfo(): Promise<{ ok: boolean; data?: Record<string, unknown> }>
-            setQqProfile(opts: Record<string, unknown>): Promise<{ ok: boolean; message?: string }>
+            setQQProfile(
+              nickname: string,
+              personalNote?: string | null,
+              sex?: string,
+            ): Promise<{ ok: boolean; message?: string }>
           }
         | undefined
 
@@ -178,12 +182,7 @@ const botRoutes: FastifyPluginAsync = async (app) => {
           }
         }
 
-        const kwargs: Record<string, unknown> = { nickname }
-        if (body.personalNote !== undefined) {
-          kwargs.personal_note = body.personalNote
-        }
-
-        const resp = await botApi.setQqProfile(kwargs)
+        const resp = await botApi.setQQProfile(nickname ?? '', body.personalNote)
         if (!resp.ok) {
           await reply.status(500).send(fail(`修改失败：${resp.message ?? '未知错误'}`))
           return

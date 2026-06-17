@@ -18,7 +18,7 @@ export class LoggingInterceptor implements HandlerInterceptor {
     ctx.setAttribute(CTX_KEY_START_TIME, Date.now())
     const groupId = ctx.groupId !== undefined ? String(ctx.groupId) : 'N/A'
     this._log.debug(
-      `正在处理事件 post_type=${ctx.event.post_type} user_id=${String(ctx.userId)} group_id=${groupId}`,
+      `正在处理事件 postType=${ctx.event.postType} userId=${String(ctx.userId)} groupId=${groupId}`,
     )
     return true
   }

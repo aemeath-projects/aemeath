@@ -28,7 +28,7 @@ export interface ContextApis {
 
 /** 从消息事件中提取纯文本。 */
 function extractPlaintext(event: AnyOneBotEvent): string {
-  if (event.post_type !== 'message' && event.post_type !== 'message_sent') {
+  if (event.postType !== 'message' && event.postType !== 'message_sent') {
     return ''
   }
   const msg = (event as { message?: unknown }).message
@@ -55,22 +55,20 @@ function textSegment(text: string): MessageSegment {
   return { type: 'text', data: { text } }
 }
 
-/** 事件记录视图（用于动态字段访问）。 */
-type EventRecord = Record<string, unknown>
-
 /** 判断事件是否为群消息事件。 */
 function isGroupEvent(event: AnyOneBotEvent): event is GroupMessageEvent {
   return (
-    (event.post_type === 'message' || event.post_type === 'message_sent') &&
-    (event as EventRecord).message_type === 'group'
+    (event.postType === 'message' || event.postType === 'message_sent') &&
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- GroupMessageEvent.messageType 是字面量 'group'，类型守卫需要此比较来缩窄
+    (event as GroupMessageEvent).messageType === 'group'
   )
 }
 
 /** 判断事件是否为私聊消息事件。 */
 function isPrivateEvent(event: AnyOneBotEvent): boolean {
   return (
-    (event.post_type === 'message' || event.post_type === 'message_sent') &&
-    (event as EventRecord).message_type === 'private'
+    (event.postType === 'message' || event.postType === 'message_sent') &&
+    (event as { messageType?: string }).messageType === 'private'
   )
 }
 
@@ -174,19 +172,20 @@ export class Context {
         : [message]
 
     if (isGroupEvent(this.event)) {
-      const result = await this.msgApi.sendGroupMsg(this.event.group_id, segments)
+      const groupEvent = this.event
+      const result = await this.msgApi.sendGroupMsg(groupEvent.groupId, segments)
       if (!result.ok) {
         throw new BotApiError(result.error.code, result.error.message)
       }
-      return result.data.message_id
+      return result.data.messageId
     } else if (isPrivateEvent(this.event)) {
-      const userId = (this.event as EventRecord).user_id
+      const userId = (this.event as { userId?: number }).userId
       if (typeof userId === 'number') {
         const result = await this.msgApi.sendPrivateMsg(userId, segments)
         if (!result.ok) {
           throw new BotApiError(result.error.code, result.error.message)
         }
-        return result.data.message_id
+        return result.data.messageId
       }
     }
     return undefined
@@ -210,7 +209,7 @@ export class Context {
 
   /** 撤回当前消息（仅消息事件有效）。失败时抛出 BotApiError。 */
   async recall(): Promise<void> {
-    const messageId = (this.event as EventRecord).message_id
+    const messageId = (this.event as { messageId?: number }).messageId
     if (typeof messageId === 'number') {
       const result = await this.msgApi.deleteMsg(messageId)
       if (!result.ok) {
@@ -234,20 +233,20 @@ export class Context {
   /** 当前群 ID（仅群消息事件有值）。 */
   get groupId(): number | undefined {
     if (isGroupEvent(this.event)) {
-      return this.event.group_id
+      return this.event.groupId
     }
     return undefined
   }
 
   /** 触发事件的用户 ID。 */
   get userId(): number {
-    const uid = (this.event as EventRecord).user_id
+    const uid = (this.event as { userId?: number }).userId
     return typeof uid === 'number' ? uid : 0
   }
 
   /** 当前消息 ID（仅消息事件有值）。 */
   get messageId(): number {
-    const mid = (this.event as EventRecord).message_id
+    const mid = (this.event as { messageId?: number }).messageId
     return typeof mid === 'number' ? mid : 0
   }
 }

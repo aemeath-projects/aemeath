@@ -27,7 +27,7 @@ export class SessionInterceptor implements HandlerInterceptor {
 
   async preHandle(ctx: Context, _handler: ResolvedHandler): Promise<boolean> {
     // 仅拦截消息事件（notice/request 不参与会话路由）
-    if (ctx.event.post_type !== 'message') return true
+    if (ctx.event.postType !== 'message') return true
 
     // SessionManager 尚未就绪时放行（启动瞬间的极短窗口）
     if (this._sessionManager === null) return true

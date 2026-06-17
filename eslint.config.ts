@@ -78,29 +78,25 @@ export default tseslint.config(
         { selector: 'typeLike', format: ['PascalCase'] },
         // 枚举成员：放行（Prisma 等外部枚举值映射）
         { selector: 'enumMember', format: null },
-        // 对象字面量属性 / 类型属性：放行
-        //   覆盖 OneBot 协议字段（SDK 边界）、$queryRaw 行类型（SQL 边界）、外部 API 形状
-        { selector: ['objectLiteralProperty', 'typeProperty'], format: null },
+        // 对象字面量属性 / 类型属性：
+        //   camelCase — 业务字段默认格式；
+        //   PascalCase — Fastify 路由 schema 固定键（Params / Querystring / Body / Reply）；
+        //   UPPER_CASE — @SettingNode enumOptions 的选项键（如 { ANYONE: 0, GROUP_ADMIN: 20 }）
+        //   数字属性名（HTTP 状态码如 200/400/500）通过 filter 放行
+        {
+          selector: ['objectLiteralProperty', 'typeProperty'],
+          format: ['camelCase', 'PascalCase', 'UPPER_CASE'],
+          leadingUnderscore: 'allow',
+          filter: { regex: '^[0-9]', match: false },
+        },
+        // 数字属性名（如 HTTP 状态码 200/400/500）：放行
+        {
+          selector: ['objectLiteralProperty', 'typeProperty'],
+          format: null,
+          filter: { regex: '^[0-9]', match: true },
+        },
         // import 的绑定名：放行（遵从外部模块导出名）
         { selector: 'import', format: null },
-      ],
-    },
-  },
-  {
-    // 业务层禁止越过 Context 直接访问 OneBot 协议字段（snake_case）
-    // 注意：selector `property.name=/_/` 匹配属性名含下划线的成员访问，是"尽力而为"的边界守卫，
-    // 非类型安全级约束——无法区分 ctx.event 与其他碰巧有 .event 属性的对象，也无法完全
-    // 区分 snake_case 与含下划线的 camelCase（在本代码库中实际不存在后者，风险低）。
-    files: ['src/handlers/**/*.ts', 'src/services/**/*.ts', 'src/apis/**/*.ts', 'src/tasks/**/*.ts'],
-    rules: {
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector:
-            "MemberExpression[object.type='MemberExpression'][object.property.name='event'][property.name=/_/]",
-          message:
-            '业务层禁止直接访问 .event.<snake_case> 协议字段，请使用 Context 的 camelCase 访问器（如 ctx.groupId / ctx.userId）',
-        },
       ],
     },
   },
@@ -109,29 +105,6 @@ export default tseslint.config(
     rules: {
       '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
-    },
-  },
-  {
-    // SDK (@aemeath-projects/napcat) TypedEventEmitter 使用了 any[] 泛型约束，
-    // 导致调用 .on()/.connect()/.disconnect() 时触发 no-unsafe-* 规则。
-    // 这是 SDK 类型设计的限制，非业务代码错误，在此处统一豁免。
-    files: [
-      'src/core/bot-client.ts',
-      'src/core/main.ts',
-      'src/core/tasks/executor.ts',
-      'src/core/utils/message-builder.ts',
-      'src/core/personnel/sync.ts',
-      'src/services/daily-checkin.ts',
-      'src/services/like.ts',
-      'src/services/feedback.ts',
-      'src/handlers/drift-bottle.ts',
-    ],
-    rules: {
-      '@typescript-eslint/no-unsafe-call': 'off',
-      '@typescript-eslint/no-unsafe-assignment': 'off',
-      '@typescript-eslint/no-unsafe-member-access': 'off',
-      '@typescript-eslint/no-unsafe-argument': 'off',
-      '@typescript-eslint/no-unsafe-return': 'off',
     },
   },
   {
@@ -145,6 +118,57 @@ export default tseslint.config(
       '@typescript-eslint/unbound-method': 'off',
       '@typescript-eslint/no-unnecessary-condition': 'off',
       '@typescript-eslint/no-dynamic-delete': 'off',
+    },
+  },
+  {
+    // SQL/DB 边界：$queryRaw 行类型与 Parquet 归档列名为 snake_case 数据契约，放行 property 命名
+    files: [
+      'src/core/chat/exporter.ts',
+      'src/core/chat/archive.ts',
+      'src/services/checkin.ts',
+      'src/services/drift-bottle.ts',
+    ],
+    rules: {
+      '@typescript-eslint/naming-convention': [
+        'error',
+        { selector: ['objectLiteralProperty', 'typeProperty'], format: null },
+      ],
+    },
+  },
+  {
+    // 框架协议契约豁免 —— 以下文件含有 snake_case 标识符，均属外部协议/框架约定，非我们自定义命名：
+    //
+    // DI 容器注入 key（如 'chat_db', 'msg_api', 'bot_client'）：
+    //   生命周期 DI 容器约定 snake_case key，文档明确规定（src/core/lifecycle/types.ts、main.ts、worker.ts）
+    //
+    // BullMQ 队列/任务名（如 'daily_checkin', 'chat_archive'）：
+    //   持久化到 Redis 的 topic 名，变更会导致已入队任务丢失（apis/queue.ts、tasks/daily-checkin.ts）
+    //
+    // HTTP 协议头 / MIME 类型常量（如 'Content-Type', 'image/png'）：
+    //   HTTP 协议约定格式，含 '-' 和 '/'，不属于 JS 标识符命名（core/chat/media.ts）
+    //
+    // Prisma $queryRaw 返回行类型（如 value_type, group_id）：
+    //   $queryRaw 直接映射数据库列名（snake_case），类型声明须与列名一致（core/settings/query.ts）
+    //
+    // Prisma 复合唯一键 / settings 点分 key（如 'userId_groupId', 'bot.enabled'）：
+    //   ORM compound key 和 settings key 均为持久化字符串契约（personnel/events.ts、personnel/index.ts、settings/service.ts）
+    files: [
+      'src/core/lifecycle/types.ts',
+      'src/core/main.ts',
+      'src/core/worker.ts',
+      'src/apis/queue.ts',
+      'src/core/chat/media.ts',
+      'src/core/personnel/events.ts',
+      'src/core/personnel/index.ts',
+      'src/core/settings/query.ts',
+      'src/core/settings/service.ts',
+      'src/tasks/daily-checkin.ts',
+    ],
+    rules: {
+      '@typescript-eslint/naming-convention': [
+        'error',
+        { selector: ['objectLiteralProperty', 'typeProperty'], format: null },
+      ],
     },
   },
   {

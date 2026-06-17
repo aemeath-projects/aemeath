@@ -1,6 +1,6 @@
 /** TaskExecutor —— 监听 BullMQ QueueEvents，按 job result 执行 Bot API。 */
 
-import { Seg } from '@aemeath-projects/napcat'
+import { seg } from '@aemeath-projects/napcat'
 import type { FriendApi, GroupApi, MessageApi, NapCatClient } from '@aemeath-projects/napcat'
 import type { MessageSegment } from '@aemeath-projects/napcat/types'
 import { getLogger } from '@logger'
@@ -108,16 +108,16 @@ export class TaskExecutor {
           case 'sendMsg': {
             const [params] = call.args as [
               {
-                message_type: 'group' | 'private'
-                group_id?: number
-                user_id?: number
+                messageType: 'group' | 'private'
+                groupId?: number
+                userId?: number
                 message: MessageSegment[]
               },
             ]
-            if (params.message_type === 'group' && params.group_id != null) {
-              await this.msgApi.sendGroupMsg(params.group_id, params.message)
-            } else if (params.message_type === 'private' && params.user_id != null) {
-              await this.msgApi.sendPrivateMsg(params.user_id, params.message)
+            if (params.messageType === 'group' && params.groupId != null) {
+              await this.msgApi.sendGroupMsg(params.groupId, params.message)
+            } else if (params.messageType === 'private' && params.userId != null) {
+              await this.msgApi.sendPrivateMsg(params.userId, params.message)
             }
             break
           }
@@ -161,7 +161,7 @@ export class TaskExecutor {
       return
     }
 
-    const imageSegment = Seg.image(`base64://${b64}`)
+    const imageSegment = seg.image(`base64://${b64}`)
 
     try {
       if ('groupId' in result.sendTo) {

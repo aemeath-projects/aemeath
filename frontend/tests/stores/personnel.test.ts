@@ -21,28 +21,35 @@ vi.mock('@/apis/personnel', () => ({
 import * as api from '@/apis/personnel'
 
 const mockPaginatedUsers = {
-  items: [{ qq: 1, nickname: 'Alice' }],
+  items: [{ qq: 1, nickname: 'Alice', relation: 'friend', groupCount: 0, lastSynced: null }],
   total: 1,
   page: 1,
-  page_size: 20,
+  pageSize: 20,
   pages: 1,
 }
 const mockPaginatedGroups = {
-  items: [{ groupId: 100, groupName: 'TestGroup' }],
+  items: [{ groupId: 100, groupName: 'TestGroup', memberCount: 1, maxMemberCount: 200, isActive: true, lastSynced: null }],
   total: 1,
   page: 1,
-  page_size: 20,
+  pageSize: 20,
   pages: 1,
 }
 const mockPaginatedMembers = {
-  items: [{ qq: 1, nickname: 'Alice', role: 'member' }],
+  items: [{ qq: 1, nickname: 'Alice', card: '', role: 'member', relation: 'friend', joinTime: 0, lastActiveTime: 0, title: '', level: '' }],
   total: 1,
   page: 1,
-  page_size: 20,
+  pageSize: 20,
   pages: 1,
 }
-const mockUserDetail = { qq: 1, nickname: 'Alice', sex: 'male', age: 20 }
-const mockSyncStatus = { last_sync: '2024-01-01T00:00:00Z', is_syncing: false }
+const mockUserDetail = { qq: 1, nickname: 'Alice', relation: 'friend', groupCount: 1, lastSynced: null }
+const mockSyncStatus = {
+  lastSyncTime: '2024-01-01T00:00:00Z',
+  durationSeconds: null,
+  status: 'idle',
+  usersSynced: 0,
+  groupsSynced: 0,
+  membershipsSynced: 0,
+}
 
 describe('usePersonnelStore', () => {
   beforeEach(() => {
@@ -241,7 +248,7 @@ describe('usePersonnelStore', () => {
   /* loadAdmins() / setAdmin() / unsetAdmin() */
 
   describe('管理员操作', () => {
-    const mockAdmins = [{ qq: 1, nickname: 'Alice' }]
+    const mockAdmins = [{ qq: 1, nickname: 'Alice', relation: 'friend', groupCount: 0, lastSynced: null }]
 
     it('loadAdmins() 成功时更新 admins', async () => {
       vi.mocked(api.fetchAdmins).mockResolvedValue(mockAdmins)
@@ -290,7 +297,7 @@ describe('usePersonnelStore', () => {
 
     it('clearCache() 清空缓存后 getUserName 再次返回 ID 字符串', async () => {
       vi.mocked(api.resolvePersonnel).mockResolvedValue({
-        users: { 1: { qq: 1, nickname: 'Alice' } },
+        users: { 1: { nickname: 'Alice', relation: 'friend' } },
         groups: {},
       })
       const store = usePersonnelStore()

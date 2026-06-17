@@ -58,6 +58,53 @@ export default tseslint.config(
     },
   },
   {
+    files: ['src/**/*.ts'],
+    rules: {
+      '@typescript-eslint/naming-convention': [
+        'error',
+        // 默认：camelCase，允许前导下划线（私有）
+        { selector: 'default', format: ['camelCase'], leadingUnderscore: 'allow' },
+        // 变量：允许 camelCase / UPPER_CASE（模块常量）/ PascalCase（类/组件赋值）
+        {
+          selector: 'variable',
+          format: ['camelCase', 'UPPER_CASE', 'PascalCase'],
+          leadingUnderscore: 'allow',
+        },
+        // 解构变量：放行（来自 SDK 事件 / $queryRaw 行 / 外部对象）
+        { selector: 'variable', modifiers: ['destructured'], format: null },
+        { selector: 'parameter', format: ['camelCase'], leadingUnderscore: 'allow' },
+        { selector: 'function', format: ['camelCase', 'PascalCase'], leadingUnderscore: 'allow' },
+        // 类/接口/类型别名/枚举：PascalCase
+        { selector: 'typeLike', format: ['PascalCase'] },
+        // 枚举成员：放行（Prisma 等外部枚举值映射）
+        { selector: 'enumMember', format: null },
+        // 对象字面量属性 / 类型属性：放行
+        //   覆盖 OneBot 协议字段（SDK 边界）、$queryRaw 行类型（SQL 边界）、外部 API 形状
+        { selector: ['objectLiteralProperty', 'typeProperty'], format: null },
+        // import 的绑定名：放行（遵从外部模块导出名）
+        { selector: 'import', format: null },
+      ],
+    },
+  },
+  {
+    // 业务层禁止越过 Context 直接访问 OneBot 协议字段（snake_case）
+    // 注意：selector `property.name=/_/` 匹配属性名含下划线的成员访问，是"尽力而为"的边界守卫，
+    // 非类型安全级约束——无法区分 ctx.event 与其他碰巧有 .event 属性的对象，也无法完全
+    // 区分 snake_case 与含下划线的 camelCase（在本代码库中实际不存在后者，风险低）。
+    files: ['src/handlers/**/*.ts', 'src/services/**/*.ts', 'src/apis/**/*.ts', 'src/tasks/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "MemberExpression[object.type='MemberExpression'][object.property.name='event'][property.name=/_/]",
+          message:
+            '业务层禁止直接访问 .event.<snake_case> 协议字段，请使用 Context 的 camelCase 访问器（如 ctx.groupId / ctx.userId）',
+        },
+      ],
+    },
+  },
+  {
     files: ['*.config.ts'],
     rules: {
       '@typescript-eslint/no-unsafe-call': 'off',

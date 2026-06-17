@@ -40,7 +40,7 @@ export class CacheKeyRegistry {
 
 export const cacheKeyRegistry = new CacheKeyRegistry()
 
-// 框架级 key 注册（原 core-cache-keys.ts）
+// 框架级 key 注册
 cacheKeyRegistry.register({
   namespace: 'perm',
   name: 'group',
@@ -55,7 +55,7 @@ cacheKeyRegistry.register({
 
 cacheKeyRegistry.register({
   namespace: 'perm',
-  name: 'group_enabled',
+  name: 'groupEnabled',
   build: (groupId) => `aemeath:perm:group_enabled:${groupId}`,
 })
 

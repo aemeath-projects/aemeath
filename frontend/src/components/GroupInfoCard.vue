@@ -120,7 +120,7 @@
         </template>
 
         <!-- 入群时间 -->
-        <template #[`item.join_time`]="{ item }">
+        <template #[`item.joinTime`]="{ item }">
           <span class="text-caption">
             {{ item.joinTime ? formatTimestamp(item.joinTime) : '-' }}
           </span>
@@ -187,7 +187,7 @@ const memberHeaders = [
   { title: '群角色', key: 'role', sortable: false, align: 'center' as const },
   { title: '关系', key: 'relation', sortable: false, align: 'center' as const },
   { title: '头衔', key: 'title', sortable: false },
-  { title: '入群时间', key: 'join_time', sortable: false },
+  { title: '入群时间', key: 'joinTime', sortable: false },
 ]
 
 const debouncedLoadMembers = debounce(() => loadMembers(1))

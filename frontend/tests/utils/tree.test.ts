@@ -64,7 +64,8 @@ describe('filterSchemasByCategory', () => {
   it('过滤 config 类', () => {
     const result = filterSchemasByCategory(schemas, 'config')
     expect(result).toHaveLength(1)
-    expect(result[0].key).toBe('b.config')
+     
+    expect(result[0]!.key).toBe('b.config')
   })
 
   it('无匹配时返回空数组', () => {

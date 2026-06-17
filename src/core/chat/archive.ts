@@ -258,9 +258,9 @@ export class ArchiveService {
 
       await this.s3.uploadFile(tmpPath, s3Key, {
         partition: partitionName,
-        period_start: periodStart.toISOString().slice(0, 10),
-        period_end: periodEnd.toISOString().slice(0, 10),
-        total_rows: String(totalRows),
+        periodStart: periodStart.toISOString().slice(0, 10),
+        periodEnd: periodEnd.toISOString().slice(0, 10),
+        totalRows: String(totalRows),
         sha256: sha256Hex,
       })
 

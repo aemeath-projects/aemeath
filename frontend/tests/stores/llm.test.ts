@@ -22,13 +22,13 @@ import * as llmApi from '@/apis/llm'
 const mockProvider = {
   id: 'p1',
   name: 'OpenAI',
-  api_base: 'https://api.openai.com/v1',
-  api_key_masked: 'sk-****',
-  max_retries: 3,
+  apiBase: 'https://api.openai.com/v1',
+  apiKeyMasked: 'sk-****',
+  maxRetries: 3,
   timeout: 30,
-  retry_interval: 1,
-  is_enabled: true,
-  model_count: 2,
+  retryInterval: 1,
+  isEnabled: true,
+  modelCount: 2,
 }
 
 const mockProviderDetail = {
@@ -38,16 +38,16 @@ const mockProviderDetail = {
 
 const mockModel = {
   id: 'm1',
-  provider_id: 'p1',
-  provider_name: 'OpenAI',
-  model_name: 'gpt-4o',
-  display_name: 'GPT-4o',
-  input_price: 0.005,
-  output_price: 0.015,
+  providerId: 'p1',
+  providerName: 'OpenAI',
+  modelName: 'gpt-4o',
+  displayName: 'GPT-4o',
+  inputPrice: 0.005,
+  outputPrice: 0.015,
   temperature: 0.7,
-  max_tokens: 4096,
-  force_stream: false,
-  extra_params: {},
+  maxTokens: 4096,
+  forceStream: false,
+  extraParams: {},
 }
 
 describe('useLLMStore', () => {

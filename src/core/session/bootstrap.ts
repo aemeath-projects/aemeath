@@ -8,7 +8,7 @@ import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import { SessionManager } from '@aemeath-projects/exostrider/session'
 import type { SessionConfig } from '@aemeath-projects/exostrider/session'
 
-import { RedisLockProvider } from './redis-lock-provider.js'
+import { RedisLockProvider } from './lock-provider.js'
 
 import type { OneBotContext } from '@/core/dispatch/context.js'
 import type { RedisStore } from '@/core/redis/store.js'

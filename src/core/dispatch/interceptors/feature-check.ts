@@ -9,9 +9,9 @@ import type {
 } from '@aemeath-projects/exostrider/dispatch'
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 
-import type { ContextApis } from './adapter.js'
-import type { OneBotContext } from './context.js'
-import type { FeatureChecker } from './mapping-types.js'
+import type { ContextApis } from '../adapter.js'
+import type { OneBotContext } from '../context.js'
+import type { FeatureChecker } from '../types.js'
 
 export type { FeatureChecker }
 

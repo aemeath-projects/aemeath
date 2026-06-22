@@ -14,7 +14,7 @@ import type { MediaStorageService } from './media.js'
 import { ArchiveS3 } from './s3.js'
 
 import { loadConfig } from '@/core/config.js'
-import type { ChatPrismaClient, MainPrismaClient } from '@/core/db.js'
+import type { ChatPrismaClient, MainPrismaClient } from '@/core/db/index.js'
 import type { OssBundle, OssBuckets } from '@/core/oss/client.js'
 
 export type { ChatMessage }

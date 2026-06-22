@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches: ['**']
-    tags: ['**']
+    tags: ['v*.*.*']
   pull_request:
     branches: [master]
   workflow_dispatch:
@@ -105,3 +105,137 @@ jobs:
           files: ./frontend/junit.xml
           report_type: test_results
           fail_ci_if_error: false
+
+  docker:
+    name: Build & Push Docker Image
+    needs: [backend, frontend]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log into Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: akaririn
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: akaririn/aemeath
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  helm:
+    name: Push Helm Chart to GHCR (OCI)
+    needs: [backend, frontend]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Helm
+        uses: azure/setup-helm@v5
+
+      - name: Log into GHCR
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
+        run: echo "${GHCR_TOKEN}" | helm registry login ghcr.io -u "${GHCR_USER}" --password-stdin
+
+      - name: Update Helm chart version
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          # 严格校验 tag 只含合法 semver 字符，防止注入
+          if [[ ! "${VERSION}" =~ ^v?[0-9]+\.[0-9]+(\.[0-9]+)?(-[a-zA-Z0-9._-]+)?(\+[a-zA-Z0-9._-]+)?$ ]]; then
+            echo "::error::非法的版本号格式: ${VERSION}"
+            exit 1
+          fi
+          VERSION="${VERSION#v}"
+          sed -i "s/^version:.*/version: ${VERSION}/" helm/aemeath/Chart.yaml
+          sed -i "s/^appVersion:.*/appVersion: \"${VERSION}\"/" helm/aemeath/Chart.yaml
+
+      - name: Add Helm dependency repos
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm repo update
+
+      - name: Build Helm dependencies
+        run: helm dependency build helm/aemeath
+
+      - name: Package Helm chart
+        run: helm package helm/aemeath -d .helm-out
+
+      - name: Push Helm chart to GHCR (OCI)
+        run: helm push .helm-out/*.tgz oci://ghcr.io/aemeath-projects
+
+  github-release:
+    name: Create GitHub Release
+    needs: [docker, helm]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Extract changelog
+        id: changelog
+        env:
+          VERSION_TAG: ${{ github.ref_name }}
+        run: |
+          NOTES_FILE="/tmp/release_notes.txt"
+          if [ -f "CHANGELOG.md" ]; then
+            # 提取对应版本段落：从 "## vX.Y.Z" 行开始，到下一个 "## " 或文件末尾
+            awk "/^## ${VERSION_TAG}[[:space:]]*/,/^## [^${VERSION_TAG}]/" CHANGELOG.md \
+              | tail -n +2 \
+              | sed '/^## /d' \
+              | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' \
+              > "$NOTES_FILE"
+            if [ ! -s "$NOTES_FILE" ]; then
+              echo "未在 CHANGELOG.md 中找到 ${VERSION_TAG} 的条目" > "$NOTES_FILE"
+            fi
+          else
+            echo "未找到 CHANGELOG.md" > "$NOTES_FILE"
+          fi
+          echo "notes_file=${NOTES_FILE}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body_path: ${{ steps.changelog.outputs.notes_file }}
+          draft: false
+          prerelease: false

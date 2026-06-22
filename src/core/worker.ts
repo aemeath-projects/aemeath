@@ -15,7 +15,7 @@ import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import { Worker } from 'bullmq'
 
 import { loadConfig } from './config.js'
-import { createMainDb, createChatDb } from './db.js'
+import { createMainDb, createChatDb } from './db/index.js'
 import { createOssClient } from './oss/client.js'
 import type { OssBuckets } from './oss/client.js'
 import { createRedis, createBullMQConnection } from './redis/factory.js'

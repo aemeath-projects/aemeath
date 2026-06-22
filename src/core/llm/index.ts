@@ -11,7 +11,7 @@ import type { LlmModel, LlmProvider } from '#prisma/main'
 import { LLMClient } from './client.js'
 import type { ChatMessage } from './completion.js'
 
-import type { MainPrismaClient } from '@/core/db.js'
+import type { MainPrismaClient } from '@/core/db/index.js'
 import { NotFoundError } from '@/core/errors.js'
 import {
   maskApiKey,

@@ -20,7 +20,7 @@ import {
 
 import { loadConfig } from './config.js'
 
-const log: PinoLogger = getLogger('bot-client') as unknown as PinoLogger
+const log: PinoLogger = getLogger('napcat') as unknown as PinoLogger
 
 @Service({ name: 'bot_client_bootstrap' })
 export class BotClientBootstrap {

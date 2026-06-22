@@ -15,7 +15,7 @@ import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 import type { Queue } from 'bullmq'
 import type { Redis } from 'ioredis'
 
-import type { MainPrismaClient, ChatPrismaClient } from '@/core/db.js'
+import type { MainPrismaClient, ChatPrismaClient } from '@/core/db/index.js'
 import type { ContextApis } from '@/core/dispatch/adapter.js'
 import type { RedisStore } from '@/core/redis/store.js'
 

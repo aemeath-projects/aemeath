@@ -2,7 +2,7 @@
 
 import type { Job } from 'bullmq'
 
-import type { MainPrismaClient } from '@/core/db.js'
+import type { MainPrismaClient } from '@/core/db/index.js'
 import type { BotActionJobResult, TaskDefinition } from '@/core/tasks/index.js'
 
 export const JOB_NAME = 'daily-like' as const

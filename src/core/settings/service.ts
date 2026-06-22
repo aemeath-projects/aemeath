@@ -4,9 +4,11 @@
 
 import type { Redis } from 'ioredis'
 
+import { Prisma } from '#prisma/main'
+
 import type { SettingNodeSchema } from './schema.js'
 
-import type { MainPrismaClient } from '@/core/db.js'
+import type { MainPrismaClient } from '@/core/db/index.js'
 import { ValidationError } from '@/core/errors.js'
 
 /* 常量 */
@@ -133,19 +135,32 @@ export class SettingsService {
    * 批量写入，自动校验 + 失效缓存。
    */
   async batchSet(entries: { key: string; value: unknown }[], scope: SettingsScope): Promise<void> {
+    if (entries.length === 0) return
     const { type, scopeId } = this._resolveScope(scope)
 
-    for (const entry of entries) {
+    // 预先校验所有条目，提前暴露错误，避免部分写入
+    const validated = entries.map((entry) => {
       const schema = this.schemaMap.get(entry.key)
-      if (!schema) throw new Error(`[settings] 未知配置项: ${entry.key}`)
+      if (!schema) throw new ValidationError(`[settings] 未知配置项: ${entry.key}`)
+      return {
+        key: entry.key,
+        serialized: this._validate(entry.key, entry.value, schema),
+        valueType: schema.type,
+      }
+    })
 
-      const serialized = this._validate(entry.key, entry.value, schema)
-      await this.db.$executeRaw`
+    // 单条 SQL 批量 UPSERT，消除 N 次串行写入
+    const valueRows = validated.map(
+      (e) =>
+        Prisma.sql`(${e.key}, ${type}::settings_entry_type, ${scopeId}, ${e.serialized}, ${e.valueType}::settings_value_type)`,
+    )
+    await this.db.$executeRaw(
+      Prisma.sql`
         INSERT INTO settings (key, type, scope, value, value_type)
-        VALUES (${entry.key}, ${type}::settings_entry_type, ${scopeId}, ${serialized}, ${schema.type}::settings_value_type)
-        ON CONFLICT (key, type, scope) DO UPDATE SET value = ${serialized}
-      `
-    }
+        VALUES ${Prisma.join(valueRows)}
+        ON CONFLICT (key, type, scope) DO UPDATE SET value = EXCLUDED.value
+      `,
+    )
 
     // 批量失效缓存
     const pipeline = this.redis.pipeline()

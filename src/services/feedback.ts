@@ -10,7 +10,7 @@ import type { MessageApi } from '@aemeath-projects/napcat'
 
 import type { Prisma, Feedback, FeedbackStatus, FeedbackSource, FeedbackType } from '#prisma/main'
 
-import type { MainPrismaClient } from '@/core/db.js'
+import type { MainPrismaClient } from '@/core/db/index.js'
 
 export type { Feedback, FeedbackStatus, FeedbackSource, FeedbackType }
 

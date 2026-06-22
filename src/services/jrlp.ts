@@ -6,8 +6,8 @@ import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/
 
 import type { WifeRecord, Prisma } from '#prisma/main'
 
-import type { MainPrismaClient } from '@/core/db.js'
-import { isPrismaKnownError } from '@/core/db.js'
+import type { MainPrismaClient } from '@/core/db/index.js'
+import { isPrismaKnownError } from '@/core/db/index.js'
 import { AppError, ValidationError } from '@/core/errors.js'
 
 export type { WifeRecord }

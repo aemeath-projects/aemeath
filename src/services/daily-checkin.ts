@@ -10,11 +10,11 @@ import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { GroupApi, NapCatClient } from '@aemeath-projects/napcat'
 
-import type { MainPrismaClient } from '@/core/db.js'
+import type { MainPrismaClient } from '@/core/db/index.js'
 import type { RedisStore } from '@/core/redis/index.js'
 import { cacheKeyRegistry } from '@/core/registries.js'
 import type { SettingsService } from '@/core/settings/index.js'
-import { SHANGHAI_TZ } from '@/core/utils.js'
+import { SHANGHAI_TZ } from '@/core/utils/index.js'
 
 /* 常量 */
 
@@ -167,6 +167,7 @@ export class DailyCheckinService {
     const rows = await this.db.group.findMany({
       where: { isActive: true },
       select: { groupId: true },
+      take: 2000, // 防御性上限，QQ 单账号群上限远低于此值
     })
 
     // 通过 SettingsService 过滤 bot.enabled=true 的群

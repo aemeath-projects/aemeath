@@ -8,7 +8,7 @@ import { createHash } from 'node:crypto'
 import { createReadStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
 
-import type { ChatPrismaClient } from '@/core/db.js'
+import type { ChatPrismaClient } from '@/core/db/index.js'
 
 /** 归档导出配置。 */
 export interface ArchiveExporterSettings {
@@ -117,17 +117,27 @@ export class ArchiveExporter {
     let hasMore = true
 
     while (hasMore) {
-      // 分区名已通过 PARTITION_NAME_RE 正则白名单验证，$queryRawUnsafe 安全
-      const whereClause = cursor !== undefined ? `WHERE id > ${cursor.toString()}` : ''
-      const batchSize = String(this.settings.batchSize)
-      const rows = await this.chatDb.$queryRawUnsafe<RawRow[]>(
-        `SELECT id, created_at, message_id, message_type, group_id, user_id,
-                raw_message, segments, sender_nickname, sender_card, sender_role, stored_at
-         FROM chat."${partitionName}"
-         ${whereClause}
-         ORDER BY id ASC
-         LIMIT ${batchSize}`,
-      )
+      // 分区名已通过 PARTITION_NAME_RE 正则白名单验证；动态值通过 $N 位置参数化，消除拼接注入风险
+      const rows =
+        cursor !== undefined
+          ? await this.chatDb.$queryRawUnsafe<RawRow[]>(
+              `SELECT id, created_at, message_id, message_type, group_id, user_id,
+                      raw_message, segments, sender_nickname, sender_card, sender_role, stored_at
+               FROM chat."${partitionName}"
+               WHERE id > $1
+               ORDER BY id ASC
+               LIMIT $2`,
+              cursor,
+              this.settings.batchSize,
+            )
+          : await this.chatDb.$queryRawUnsafe<RawRow[]>(
+              `SELECT id, created_at, message_id, message_type, group_id, user_id,
+                      raw_message, segments, sender_nickname, sender_card, sender_role, stored_at
+               FROM chat."${partitionName}"
+               ORDER BY id ASC
+               LIMIT $1`,
+              this.settings.batchSize,
+            )
 
       if (rows.length === 0) break
 

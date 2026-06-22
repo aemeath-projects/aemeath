@@ -6,7 +6,7 @@ import {
 } from '@aemeath-projects/exostrider/dispatch'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { MainPrismaClient } from '@/core/db.js'
+import type { MainPrismaClient } from '@/core/db/index.js'
 import { buildSchemaMap, cleanOrphanKeys } from '@/core/settings/schema.js'
 
 beforeEach(() => {

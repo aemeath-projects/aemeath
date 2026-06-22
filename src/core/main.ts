@@ -36,14 +36,17 @@ import pkg from '../../package.json' with { type: 'json' }
 const logger = getLogger('main')
 
 import { loadConfig } from './config.js'
-import { createMainDb, createChatDb } from './db.js'
+import { createMainDb, createChatDb } from './db/index.js'
 import { oneBotContextConfig } from './dispatch/adapter.js'
 import type { ContextApis } from './dispatch/adapter.js'
 import type { OneBotContext } from './dispatch/context.js'
-import { FeatureCheckInterceptor } from './dispatch/feature-check-interceptor.js'
-import { LoggingInterceptor, SessionInterceptor } from './dispatch/interceptors/index.js'
-import type { FeatureChecker } from './dispatch/mapping-types.js'
-import type { AemeathServiceMap } from './lifecycle/types.js'
+import {
+  FeatureCheckInterceptor,
+  LoggingInterceptor,
+  SessionInterceptor,
+} from './dispatch/interceptors/index.js'
+import type { FeatureChecker } from './dispatch/types.js'
+import type { AemeathServiceMap } from './lifecycle.js'
 import { metricsRegistry } from './monitoring/index.js'
 import { authPlugin, corsPlugin, swaggerPlugin } from './plugins/index.js'
 import { createRedis, checkRedisReachable } from './redis/factory.js'
@@ -73,7 +76,7 @@ import '@/core/oss/bootstrap.js'
 // 触发 MediaStorageService 的 Startup 注册
 import '@/core/chat/media.js'
 // 触发 BotClientBootstrap 的 Startup 注册
-import '@/core/bot-client.js'
+import '@/core/napcat.js'
 // 触发 SessionManagerBootstrap 的 Startup 注册
 import '@/core/session/bootstrap.js'
 

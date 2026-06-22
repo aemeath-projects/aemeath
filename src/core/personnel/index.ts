@@ -8,10 +8,10 @@
 import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/lifecycle'
 import type { FriendInfo, GroupInfo, GroupMember } from '@aemeath-projects/napcat/types'
 
-import { USER_RELATION_GLOB } from './cache-keys.js'
+import { USER_RELATION_GLOB } from './cache.js'
 import './metrics.js'
 
-import type { MainPrismaClient } from '@/core/db.js'
+import type { MainPrismaClient } from '@/core/db/index.js'
 import type { RedisStore } from '@/core/redis/store.js'
 import { cacheKeyRegistry } from '@/core/registries.js'
 
@@ -430,30 +430,43 @@ export class PersonnelService {
     return total
   }
 
-  /** 重算所有非 admin 用户的 relation 字段。 */
+  /** 重算所有非 admin 用户的 relation 字段（游标分批，每批 1000 条）。 */
   private async _recalculateRelations(friendQqSet: Set<bigint>): Promise<void> {
-    const users = await this.db.user.findMany({
-      where: { relation: { not: 'admin' } },
-      select: { qq: true, relation: true },
-    })
+    const BATCH_SIZE = 1000
+    let cursor: bigint | undefined
 
-    if (users.length === 0) return
+    for (;;) {
+      const users = await this.db.user.findMany({
+        where: {
+          relation: { not: 'admin' },
+          ...(cursor !== undefined ? { qq: { gt: cursor } } : {}),
+        },
+        select: { qq: true, relation: true },
+        orderBy: { qq: 'asc' },
+        take: BATCH_SIZE,
+      })
 
-    const userIds = users.map((u) => u.qq)
-    const activeMemberRows = await this.db.groupMembership.findMany({
-      where: { userId: { in: userIds }, isActive: true },
-      select: { userId: true },
-      distinct: ['userId'],
-    })
-    const activeMemberIds = new Set(activeMemberRows.map((r) => r.userId))
+      if (users.length === 0) break
 
-    for (const user of users) {
-      const hasActiveMembership = activeMemberIds.has(user.qq)
-      const isFriend = friendQqSet.has(user.qq)
-      const newRelation = computeRelation(user.relation, isFriend, hasActiveMembership)
-      if (user.relation !== newRelation) {
-        await this.db.user.update({ where: { qq: user.qq }, data: { relation: newRelation } })
+      const userIds = users.map((u) => u.qq)
+      const activeMemberRows = await this.db.groupMembership.findMany({
+        where: { userId: { in: userIds }, isActive: true },
+        select: { userId: true },
+        distinct: ['userId'],
+      })
+      const activeMemberIds = new Set(activeMemberRows.map((r) => r.userId))
+
+      for (const user of users) {
+        const hasActiveMembership = activeMemberIds.has(user.qq)
+        const isFriend = friendQqSet.has(user.qq)
+        const newRelation = computeRelation(user.relation, isFriend, hasActiveMembership)
+        if (user.relation !== newRelation) {
+          await this.db.user.update({ where: { qq: user.qq }, data: { relation: newRelation } })
+        }
       }
+
+      cursor = users.at(-1)?.qq
+      if (users.length < BATCH_SIZE) break
     }
   }
 

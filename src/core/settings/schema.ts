@@ -4,7 +4,7 @@
 import type { SettingNodeOptions } from '@aemeath-projects/exostrider/dispatch'
 import { handlerRegistry } from '@aemeath-projects/exostrider/dispatch'
 
-import type { MainPrismaClient } from '@/core/db.js'
+import type { MainPrismaClient } from '@/core/db/index.js'
 
 export interface SettingNodeSchema {
   key: string

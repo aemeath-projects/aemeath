@@ -9,8 +9,8 @@ import type { FriendApi } from '@aemeath-projects/napcat'
 
 import type { LikeTask, LikeHistory, LikeSource, Prisma } from '#prisma/main'
 
-import type { MainPrismaClient } from '@/core/db.js'
-import { isPrismaKnownError } from '@/core/db.js'
+import type { MainPrismaClient } from '@/core/db/index.js'
+import { isPrismaKnownError } from '@/core/db/index.js'
 
 export type { LikeTask, LikeHistory, LikeSource }
 

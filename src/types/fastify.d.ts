@@ -7,9 +7,9 @@ import type { NapCatClient } from '@aemeath-projects/napcat'
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 import type { Redis } from 'ioredis'
 
-import type { createMainDb, createChatDb } from '@/core/db.js'
+import type { createMainDb, createChatDb } from '@/core/db/index.js'
 import type { ContextApis } from '@/core/dispatch/adapter.js'
-import type { AemeathServiceMap } from '@/core/lifecycle/types.js'
+import type { AemeathServiceMap } from '@/core/lifecycle.js'
 import type { RedisStore } from '@/core/redis/store.js'
 import type { TaskExecutor } from '@/core/tasks/executor.js'
 

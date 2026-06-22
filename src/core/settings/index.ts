@@ -19,7 +19,7 @@ import { SettingsPermissionChecker } from './permission.js'
 import { buildSchemaMap, cleanOrphanKeys } from './schema.js'
 import { SettingsService } from './service.js'
 
-import type { MainPrismaClient } from '@/core/db.js'
+import type { MainPrismaClient } from '@/core/db/index.js'
 import type { PersonnelService } from '@/core/personnel/index.js'
 
 @Service({ name: 'settings_bootstrap' })

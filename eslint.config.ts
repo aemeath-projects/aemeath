@@ -153,7 +153,7 @@ export default tseslint.config(
     // Prisma 复合唯一键 / settings 点分 key（如 'userId_groupId', 'bot.enabled'）：
     //   ORM compound key 和 settings key 均为持久化字符串契约（personnel/events.ts、personnel/index.ts、settings/service.ts）
     files: [
-      'src/core/lifecycle/types.ts',
+      'src/core/lifecycle.ts',
       'src/core/main.ts',
       'src/core/worker.ts',
       'src/apis/queue.ts',
@@ -169,6 +169,14 @@ export default tseslint.config(
         'error',
         { selector: ['objectLiteralProperty', 'typeProperty'], format: null },
       ],
+    },
+  },
+  {
+    // Prisma.sql / Prisma.join 为生成代码导出，ESLint TypeScript 服务无法推断其模板标签类型
+    files: ['src/core/settings/service.ts'],
+    rules: {
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
     },
   },
   {

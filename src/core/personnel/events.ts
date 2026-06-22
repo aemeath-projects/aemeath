@@ -7,7 +7,7 @@
 
 import { computeRelation } from './index.js'
 
-import type { MainPrismaClient } from '@/core/db.js'
+import type { MainPrismaClient } from '@/core/db/index.js'
 import type { RedisStore } from '@/core/redis/store.js'
 import { cacheKeyRegistry } from '@/core/registries.js'
 

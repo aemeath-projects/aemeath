@@ -2,7 +2,7 @@
 
 import type { Job } from 'bullmq'
 
-import type { MainPrismaClient } from '@/core/db.js'
+import type { MainPrismaClient } from '@/core/db/index.js'
 import type { RedisStore } from '@/core/redis/index.js'
 import { cacheKeyRegistry } from '@/core/registries.js'
 import type { MinimalSettingSchema } from '@/core/settings/index.js'

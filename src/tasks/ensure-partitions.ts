@@ -2,7 +2,7 @@
 
 import type { Job } from 'bullmq'
 
-import type { ChatPrismaClient } from '@/core/db.js'
+import type { ChatPrismaClient } from '@/core/db/index.js'
 import type { SelfContainedJobResult, TaskDefinition } from '@/core/tasks/index.js'
 
 export const JOB_NAME = 'ensure-chat-partitions' as const

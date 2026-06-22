@@ -1,6 +1,6 @@
 /** Settings 纯函数查询 —— Worker 与主进程共用，无 Redis 缓存层。 */
 
-import type { MainPrismaClient } from '@/core/db.js'
+import type { MainPrismaClient } from '@/core/db/index.js'
 
 /* 类型定义 */
 

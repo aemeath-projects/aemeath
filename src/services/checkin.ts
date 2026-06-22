@@ -11,11 +11,11 @@ import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import { Prisma } from '#prisma/main'
 import type { CheckinRecord } from '#prisma/main'
 
-import type { MainPrismaClient } from '@/core/db.js'
-import { isPrismaKnownError } from '@/core/db.js'
+import type { MainPrismaClient } from '@/core/db/index.js'
+import { isPrismaKnownError } from '@/core/db/index.js'
 import type { RedisStore } from '@/core/redis/index.js'
 import { cacheKeyRegistry } from '@/core/registries.js'
-import { SHANGHAI_TZ } from '@/core/utils.js'
+import { SHANGHAI_TZ } from '@/core/utils/index.js'
 
 export type { CheckinRecord }
 

@@ -2,10 +2,10 @@
  * 日志 SSE 端点 —— 实时推送应用日志到前端。
  */
 
+import { logBroadcaster } from '@aemeath-projects/exostrider/logger'
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
 import { LogStreamQuerySchema } from '@/apis/schemas/index.js'
-import { logBroadcaster } from '@/core/logging/index.js'
 
 /**
  * 日志 SSE 路由插件。

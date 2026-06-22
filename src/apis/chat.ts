@@ -2,7 +2,8 @@
  * 聊天记录 REST API 路由 —— /api/chat。
  */
 
-import { getLogger } from '@logger'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
 import {
@@ -21,9 +22,11 @@ import {
   ArchiveQueryDataSchema,
   ArchiveTriggerDataSchema,
 } from '@/apis/schemas/index.js'
+import type { ArchiveService } from '@/core/chat/archive.js'
+import type { ChatHistoryService } from '@/core/chat/index.js'
 import { ok, fail, OkResponse, FailResponse } from '@/core/schemas/index.js'
 
-const log = getLogger('chat')
+const log: PinoLogger = getLogger('chat') as unknown as PinoLogger
 
 /**
  * 将 Prisma ChatMessage（含 bigint 字段）转换为 JSON-safe 对象。
@@ -88,9 +91,7 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
       }>,
       reply: FastifyReply,
     ) => {
-      const { ChatHistoryService } = await import('@/core/chat/index.js')
-
-      const svc = app.services.getTyped(ChatHistoryService, 'chat_service')
+      const svc = app.services.get('chat_service') as ChatHistoryService
 
       const groupId = BigInt(req.params.groupId)
       const q = req.query
@@ -128,9 +129,7 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
       }>,
       reply: FastifyReply,
     ) => {
-      const { ChatHistoryService } = await import('@/core/chat/index.js')
-
-      const svc = app.services.getTyped(ChatHistoryService, 'chat_service')
+      const svc = app.services.get('chat_service') as ChatHistoryService
 
       const userId = BigInt(req.params.userId)
       const q = req.query
@@ -164,9 +163,7 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
       }>,
       reply: FastifyReply,
     ) => {
-      const { ChatHistoryService } = await import('@/core/chat/index.js')
-
-      const svc = app.services.getTyped(ChatHistoryService, 'chat_service')
+      const svc = app.services.get('chat_service') as ChatHistoryService
 
       const messageId = BigInt(req.params.messageId)
       const createdAt = new Date(req.query.createdAt)
@@ -202,9 +199,7 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
       req: FastifyRequest<{ Querystring: { page?: string; pageSize?: string } }>,
       reply: FastifyReply,
     ) => {
-      const { ArchiveService } = await import('@/core/chat/archive.js')
-
-      const svc = app.services.getTyped(ArchiveService, 'archive_service')
+      const svc = app.services.get('archive_service') as ArchiveService
 
       const page = req.query.page ? parseInt(req.query.page, 10) : 1
       const pageSize = req.query.pageSize ? parseInt(req.query.pageSize, 10) : 20
@@ -275,8 +270,7 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
       }
       const limit = req.query.limit ? parseInt(req.query.limit, 10) : 50
 
-      const { ArchiveService } = await import('@/core/chat/archive.js')
-      const svc = app.services.getTyped(ArchiveService, 'archive_service')
+      const svc = app.services.get('archive_service') as ArchiveService
 
       const result = await svc.listArchives({ periodStart, limit })
       await reply.send(ok(result))

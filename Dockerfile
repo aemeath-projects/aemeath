@@ -1,5 +1,5 @@
 # 阶段 1：构建
-FROM node:22-slim AS builder
+FROM node:24-slim AS builder
 WORKDIR /app
 
 # 启用 corepack 以使用 pnpm
@@ -25,7 +25,7 @@ RUN pnpm --filter frontend build
 RUN pnpm prune --prod
 
 # 阶段 2：运行时
-FROM node:22-slim
+FROM node:24-slim
 WORKDIR /app
 
 # 创建非 root 用户

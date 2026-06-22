@@ -2,12 +2,13 @@
  * 今日老婆（jrlp）业务逻辑服务 —— 抽取、预设、查询、修改、删除。
  */
 
+import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/lifecycle'
+
 import type { WifeRecord, Prisma } from '#prisma/main'
 
 import type { MainPrismaClient } from '@/core/db.js'
 import { isPrismaKnownError } from '@/core/db.js'
 import { AppError, ValidationError } from '@/core/errors.js'
-import { Service, Inject, Provide, Startup } from '@/core/lifecycle/decorators/index.js'
 
 export type { WifeRecord }
 

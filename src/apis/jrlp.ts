@@ -2,7 +2,8 @@
  * 今日老婆管理 REST API —— /api/jrlp。
  */
 
-import { getLogger } from '@logger'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import { Type } from '@sinclair/typebox'
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
@@ -21,12 +22,10 @@ import {
 import { fail, ok, FailResponse, OkResponse } from '@/core/schemas/index.js'
 import type { JrlpService, WifeRecord } from '@/services/jrlp.js'
 
-const log = getLogger('jrlp')
+const log: PinoLogger = getLogger('jrlp') as unknown as PinoLogger
 
 async function getJrlpSvc(app: FastifyInstance): Promise<JrlpService> {
-  const { JrlpService: Cls } = await import('@/services/jrlp.js')
-
-  return app.services.getTyped(Cls, 'jrlp_service')
+  return app.services.get('jrlp_service') as JrlpService
 }
 
 function ceilDiv(a: number, b: number): number {

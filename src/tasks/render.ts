@@ -2,7 +2,8 @@
 
 import { createHash } from 'node:crypto'
 
-import { getLogger } from '@logger'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import { UnrecoverableError } from 'bullmq'
 import type { Client } from 'minio'
 
@@ -16,7 +17,7 @@ import { RenderService, TemplateNotFoundError, loadTemplates } from '@/renderer/
 
 import '@/renderer/cache-keys.js'
 
-const log = getLogger('tasks:render')
+const log: PinoLogger = getLogger('tasks:render') as unknown as PinoLogger
 
 // Worker 模块级单例（顶层 await，文件被 import 时执行）
 const renderService = new RenderService()

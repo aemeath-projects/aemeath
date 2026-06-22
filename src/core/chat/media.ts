@@ -2,14 +2,15 @@
 
 import { createHash } from 'node:crypto'
 
-import { logger } from '@logger'
+import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/lifecycle'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { Client } from 'minio'
 
-import { Service, Inject, Provide, Startup } from '../lifecycle/decorators/index.js'
 import type { OssBundle, OssBuckets } from '../oss/client.js'
 import { uploadBuffer, objectExists } from '../oss/utils.js'
 
-const log = logger.child({ module: 'media-storage' })
+const log: PinoLogger = getLogger('media-storage') as unknown as PinoLogger
 
 /** Content-Type 到文件扩展名映射。 */
 const MIME_EXT_MAP: Record<string, string> = {

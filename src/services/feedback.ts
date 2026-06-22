@@ -2,14 +2,15 @@
  * 用户反馈业务逻辑 —— 反馈创建、查询、状态更新、通知。
  */
 
+import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/lifecycle'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import { seg } from '@aemeath-projects/napcat'
 import type { MessageApi } from '@aemeath-projects/napcat'
-import { logger, type Logger } from '@logger'
 
 import type { Prisma, Feedback, FeedbackStatus, FeedbackSource, FeedbackType } from '#prisma/main'
 
 import type { MainPrismaClient } from '@/core/db.js'
-import { Service, Inject, Provide, Startup } from '@/core/lifecycle/decorators/index.js'
 
 export type { Feedback, FeedbackStatus, FeedbackSource, FeedbackType }
 
@@ -41,7 +42,7 @@ export interface ListFeedbacksParams {
  * 通过 Startup 生命周期注册，由 LifecycleOrchestrator 管理。
  */
 export class FeedbackService {
-  private readonly _log: Logger = logger.child({ name: 'FeedbackService' })
+  private readonly _log: PinoLogger = getLogger('FeedbackService') as unknown as PinoLogger
 
   constructor(
     private readonly db: MainPrismaClient,

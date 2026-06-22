@@ -1,62 +1,112 @@
+// tests/unit/core/settings/decorators.test.ts
+// 旧版 SettingNode/settingNodeRegistry 已不存在，settings 配置节点现通过
+// exostrider @SettingNode 装饰器 + HandlerRegistry 注册。
+// 此文件改为测试 buildSchemaMap 从 handlerRegistry 正确读取 settingNodes。
+import {
+  Permission,
+  handlerRegistry,
+  SettingNode,
+  Handler,
+  type SettingNodeEntry,
+} from '@aemeath-projects/exostrider/dispatch'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { Permission } from '@/core/dispatch/constants.js'
-import { SettingNode, settingNodeRegistry } from '@/core/settings/decorators.js'
+import { buildSchemaMap } from '@/core/settings/schema.js'
 
 beforeEach(() => {
-  settingNodeRegistry.clear()
+  handlerRegistry.clear()
 })
 
 class TestHandler {
   handle(): void {}
 }
 
-describe('SettingNode 装饰器', () => {
-  it('注册 boolean 类型配置项', () => {
-    SettingNode('feature.enabled', { type: 'boolean', default: true, description: '开关' })(
-      TestHandler,
-    )
+/**
+ * 通过手动模拟装饰器上下文来应用 @Handler + @SettingNode，
+ * 使其注册到 handlerRegistry。
+ */
+function registerHandlerWithSettings(
+  handlerName: string,
+  settingNodes: { key: string; options: SettingNodeEntry['options'] }[],
+): void {
+  const metadata: Record<symbol, unknown> = {}
+  const classCtxBase = {
+    kind: 'class' as const,
+    metadata,
+    addInitializer: () => {},
+  }
 
-    const nodes = settingNodeRegistry.get(TestHandler)
-    expect(nodes).toHaveLength(1)
-    expect(nodes![0]).toMatchObject({
-      key: 'feature.enabled',
-      type: 'boolean',
-      default: true,
-      description: '开关',
-      scope: 'all',
-    })
+  // 手动应用 @SettingNode 装饰器
+  for (const node of settingNodes) {
+    SettingNode(node.key, node.options)(TestHandler, { ...classCtxBase, name: 'TestHandler' })
+  }
+
+  // 手动应用 @Handler 装饰器
+  const handlerCtx = {
+    ...classCtxBase,
+    name: 'TestHandler',
+  } as unknown as ClassDecoratorContext
+
+  Handler({ name: handlerName, displayName: `Test ${handlerName}` })(TestHandler, handlerCtx)
+}
+
+describe('SettingNode 通过 HandlerRegistry 注册', () => {
+  it('注册 boolean 类型配置项', () => {
+    registerHandlerWithSettings('feature', [
+      { key: 'enabled', options: { type: 'boolean', default: true, description: '开关' } },
+    ])
+
+    const entry = handlerRegistry.get('feature')
+    expect(entry).toBeDefined()
+    expect(entry!.settingNodes).toHaveLength(1)
+    expect(entry!.settingNodes[0]!.key).toBe('feature.enabled')
+    expect(entry!.settingNodes[0]!.options.type).toBe('boolean')
+    expect(entry!.settingNodes[0]!.options.default).toBe(true)
   })
 
   it('注册 enum 类型配置项（含 enumOptions）', () => {
-    SettingNode('feature.permission', {
-      type: 'enum',
-      default: 'ANYONE',
-      enumOptions: Permission,
-      description: '权限等级',
-    })(TestHandler)
+    registerHandlerWithSettings('feature2', [
+      {
+        key: 'permission',
+        options: {
+          type: 'enum',
+          default: 'ANYONE',
+          enumOptions: Permission,
+          description: '权限等级',
+        },
+      },
+    ])
 
-    const nodes = settingNodeRegistry.get(TestHandler)
-    expect(nodes![0]!.enumOptions).toEqual(Permission)
-    expect(nodes![0]!.default).toBe('ANYONE')
+    const entry = handlerRegistry.get('feature2')
+    expect(entry!.settingNodes[0]!.options.enumOptions).toEqual(Permission)
+    expect(entry!.settingNodes[0]!.options.default).toBe('ANYONE')
   })
 
-  it('同一类可叠加多个 SettingNode', () => {
-    SettingNode('feature.enabled', { type: 'boolean', default: true })(TestHandler)
-    SettingNode('feature.permission', { type: 'enum', default: 'ANYONE', enumOptions: Permission })(
-      TestHandler,
-    )
+  it('同一 handler 可叠加多个 SettingNode', () => {
+    registerHandlerWithSettings('feature3', [
+      { key: 'enabled', options: { type: 'boolean', default: true } },
+      {
+        key: 'permission',
+        options: {
+          type: 'enum',
+          default: 'ANYONE',
+          enumOptions: Permission,
+        },
+      },
+    ])
 
-    expect(settingNodeRegistry.get(TestHandler)).toHaveLength(2)
+    expect(handlerRegistry.get('feature3')!.settingNodes).toHaveLength(2)
   })
+})
 
-  it('scope 默认值为 all', () => {
-    SettingNode('feature.enabled', { type: 'boolean', default: false })(TestHandler)
-    expect(settingNodeRegistry.get(TestHandler)![0]!.scope).toBe('all')
-  })
+describe('buildSchemaMap 集成', () => {
+  it('从 handlerRegistry 中收集配置节点', () => {
+    registerHandlerWithSettings('myfeature', [
+      { key: 'enabled', options: { type: 'boolean', default: false } },
+    ])
 
-  it('scope 可指定为 group', () => {
-    SettingNode('bot.enabled', { type: 'boolean', default: true, scope: 'group' })(TestHandler)
-    expect(settingNodeRegistry.get(TestHandler)![0]!.scope).toBe('group')
+    const map = buildSchemaMap()
+    expect(map.has('myfeature.enabled')).toBe(true)
+    expect(map.get('myfeature.enabled')!.owner).toBe('myfeature')
   })
 })

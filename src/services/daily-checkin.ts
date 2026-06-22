@@ -5,11 +5,12 @@
  * 均通过 Redis 日期键去重，防止重复打卡。
  */
 
+import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/lifecycle'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { GroupApi, NapCatClient } from '@aemeath-projects/napcat'
-import { logger, type Logger } from '@logger'
 
 import type { MainPrismaClient } from '@/core/db.js'
-import { Service, Inject, Provide, Startup } from '@/core/lifecycle/decorators/index.js'
 import type { RedisStore } from '@/core/redis/index.js'
 import { cacheKeyRegistry } from '@/core/registries.js'
 import type { SettingsService } from '@/core/settings/index.js'
@@ -46,7 +47,7 @@ export interface DailyCheckinResult {
  */
 export class DailyCheckinService {
   private _currentTask: Promise<void> | null = null
-  private readonly _log: Logger = logger.child({ name: 'DailyCheckinService' })
+  private readonly _log: PinoLogger = getLogger('DailyCheckinService') as unknown as PinoLogger
 
   constructor(
     private readonly db: MainPrismaClient,

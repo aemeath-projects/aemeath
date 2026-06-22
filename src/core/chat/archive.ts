@@ -2,7 +2,8 @@
  * 聊天记录归档服务与 BullMQ 任务 —— 编排冷数据归档流程（发现分区 → 导出 → 上传 S3 → 清理）。
  */
 
-import { logger, type Logger } from '@logger'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 
 import type { ArchiveStatus } from '#prisma/main'
 
@@ -40,7 +41,7 @@ export interface ArchiveJobData {
  */
 export class ArchiveService {
   private readonly exporter: ArchiveExporter
-  private readonly _log: Logger = logger.child({ name: 'ArchiveService' })
+  private readonly _log: PinoLogger = getLogger('ArchiveService') as unknown as PinoLogger
 
   constructor(
     private readonly chatDb: ChatPrismaClient,

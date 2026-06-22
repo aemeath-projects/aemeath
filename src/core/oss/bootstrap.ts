@@ -1,14 +1,15 @@
 /** OSS 模块生命周期注册 —— 创建共享客户端并确保 bucket 存在。 */
 
-import { logger } from '@logger'
+import { Service, Provide, Startup } from '@aemeath-projects/exostrider/lifecycle'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 
 import { loadConfig } from '../config.js'
-import { Service, Provide, Startup } from '../lifecycle/decorators/index.js'
 
 import { createOssClient } from './client.js'
 import type { OssBuckets, OssBundle } from './client.js'
 
-const log = logger.child({ module: 'oss' })
+const log: PinoLogger = getLogger('oss') as unknown as PinoLogger
 
 @Service({ name: 'oss_bootstrap' })
 export class OssBootstrap {

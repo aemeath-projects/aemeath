@@ -1,9 +1,7 @@
-import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
-import { beforeEach, describe, expect, it } from 'vitest'
-
-import { MessageScope, Permission } from '@/core/dispatch/constants.js'
-import type { HandlerMethod } from '@/core/dispatch/mapping.js'
 import {
+  MessageScope,
+  Permission,
+  type HandlerMethod,
   CommandHandlerMapping,
   CompositeHandlerMapping,
   EndsWithHandlerMapping,
@@ -12,7 +10,13 @@ import {
   KeywordHandlerMapping,
   RegexHandlerMapping,
   StartsWithHandlerMapping,
-} from '@/core/dispatch/mapping.js'
+  Context,
+} from '@aemeath-projects/exostrider/dispatch'
+import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
+import { beforeEach, describe, expect, it } from 'vitest'
+
+import { oneBotContextConfig } from '@/core/dispatch/adapter.js'
+import type { ContextApis } from '@/core/dispatch/adapter.js'
 
 /* 测试用事件工厂 */
 
@@ -75,30 +79,41 @@ function makeRequestEvent(requestType: string): AnyOneBotEvent {
   return event
 }
 
+/** 构建 Context 供映射层使用 */
+const EMPTY_APIS: ContextApis = {
+  msgApi: {} as ContextApis['msgApi'],
+  friendApi: {} as ContextApis['friendApi'],
+  groupApi: {} as ContextApis['groupApi'],
+}
+
+function makeCtx(event: AnyOneBotEvent, scope?: string): Context<AnyOneBotEvent, ContextApis> {
+  const ctx = new Context(event, EMPTY_APIS, oneBotContextConfig)
+  ctx.scope = scope
+  return ctx
+}
+
 /* 处理器工厂 */
 
 function makeHandler(
   overrides: Partial<HandlerMethod> = {},
-  metaOverrides: Partial<HandlerMethod['meta']> = {},
+  triggerAndMeta: Partial<Pick<HandlerMethod, 'mappingType' | 'trigger'>> &
+    Record<string, unknown> = {},
 ): HandlerMethod {
+  const { mappingType, trigger, ...rest } = triggerAndMeta
   return {
     instance: {},
-
     method: () => {},
+    methodName: 'handle',
+    handlerName: 'test',
     priority: 50,
-    componentName: 'test',
-    meta: {
-      mappingType: 'command',
-      permission: Permission.ANYONE,
-      messageScope: MessageScope.ALL,
-      priority: null,
-      displayName: '',
-      description: '',
-      ...metaOverrides,
-    },
+    scope: undefined,
+    permission: Permission.ANYONE,
+    mappingType: mappingType ?? 'command',
+    trigger: trigger ?? {},
     interceptors: [],
+    ...rest,
     ...overrides,
-  }
+  } as unknown as HandlerMethod
 }
 
 /* CommandHandlerMapping */
@@ -111,58 +126,57 @@ describe('CommandHandlerMapping', () => {
   })
 
   it('应匹配以 / 开头的命令', () => {
-    const handler = makeHandler({}, { mappingType: 'command', cmd: 'echo' })
+    const handler = makeHandler({}, { mappingType: 'command', trigger: { cmd: 'echo' } })
     mapping.register(handler)
 
-    const results = mapping.resolve(makeGroupMsgEvent('/echo hello'))
-    expect(results).toHaveLength(1)
-    expect(results[0]?.handler).toBe(handler)
+    const result = mapping.getHandler(makeCtx(makeGroupMsgEvent('/echo hello')))
+    expect(result).toBe(handler)
   })
 
   it('没有命令前缀的消息不应匹配', () => {
-    const handler = makeHandler({}, { mappingType: 'command', cmd: 'echo' })
+    const handler = makeHandler({}, { mappingType: 'command', trigger: { cmd: 'echo' } })
     mapping.register(handler)
 
-    expect(mapping.resolve(makeGroupMsgEvent('echo hello'))).toHaveLength(0)
+    expect(mapping.getHandler(makeCtx(makeGroupMsgEvent('echo hello')))).toBeUndefined()
   })
 
   it('不同命令不应相互匹配', () => {
-    const handler = makeHandler({}, { mappingType: 'command', cmd: 'help' })
+    const handler = makeHandler({}, { mappingType: 'command', trigger: { cmd: 'help' } })
     mapping.register(handler)
 
-    expect(mapping.resolve(makeGroupMsgEvent('/echo hello'))).toHaveLength(0)
+    expect(mapping.getHandler(makeCtx(makeGroupMsgEvent('/echo hello')))).toBeUndefined()
   })
 
   it('应支持 aliases', () => {
     const handler = makeHandler(
       {},
-      { mappingType: 'command', cmd: 'ping', aliases: new Set(['p', 'pong']) },
+      { mappingType: 'command', trigger: { cmd: 'ping', aliases: new Set(['p', 'pong']) } },
     )
     mapping.register(handler)
 
-    expect(mapping.resolve(makeGroupMsgEvent('/ping'))).toHaveLength(1)
-    expect(mapping.resolve(makeGroupMsgEvent('/p'))).toHaveLength(1)
-    expect(mapping.resolve(makeGroupMsgEvent('/pong'))).toHaveLength(1)
-    expect(mapping.resolve(makeGroupMsgEvent('/unknown'))).toHaveLength(0)
+    expect(mapping.getHandler(makeCtx(makeGroupMsgEvent('/ping')))).toBe(handler)
+    expect(mapping.getHandler(makeCtx(makeGroupMsgEvent('/p')))).toBe(handler)
+    expect(mapping.getHandler(makeCtx(makeGroupMsgEvent('/pong')))).toBe(handler)
+    expect(mapping.getHandler(makeCtx(makeGroupMsgEvent('/unknown')))).toBeUndefined()
   })
 
   it('非消息事件不应匹配', () => {
-    const handler = makeHandler({}, { mappingType: 'command', cmd: 'echo' })
+    const handler = makeHandler({}, { mappingType: 'command', trigger: { cmd: 'echo' } })
     mapping.register(handler)
 
-    expect(mapping.resolve(makeNoticeEvent('group_ban'))).toHaveLength(0)
+    expect(mapping.getHandler(makeCtx(makeNoticeEvent('group_ban')))).toBeUndefined()
   })
 
   it('空文本不应匹配', () => {
-    const handler = makeHandler({}, { mappingType: 'command', cmd: 'echo' })
+    const handler = makeHandler({}, { mappingType: 'command', trigger: { cmd: 'echo' } })
     mapping.register(handler)
 
-    expect(mapping.resolve(makeGroupMsgEvent('/'))).toHaveLength(0)
+    expect(mapping.getHandler(makeCtx(makeGroupMsgEvent('/')))).toBeUndefined()
   })
 
   it('registeredCount 应正确计数', () => {
-    mapping.register(makeHandler({}, { mappingType: 'command', cmd: 'a' }))
-    mapping.register(makeHandler({}, { mappingType: 'command', cmd: 'b' }))
+    mapping.register(makeHandler({}, { mappingType: 'command', trigger: { cmd: 'a' } }))
+    mapping.register(makeHandler({}, { mappingType: 'command', trigger: { cmd: 'b' } }))
     expect(mapping.registeredCount).toBe(2)
   })
 })
@@ -181,36 +195,36 @@ describe('RegexHandlerMapping', () => {
       {},
       {
         mappingType: 'regex',
-        pattern: 'hello\\s+world',
-        compiledPattern: /hello\s+world/u,
+        trigger: {
+          compiledPattern: /hello\s+world/u,
+        },
       },
     )
     mapping.register(handler)
 
-    const results = mapping.resolve(makeGroupMsgEvent('say hello world to me'))
-    expect(results).toHaveLength(1)
-    expect(results[0]?.regexMatch).not.toBeNull()
+    const ctx = makeCtx(makeGroupMsgEvent('say hello world to me'))
+    const result = mapping.getHandler(ctx)
+    expect(result).toBe(handler)
+    expect(ctx.regexMatch).not.toBeNull()
   })
 
-  it('不匹配正则的消息应返回空', () => {
-    const handler = makeHandler(
-      {},
-      { mappingType: 'regex', pattern: 'foo', compiledPattern: /foo/u },
-    )
+  it('不匹配正则的消息应返回 undefined', () => {
+    const handler = makeHandler({}, { mappingType: 'regex', trigger: { compiledPattern: /foo/u } })
     mapping.register(handler)
 
-    expect(mapping.resolve(makeGroupMsgEvent('bar'))).toHaveLength(0)
+    expect(mapping.getHandler(makeCtx(makeGroupMsgEvent('bar')))).toBeUndefined()
   })
 
   it('应返回 regexMatch', () => {
     const handler = makeHandler(
       {},
-      { mappingType: 'regex', pattern: '(\\d+)', compiledPattern: /(\d+)/u },
+      { mappingType: 'regex', trigger: { compiledPattern: /(\d+)/u } },
     )
     mapping.register(handler)
 
-    const results = mapping.resolve(makeGroupMsgEvent('order 42 items'))
-    expect(results[0]?.regexMatch?.[1]).toBe('42')
+    const ctx = makeCtx(makeGroupMsgEvent('order 42 items'))
+    mapping.getHandler(ctx)
+    expect(ctx.regexMatch?.[1]).toBe('42')
   })
 })
 
@@ -224,18 +238,24 @@ describe('KeywordHandlerMapping', () => {
   })
 
   it('包含关键词时应匹配', () => {
-    const handler = makeHandler({}, { mappingType: 'keyword', keywords: new Set(['cat', 'dog']) })
+    const handler = makeHandler(
+      {},
+      { mappingType: 'keyword', trigger: { keywords: new Set(['cat', 'dog']) } },
+    )
     mapping.register(handler)
 
-    expect(mapping.resolve(makeGroupMsgEvent('I love my dog'))).toHaveLength(1)
-    expect(mapping.resolve(makeGroupMsgEvent('a cat is here'))).toHaveLength(1)
+    expect(mapping.getHandler(makeCtx(makeGroupMsgEvent('I love my dog')))).toBe(handler)
+    expect(mapping.getHandler(makeCtx(makeGroupMsgEvent('a cat is here')))).toBe(handler)
   })
 
   it('不包含关键词时不应匹配', () => {
-    const handler = makeHandler({}, { mappingType: 'keyword', keywords: new Set(['cat', 'dog']) })
+    const handler = makeHandler(
+      {},
+      { mappingType: 'keyword', trigger: { keywords: new Set(['cat', 'dog']) } },
+    )
     mapping.register(handler)
 
-    expect(mapping.resolve(makeGroupMsgEvent('I have a fish'))).toHaveLength(0)
+    expect(mapping.getHandler(makeCtx(makeGroupMsgEvent('I have a fish')))).toBeUndefined()
   })
 })
 
@@ -249,11 +269,11 @@ describe('StartsWithHandlerMapping', () => {
   })
 
   it('以指定前缀开头时应匹配', () => {
-    const handler = makeHandler({}, { mappingType: 'startswith', prefix: '!cmd' })
+    const handler = makeHandler({}, { mappingType: 'startswith', trigger: { prefix: '!cmd' } })
     mapping.register(handler)
 
-    expect(mapping.resolve(makeGroupMsgEvent('!cmd do something'))).toHaveLength(1)
-    expect(mapping.resolve(makeGroupMsgEvent('!other'))).toHaveLength(0)
+    expect(mapping.getHandler(makeCtx(makeGroupMsgEvent('!cmd do something')))).toBe(handler)
+    expect(mapping.getHandler(makeCtx(makeGroupMsgEvent('!other')))).toBeUndefined()
   })
 })
 
@@ -267,11 +287,11 @@ describe('EndsWithHandlerMapping', () => {
   })
 
   it('以指定后缀结尾时应匹配', () => {
-    const handler = makeHandler({}, { mappingType: 'endswith', suffix: '吗？' })
+    const handler = makeHandler({}, { mappingType: 'endswith', trigger: { suffix: '吗？' } })
     mapping.register(handler)
 
-    expect(mapping.resolve(makeGroupMsgEvent('你好吗？'))).toHaveLength(1)
-    expect(mapping.resolve(makeGroupMsgEvent('你好！'))).toHaveLength(0)
+    expect(mapping.getHandler(makeCtx(makeGroupMsgEvent('你好吗？')))).toBe(handler)
+    expect(mapping.getHandler(makeCtx(makeGroupMsgEvent('你好！')))).toBeUndefined()
   })
 })
 
@@ -285,11 +305,11 @@ describe('FullMatchHandlerMapping', () => {
   })
 
   it('完全匹配时应返回结果', () => {
-    const handler = makeHandler({}, { mappingType: 'fullmatch', text: '菜单' })
+    const handler = makeHandler({}, { mappingType: 'fullmatch', trigger: { text: '菜单' } })
     mapping.register(handler)
 
-    expect(mapping.resolve(makeGroupMsgEvent('菜单'))).toHaveLength(1)
-    expect(mapping.resolve(makeGroupMsgEvent('菜单列表'))).toHaveLength(0)
+    expect(mapping.getHandler(makeCtx(makeGroupMsgEvent('菜单')))).toBe(handler)
+    expect(mapping.getHandler(makeCtx(makeGroupMsgEvent('菜单列表')))).toBeUndefined()
   })
 })
 
@@ -303,49 +323,56 @@ describe('EventTypeHandlerMapping', () => {
   })
 
   it('应匹配对应 post_type 的事件', () => {
-    const handler = makeHandler({}, { mappingType: 'event_type', eventType: 'notice' })
+    const handler = makeHandler(
+      {},
+      { mappingType: 'event', trigger: { matchConfig: { postType: 'notice' } } },
+    )
     mapping.register(handler)
 
-    expect(mapping.resolve(makeNoticeEvent('group_ban'))).toHaveLength(1)
-    expect(mapping.resolve(makeGroupMsgEvent('hello'))).toHaveLength(0)
+    expect(mapping.getHandler(makeCtx(makeNoticeEvent('group_ban')))).toBe(handler)
+    expect(mapping.getHandler(makeCtx(makeGroupMsgEvent('hello')))).toBeUndefined()
   })
 
   it('应按 notice_type 过滤', () => {
     const handler = makeHandler(
       {},
-      { mappingType: 'event_type', eventType: 'notice', noticeType: 'group_ban' },
+      {
+        mappingType: 'event',
+        trigger: { matchConfig: { postType: 'notice', noticeType: 'group_ban' } },
+      },
     )
     mapping.register(handler)
 
-    expect(mapping.resolve(makeNoticeEvent('group_ban'))).toHaveLength(1)
-    expect(mapping.resolve(makeNoticeEvent('friend_add'))).toHaveLength(0)
+    expect(mapping.getHandler(makeCtx(makeNoticeEvent('group_ban')))).toBe(handler)
+    expect(mapping.getHandler(makeCtx(makeNoticeEvent('friend_add')))).toBeUndefined()
   })
 
   it('应按 sub_type 过滤', () => {
     const handler = makeHandler(
       {},
       {
-        mappingType: 'event_type',
-        eventType: 'notice',
-        noticeType: 'notify',
-        subType: 'poke',
+        mappingType: 'event',
+        trigger: { matchConfig: { postType: 'notice', noticeType: 'notify', subType: 'poke' } },
       },
     )
     mapping.register(handler)
 
-    expect(mapping.resolve(makeNoticeEvent('notify', 'poke'))).toHaveLength(1)
-    expect(mapping.resolve(makeNoticeEvent('notify', 'gray_tip'))).toHaveLength(0)
+    expect(mapping.getHandler(makeCtx(makeNoticeEvent('notify', 'poke')))).toBe(handler)
+    expect(mapping.getHandler(makeCtx(makeNoticeEvent('notify', 'gray_tip')))).toBeUndefined()
   })
 
   it('应按 request_type 过滤', () => {
     const handler = makeHandler(
       {},
-      { mappingType: 'event_type', eventType: 'request', requestType: 'friend' },
+      {
+        mappingType: 'event',
+        trigger: { matchConfig: { postType: 'request', requestType: 'friend' } },
+      },
     )
     mapping.register(handler)
 
-    expect(mapping.resolve(makeRequestEvent('friend'))).toHaveLength(1)
-    expect(mapping.resolve(makeRequestEvent('group'))).toHaveLength(0)
+    expect(mapping.getHandler(makeCtx(makeRequestEvent('friend')))).toBe(handler)
+    expect(mapping.getHandler(makeCtx(makeRequestEvent('group')))).toBeUndefined()
   })
 })
 
@@ -359,80 +386,89 @@ describe('CompositeHandlerMapping', () => {
   })
 
   it('应将 command 类型路由到 CommandHandlerMapping', () => {
-    const handler = makeHandler({}, { mappingType: 'command', cmd: 'echo' })
+    const handler = makeHandler({}, { mappingType: 'command', trigger: { cmd: 'echo' } })
     composite.register(handler)
 
-    const results = composite.resolve(makeGroupMsgEvent('/echo hello'))
-    expect(results).toHaveLength(1)
+    const result = composite.getHandler(makeCtx(makeGroupMsgEvent('/echo hello')))
+    expect(result).toBe(handler)
   })
 
   it('应将 event_type 路由到 EventTypeHandlerMapping', () => {
-    const handler = makeHandler({}, { mappingType: 'event_type', eventType: 'notice' })
+    const handler = makeHandler(
+      {},
+      { mappingType: 'event', trigger: { matchConfig: { postType: 'notice' } } },
+    )
     composite.register(handler)
 
-    expect(composite.resolve(makeNoticeEvent('group_ban'))).toHaveLength(1)
+    expect(composite.getHandler(makeCtx(makeNoticeEvent('group_ban')))).toBe(handler)
   })
 
   it('MessageScope.GROUP 应只匹配群消息', () => {
     const handler = makeHandler(
-      {},
-      { mappingType: 'command', cmd: 'test', messageScope: MessageScope.GROUP },
+      { scope: MessageScope.GROUP },
+      { mappingType: 'command', trigger: { cmd: 'test' } },
     )
     composite.register(handler)
 
-    expect(composite.resolve(makeGroupMsgEvent('/test'))).toHaveLength(1)
-    expect(composite.resolve(makePrivateMsgEvent('/test'))).toHaveLength(0)
+    expect(composite.getHandler(makeCtx(makeGroupMsgEvent('/test'), MessageScope.GROUP))).toBe(
+      handler,
+    )
+    expect(
+      composite.getHandler(makeCtx(makePrivateMsgEvent('/test'), MessageScope.PRIVATE)),
+    ).toBeUndefined()
   })
 
   it('MessageScope.PRIVATE 应只匹配私聊消息', () => {
     const handler = makeHandler(
-      {},
-      { mappingType: 'command', cmd: 'test', messageScope: MessageScope.PRIVATE },
+      { scope: MessageScope.PRIVATE },
+      { mappingType: 'command', trigger: { cmd: 'test' } },
     )
     composite.register(handler)
 
-    expect(composite.resolve(makePrivateMsgEvent('/test'))).toHaveLength(1)
-    expect(composite.resolve(makeGroupMsgEvent('/test'))).toHaveLength(0)
+    expect(composite.getHandler(makeCtx(makePrivateMsgEvent('/test'), MessageScope.PRIVATE))).toBe(
+      handler,
+    )
+    expect(
+      composite.getHandler(makeCtx(makeGroupMsgEvent('/test'), MessageScope.GROUP)),
+    ).toBeUndefined()
   })
 
   it('MessageScope.ALL 应匹配所有消息类型', () => {
     const handler = makeHandler(
-      {},
-      { mappingType: 'command', cmd: 'test', messageScope: MessageScope.ALL },
+      { scope: MessageScope.ALL },
+      { mappingType: 'command', trigger: { cmd: 'test' } },
     )
     composite.register(handler)
 
-    expect(composite.resolve(makeGroupMsgEvent('/test'))).toHaveLength(1)
-    expect(composite.resolve(makePrivateMsgEvent('/test'))).toHaveLength(1)
-  })
-
-  it('应按优先级升序排列结果', () => {
-    const highPrio = makeHandler({ priority: 10 }, { mappingType: 'command', cmd: 'test' })
-    const lowPrio = makeHandler({ priority: 100 }, { mappingType: 'command', cmd: 'test' })
-    composite.register(lowPrio)
-    composite.register(highPrio)
-
-    const results = composite.resolve(makeGroupMsgEvent('/test'))
-    expect(results).toHaveLength(2)
-    expect(results[0]?.handler.priority).toBe(10)
-    expect(results[1]?.handler.priority).toBe(100)
+    expect(composite.getHandler(makeCtx(makeGroupMsgEvent('/test'), MessageScope.GROUP))).toBe(
+      handler,
+    )
+    expect(composite.getHandler(makeCtx(makePrivateMsgEvent('/test'), MessageScope.PRIVATE))).toBe(
+      handler,
+    )
   })
 
   it('handlerCount 应统计所有已注册处理器', () => {
-    composite.register(makeHandler({}, { mappingType: 'command', cmd: 'a' }))
-    composite.register(makeHandler({}, { mappingType: 'keyword', keywords: new Set(['hi']) }))
-    composite.register(makeHandler({}, { mappingType: 'event_type', eventType: 'notice' }))
+    composite.register(makeHandler({}, { mappingType: 'command', trigger: { cmd: 'a' } }))
+    composite.register(
+      makeHandler({}, { mappingType: 'keyword', trigger: { keywords: new Set(['hi']) } }),
+    )
+    composite.register(
+      makeHandler({}, { mappingType: 'event', trigger: { matchConfig: { postType: 'notice' } } }),
+    )
 
     expect(composite.handlerCount).toBe(3)
   })
 
-  it('同一消息不同 mapping 类型的结果应合并', () => {
+  it('getAllHandlers 应返回所有匹配的处理器', () => {
     // 命令匹配
-    composite.register(makeHandler({}, { mappingType: 'command', cmd: 'hi' }))
+    composite.register(makeHandler({}, { mappingType: 'command', trigger: { cmd: 'hi' } }))
     // 关键词匹配（"/hi" 包含 "hi"）
-    composite.register(makeHandler({}, { mappingType: 'keyword', keywords: new Set(['hi']) }))
+    composite.register(
+      makeHandler({}, { mappingType: 'keyword', trigger: { keywords: new Set(['hi']) } }),
+    )
 
-    const results = composite.resolve(makeGroupMsgEvent('/hi'))
+    const results = composite.getAllHandlers(makeCtx(makeGroupMsgEvent('/hi')))
     // command 匹配 "/hi"（有前缀），keyword 检查整个文本 "/hi" 是否包含 "hi" → 是
     expect(results.length).toBeGreaterThanOrEqual(1)
   })

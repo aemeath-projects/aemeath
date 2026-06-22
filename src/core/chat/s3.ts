@@ -2,7 +2,8 @@
  * S3 上传服务 —— 封装 Parquet 文件和 manifest 的 S3 上传操作。
  */
 
-import { logger, type Logger } from '@logger'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { Client as MinioClient } from 'minio'
 
 /** Parquet 归档 manifest 结构。 */
@@ -29,7 +30,7 @@ export interface ArchiveManifest {
  * 接收外部注入的 MinIO Client 实例（由 OSS Startup 统一管理）。
  */
 export class ArchiveS3 {
-  private readonly _log: Logger = logger.child({ name: 'ArchiveS3' })
+  private readonly _log: PinoLogger = getLogger('ArchiveS3') as unknown as PinoLogger
 
   constructor(
     private readonly client: MinioClient,

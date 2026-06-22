@@ -2,15 +2,16 @@
  * 点赞 Bot 处理器 —— 响应 /like 或 /点赞 命令。
  */
 
-import { type Context } from '@/core/dispatch/context.js'
 import {
   Handler,
   OnCommand,
   Scope,
-  Permission,
+  PermissionDecorator,
   SettingNode,
-} from '@/core/dispatch/decorators/index.js'
-import { Inject } from '@/core/lifecycle/decorators/index.js'
+} from '@aemeath-projects/exostrider/dispatch'
+import { Inject } from '@aemeath-projects/exostrider/lifecycle'
+
+import type { OneBotContext as Context } from '@/core/dispatch/context.js'
 import type { LikeService } from '@/services/like.js'
 
 const DEFAULT_LIKE_TIMES = 10
@@ -46,11 +47,11 @@ class LikeHandler {
   /** 解析参数并分发到对应子命令。 */
   @OnCommand('like', { aliases: ['点赞'] })
   @Scope('all')
-  @Permission(0)
+  @PermissionDecorator(0)
   async handle(ctx: Context): Promise<void> {
     const qq = BigInt(ctx.userId)
     const args = ctx.getArgs()
-    const sub = args[0]?.toLowerCase() ?? ''
+    const sub = args?.[0]?.toLowerCase() ?? ''
 
     if (sub === 'schedule' || sub === '定时') {
       await handleSchedule(ctx, this.likeService, qq)

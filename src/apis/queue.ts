@@ -2,7 +2,8 @@
  * 任务队列 API 端点 —— 查询定时任务与消息队列状态，SSE 实时推送。
  */
 
-import { getLogger } from '@logger'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
 import {
@@ -16,7 +17,7 @@ import {
 } from '@/apis/schemas/index.js'
 import { fail, ok, FailResponse, OkResponse } from '@/core/schemas/index.js'
 
-const log = getLogger('queue')
+const log: PinoLogger = getLogger('queue') as unknown as PinoLogger
 
 const TASK_DISPLAY_NAMES: Record<string, string> = {
   archive_chat_history: '聊天记录归档',

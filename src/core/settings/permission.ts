@@ -2,17 +2,17 @@
  * Settings 权限检查器 —— 替代 FeaturePermissionChecker，基于 SettingsService 读取配置。
  */
 
+import { Permission, handlerRegistry } from '@aemeath-projects/exostrider/dispatch'
+
 import type { SettingNodeSchema } from './schema.js'
 import type { SettingsService } from './service.js'
 
-import { Permission } from '@/core/dispatch/constants.js'
-import type { Context } from '@/core/dispatch/context.js'
-import type { FeatureChecker } from '@/core/dispatch/mapping.js'
-import { handlerRegistry } from '@/core/dispatch/registry.js'
+import type { OneBotContext as Context } from '@/core/dispatch/context.js'
+import type { FeatureChecker } from '@/core/dispatch/mapping-types.js'
 import type { PersonnelService } from '@/core/personnel/index.js'
 
 /** dispatcher 注入到 Context 的 handler 方法元数据。 */
-interface HandlerMethod {
+interface HandlerMethodMeta {
   componentName: string
   methodName: string
   permission: number
@@ -36,7 +36,7 @@ export class SettingsPermissionChecker implements FeatureChecker {
   ) {}
 
   async check(ctx: Context): Promise<boolean> {
-    const handler = ctx.getAttribute('handlerMethod') as HandlerMethod | undefined
+    const handler = ctx.getAttribute<HandlerMethodMeta>('handlerMethod')
     if (handler == null) return true
 
     const featureName = handler.componentName
@@ -109,6 +109,6 @@ export class SettingsPermissionChecker implements FeatureChecker {
   /** 检查功能是否为 system（从 HandlerRegistry 判断）。 */
   private _isSystem(featureName: string): boolean {
     const entry = handlerRegistry.get(featureName)
-    return entry?.meta.system === true
+    return entry?.options.system === true
   }
 }

@@ -3,10 +3,11 @@
 import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 
-import { getLogger } from '@logger'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { Font } from 'satori'
 
-const log = getLogger('renderer:fonts')
+const log: PinoLogger = getLogger('renderer:fonts') as unknown as PinoLogger
 
 interface FontSpec {
   name: string

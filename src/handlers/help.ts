@@ -2,17 +2,18 @@
  * 帮助处理器 —— 响应 /help 等指令，返回图片格式的功能帮助。
  */
 
-import { getLogger } from '@logger'
+import { Handler, OnCommand, Scope, handlerRegistry } from '@aemeath-projects/exostrider/dispatch'
+import type { HandlerOptions as HandlerClassMeta } from '@aemeath-projects/exostrider/dispatch'
+import { Inject } from '@aemeath-projects/exostrider/lifecycle'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { Queue } from 'bullmq'
 
-import { type Context } from '@/core/dispatch/context.js'
-import { Handler, OnCommand, Scope } from '@/core/dispatch/decorators/index.js'
-import { handlerRegistry, type HandlerMeta as HandlerClassMeta } from '@/core/dispatch/registry.js'
-import { Inject } from '@/core/lifecycle/decorators/index.js'
+import type { OneBotContext as Context } from '@/core/dispatch/context.js'
 import { enqueueRender } from '@/core/utils/index.js'
 import type { HelpData } from '@/renderer/templates/help.js'
 
-const log = getLogger('help')
+const log: PinoLogger = getLogger('help') as unknown as PinoLogger
 
 const HELP_PAGE_SIZE = 8
 const RENDER_WIDTH = 680
@@ -32,9 +33,11 @@ interface HelpCategory {
 /** 降级处理：直接发送纯文本功能列表。 */
 async function fallbackText(ctx: Context): Promise<boolean> {
   const lines: string[] = ['可用功能列表：']
-  for (const entry of handlerRegistry.values()) {
-    if (!entry.meta.system) {
-      lines.push(`  · ${entry.meta.displayName}: ${entry.meta.description}`)
+  for (const entry of handlerRegistry.entries) {
+    if (!entry.options.system) {
+      lines.push(
+        `  · ${entry.options.displayName ?? entry.options.name}: ${entry.options.description ?? ''}`,
+      )
     }
   }
   await ctx.reply(lines.join('\n'))
@@ -50,10 +53,10 @@ async function handleList(
 ): Promise<boolean> {
   const grouped = new Map<string, HelpItem[]>()
   for (const meta of allFeatures) {
-    const tag = meta.tags[0] ?? '其他'
+    const tag = meta.tags?.[0] ?? '其他'
     const item: HelpItem = {
-      displayName: meta.displayName,
-      description: meta.description,
+      displayName: meta.displayName ?? meta.name,
+      description: meta.description ?? '',
       trigger: '',
       tag,
     }
@@ -129,11 +132,11 @@ async function handleDetail(
   }
 
   const helpData: HelpData = {
-    title: meta.displayName,
+    title: meta.displayName ?? meta.name,
     categories: [
       {
         tag: '说明',
-        items: [{ name: meta.displayName, desc: meta.description || '—' }],
+        items: [{ name: meta.displayName ?? meta.name, desc: meta.description ?? '—' }],
       },
     ],
     page: 1,
@@ -170,8 +173,8 @@ class HelpHandler {
   @Scope('all')
   async showHelp(ctx: Context): Promise<boolean> {
     const arg = ctx.getArgStr().trim()
-    const allFeatures: HandlerClassMeta[] = [...handlerRegistry.values()]
-      .map((entry) => entry.meta)
+    const allFeatures: HandlerClassMeta[] = handlerRegistry.entries
+      .map((entry) => entry.options)
       .filter((m) => !m.system)
 
     if (!arg || /^\d+$/u.test(arg)) {

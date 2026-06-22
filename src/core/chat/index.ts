@@ -2,7 +2,9 @@
  * 聊天记录业务逻辑 —— 消息持久化、查询、上下文获取。
  */
 
-import { logger, type Logger } from '@logger'
+import { Service, Inject, Provide, Startup, Shutdown } from '@aemeath-projects/exostrider/lifecycle'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { Client } from 'minio'
 
 import type { ChatMessage } from '#prisma/chat'
@@ -13,7 +15,6 @@ import { ArchiveS3 } from './s3.js'
 
 import { loadConfig } from '@/core/config.js'
 import type { ChatPrismaClient, MainPrismaClient } from '@/core/db.js'
-import { Service, Inject, Provide, Startup, Shutdown } from '@/core/lifecycle/decorators/index.js'
 import type { OssBundle, OssBuckets } from '@/core/oss/client.js'
 
 export type { ChatMessage }
@@ -69,7 +70,7 @@ export interface MessageContext {
  * 通过 Startup / Shutdown 生命周期注册，由 LifecycleOrchestrator 管理。
  */
 export class ChatHistoryService {
-  private readonly _log: Logger = logger.child({ name: 'ChatHistoryService' })
+  private readonly _log: PinoLogger = getLogger('ChatHistoryService') as unknown as PinoLogger
 
   constructor(
     private readonly chatDb: ChatPrismaClient,

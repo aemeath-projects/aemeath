@@ -1,8 +1,13 @@
+import {
+  handlerRegistry,
+  Handler,
+  SettingNode,
+  type SettingNodeEntry,
+} from '@aemeath-projects/exostrider/dispatch'
 import type { Redis } from 'ioredis'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { MainPrismaClient } from '@/core/db.js'
-import { SettingNode, settingNodeRegistry } from '@/core/settings/decorators.js'
 import { buildSchemaMap } from '@/core/settings/schema.js'
 import { SettingsService } from '@/core/settings/service.js'
 
@@ -67,21 +72,40 @@ class TestFeature {
 }
 
 beforeEach(() => {
-  settingNodeRegistry.clear()
+  handlerRegistry.clear()
 })
+
+/** 注册测试用 handler 到 handlerRegistry */
+function registerTestHandler(): void {
+  const metadata: Record<symbol, unknown> = {}
+  const ctxBase = {
+    kind: 'class' as const,
+    metadata,
+    addInitializer: () => {},
+    name: 'TestFeature',
+  }
+
+  const nodes: { key: string; options: SettingNodeEntry['options'] }[] = [
+    { key: 'enabled', options: { type: 'boolean', default: true } },
+    {
+      key: 'permission',
+      options: { type: 'enum', default: 'ANYONE', enumOptions: { ANYONE: 0, ADMIN: 100 } },
+    },
+    { key: 'count', options: { type: 'number', default: 5 } },
+    { key: 'label', options: { type: 'string', default: 'hello' } },
+  ]
+
+  for (const node of nodes) {
+    SettingNode(node.key, node.options)(TestFeature, ctxBase)
+  }
+  Handler({ name: 'feature', displayName: 'Test Feature' })(TestFeature, ctxBase)
+}
 
 function createService(
   dbRows: Parameters<typeof createMockDb>[0] = {},
   redisValues: Record<string, string | null> = {},
 ) {
-  SettingNode('feature.enabled', { type: 'boolean', default: true })(TestFeature)
-  SettingNode('feature.permission', {
-    type: 'enum',
-    default: 'ANYONE',
-    enumOptions: { ANYONE: 0, ADMIN: 100 },
-  })(TestFeature)
-  SettingNode('feature.count', { type: 'number', default: 5 })(TestFeature)
-  SettingNode('feature.label', { type: 'string', default: 'hello' })(TestFeature)
+  registerTestHandler()
 
   const schemaMap = buildSchemaMap()
   const redis = createMockRedis(redisValues)
@@ -98,8 +122,8 @@ describe('SettingsService.get', () => {
   })
 
   it('Redis 为 __NULL__ 时回退到 Schema default', async () => {
-    settingNodeRegistry.clear()
-    SettingNode('feature.enabled', { type: 'boolean', default: true })(TestFeature)
+    handlerRegistry.clear()
+    registerTestHandler()
     const schemaMap = buildSchemaMap()
     const redis = createMockRedis({
       'settings:group:99:feature.enabled': '__NULL__',
@@ -112,8 +136,8 @@ describe('SettingsService.get', () => {
   })
 
   it('DB 无记录时回退到 Schema default', async () => {
-    settingNodeRegistry.clear()
-    SettingNode('feature.enabled', { type: 'boolean', default: true })(TestFeature)
+    handlerRegistry.clear()
+    registerTestHandler()
     const schemaMap = buildSchemaMap()
     const redis = createMockRedis()
     const db = {
@@ -127,14 +151,12 @@ describe('SettingsService.get', () => {
   })
 
   it('number 类型正确反序列化', async () => {
-    // 无 scope 时直接回退到 Schema default（default scope 已移除）
     const { service } = createService({}, { 'settings:group:99:feature.count': '42' })
     const result = await service.get<number>('feature.count', { group: 99n })
     expect(result).toBe(42)
   })
 
   it('enum 类型返回标签字符串', async () => {
-    // 无 scope 时直接回退到 Schema default（default scope 已移除）
     const { service } = createService({}, { 'settings:group:99:feature.permission': 'ADMIN' })
     const result = await service.get<string>('feature.permission', { group: 99n })
     expect(result).toBe('ADMIN')

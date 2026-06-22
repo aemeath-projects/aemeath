@@ -2,13 +2,14 @@
  * 漂流瓶业务逻辑服务 —— 扔/捞漂流瓶、漂流瓶池管理。
  */
 
+import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/lifecycle'
+
 import type { DriftBottleItem, DriftBottlePool, DriftBottleGroupPool } from '#prisma/main'
 import { Prisma } from '#prisma/main'
 
 import type { MainPrismaClient } from '@/core/db.js'
 import { isPrismaKnownError } from '@/core/db.js'
 import { NotFoundError, ValidationError } from '@/core/errors.js'
-import { Service, Inject, Provide, Startup } from '@/core/lifecycle/decorators/index.js'
 
 export type { DriftBottleItem, DriftBottlePool, DriftBottleGroupPool }
 

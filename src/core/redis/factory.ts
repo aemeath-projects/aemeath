@@ -1,8 +1,11 @@
 /** ioredis 实例工厂与 BullMQ 连接解析。 */
 
-import { logger } from '@logger'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { ConnectionOptions } from 'bullmq'
 import { Redis, type RedisOptions } from 'ioredis'
+
+const logger: PinoLogger = getLogger('redis-factory') as unknown as PinoLogger
 
 /** 创建一个新的 ioredis Redis 实例，并将 error 事件路由到 Pino。 */
 export function createRedis(url: string, opts?: RedisOptions): Redis {

@@ -4,6 +4,9 @@
  * EchoLoader 不扫描 src/core/，由 main.ts 手动 import 触发副作用。
  */
 
+import { Service, Provide, Startup, Shutdown } from '@aemeath-projects/exostrider/lifecycle'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import {
   NapCatClient,
   ReverseWebSocketTransport,
@@ -14,12 +17,10 @@ import {
   SystemApi,
   ExtensionApi,
 } from '@aemeath-projects/napcat'
-import { logger } from '@logger'
 
 import { loadConfig } from './config.js'
-import { Service, Provide, Startup, Shutdown } from './lifecycle/decorators/index.js'
 
-const log = logger.child({ module: 'bot-client' })
+const log: PinoLogger = getLogger('bot-client') as unknown as PinoLogger
 
 @Service({ name: 'bot_client_bootstrap' })
 export class BotClientBootstrap {
@@ -75,7 +76,7 @@ export class BotClientBootstrap {
 
     await client.connect()
 
-    log.info({ port: config.NAPCAT_WS_PORT }, 'NapCat 反向 WebSocket 服务器已启动')
+    log.info(`NapCat 反向 WebSocket 服务器已启动，port=${String(config.NAPCAT_WS_PORT)}`)
   }
 
   @Shutdown

@@ -2,20 +2,21 @@
  * 漂流瓶 Bot 处理器 —— 响应「扔漂流瓶」和「捞漂流瓶」关键词。
  */
 
-import { seg } from '@aemeath-projects/napcat'
-import type { MessageSegment } from '@aemeath-projects/napcat/types'
-import { logger } from '@logger'
-
-import { type Context } from '@/core/dispatch/context.js'
 import {
   Handler,
   OnStartsWith,
   OnFullMatch,
   Scope,
-  Permission,
+  PermissionDecorator,
   SettingNode,
-} from '@/core/dispatch/decorators/index.js'
-import { Inject } from '@/core/lifecycle/decorators/index.js'
+} from '@aemeath-projects/exostrider/dispatch'
+import { Inject } from '@aemeath-projects/exostrider/lifecycle'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
+import { seg } from '@aemeath-projects/napcat'
+import type { MessageSegment } from '@aemeath-projects/napcat/types'
+
+import type { OneBotContext as Context } from '@/core/dispatch/context.js'
 import { MessageBuilder } from '@/core/utils/index.js'
 import type { DriftBottleService } from '@/services/drift-bottle.js'
 
@@ -69,7 +70,7 @@ function filterContent(
   description: '最低权限等级',
 })
 class DriftBottleHandler {
-  private readonly _log = logger.child({ name: 'driftBottle' })
+  private readonly _log: PinoLogger = getLogger('driftBottle') as unknown as PinoLogger
 
   @Inject('drift_bottle_service')
   private readonly driftBottleService!: DriftBottleService
@@ -77,7 +78,7 @@ class DriftBottleHandler {
   /** 处理扔漂流瓶请求。 */
   @OnStartsWith(TRIGGER_THROW)
   @Scope('group')
-  @Permission(0)
+  @PermissionDecorator(0)
   async handleThrow(ctx: Context): Promise<boolean> {
     if (ctx.groupId === undefined) {
       return false
@@ -120,7 +121,7 @@ class DriftBottleHandler {
   /** 处理捞漂流瓶请求。 */
   @OnFullMatch(TRIGGER_PICK)
   @Scope('group')
-  @Permission(0)
+  @PermissionDecorator(0)
   async handlePick(ctx: Context): Promise<boolean> {
     if (ctx.groupId === undefined) {
       return false

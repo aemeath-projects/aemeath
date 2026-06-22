@@ -16,9 +16,7 @@ import { ok, fail, OkResponse, FailResponse } from '@/core/schemas/index.js'
 import type { Feedback, FeedbackService } from '@/services/feedback.js'
 
 async function getFeedbackSvc(app: FastifyInstance): Promise<FeedbackService> {
-  const { FeedbackService: Cls } = await import('@/services/feedback.js')
-
-  return app.services.getTyped(Cls, 'feedback_service')
+  return app.services.get('feedback_service') as FeedbackService
 }
 
 interface UpdateStatusBody {

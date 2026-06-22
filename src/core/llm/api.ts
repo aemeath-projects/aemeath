@@ -5,7 +5,7 @@
 import { Type } from '@sinclair/typebox'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 
-import { LLMService } from './index.js'
+import type { LLMService } from './index.js'
 
 import { NotFoundError } from '@/core/errors.js'
 import { ok, fail, OkResponse, FailResponse } from '@/core/schemas/index.js'
@@ -30,7 +30,7 @@ import {
 /* 内部工具 */
 
 function getLlmService(request: FastifyRequest): LLMService {
-  return request.server.services.getTyped(LLMService, 'llm_service')
+  return request.server.services.get('llm_service') as LLMService
 }
 
 async function handleError(reply: FastifyReply, err: unknown): Promise<void> {

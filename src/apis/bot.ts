@@ -2,7 +2,8 @@
  * Bot 信息 API 端点 —— 获取和修改 Bot 登录信息。
  */
 
-import { getLogger } from '@logger'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
 import {
@@ -13,7 +14,7 @@ import {
 } from '@/apis/schemas/index.js'
 import { fail, ok, FailResponse, OkResponse } from '@/core/schemas/index.js'
 
-const log = getLogger('bot')
+const log: PinoLogger = getLogger('bot') as unknown as PinoLogger
 
 /* 请求类型 */
 

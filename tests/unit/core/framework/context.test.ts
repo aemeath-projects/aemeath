@@ -1,8 +1,10 @@
+import { FinishError } from '@aemeath-projects/exostrider/dispatch'
 import type { FriendApi, GroupApi, MessageApi } from '@aemeath-projects/napcat'
 import type { AnyOneBotEvent, MessageSegment } from '@aemeath-projects/napcat/types'
 import { describe, expect, it, vi } from 'vitest'
 
-import { Context, FinishError } from '@/core/dispatch/context.js'
+import { oneBotContextConfig } from '@/core/dispatch/adapter.js'
+import { OneBotContext as Context } from '@/core/dispatch/context.js'
 import type { ContextApis } from '@/core/dispatch/context.js'
 import { BotApiError } from '@/core/errors.js'
 
@@ -95,13 +97,13 @@ describe('FinishError', () => {
 describe('Context.getPlaintext', () => {
   it('应提取群消息纯文本', () => {
     const { apis } = makeMockApis()
-    const ctx = new Context(makeGroupMsgEvent('hello world'), apis)
+    const ctx = new Context(makeGroupMsgEvent('hello world'), apis, oneBotContextConfig)
     expect(ctx.getPlaintext()).toBe('hello world')
   })
 
   it('通知事件应返回空字符串', () => {
     const { apis } = makeMockApis()
-    const ctx = new Context(makeNoticeEvent('group_ban'), apis)
+    const ctx = new Context(makeNoticeEvent('group_ban'), apis, oneBotContextConfig)
     expect(ctx.getPlaintext()).toBe('')
   })
 })
@@ -111,19 +113,19 @@ describe('Context.getPlaintext', () => {
 describe('Context.getArgs', () => {
   it('应返回命令名之后的参数列表', () => {
     const { apis } = makeMockApis()
-    const ctx = new Context(makeGroupMsgEvent('/echo hello world'), apis)
+    const ctx = new Context(makeGroupMsgEvent('/echo hello world'), apis, oneBotContextConfig)
     expect(ctx.getArgs()).toEqual(['hello', 'world'])
   })
 
   it('只有命令名时应返回空数组', () => {
     const { apis } = makeMockApis()
-    const ctx = new Context(makeGroupMsgEvent('/echo'), apis)
+    const ctx = new Context(makeGroupMsgEvent('/echo'), apis, oneBotContextConfig)
     expect(ctx.getArgs()).toEqual([])
   })
 
   it('多余空格应被忽略', () => {
     const { apis } = makeMockApis()
-    const ctx = new Context(makeGroupMsgEvent('/cmd  a  b'), apis)
+    const ctx = new Context(makeGroupMsgEvent('/cmd  a  b'), apis, oneBotContextConfig)
     expect(ctx.getArgs()).toEqual(['a', 'b'])
   })
 })
@@ -133,13 +135,13 @@ describe('Context.getArgs', () => {
 describe('Context.getArgStr', () => {
   it('应返回命令名之后的原始字符串', () => {
     const { apis } = makeMockApis()
-    const ctx = new Context(makeGroupMsgEvent('/echo hello world'), apis)
+    const ctx = new Context(makeGroupMsgEvent('/echo hello world'), apis, oneBotContextConfig)
     expect(ctx.getArgStr()).toBe('hello world')
   })
 
   it('只有命令名时应返回空字符串', () => {
     const { apis } = makeMockApis()
-    const ctx = new Context(makeGroupMsgEvent('/cmd'), apis)
+    const ctx = new Context(makeGroupMsgEvent('/cmd'), apis, oneBotContextConfig)
     expect(ctx.getArgStr()).toBe('')
   })
 })
@@ -149,21 +151,21 @@ describe('Context.getArgStr', () => {
 describe('Context.isGroupEvent / isPrivateEvent', () => {
   it('群消息事件 isGroupEvent 应为 true', () => {
     const { apis } = makeMockApis()
-    const ctx = new Context(makeGroupMsgEvent('test'), apis)
+    const ctx = new Context(makeGroupMsgEvent('test'), apis, oneBotContextConfig)
     expect(ctx.isGroupEvent()).toBe(true)
     expect(ctx.isPrivateEvent()).toBe(false)
   })
 
   it('私聊消息事件 isPrivateEvent 应为 true', () => {
     const { apis } = makeMockApis()
-    const ctx = new Context(makePrivateMsgEvent('test'), apis)
+    const ctx = new Context(makePrivateMsgEvent('test'), apis, oneBotContextConfig)
     expect(ctx.isGroupEvent()).toBe(false)
     expect(ctx.isPrivateEvent()).toBe(true)
   })
 
   it('通知事件两者均应为 false', () => {
     const { apis } = makeMockApis()
-    const ctx = new Context(makeNoticeEvent('friend_add'), apis)
+    const ctx = new Context(makeNoticeEvent('friend_add'), apis, oneBotContextConfig)
     expect(ctx.isGroupEvent()).toBe(false)
     expect(ctx.isPrivateEvent()).toBe(false)
   })
@@ -174,7 +176,7 @@ describe('Context.isGroupEvent / isPrivateEvent', () => {
 describe('Context 属性', () => {
   it('群消息 groupId 应返回正确的群 ID', () => {
     const { apis } = makeMockApis()
-    const ctx = new Context(makeGroupMsgEvent('test'), apis)
+    const ctx = new Context(makeGroupMsgEvent('test'), apis, oneBotContextConfig)
     expect(ctx.groupId).toBe(99999)
     expect(ctx.userId).toBe(11111)
     expect(ctx.messageId).toBe(42)
@@ -182,7 +184,7 @@ describe('Context 属性', () => {
 
   it('私聊消息 groupId 应为 undefined', () => {
     const { apis } = makeMockApis()
-    const ctx = new Context(makePrivateMsgEvent('test'), apis)
+    const ctx = new Context(makePrivateMsgEvent('test'), apis, oneBotContextConfig)
     expect(ctx.groupId).toBeUndefined()
     expect(ctx.userId).toBe(22222)
   })
@@ -193,7 +195,7 @@ describe('Context 属性', () => {
 describe('Context.reply', () => {
   it('群消息事件应调用 sendGroupMsg', async () => {
     const mock = makeMockApis()
-    const ctx = new Context(makeGroupMsgEvent('test'), mock.apis)
+    const ctx = new Context(makeGroupMsgEvent('test'), mock.apis, oneBotContextConfig)
     await ctx.reply('hello')
     expect(mock.sendGroupMsg).toHaveBeenCalledOnce()
     expect(mock.sendGroupMsg).toHaveBeenCalledWith(99999, [
@@ -201,16 +203,16 @@ describe('Context.reply', () => {
     ])
   })
 
-  it('群消息事件成功时应返回 message_id', async () => {
+  it('群消息事件成功时 replyGetId 应返回 message_id', async () => {
     const mock = makeMockApis()
-    const ctx = new Context(makeGroupMsgEvent('test'), mock.apis)
-    const msgId = await ctx.reply('hello')
+    const ctx = new Context(makeGroupMsgEvent('test'), mock.apis, oneBotContextConfig)
+    const msgId = await ctx.replyGetId('hello')
     expect(msgId).toBe(100)
   })
 
   it('私聊消息事件应调用 sendPrivateMsg', async () => {
     const mock = makeMockApis()
-    const ctx = new Context(makePrivateMsgEvent('test'), mock.apis)
+    const ctx = new Context(makePrivateMsgEvent('test'), mock.apis, oneBotContextConfig)
     await ctx.reply('hi')
     expect(mock.sendPrivateMsg).toHaveBeenCalledOnce()
     expect(mock.sendPrivateMsg).toHaveBeenCalledWith(22222, [
@@ -218,16 +220,16 @@ describe('Context.reply', () => {
     ])
   })
 
-  it('私聊消息事件成功时应返回 message_id', async () => {
+  it('私聊消息事件成功时 replyGetId 应返回 message_id', async () => {
     const mock = makeMockApis()
-    const ctx = new Context(makePrivateMsgEvent('test'), mock.apis)
-    const msgId = await ctx.reply('hi')
+    const ctx = new Context(makePrivateMsgEvent('test'), mock.apis, oneBotContextConfig)
+    const msgId = await ctx.replyGetId('hi')
     expect(msgId).toBe(101)
   })
 
   it('应支持传入 MessageSegment 数组', async () => {
     const mock = makeMockApis()
-    const ctx = new Context(makeGroupMsgEvent('test'), mock.apis)
+    const ctx = new Context(makeGroupMsgEvent('test'), mock.apis, oneBotContextConfig)
     const segs: MessageSegment[] = [
       { type: 'text', data: { text: 'hello ' } },
       { type: 'text', data: { text: 'world' } },
@@ -238,7 +240,7 @@ describe('Context.reply', () => {
 
   it('应支持传入单个 MessageSegment', async () => {
     const mock = makeMockApis()
-    const ctx = new Context(makeGroupMsgEvent('test'), mock.apis)
+    const ctx = new Context(makeGroupMsgEvent('test'), mock.apis, oneBotContextConfig)
     const seg: MessageSegment = { type: 'text', data: { text: 'single' } }
     await ctx.reply(seg)
     expect(mock.sendGroupMsg).toHaveBeenCalledWith(99999, [seg])
@@ -250,33 +252,33 @@ describe('Context.reply', () => {
       ok: false,
       error: { code: 100, message: '消息发送失败' },
     })
-    const ctx = new Context(makeGroupMsgEvent('test'), mock.apis)
+    const ctx = new Context(makeGroupMsgEvent('test'), mock.apis, oneBotContextConfig)
     await expect(ctx.reply('fail')).rejects.toBeInstanceOf(BotApiError)
     await expect(ctx.reply('fail')).rejects.toMatchObject({ retcode: 100, message: '消息发送失败' })
   })
 
   it('非消息事件应返回 undefined', async () => {
     const mock = makeMockApis()
-    const ctx = new Context(makeNoticeEvent('group_ban'), mock.apis)
-    const result = await ctx.reply('hello')
+    const ctx = new Context(makeNoticeEvent('group_ban'), mock.apis, oneBotContextConfig)
+    const result = await ctx.replyGetId('hello')
     expect(result).toBeUndefined()
     expect(mock.sendGroupMsg).not.toHaveBeenCalled()
   })
 })
 
-/* finish */
+/* finish / finishWith */
 
 describe('Context.finish', () => {
   it('应抛出 FinishError', async () => {
     const { apis } = makeMockApis()
-    const ctx = new Context(makeGroupMsgEvent('test'), apis)
-    await expect(ctx.finish()).rejects.toBeInstanceOf(FinishError)
+    const ctx = new Context(makeGroupMsgEvent('test'), apis, oneBotContextConfig)
+    await expect(ctx.finishWith()).rejects.toBeInstanceOf(FinishError)
   })
 
   it('带消息时应先发送再抛出 FinishError', async () => {
     const mock = makeMockApis()
-    const ctx = new Context(makeGroupMsgEvent('test'), mock.apis)
-    await expect(ctx.finish('bye')).rejects.toBeInstanceOf(FinishError)
+    const ctx = new Context(makeGroupMsgEvent('test'), mock.apis, oneBotContextConfig)
+    await expect(ctx.finishWith('bye')).rejects.toBeInstanceOf(FinishError)
     expect(mock.sendGroupMsg).toHaveBeenCalledOnce()
   })
 })
@@ -286,14 +288,14 @@ describe('Context.finish', () => {
 describe('Context.recall', () => {
   it('消息事件应调用 deleteMsg 并传入 message_id', async () => {
     const mock = makeMockApis()
-    const ctx = new Context(makeGroupMsgEvent('test'), mock.apis)
+    const ctx = new Context(makeGroupMsgEvent('test'), mock.apis, oneBotContextConfig)
     await ctx.recall()
     expect(mock.deleteMsg).toHaveBeenCalledWith(42)
   })
 
   it('通知事件不应调用 deleteMsg', async () => {
     const mock = makeMockApis()
-    const ctx = new Context(makeNoticeEvent('group_ban'), mock.apis)
+    const ctx = new Context(makeNoticeEvent('group_ban'), mock.apis, oneBotContextConfig)
     await ctx.recall()
     expect(mock.deleteMsg).not.toHaveBeenCalled()
   })
@@ -301,7 +303,7 @@ describe('Context.recall', () => {
   it('API 返回失败时应抛出 BotApiError', async () => {
     const mock = makeMockApis()
     mock.deleteMsg.mockResolvedValue({ ok: false, error: { code: 200, message: '撤回失败' } })
-    const ctx = new Context(makeGroupMsgEvent('test'), mock.apis)
+    const ctx = new Context(makeGroupMsgEvent('test'), mock.apis, oneBotContextConfig)
     await expect(ctx.recall()).rejects.toBeInstanceOf(BotApiError)
     await expect(ctx.recall()).rejects.toMatchObject({ retcode: 200, message: '撤回失败' })
   })
@@ -312,7 +314,7 @@ describe('Context.recall', () => {
 describe('Context.setAttribute / getAttribute', () => {
   it('应存储并读取属性', () => {
     const { apis } = makeMockApis()
-    const ctx = new Context(makeGroupMsgEvent('test'), apis)
+    const ctx = new Context(makeGroupMsgEvent('test'), apis, oneBotContextConfig)
 
     ctx.setAttribute('key', 42)
     expect(ctx.getAttribute('key')).toBe(42)
@@ -320,7 +322,7 @@ describe('Context.setAttribute / getAttribute', () => {
 
   it('不存在的属性应返回 undefined', () => {
     const { apis } = makeMockApis()
-    const ctx = new Context(makeGroupMsgEvent('test'), apis)
+    const ctx = new Context(makeGroupMsgEvent('test'), apis, oneBotContextConfig)
 
     expect(ctx.getAttribute('nonexistent')).toBeUndefined()
   })
@@ -328,23 +330,23 @@ describe('Context.setAttribute / getAttribute', () => {
 
 /* 正则匹配 */
 
-describe('Context.setRegexMatch / getRegexMatch', () => {
+describe('Context.regexMatch', () => {
   it('应存储并读取正则匹配结果', () => {
     const { apis } = makeMockApis()
-    const ctx = new Context(makeGroupMsgEvent('test 123'), apis)
+    const ctx = new Context(makeGroupMsgEvent('test 123'), apis, oneBotContextConfig)
 
     const match = /(\d+)/u.exec('test 123')
     expect(match).not.toBeNull()
 
-    ctx.setRegexMatch(match!)
-    expect(ctx.getRegexMatch()).toBe(match)
-    expect(ctx.getRegexMatch()?.[1]).toBe('123')
+    ctx.regexMatch = match!
+    expect(ctx.regexMatch).toBe(match)
+    expect(ctx.regexMatch?.[1]).toBe('123')
   })
 
   it('默认应为 null', () => {
     const { apis } = makeMockApis()
-    const ctx = new Context(makeGroupMsgEvent('test'), apis)
+    const ctx = new Context(makeGroupMsgEvent('test'), apis, oneBotContextConfig)
 
-    expect(ctx.getRegexMatch()).toBeNull()
+    expect(ctx.regexMatch).toBeNull()
   })
 })

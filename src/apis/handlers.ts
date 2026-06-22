@@ -2,10 +2,10 @@
  * 处理器管理 API 端点 —— 列出已注册的组件和处理器。
  */
 
+import { handlerRegistry } from '@aemeath-projects/exostrider/dispatch'
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
 import { HandlerListDataSchema } from '@/apis/schemas/index.js'
-import { handlerRegistry } from '@/core/dispatch/index.js'
 import { ok, OkResponse, FailResponse } from '@/core/schemas/index.js'
 
 /**
@@ -25,30 +25,21 @@ const handlerRoutes: FastifyPluginAsync = async (app) => {
       },
     },
     async (_req: FastifyRequest, reply: FastifyReply) => {
-      const controllers = [...handlerRegistry.values()].map((entry) => {
+      const controllers = handlerRegistry.entries.map((entry) => {
         const methods: Record<string, unknown>[] = entry.methods.map((methodMeta) => ({
-          name: methodMeta.method.name || 'anonymous',
+          name: String(methodMeta.methodName),
           mappingType: methodMeta.mappingType,
-          displayName: methodMeta.displayName,
-          description: methodMeta.description,
           permission: methodMeta.permission,
-          messageScope: methodMeta.messageScope,
-          cmd: methodMeta.cmd as string | undefined,
-          pattern: methodMeta.pattern as string | undefined,
-          keywords:
-            methodMeta.keywords instanceof Set
-              ? [...(methodMeta.keywords as Set<string>)]
-              : undefined,
-          prefix: methodMeta.prefix as string | undefined,
-          text: methodMeta.text as string | undefined,
+          scope: methodMeta.scope,
+          ...methodMeta.trigger,
         }))
 
         return {
-          name: entry.meta.name,
-          displayName: entry.meta.displayName,
-          description: entry.meta.description,
-          tags: entry.meta.tags,
-          system: entry.meta.system,
+          name: entry.options.name,
+          displayName: entry.options.displayName,
+          description: entry.options.description,
+          tags: entry.options.tags,
+          system: entry.options.system,
           methods,
         }
       })

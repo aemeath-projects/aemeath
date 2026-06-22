@@ -19,10 +19,10 @@ import {
   SettingsRecordDataSchema,
 } from '@/apis/schemas/index.js'
 import { ok, fail, OkResponse, FailResponse } from '@/core/schemas/index.js'
-import { SettingsService } from '@/core/settings/index.js'
+import type { SettingsService } from '@/core/settings/index.js'
 
 function getSettings(app: FastifyInstance): SettingsService {
-  return app.services.getTyped(SettingsService, 'settings')
+  return app.services.get('settings') as SettingsService
 }
 
 /* 请求体接口 */

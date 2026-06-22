@@ -2,11 +2,12 @@
  * 今日老婆 Bot 处理器 —— 响应群聊抽取指令。
  */
 
-import { logger } from '@logger'
+import { Handler, OnRegex, Scope, SettingNode } from '@aemeath-projects/exostrider/dispatch'
+import { Inject } from '@aemeath-projects/exostrider/lifecycle'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 
-import { type Context } from '@/core/dispatch/context.js'
-import { Handler, OnRegex, Scope, SettingNode } from '@/core/dispatch/decorators/index.js'
-import { Inject } from '@/core/lifecycle/decorators/index.js'
+import type { OneBotContext as Context } from '@/core/dispatch/context.js'
 import { MessageBuilder } from '@/core/utils/index.js'
 import type { JrlpService } from '@/services/jrlp.js'
 
@@ -38,13 +39,13 @@ function getTodayShanghai(): Date {
   description: '最低权限等级',
 })
 class JrlpHandler {
-  private readonly _log = logger.child({ name: 'jrlp' })
+  private readonly _log: PinoLogger = getLogger('jrlp') as unknown as PinoLogger
 
   @Inject('jrlp_service')
   private readonly jrlpService!: JrlpService
 
   /** 随机抽取今日群老婆。 */
-  @OnRegex('^(jrlp|今日老婆|抽老婆|群老婆)$')
+  @OnRegex(/^(jrlp|今日老婆|抽老婆|群老婆)$/u)
   @Scope('group')
   async drawWife(ctx: Context): Promise<boolean> {
     if (ctx.groupId === undefined) {

@@ -2,7 +2,9 @@
  * LLM 业务逻辑层 —— 提供商/模型 CRUD 与 LLM 调用编排。
  */
 
-import { logger, type Logger } from '@logger'
+import { Service, Inject, Provide, Startup, Shutdown } from '@aemeath-projects/exostrider/lifecycle'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 
 import type { LlmModel, LlmProvider } from '#prisma/main'
 
@@ -11,7 +13,6 @@ import type { ChatMessage } from './completion.js'
 
 import type { MainPrismaClient } from '@/core/db.js'
 import { NotFoundError } from '@/core/errors.js'
-import { Service, Inject, Provide, Startup, Shutdown } from '@/core/lifecycle/decorators/index.js'
 import {
   maskApiKey,
   type CreateModelData,
@@ -64,7 +65,7 @@ export interface ChatOptions {
  */
 export class LLMService {
   private readonly client: LLMClient
-  private readonly _log: Logger = logger.child({ name: 'LLMService' })
+  private readonly _log: PinoLogger = getLogger('LLMService') as unknown as PinoLogger
 
   constructor(private readonly mainDb: MainPrismaClient) {
     this.client = new LLMClient()

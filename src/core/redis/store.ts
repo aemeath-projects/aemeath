@@ -68,6 +68,19 @@ export class RedisStore {
   }
 
   /**
+   * 原子性地仅在键不存在时写入值（SET NX EX）。
+   *
+   * @param key    Redis 键
+   * @param value  写入的字符串值
+   * @param ttlMs  过期时长（毫秒），必须 > 0
+   * @returns 写入成功返回 true，键已存在返回 false
+   */
+  async setNx(key: string, value: string, ttlMs: number): Promise<boolean> {
+    const result = await this.redis.set(key, value, 'PX', ttlMs, 'NX')
+    return result === 'OK'
+  }
+
+  /**
    * 按 glob 模式批量删除匹配的键（使用 SCAN 迭代，避免 KEYS 阻塞）。
    *
    * @returns 删除的键数量

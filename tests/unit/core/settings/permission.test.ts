@@ -1,11 +1,14 @@
-/* eslint-disable @typescript-eslint/no-deprecated */
+import {
+  Permission,
+  handlerRegistry,
+  Handler,
+  SettingNode,
+  type SettingNodeEntry,
+} from '@aemeath-projects/exostrider/dispatch'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { Permission } from '@/core/dispatch/constants.js'
-import type { Context } from '@/core/dispatch/context.js'
-import { handlerRegistry } from '@/core/dispatch/registry.js'
+import type { OneBotContext as Context } from '@/core/dispatch/context.js'
 import type { PersonnelService } from '@/core/personnel/index.js'
-import { SettingNode, settingNodeRegistry } from '@/core/settings/decorators.js'
 import { SettingsPermissionChecker } from '@/core/settings/permission.js'
 import { buildSchemaMap } from '@/core/settings/schema.js'
 import type { SettingsService } from '@/core/settings/service.js'
@@ -74,18 +77,37 @@ class TestHandler {
 }
 
 beforeEach(() => {
-  settingNodeRegistry.clear()
   handlerRegistry.clear()
 })
 
-function buildChecker(settingsValues: Record<string, unknown> = {}, adminQqs: bigint[] = []) {
-  SettingNode('test_feature.enabled', { type: 'boolean', default: true })(TestHandler)
-  SettingNode('test_feature.permission', {
-    type: 'enum',
-    default: 'ANYONE',
-    enumOptions: Permission,
-  })(TestHandler)
+/** 注册测试 handler 及 settingNodes */
+function registerTestHandler(): void {
+  const metadata: Record<symbol, unknown> = {}
+  const ctxBase = {
+    kind: 'class' as const,
+    metadata,
+    addInitializer: () => {},
+    name: 'TestHandler',
+  }
+  const nodes: { key: string; options: SettingNodeEntry['options'] }[] = [
+    { key: 'enabled', options: { type: 'boolean', default: true } },
+    {
+      key: 'permission',
+      options: {
+        type: 'enum',
+        default: 'ANYONE',
+        enumOptions: Permission,
+      },
+    },
+  ]
+  for (const node of nodes) {
+    SettingNode(node.key, node.options)(TestHandler, ctxBase)
+  }
+  Handler({ name: 'test_feature', displayName: 'Test Feature' })(TestHandler, ctxBase)
+}
 
+function buildChecker(settingsValues: Record<string, unknown> = {}, adminQqs: bigint[] = []) {
+  registerTestHandler()
   const schemaMap = buildSchemaMap()
   const settings = createMockSettings(settingsValues)
   const personnel = createMockPersonnel(adminQqs)
@@ -98,20 +120,16 @@ function buildChecker(settingsValues: Record<string, unknown> = {}, adminQqs: bi
 
 describe('system 功能直通', () => {
   it('system 组件跳过所有检查', async () => {
-    settingNodeRegistry.clear()
     handlerRegistry.clear()
-    handlerRegistry.register('sys_feature', {
-      meta: {
-        name: 'sys_feature',
-        displayName: '',
-        description: '',
-        tags: [],
-        defaultPriority: 0,
-        system: true,
-        target: TestHandler,
-      },
-      methods: [],
-    })
+    // 注册一个 system=true 的 handler
+    const metadata: Record<symbol, unknown> = {}
+    const ctxBase = {
+      kind: 'class' as const,
+      metadata,
+      addInitializer: () => {},
+      name: 'TestHandler',
+    }
+    Handler({ name: 'sys_feature', displayName: '', system: true })(TestHandler, ctxBase)
 
     const schemaMap = buildSchemaMap()
     const settings = createMockSettings()

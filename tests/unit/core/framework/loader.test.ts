@@ -2,11 +2,9 @@
 import { mkdir, writeFile, rm } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
+import type { EchoConfig, EchoEntry } from '@aemeath-projects/exostrider/echo'
+import { EchoLoader } from '@aemeath-projects/exostrider/echo'
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-
-import type { EchoConfig } from '@/core/echo/config.js'
-import { EchoLoader } from '@/core/echo/loader.js'
-import type { TaskEchoEntry, RouteEchoEntry } from '@/core/echo/loader.js'
 
 const TMP_DIR = resolve(import.meta.dirname, '__fixtures_loader__')
 
@@ -28,12 +26,12 @@ describe('EchoLoader', () => {
   it('扫描目录发现 .ts 文件', async () => {
     await createFixture('handlers/echo.ts', 'export {}')
     const config: EchoConfig = {
-      echoes: { handler: ['handlers'], service: [], task: [], route: [] },
+      echoes: { handler: 'handlers' },
     }
     const loader = new EchoLoader(config, TMP_DIR)
     const entries = await loader.discoverByType('handler')
     expect(entries.length).toBeGreaterThanOrEqual(1)
-    expect(entries[0]?.filePath).toContain('echo.ts')
+    expect(entries[0]?.path).toContain('echo.ts')
   })
 
   it('排除匹配 exclude 模式的文件', async () => {
@@ -41,21 +39,18 @@ describe('EchoLoader', () => {
     await createFixture('apis/schemas/user-schema.ts', 'export {}')
     const config: EchoConfig = {
       echoes: {
-        handler: [],
-        service: [],
-        task: [],
-        route: { dirs: ['apis'], exclude: ['**/schemas/**'] },
+        route: { dir: 'apis', exclude: ['**/schemas/**'] },
       },
     }
     const loader = new EchoLoader(config, TMP_DIR)
     const entries = await loader.discoverByType('route')
     expect(entries).toHaveLength(1)
-    expect(entries[0]?.filePath).toContain('user.ts')
+    expect(entries[0]?.path).toContain('user.ts')
   })
 
   it('目录不存在时跳过不报错', async () => {
     const config: EchoConfig = {
-      echoes: { handler: ['nonexistent'], service: [], task: [], route: [] },
+      echoes: { handler: 'nonexistent' },
     }
     const loader = new EchoLoader(config, TMP_DIR)
     const entries = await loader.discoverByType('handler')
@@ -73,11 +68,13 @@ describe('EchoLoader', () => {
       }
     `,
     )
-    const config: EchoConfig = { echoes: { handler: [], service: [], task: ['tasks'], route: [] } }
+    const config: EchoConfig = { echoes: { task: 'tasks' } }
     const loader = new EchoLoader(config, TMP_DIR)
     const entries = await loader.discoverByType('task')
     expect(entries).toHaveLength(1)
-    expect((entries[0] as TaskEchoEntry).taskDefinition.jobName).toBe('my_task')
+    const entry = entries[0]!
+    expect(entry.path).toContain('my-task.js')
+    expect(entry.type).toBe('task')
   })
 
   it('discoverByType(route) 收集 export default 函数', async () => {
@@ -85,18 +82,12 @@ describe('EchoLoader', () => {
       'routes/health.js',
       'export default async function plugin(app) { app.get("/health", () => "ok") }',
     )
-    const config: EchoConfig = { echoes: { handler: [], service: [], task: [], route: ['routes'] } }
+    const config: EchoConfig = { echoes: { route: 'routes' } }
     const loader = new EchoLoader(config, TMP_DIR)
     const entries = await loader.discoverByType('route')
     expect(entries).toHaveLength(1)
-    expect(typeof (entries[0] as RouteEchoEntry).plugin).toBe('function')
-  })
-
-  it('无标准导出的文件被静默跳过', async () => {
-    await createFixture('tasks/util.js', 'export function helper() {}')
-    const config: EchoConfig = { echoes: { handler: [], service: [], task: ['tasks'], route: [] } }
-    const loader = new EchoLoader(config, TMP_DIR)
-    const entries = await loader.discoverByType('task')
-    expect(entries).toHaveLength(0)
+    expect(
+      typeof (entries[0] as EchoEntry & { module: { default?: unknown } }).module?.default,
+    ).toBe('function')
   })
 })

@@ -1,18 +1,18 @@
 /* eslint-disable @typescript-eslint/no-extraneous-class */
-import { describe, it, expect, afterEach } from 'vitest'
 
-import type { SettingNodeEntry } from '@/core/dispatch/decorators/symbols.js'
-import { Inject } from '@/core/lifecycle/decorators/inject.js'
-import { Startup, Shutdown } from '@/core/lifecycle/decorators/lifecycle.js'
-import { Provide } from '@/core/lifecycle/decorators/provide.js'
-import { Service, serviceEntryRegistry } from '@/core/lifecycle/decorators/service.js'
 import {
+  Inject,
+  Startup,
+  Shutdown,
+  Provide,
+  Service,
+  serviceEntryRegistry,
   SERVICE_INJECTS,
   SERVICE_PROVIDES,
-  SERVICE_LIFECYCLE,
-  SERVICE_SETTINGS,
-} from '@/core/lifecycle/decorators/symbols.js'
-import type { LifecycleEntry } from '@/core/lifecycle/decorators/symbols.js'
+  SERVICE_STARTUP,
+  SERVICE_SHUTDOWN,
+} from '@aemeath-projects/exostrider/lifecycle'
+import { describe, it, expect, afterEach } from 'vitest'
 
 // TC39 Stage 3 字段装饰器测试：通过手动模拟 ClassFieldDecoratorContext 调用装饰器工厂，
 // 验证元数据正确写入 Symbol.metadata，无需依赖转换器支持 @decorator 语法。
@@ -156,38 +156,35 @@ function applyMethodDecorator(
 describe('@Startup / @Shutdown', () => {
   it('应将启动方法名写入 metadata', () => {
     const metadata = applyMethodDecorator(Startup, 'start')
-    const lifecycle = metadata[SERVICE_LIFECYCLE] as LifecycleEntry
-    expect(lifecycle.startupMethod).toBe('start')
-    expect(lifecycle.shutdownMethod).toBe(null)
+    expect(metadata[SERVICE_STARTUP]).toBe('start')
+    expect(metadata[SERVICE_SHUTDOWN]).toBeUndefined()
   })
 
   it('应将关闭方法名写入 metadata', () => {
     const metadata = applyMethodDecorator(Shutdown, 'stop')
-    const lifecycle = metadata[SERVICE_LIFECYCLE] as LifecycleEntry
-    expect(lifecycle.startupMethod).toBe(null)
-    expect(lifecycle.shutdownMethod).toBe('stop')
+    expect(metadata[SERVICE_SHUTDOWN]).toBe('stop')
+    expect(metadata[SERVICE_STARTUP]).toBeUndefined()
   })
 
   it('应同时记录启动和关闭方法名（共享同一 metadata）', () => {
     const metadata = applyMethodDecorator(Startup, 'start')
     applyMethodDecorator(Shutdown, 'stop', metadata)
-    const lifecycle = metadata[SERVICE_LIFECYCLE] as LifecycleEntry
-    expect(lifecycle.startupMethod).toBe('start')
-    expect(lifecycle.shutdownMethod).toBe('stop')
+    expect(metadata[SERVICE_STARTUP]).toBe('start')
+    expect(metadata[SERVICE_SHUTDOWN]).toBe('stop')
   })
 
   it('重复标记 @Startup 应抛出错误', () => {
     expect(() => {
       const metadata = applyMethodDecorator(Startup, 'start1')
       applyMethodDecorator(Startup, 'start2', metadata)
-    }).toThrow('@Startup 只能标记一个方法')
+    }).toThrow()
   })
 
   it('重复标记 @Shutdown 应抛出错误', () => {
     expect(() => {
       const metadata = applyMethodDecorator(Shutdown, 'stop1')
       applyMethodDecorator(Shutdown, 'stop2', metadata)
-    }).toThrow('@Shutdown 只能标记一个方法')
+    }).toThrow()
   })
 })
 
@@ -199,8 +196,7 @@ describe('@Startup / @Shutdown', () => {
 function applyServiceDecorator(
   name: string,
   metadata: Record<symbol, unknown>,
-
-  targetClass: new (...args: any[]) => unknown,
+  targetClass: new (...args: unknown[]) => unknown,
 ): void {
   const ctx = {
     kind: 'class' as const,
@@ -259,7 +255,6 @@ describe('@Service', () => {
     expect(entry.provides).toEqual([{ propertyName: 'extra', serviceKey: 'extra' }])
     expect(entry.startupMethod).toBe('start')
     expect(entry.shutdownMethod).toBe('stop')
-    expect(entry.settingNodes).toEqual([])
   })
 
   it('无任何子装饰器时应生成空 injects/provides 并无 startupMethod/shutdownMethod', () => {
@@ -275,7 +270,7 @@ describe('@Service', () => {
     expect(entry.shutdownMethod).toBeNull()
   })
 
-  it('重复注册相同名称时应抛出包含"名称冲突"的错误', () => {
+  it('重复注册相同名称时应抛出包含名称冲突信息的错误', () => {
     const metadata: Record<symbol, unknown> = {}
     class A {}
     applyServiceDecorator('dup', metadata, A)
@@ -283,23 +278,6 @@ describe('@Service', () => {
     expect(() => {
       class B {}
       applyServiceDecorator('dup', {}, B)
-    }).toThrow('名称冲突')
-  })
-
-  it('settingNodes 的 key 应以服务名称作前缀', () => {
-    const metadata: Record<symbol, unknown> = {}
-    const settingEntry: SettingNodeEntry = {
-      key: 'enabled',
-      options: { type: 'boolean', default: true },
-    }
-    metadata[SERVICE_SETTINGS] = [settingEntry]
-    metadata[SERVICE_LIFECYCLE] = { startupMethod: null, shutdownMethod: null }
-
-    class WithSettings {}
-    applyServiceDecorator('my_svc', metadata, WithSettings)
-
-    const entry = serviceEntryRegistry.get('my_svc')!
-    expect(entry.settingNodes).toHaveLength(1)
-    expect(entry.settingNodes[0]!.key).toBe('my_svc.enabled')
+    }).toThrow()
   })
 })

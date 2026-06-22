@@ -2,7 +2,7 @@
  * Settings 模块入口 —— 统一导出 + Startup 生命周期注册。
  */
 
-export { SettingNode, settingNodeRegistry } from './decorators.js'
+export { SettingNode } from '@aemeath-projects/exostrider/dispatch'
 export type { SettingNodeMeta, SettingNodeOptions, SettingValueType } from './decorators.js'
 export { buildSchemaMap, cleanOrphanKeys } from './schema.js'
 export type { SettingNodeSchema } from './schema.js'
@@ -12,6 +12,7 @@ export { SettingsPermissionChecker } from './permission.js'
 export type { MinimalSettingSchema, SettingsQueryContext } from './query.js'
 export { getSettingValue } from './query.js'
 
+import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/lifecycle'
 import type { Redis } from 'ioredis'
 
 import { SettingsPermissionChecker } from './permission.js'
@@ -19,7 +20,6 @@ import { buildSchemaMap, cleanOrphanKeys } from './schema.js'
 import { SettingsService } from './service.js'
 
 import type { MainPrismaClient } from '@/core/db.js'
-import { Service, Inject, Provide, Startup } from '@/core/lifecycle/decorators/index.js'
 import type { PersonnelService } from '@/core/personnel/index.js'
 
 @Service({ name: 'settings_bootstrap' })

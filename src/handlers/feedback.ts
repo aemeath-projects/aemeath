@@ -4,11 +4,17 @@
  * 注意：交互式多轮会话将在 Phase 4 实现，当前版本仅支持简单模式。
  */
 
-import { logger } from '@logger'
+import {
+  Handler,
+  OnCommand,
+  PermissionDecorator,
+  SettingNode,
+} from '@aemeath-projects/exostrider/dispatch'
+import { Inject } from '@aemeath-projects/exostrider/lifecycle'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 
-import { type Context } from '@/core/dispatch/context.js'
-import { Handler, OnCommand, Permission, SettingNode } from '@/core/dispatch/decorators/index.js'
-import { Inject } from '@/core/lifecycle/decorators/index.js'
+import type { OneBotContext as Context } from '@/core/dispatch/context.js'
 import type { FeedbackService } from '@/services/feedback.js'
 
 type FeedbackType = 'bug' | 'suggestion' | 'complaint'
@@ -50,14 +56,14 @@ function parseQuickFeedback(args: string): [FeedbackType | null, string] {
   description: '最低权限等级',
 })
 class FeedbackHandler {
-  private readonly _log = logger.child({ name: 'feedback' })
+  private readonly _log: PinoLogger = getLogger('feedback') as unknown as PinoLogger
 
   @Inject('feedback_service')
   private readonly feedbackService!: FeedbackService
 
   /** 提交反馈命令。有参数时直接提交，无参数时提示用法。 */
   @OnCommand('/反馈', { aliases: ['/feedback'] })
-  @Permission(0)
+  @PermissionDecorator(0)
   async submitFeedback(ctx: Context): Promise<boolean> {
     const argStr = ctx.getArgStr().trim()
 
@@ -92,7 +98,7 @@ class FeedbackHandler {
 
   /** 查询用户最近 5 条反馈。 */
   @OnCommand('/我的反馈', { aliases: ['/myfeedback'] })
-  @Permission(0)
+  @PermissionDecorator(0)
   async myFeedbacks(ctx: Context): Promise<boolean> {
     try {
       const feedbacks = await this.feedbackService.getUserFeedbacks(BigInt(ctx.userId), 5)

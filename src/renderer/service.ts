@@ -3,7 +3,8 @@
 import { createRequire } from 'node:module'
 import { join, dirname } from 'node:path'
 
-import { getLogger } from '@logger'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import { Resvg } from '@resvg/resvg-js'
 import satori from 'satori'
 import type { Font } from 'satori'
@@ -15,7 +16,7 @@ import { RenderError, TemplateNotFoundError, TemplateRenderError } from './error
 import { loadFonts } from './fonts.js'
 import type { RenderOptions, SatoriElement, TemplateFunction, TemplateRegistry } from './types.js'
 
-const log = getLogger('renderer')
+const log: PinoLogger = getLogger('renderer') as unknown as PinoLogger
 const _require = createRequire(import.meta.url)
 
 const DEFAULT_WIDTH = 800

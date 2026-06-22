@@ -5,9 +5,10 @@
  * 所有触发入口（WS 连接、API 手动触发、内置定时调度）统一调用 requestSync()。
  */
 
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { FriendApi, GroupApi } from '@aemeath-projects/napcat'
 import type { FriendInfo, GroupInfo, GroupMember } from '@aemeath-projects/napcat/types'
-import { logger, type Logger } from '@logger'
 
 import type { PersonnelService } from './index.js'
 
@@ -48,7 +49,7 @@ export class SyncCoordinator {
   private readonly _intervalMs: number
   private readonly _initialDelayMs: number
   private readonly _apiDelayMs: number
-  private readonly _log: Logger = logger.child({ name: 'SyncCoordinator' })
+  private readonly _log: PinoLogger = getLogger('SyncCoordinator') as unknown as PinoLogger
 
   constructor(
     private readonly friendApi: FriendApi,

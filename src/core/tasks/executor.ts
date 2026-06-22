@@ -1,9 +1,10 @@
 /** TaskExecutor —— 监听 BullMQ QueueEvents，按 job result 执行 Bot API。 */
 
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import { seg } from '@aemeath-projects/napcat'
 import type { FriendApi, GroupApi, MessageApi, NapCatClient } from '@aemeath-projects/napcat'
 import type { MessageSegment } from '@aemeath-projects/napcat/types'
-import { getLogger } from '@logger'
 import { Job, Queue, QueueEvents } from 'bullmq'
 import type { ConnectionOptions } from 'bullmq'
 
@@ -15,7 +16,7 @@ import {
 } from '@/core/tasks/models.js'
 import type { BotActionJobResult, RenderSendJobResult } from '@/core/tasks/models.js'
 
-const log = getLogger('TaskExecutor')
+const log: PinoLogger = getLogger('TaskExecutor') as unknown as PinoLogger
 
 export class TaskExecutor {
   private readonly events: QueueEvents

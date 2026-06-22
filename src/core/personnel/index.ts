@@ -5,13 +5,13 @@
  * 增量事件处理已迁移至 PersonnelEventService（events.ts）。
  */
 
+import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/lifecycle'
 import type { FriendInfo, GroupInfo, GroupMember } from '@aemeath-projects/napcat/types'
 
 import { USER_RELATION_GLOB } from './cache-keys.js'
 import './metrics.js'
 
 import type { MainPrismaClient } from '@/core/db.js'
-import { Service, Inject, Provide, Startup } from '@/core/lifecycle/decorators/index.js'
 import type { RedisStore } from '@/core/redis/store.js'
 import { cacheKeyRegistry } from '@/core/registries.js'
 

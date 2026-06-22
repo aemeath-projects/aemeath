@@ -2,14 +2,15 @@
  * 点赞服务 —— 手动点赞、定时任务注册/取消/查询、批量定时执行。
  */
 
+import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/lifecycle'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { FriendApi } from '@aemeath-projects/napcat'
-import { logger, type Logger } from '@logger'
 
 import type { LikeTask, LikeHistory, LikeSource, Prisma } from '#prisma/main'
 
 import type { MainPrismaClient } from '@/core/db.js'
 import { isPrismaKnownError } from '@/core/db.js'
-import { Service, Inject, Provide, Startup } from '@/core/lifecycle/decorators/index.js'
 
 export type { LikeTask, LikeHistory, LikeSource }
 
@@ -55,7 +56,7 @@ export interface ListHistoryParams {
  */
 export class LikeService {
   private _currentTask: Promise<void> | null = null
-  private readonly _log: Logger = logger.child({ name: 'LikeService' })
+  private readonly _log: PinoLogger = getLogger('LikeService') as unknown as PinoLogger
 
   constructor(
     private readonly db: MainPrismaClient,

@@ -1,13 +1,15 @@
 /**
  * Fastify 类型扩展 —— 通过 decorate 注入的服务和基础设施访问。
  */
-
+import type { EventDispatcher } from '@aemeath-projects/exostrider/dispatch'
+import type { ServiceRegistry } from '@aemeath-projects/exostrider/lifecycle'
 import type { NapCatClient } from '@aemeath-projects/napcat'
+import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 import type { Redis } from 'ioredis'
 
 import type { createMainDb, createChatDb } from '@/core/db.js'
-import type { EventDispatcher } from '@/core/dispatch/dispatcher.js'
-import type { ServiceRegistry } from '@/core/lifecycle/service-registry.js'
+import type { ContextApis } from '@/core/dispatch/adapter.js'
+import type { AemeathServiceMap } from '@/core/lifecycle/types.js'
 import type { RedisStore } from '@/core/redis/store.js'
 import type { TaskExecutor } from '@/core/tasks/executor.js'
 
@@ -20,7 +22,7 @@ export interface InfraState {
   readonly cacheStore: RedisStore
   readonly persistentStore: RedisStore
   readonly botClient: NapCatClient
-  readonly dispatcher: EventDispatcher
+  readonly dispatcher: EventDispatcher<AnyOneBotEvent, ContextApis>
   readonly taskExecutor: TaskExecutor
   readonly queue: { close(): Promise<void> }
 }
@@ -28,7 +30,7 @@ export interface InfraState {
 declare module 'fastify' {
   interface FastifyInstance {
     /** 业务服务注册表（只读，由 LifecycleOrchestrator 产出）。 */
-    services: ServiceRegistry
+    services: ServiceRegistry<AemeathServiceMap>
     /** 基础设施依赖（只读，由 _startup 闭包产出）。 */
     infra: InfraState
   }

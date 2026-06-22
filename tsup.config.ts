@@ -1,5 +1,3 @@
-import { resolve } from 'node:path'
-
 import { defineConfig } from 'tsup'
 
 export default defineConfig({
@@ -16,7 +14,4 @@ export default defineConfig({
   sourcemap: true,
   minify: true,
   external: [/^#prisma\/.*/],
-  esbuildOptions(options) {
-    options.alias = { '@logger': resolve('./src/core/logging/index.ts') }
-  },
 })

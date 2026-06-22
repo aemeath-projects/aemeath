@@ -1,6 +1,18 @@
-import { defineConfig } from '@/core/echo/config.js'
+import type { EchoConfig } from '@aemeath-projects/exostrider/echo'
 
-export default defineConfig({
+/** Aemeath 运行时配置（扩展 EchoConfig，追加 app 字段）。 */
+export interface AemeathConfig extends EchoConfig {
+  readonly app?: {
+    readonly cacheKeyPrefix?: string
+    readonly queueName?: string
+    readonly heartbeatKeyPrefix?: string
+    readonly commandPrefix?: string
+    readonly defaultTimezone?: string
+    readonly sessionTimeout?: number
+  }
+}
+
+const config: AemeathConfig = {
   app: {
     /** Redis cache key 命名空间前缀 */
     cacheKeyPrefix: 'aemeath:',
@@ -16,12 +28,14 @@ export default defineConfig({
     sessionTimeout: 300,
   },
   echoes: {
-    handler: ['src/handlers'],
-    service: ['src/services'],
-    task: ['src/tasks'],
+    handler: 'src/handlers',
+    service: 'src/services',
+    task: 'src/tasks',
     route: {
-      dirs: ['src/apis'],
+      dir: 'src/apis',
       exclude: ['**/schemas/**', '**/plugins/**'],
     },
   },
-})
+}
+
+export default config

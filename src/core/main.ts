@@ -8,7 +8,18 @@
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 
+import { EventDispatcher, handlerRegistry } from '@aemeath-projects/exostrider/dispatch'
+import { loadEchoConfig, EchoLoader } from '@aemeath-projects/exostrider/echo'
+import type { EchoEntry } from '@aemeath-projects/exostrider/echo'
+import {
+  LifecycleOrchestrator,
+  ServiceRegistry,
+  serviceEntryRegistry,
+} from '@aemeath-projects/exostrider/lifecycle'
+import { createLogger, setLogger, getLogger } from '@aemeath-projects/exostrider/logger'
+import type { SessionManager } from '@aemeath-projects/exostrider/session'
 import type {
+  AnyOneBotEvent,
   PrivateMessageEvent,
   GroupMessageEvent,
   MessageSentEvent,
@@ -17,38 +28,34 @@ import type {
   GroupRequestEvent,
 } from '@aemeath-projects/napcat/types'
 import fastifyStatic from '@fastify/static'
-import { createLogger, setLogger, logger, getLogger } from '@logger'
 import Fastify, { type FastifyInstance, type FastifyPluginAsync } from 'fastify'
 
+import type { AemeathConfig } from '../../aemeath.config.js'
 import pkg from '../../package.json' with { type: 'json' }
+
+const logger = getLogger('main')
 
 import { loadConfig } from './config.js'
 import { createMainDb, createChatDb } from './db.js'
-import type { ContextApis } from './dispatch/context.js'
-import { EventDispatcher } from './dispatch/dispatcher.js'
+import { oneBotContextConfig } from './dispatch/adapter.js'
+import type { ContextApis } from './dispatch/adapter.js'
+import type { OneBotContext } from './dispatch/context.js'
+import { FeatureCheckInterceptor } from './dispatch/feature-check-interceptor.js'
 import { LoggingInterceptor, SessionInterceptor } from './dispatch/interceptors/index.js'
-import { CompositeHandlerMapping } from './dispatch/mapping.js'
-import type { FeatureChecker } from './dispatch/mapping.js'
-import { buildHandlerMethod } from './dispatch/method-builder.js'
-import { handlerRegistry } from './dispatch/registry.js'
-import type { EchoConfig } from './echo/config.js'
-import { loadEchoConfig } from './echo/config.js'
-import { EchoLoader } from './echo/loader.js'
-import type { RouteEchoEntry, TaskEchoEntry } from './echo/loader.js'
-import { LifecycleOrchestrator } from './lifecycle/orchestrator.js'
-import { ServiceRegistry } from './lifecycle/service-registry.js'
-import type { InfraServiceMap } from './lifecycle/types.js'
+import type { FeatureChecker } from './dispatch/mapping-types.js'
+import type { AemeathServiceMap } from './lifecycle/types.js'
 import { metricsRegistry } from './monitoring/index.js'
 import { authPlugin, corsPlugin, swaggerPlugin } from './plugins/index.js'
 import { createRedis, checkRedisReachable } from './redis/factory.js'
 import { RedisStore } from './redis/store.js'
-import type { SessionManager } from './session/manager.js'
 import { createBullMQConnection, getTaskQueue } from './tasks/broker.js'
 import { TaskExecutor } from './tasks/executor.js'
 import { setTaskDefinitions } from './tasks/scheduler.js'
+import type { TaskDefinition } from './tasks/types.js'
 
 import { ok, OkResponse, FailResponse, HealthDataSchema } from '@/core/schemas/index.js'
 import type { InfraState } from '@/types/fastify.js'
+
 /**
  * 侧效应导入（Side-effect imports）
  *
@@ -70,60 +77,20 @@ import '@/core/bot-client.js'
 // 触发 SessionManagerBootstrap 的 Startup 注册
 import '@/core/session/bootstrap.js'
 
+/** TaskEchoEntry —— task 类型的 echo 条目（含 taskDefinition 字段）。 */
+interface TaskEchoEntry extends EchoEntry {
+  taskDefinition: TaskDefinition
+}
+
+/** RouteEchoEntry —— route 类型的 echo 条目（含 plugin 字段）。 */
+interface RouteEchoEntry extends EchoEntry {
+  plugin: FastifyPluginAsync
+}
+
 /* 模块级生命周期编排器（startup 创建，shutdown 复用同一实例） */
-let _orchestrator: LifecycleOrchestrator | null = null
+let _orchestrator: LifecycleOrchestrator<AemeathServiceMap> | null = null
 
-/* EchoLoader 辅助函数 */
-
-/**
- * 通过 EchoLoader 加载 handler、service、task 类型的 echo，
- * 触发装饰器副作用（@Startup/@Shutdown 注册），
- * 并将 task definitions 传给 scheduler，最后将 handler 注册到 composite mapping。
- */
-async function _loadEchoes(composite: CompositeHandlerMapping): Promise<EchoConfig> {
-  const echoConfig = await loadEchoConfig()
-  const baseDir = resolve(import.meta.dirname, '..', '..')
-  const loader = new EchoLoader(echoConfig, baseDir)
-
-  await loader.discoverByType('handler')
-  await loader.discoverByType('service')
-
-  const taskEntries = (await loader.discoverByType('task')) as TaskEchoEntry[]
-  setTaskDefinitions(taskEntries.map((e) => e.taskDefinition))
-
-  _registerHandlersToMapping(composite)
-  return echoConfig
-}
-
-/** 遍历 HandlerRegistry，实例化所有组件并将处理器方法注册到 CompositeHandlerMapping。 */
-function _registerHandlersToMapping(composite: CompositeHandlerMapping): void {
-  const log = getLogger('main')
-  for (const data of handlerRegistry.decoratorValues()) {
-    const instance = handlerRegistry.getInstance(data.options.name)
-    if (!instance) continue
-
-    let handlerCount = 0
-    for (const methodMeta of data.methods) {
-      composite.register(buildHandlerMethod(data, methodMeta, instance))
-      handlerCount++
-    }
-
-    log.info(`组件已注册：${data.options.name}，handler 数量：${String(handlerCount)}`)
-  }
-}
-
-/* 路由注册辅助函数 */
-
-/** 通过 EchoLoader 发现并注册 src/apis/ 下所有业务路由插件。 */
-async function _registerEchoRoutes(app: FastifyInstance): Promise<void> {
-  const echoConfig = await loadEchoConfig()
-  const baseDir = resolve(import.meta.dirname, '..', '..')
-  const loader = new EchoLoader(echoConfig, baseDir)
-  const routeEntries = await loader.discoverByType('route')
-  for (const entry of routeEntries) {
-    await app.register((entry as RouteEchoEntry).plugin as FastifyPluginAsync)
-  }
-}
+/* 注册核心领域 API 路由辅助函数 */
 
 /** 注册核心领域 API 路由（LLM、人员管理），这些路由未随 EchoLoader 发现，硬编码注册。 */
 async function _registerCoreRoutes(app: FastifyInstance): Promise<void> {
@@ -169,64 +136,88 @@ async function _startup(
   const cacheStore = new RedisStore(cacheRedis, config.CACHE_DEFAULT_TTL)
   const persistentStore = new RedisStore(persistentRedis, 0)
 
-  // 4. 构建复合处理器映射
-  const composite = new CompositeHandlerMapping()
+  // 4. EchoLoader 发现并加载 handlers、services、tasks（触发 @Startup/@Shutdown 副作用）
+  const baseDir = resolve(import.meta.dirname, '..', '..')
+  const echoConfigPath = resolve(baseDir, 'aemeath.config.js')
+  const echoConfig = (await loadEchoConfig(echoConfigPath)) as unknown as AemeathConfig
+  const loader = new EchoLoader(echoConfig, baseDir)
+  await loader.discoverAll()
 
-  // 5. EchoLoader 发现并加载 handlers、services、tasks（触发 @Startup/@Shutdown 副作用）
-  const echoConfig = await _loadEchoes(composite)
+  // 5. 将 task definitions 传给 scheduler
+  const taskEntries = (await loader.discoverByType('task')) as unknown as TaskEchoEntry[]
+  setTaskDefinitions(taskEntries.map((e) => e.taskDefinition))
 
-  // 6. 构建 Dispatcher
-  const sessionInterceptor = new SessionInterceptor()
-  const dispatcher = new EventDispatcher(composite, [new LoggingInterceptor(), sessionInterceptor])
-
-  // 7. 预检所有 Redis 连接可达性（连接不可用时立即抛出，避免后续操作无声挂起）
+  // 6. 预检所有 Redis 连接可达性（连接不可用时立即抛出，避免后续操作无声挂起）
   await checkRedisReachable(config.CACHE_REDIS_URL, 'Cache Redis')
   await checkRedisReachable(config.PERSISTENT_REDIS_URL, 'Persistent Redis')
   await checkRedisReachable(config.BULLMQ_REDIS_URL, 'BullMQ Redis')
 
-  // 8. 创建 BullMQ 单队列
+  // 7. 创建 BullMQ 单队列
   const bullConn = createBullMQConnection(config.BULLMQ_REDIS_URL)
   const queue = getTaskQueue(bullConn)
   const queueName = echoConfig.app?.queueName ?? 'aemeath-tasks'
 
-  // 9. 生命周期编排器：按拓扑顺序启动所有业务模块
-  _orchestrator = new LifecycleOrchestrator()
-  const infraServices = {
-    db: mainDb,
-    chat_db: chatDb,
-    cache: cacheStore,
-    persistent: persistentStore,
-    cache_redis: cacheRedis,
-    persistent_redis: persistentRedis,
-    dispatcher,
-    queue,
+  // 8. 构建服务注册表，注入基础设施服务
+  const appLogger = getLogger('lifecycle')
+  const registry = new ServiceRegistry<AemeathServiceMap>()
+  registry.set('db', mainDb)
+  registry.set('chat_db', chatDb)
+  registry.set('cache', cacheStore)
+  registry.set('persistent', persistentStore)
+  registry.set('cache_redis', cacheRedis)
+  registry.set('persistent_redis', persistentRedis)
+  registry.set('queue', queue)
+
+  // 9. 生命周期编排器：按拓扑顺序启动所有业务模块（@Provide 服务写入 registry）
+  _orchestrator = new LifecycleOrchestrator<AemeathServiceMap>(registry, { logger: appLogger })
+  await _orchestrator.startup([...serviceEntryRegistry.values()])
+
+  // 10. 实例化所有 handler（注入依赖）
+  handlerRegistry.instantiate((key) => {
+    try {
+      return registry.get(key)
+    } catch {
+      return undefined
+    }
+  })
+
+  // 11. 构建 mapping 和 Dispatcher
+  const featureCheckInterceptor = new FeatureCheckInterceptor()
+  const loggingInterceptor = new LoggingInterceptor()
+  const sessionInterceptor = new SessionInterceptor()
+  const composite = handlerRegistry.buildMappings()
+
+  const dispatcher = new EventDispatcher<AnyOneBotEvent, ContextApis>({
+    mapping: composite,
+    // 拦截器实现使用 OneBotContext（Context 子类），类型断言绕过逆变检查
+    interceptors: [featureCheckInterceptor, loggingInterceptor, sessionInterceptor],
+    contextConfig: oneBotContextConfig,
+    logger: appLogger,
+  })
+
+  // 12. 注入 Settings 权限检查器到 FeatureCheckInterceptor（延迟绑定）
+  const settingsChecker = registry.getOptional('settings_checker') as FeatureChecker | undefined
+  if (settingsChecker !== undefined) {
+    featureCheckInterceptor.setChecker(settingsChecker)
   }
 
-  const allServices: InfraServiceMap = await _orchestrator.startup(infraServices)
-
-  // 10. 实例化所有新格式 handler（注入依赖）
-  handlerRegistry.instantiateAll(allServices)
-
-  // 11. 注入 Settings 权限检查器到 Dispatcher（延迟绑定）
-  const settingsChecker = allServices.settings_checker as FeatureChecker | undefined
-  if (settingsChecker) {
-    dispatcher.setFeatureChecker(settingsChecker)
-  }
-
-  // 12. 注入 SessionManager 到会话拦截器（延迟绑定）
-  const sessionManager = allServices.session_manager as SessionManager | undefined
-  if (sessionManager) {
+  // 13. 注入 SessionManager 到会话拦截器（延迟绑定）
+  const sessionManager = registry.getOptional('session_manager') as
+    | SessionManager<OneBotContext>
+    | undefined
+  if (sessionManager !== undefined) {
     sessionInterceptor.setSessionManager(sessionManager)
   }
 
-  // 13. 订阅 NapCat 事件，将事件分发给 Dispatcher
-  const botClient = allServices.bot_client
+  // 14. 获取 NapCat 服务实例
+  const botClient = registry.get('bot_client')
   const apis: ContextApis = {
-    msgApi: allServices.msg_api,
-    friendApi: allServices.friend_api,
-    groupApi: allServices.group_api,
+    msgApi: registry.get('msg_api'),
+    friendApi: registry.get('friend_api'),
+    groupApi: registry.get('group_api'),
   }
-  // 消息事件
+
+  // 15. 订阅 NapCat 事件，将事件分发给 Dispatcher
   // 错误已由 EventDispatcher 内部捕获并记录，无需 await
   botClient.on('message', (event: PrivateMessageEvent | GroupMessageEvent) => {
     void dispatcher.dispatch(event, apis)
@@ -243,19 +234,12 @@ async function _startup(
     void dispatcher.dispatch(event, apis)
   })
 
-  // 14. 构建 ServiceRegistry（API 路由通过 app.state.serviceRegistry 访问业务服务）
-  const serviceRegistry = new ServiceRegistry()
-  for (const [key, value] of Object.entries(allServices)) {
-    serviceRegistry.register(key, value)
-  }
-  serviceRegistry.freeze()
-
-  // 15. 启动 TaskExecutor（监听 job completed 事件）
+  // 16. 启动 TaskExecutor（监听 job completed 事件）
   const taskExecutor = new TaskExecutor(
-    allServices.msg_api,
-    allServices.friend_api,
-    allServices.group_api,
-    allServices.bot_client,
+    registry.get('msg_api'),
+    registry.get('friend_api'),
+    registry.get('group_api'),
+    registry.get('bot_client'),
     cacheStore,
     bullConn,
     queueName,
@@ -263,8 +247,8 @@ async function _startup(
   )
   taskExecutor.start()
 
-  // 16. 通过 Fastify decorate 暴露服务（路由层访问入口）
-  app.decorate('services', serviceRegistry)
+  // 17. 通过 Fastify decorate 暴露服务（路由层访问入口）
+  app.decorate('services', registry)
   app.decorate(
     'infra',
     Object.freeze({
@@ -347,8 +331,21 @@ async function bootstrap(): Promise<void> {
   // Bearer token 认证
   await authPlugin(app, config.ADMIN_TOKEN)
 
-  /* 注册 API 路由 */
-  await _registerEchoRoutes(app)
+  /* 注册 API 路由（须在 onReady 之前，Fastify 封闭路由前） */
+
+  // 通过 EchoLoader 发现并注册 src/apis/ 下所有业务路由插件
+  {
+    const baseDir = resolve(import.meta.dirname, '..', '..')
+    const echoConfigPath = resolve(baseDir, 'aemeath.config.js')
+    const echoConfig = await loadEchoConfig(echoConfigPath)
+    const loader = new EchoLoader(echoConfig, baseDir)
+    const routeEntries = await loader.discoverByType('route')
+    for (const entry of routeEntries) {
+      await app.register((entry as unknown as RouteEchoEntry).plugin)
+    }
+  }
+
+  // 注册核心领域 API 路由（LLM、人员管理）
   await _registerCoreRoutes(app)
 
   /* 系统端点 */
@@ -411,6 +408,6 @@ async function bootstrap(): Promise<void> {
 /* 入口 */
 
 bootstrap().catch((err: unknown) => {
-  logger.error({ err }, '启动失败')
+  logger.error(`启动失败: ${String(err)}`)
   process.exit(1)
 })

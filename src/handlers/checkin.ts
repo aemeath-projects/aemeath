@@ -2,18 +2,19 @@
  * 用户群签到 Bot 处理器 —— 响应「签到」关键词或「/签到」命令。
  */
 
-import { logger } from '@logger'
-
-import { type Context } from '@/core/dispatch/context.js'
 import {
   Handler,
   OnCommand,
   OnKeyword,
   Scope,
-  Permission,
+  PermissionDecorator,
   SettingNode,
-} from '@/core/dispatch/decorators/index.js'
-import { Inject } from '@/core/lifecycle/decorators/index.js'
+} from '@aemeath-projects/exostrider/dispatch'
+import { Inject } from '@aemeath-projects/exostrider/lifecycle'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
+
+import type { OneBotContext as Context } from '@/core/dispatch/context.js'
 import { MessageBuilder } from '@/core/utils/index.js'
 import type { CheckinService } from '@/services/checkin.js'
 
@@ -42,7 +43,7 @@ function getTodayShanghai(): Date {
   description: '最低权限等级',
 })
 class CheckinHandler {
-  private readonly _log = logger.child({ name: 'checkin' })
+  private readonly _log: PinoLogger = getLogger('checkin') as unknown as PinoLogger
 
   @Inject('user_checkin_service')
   private readonly checkinService!: CheckinService
@@ -57,7 +58,7 @@ class CheckinHandler {
   /** 处理用户签到请求（命令触发）。 */
   @OnCommand('签到')
   @Scope('group')
-  @Permission(0)
+  @PermissionDecorator(0)
   async handleCheckinCommand(ctx: Context): Promise<boolean> {
     return this._doCheckin(ctx)
   }

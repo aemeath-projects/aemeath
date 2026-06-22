@@ -5,10 +5,10 @@
 import { Type } from '@sinclair/typebox'
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 
-import { PersonnelQueryService } from './query.js'
-import { SyncCoordinator } from './sync.js'
+import type { PersonnelQueryService } from './query.js'
+import type { SyncCoordinator } from './sync.js'
 
-import { PersonnelService } from './index.js'
+import type { PersonnelService } from './index.js'
 
 import { ValidationError } from '@/core/errors.js'
 import { ok, fail, OkResponse, FailResponse } from '@/core/schemas/index.js'
@@ -35,15 +35,15 @@ function parseBigIntParam(value: string, name: string): bigint {
 }
 
 function getPersonnelService(app: FastifyInstance): PersonnelService {
-  return app.services.getTyped(PersonnelService, 'personnelService')
+  return app.services.get('personnelService') as PersonnelService
 }
 
 function getPersonnelQueryService(app: FastifyInstance): PersonnelQueryService {
-  return app.services.getTyped(PersonnelQueryService, 'personnelQueryService')
+  return app.services.get('personnelQueryService') as PersonnelQueryService
 }
 
 function getSyncCoordinator(app: FastifyInstance): SyncCoordinator {
-  return app.services.getTyped(SyncCoordinator, 'syncCoordinator')
+  return app.services.get('syncCoordinator') as SyncCoordinator
 }
 
 /**

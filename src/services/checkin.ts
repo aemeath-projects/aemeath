@@ -4,14 +4,15 @@
 
 import './checkin-cache-keys.js'
 
-import { logger, type Logger } from '@logger'
+import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/lifecycle'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 
 import { Prisma } from '#prisma/main'
 import type { CheckinRecord } from '#prisma/main'
 
 import type { MainPrismaClient } from '@/core/db.js'
 import { isPrismaKnownError } from '@/core/db.js'
-import { Service, Inject, Provide, Startup } from '@/core/lifecycle/decorators/index.js'
 import type { RedisStore } from '@/core/redis/index.js'
 import { cacheKeyRegistry } from '@/core/registries.js'
 import { SHANGHAI_TZ } from '@/core/utils.js'
@@ -95,7 +96,7 @@ interface CheckinCache {
  * 通过 Startup 生命周期注册，由 LifecycleOrchestrator 管理。
  */
 export class CheckinService {
-  private readonly _log: Logger = logger.child({ name: 'CheckinService' })
+  private readonly _log: PinoLogger = getLogger('CheckinService') as unknown as PinoLogger
 
   constructor(
     private readonly db: MainPrismaClient,

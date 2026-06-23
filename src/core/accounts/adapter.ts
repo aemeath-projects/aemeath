@@ -1,7 +1,7 @@
 /**
  * NapCatClientAdapter —— 将 napcat SDK NapCatClient 适配为 exostrider ClientAdapter 接口。
  */
-import type { ClientAdapter, ClientState, ClientPool } from '@aemeath-projects/exostrider/pool'
+import type { ClientAdapter, ClientState, PoolEmitter } from '@aemeath-projects/exostrider/pool'
 import { NapCatClient, WebSocketTransport, SseTransport, SystemApi } from '@aemeath-projects/napcat'
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 
@@ -60,13 +60,10 @@ export class NapCatClientAdapter implements ClientAdapter<NapCatClient> {
   }
 
   /**
-   * 将 NapCat 客户端事件转发到连接池，同时订阅 close 事件以快速触发路由失效。
-   * 必须在 pool.addClient() 之后、connect() 之前调用。
+   * 将 NapCat 客户端事件转发到连接池。
+   * 由 ClientPool.addClient 自动调用，无需手动触发。
    */
-  wireToPool<TRole extends string>(
-    pool: ClientPool<NapCatClient, TRole, AnyOneBotEvent>,
-    role: TRole,
-  ): void {
+  wireToPool(pool: PoolEmitter, role: string): void {
     const emit = (event: AnyOneBotEvent) => {
       pool.emitFromClient(this.id, event, role)
     }

@@ -4,7 +4,7 @@
  * 启动流程：
  * 1. 从数据库加载所有 isEnabled 账号
  * 2. 创建 ClientPool（含去重 pipeline）
- * 3. 为每个账号创建 NapCatClientAdapter，加入连接池，绑定事件转发
+ * 3. 为每个账号创建 NapCatClientAdapter，加入连接池（addClient 自动触发事件绑定）
  * 4. 并行连接所有账号（重连由 napcat SDK 的 WebSocketTransport 管理）
  * 5. 同步群成员关系（拉取各账号已加的群列表）
  * 6. 创建 RoutingTable + MessageRouter
@@ -81,11 +81,10 @@ export class MultiAccountBootstrap {
       },
     })
 
-    // 3. 注册所有账号并绑定事件转发
+    // 3. 注册所有账号，addClient 会自动调用 adapter.wireToPool 完成事件绑定
     for (const account of accounts) {
       const adapter = new NapCatClientAdapter(account)
       this.pool.addClient(adapter, account.role as AccountRole)
-      adapter.wireToPool(this.pool, account.role as AccountRole)
     }
 
     // 4. 并行连接（重连由 napcat SDK WebSocketTransport 管理）

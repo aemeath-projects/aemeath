@@ -3,9 +3,8 @@ import type { FriendApi, GroupApi, MessageApi } from '@aemeath-projects/napcat'
 import type { AnyOneBotEvent, MessageSegment } from '@aemeath-projects/napcat/types'
 import { describe, expect, it, vi } from 'vitest'
 
-import { oneBotContextConfig } from '@/core/dispatch/adapter.js'
-import { OneBotContext as Context } from '@/core/dispatch/context.js'
-import type { ContextApis } from '@/core/dispatch/context.js'
+import { oneBotContextConfig, OneBotContext as Context } from '@/core/dispatch/index.js'
+import type { ContextApis } from '@/core/dispatch/index.js'
 import { BotApiError } from '@/core/errors.js'
 
 /* 测试用 ContextApis mock */

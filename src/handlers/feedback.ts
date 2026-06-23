@@ -4,17 +4,12 @@
  * 注意：交互式多轮会话将在 Phase 4 实现，当前版本仅支持简单模式。
  */
 
-import {
-  Handler,
-  OnCommand,
-  PermissionDecorator,
-  SettingNode,
-} from '@aemeath-projects/exostrider/dispatch'
 import { Inject } from '@aemeath-projects/exostrider/lifecycle'
 import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 
-import type { OneBotContext as Context } from '@/core/dispatch/context.js'
+import type { OneBotContext as Context } from '@/core/dispatch/index.js'
+import { Handler, OnCommand, PermissionDecorator, SettingNode } from '@/core/dispatch/index.js'
 import type { FeedbackService } from '@/services/feedback.js'
 
 type FeedbackType = 'bug' | 'suggestion' | 'complaint'

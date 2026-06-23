@@ -15,7 +15,7 @@ import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import { Worker } from 'bullmq'
 
 import { loadConfig } from './config.js'
-import { createMainDb, createChatDb } from './db/index.js'
+import { createMainDb, createIrisDb } from './db/index.js'
 import { createOssClient } from './oss/client.js'
 import type { OssBuckets } from './oss/client.js'
 import { createRedis, createBullMQConnection } from './redis/factory.js'
@@ -52,7 +52,7 @@ async function main(): Promise<void> {
 
   const bullConn = createBullMQConnection(config.BULLMQ_REDIS_URL)
   const db = createMainDb(config.DATABASE_URL)
-  const chatDb = createChatDb(config.CHAT_DATABASE_URL)
+  const irisDb = createIrisDb(config.IRIS_DATABASE_URL)
   const cacheRedis = createRedis(config.CACHE_REDIS_URL)
   const cacheStore = new RedisStore(cacheRedis, config.CACHE_DEFAULT_TTL)
 
@@ -70,7 +70,7 @@ async function main(): Promise<void> {
 
   const infraDeps: Record<string, unknown> = {
     db,
-    chat_db: chatDb,
+    iris_db: irisDb,
     cache: cacheStore,
     oss: { client: ossClient, buckets: ossBuckets },
   }
@@ -159,7 +159,7 @@ async function main(): Promise<void> {
     log.info('收到停止信号，正在优雅关闭...')
     await worker.close()
     await db.$disconnect()
-    await chatDb.$disconnect()
+    await irisDb.$disconnect()
     await cacheRedis.quit()
     log.info('Aemeath Worker 已停止')
     process.exit(0)

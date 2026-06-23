@@ -8,13 +8,18 @@
 import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/lifecycle'
 import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
-import type { GroupApi, NapCatClient } from '@aemeath-projects/napcat'
+import type { ClientPool } from '@aemeath-projects/exostrider/pool'
+import type { GroupApi, FriendApi, NapCatClient } from '@aemeath-projects/napcat'
+import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 
+import type { AccountRole } from '@/core/accounts/index.js'
 import type { MainPrismaClient } from '@/core/db/index.js'
 import type { RedisStore } from '@/core/redis/index.js'
 import { cacheKeyRegistry } from '@/core/registries.js'
 import type { SettingsService } from '@/core/settings/index.js'
 import { SHANGHAI_TZ } from '@/core/utils/index.js'
+
+type AccountPool = ClientPool<NapCatClient, AccountRole, AnyOneBotEvent>
 
 /* 常量 */
 
@@ -53,7 +58,7 @@ export class DailyCheckinService {
     private readonly db: MainPrismaClient,
     private readonly cache: RedisStore,
     private readonly groupApi: GroupApi,
-    private readonly client: NapCatClient,
+    private readonly pool: AccountPool,
     private readonly settings: SettingsService,
   ) {}
 
@@ -90,8 +95,8 @@ export class DailyCheckinService {
   // ════════════════════════════════════════════
 
   private async _runCheckin(source: CheckinSource): Promise<void> {
-    if (this.client.transport.state !== 'connected') {
-      this._log.warn({ source }, 'WS 未连接，跳过本轮打卡')
+    if (this.pool.getAvailableClients().length === 0) {
+      this._log.warn({ source }, '无可用账号，跳过本轮打卡')
       return
     }
 
@@ -193,13 +198,13 @@ export class DailyCheckinBootstrap {
   @Inject('cache')
   cache!: RedisStore
 
-  /** 注入 Bot API */
-  @Inject('group_api')
-  groupApi!: GroupApi
+  /** 注入主账号 API bundle */
+  @Inject('master_apis')
+  masterApis!: { groupApi: GroupApi; friendApi: FriendApi }
 
-  /** 注入 WebSocket 连接管理器 */
-  @Inject('bot_client')
-  client!: NapCatClient
+  /** 注入账号池 */
+  @Inject('account_pool')
+  pool!: AccountPool
 
   /** 注入设置服务 */
   @Inject('settings')
@@ -214,8 +219,8 @@ export class DailyCheckinBootstrap {
     this.dailyCheckinService = new DailyCheckinService(
       this.db,
       this.cache,
-      this.groupApi,
-      this.client,
+      this.masterApis.groupApi,
+      this.pool,
       this.settings,
     )
   }

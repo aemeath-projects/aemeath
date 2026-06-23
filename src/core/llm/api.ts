@@ -8,8 +8,11 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import type { LLMService } from './index.js'
 
 import { NotFoundError } from '@/core/errors.js'
-import { ok, fail, OkResponse, FailResponse } from '@/core/schemas/index.js'
 import {
+  ok,
+  fail,
+  OkResponse,
+  FailResponse,
   CreateModelSchema,
   CreateProviderSchema,
   UpdateModelSchema,
@@ -25,7 +28,7 @@ import {
   type CreateProviderData,
   type UpdateModelData,
   type UpdateProviderData,
-} from '@/core/schemas/llm.js'
+} from '@/core/schemas/index.js'
 
 /* 内部工具 */
 

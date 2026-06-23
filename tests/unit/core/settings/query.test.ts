@@ -2,8 +2,8 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import type { MainPrismaClient } from '@/core/db/index.js'
-import { getSettingValue } from '@/core/settings/query.js'
-import type { SettingsQueryContext } from '@/core/settings/query.js'
+import { getSettingValue } from '@/core/settings/index.js'
+import type { SettingsQueryContext } from '@/core/settings/index.js'
 
 function createMockDb(rows: { key: string; value: string; value_type: string }[] = []) {
   return {

@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-import { MediaStorageService } from '@/core/chat/media.js'
-import { uploadBuffer, objectExists } from '@/core/oss/utils.js'
+import { MediaStorageService } from '@/core/iris/index.js'
+import { uploadBuffer, objectExists } from '@/core/oss/index.js'
 
 // Mock fetch（必须在 import 之前通过 vi.stubGlobal，vitest 会 hoist vi.mock）
 const mockFetch = vi.fn()
 vi.stubGlobal('fetch', mockFetch)
 
 // Mock oss utils
-vi.mock('@/core/oss/utils.js', () => ({
+vi.mock('@/core/oss/index.js', () => ({
   uploadBuffer: vi.fn().mockResolvedValue(undefined),
   objectExists: vi.fn().mockResolvedValue(false),
 }))

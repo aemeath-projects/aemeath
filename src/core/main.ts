@@ -18,15 +18,7 @@ import {
 } from '@aemeath-projects/exostrider/lifecycle'
 import { createLogger, setLogger, getLogger } from '@aemeath-projects/exostrider/logger'
 import type { SessionManager } from '@aemeath-projects/exostrider/session'
-import type {
-  AnyOneBotEvent,
-  PrivateMessageEvent,
-  GroupMessageEvent,
-  MessageSentEvent,
-  AnyNoticeEvent,
-  FriendRequestEvent,
-  GroupRequestEvent,
-} from '@aemeath-projects/napcat/types'
+import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 import fastifyStatic from '@fastify/static'
 import Fastify, { type FastifyInstance, type FastifyPluginAsync } from 'fastify'
 
@@ -36,26 +28,29 @@ import pkg from '../../package.json' with { type: 'json' }
 const logger = getLogger('main')
 
 import { loadConfig } from './config.js'
-import { createMainDb, createChatDb } from './db/index.js'
-import { oneBotContextConfig } from './dispatch/adapter.js'
-import type { ContextApis } from './dispatch/adapter.js'
-import type { OneBotContext } from './dispatch/context.js'
+import { createMainDb, createIrisDb } from './db/index.js'
+import { oneBotContextConfig } from './dispatch/index.js'
+import type { ContextApis, OneBotContext, FeatureChecker } from './dispatch/index.js'
 import {
   FeatureCheckInterceptor,
+  IrisInterceptor,
   LoggingInterceptor,
   SessionInterceptor,
 } from './dispatch/interceptors/index.js'
-import type { FeatureChecker } from './dispatch/types.js'
+import type { IrisService } from './iris/index.js'
 import type { AemeathServiceMap } from './lifecycle.js'
 import { metricsRegistry } from './monitoring/index.js'
 import { authPlugin, corsPlugin, swaggerPlugin } from './plugins/index.js'
-import { createRedis, checkRedisReachable } from './redis/factory.js'
-import { RedisStore } from './redis/store.js'
-import { createBullMQConnection, getTaskQueue } from './tasks/broker.js'
-import { TaskExecutor } from './tasks/executor.js'
-import { setTaskDefinitions } from './tasks/scheduler.js'
-import type { TaskDefinition } from './tasks/types.js'
+import { createRedis, checkRedisReachable, RedisStore } from './redis/index.js'
+import {
+  createBullMQConnection,
+  getTaskQueue,
+  TaskExecutor,
+  setTaskDefinitions,
+} from './tasks/index.js'
+import type { TaskDefinition } from './tasks/index.js'
 
+import { buildContextApis } from '@/core/accounts/index.js'
 import { ok, OkResponse, FailResponse, HealthDataSchema } from '@/core/schemas/index.js'
 import type { InfraState } from '@/types/fastify.js'
 
@@ -74,9 +69,11 @@ import '@/core/personnel/index.js'
 // 触发 OSS 模块的 Startup 注册
 import '@/core/oss/bootstrap.js'
 // 触发 MediaStorageService 的 Startup 注册
-import '@/core/chat/media.js'
+import '@/core/iris/media.js'
+// 触发 IrisBootstrap 的 Startup 注册（IrisService / IrisArchiveService / IrisCounter / IrisSearchService）
+import '@/core/iris/bootstrap.js'
 // 触发 BotClientBootstrap 的 Startup 注册
-import '@/core/napcat.js'
+import '@/core/accounts/bootstrap.js'
 // 触发 SessionManagerBootstrap 的 Startup 注册
 import '@/core/session/bootstrap.js'
 
@@ -127,7 +124,7 @@ async function _startup(
 
   // 1. 初始化 Prisma 客户端
   const mainDb = createMainDb(config.DATABASE_URL, config.DB_POOL_SIZE)
-  const chatDb = createChatDb(config.CHAT_DATABASE_URL, config.CHAT_DB_POOL_SIZE)
+  const irisDb = createIrisDb(config.IRIS_DATABASE_URL, config.IRIS_DB_POOL_SIZE)
 
   // 2. 初始化 Redis 客户端
   const cacheRedis = createRedis(config.CACHE_REDIS_URL, { lazyConnect: false })
@@ -164,7 +161,7 @@ async function _startup(
   const appLogger = getLogger('lifecycle')
   const registry = new ServiceRegistry<AemeathServiceMap>()
   registry.set('db', mainDb)
-  registry.set('chat_db', chatDb)
+  registry.set('iris_db', irisDb)
   registry.set('cache', cacheStore)
   registry.set('persistent', persistentStore)
   registry.set('cache_redis', cacheRedis)
@@ -188,12 +185,23 @@ async function _startup(
   const featureCheckInterceptor = new FeatureCheckInterceptor()
   const loggingInterceptor = new LoggingInterceptor()
   const sessionInterceptor = new SessionInterceptor()
+
+  const irisInterceptor = new IrisInterceptor(
+    registry.get('iris') as IrisService,
+    registry.get('iris_counter'),
+  )
+
   const composite = handlerRegistry.buildMappings()
 
   const dispatcher = new EventDispatcher<AnyOneBotEvent, ContextApis>({
     mapping: composite,
     // 拦截器实现使用 OneBotContext（Context 子类），类型断言绕过逆变检查
-    interceptors: [featureCheckInterceptor, loggingInterceptor, sessionInterceptor],
+    interceptors: [
+      irisInterceptor, // 最高优先级，第一个
+      featureCheckInterceptor,
+      loggingInterceptor,
+      sessionInterceptor,
+    ],
     contextConfig: oneBotContextConfig,
     logger: appLogger,
   })
@@ -212,37 +220,20 @@ async function _startup(
     sessionInterceptor.setSessionManager(sessionManager)
   }
 
-  // 14. 获取 NapCat 服务实例
-  const botClient = registry.get('bot_client')
-  const apis: ContextApis = {
-    msgApi: registry.get('msg_api'),
-    friendApi: registry.get('friend_api'),
-    groupApi: registry.get('group_api'),
-  }
-
-  // 15. 订阅 NapCat 事件，将事件分发给 Dispatcher
-  // 错误已由 EventDispatcher 内部捕获并记录，无需 await
-  botClient.on('message', (event: PrivateMessageEvent | GroupMessageEvent) => {
-    void dispatcher.dispatch(event, apis)
-  })
-  botClient.on('message_sent', (event: MessageSentEvent) => {
-    void dispatcher.dispatch(event, apis)
-  })
-  // 通知事件
-  botClient.on('notice', (event: AnyNoticeEvent) => {
-    void dispatcher.dispatch(event, apis)
-  })
-  // 请求事件
-  botClient.on('request', (event: FriendRequestEvent | GroupRequestEvent) => {
-    void dispatcher.dispatch(event, apis)
+  // 14. 从 registry 获取多账号服务实例，接入事件管道
+  const pool = registry.get('account_pool')
+  const router = registry.get('message_router')
+  pool.on('event', (aggregated) => {
+    void dispatcher.dispatch(aggregated.event, buildContextApis(aggregated, router, pool))
   })
 
-  // 16. 启动 TaskExecutor（监听 job completed 事件）
+  // 15. 启动 TaskExecutor（监听 job completed 事件）
+  const masterApis = registry.get('master_apis')
   const taskExecutor = new TaskExecutor(
-    registry.get('msg_api'),
-    registry.get('friend_api'),
-    registry.get('group_api'),
-    registry.get('bot_client'),
+    masterApis.msgApi,
+    masterApis.friendApi,
+    masterApis.groupApi,
+    pool,
     cacheStore,
     bullConn,
     queueName,
@@ -250,25 +241,24 @@ async function _startup(
   )
   taskExecutor.start()
 
-  // 17. 通过 Fastify decorate 暴露服务（路由层访问入口）
+  // 16. 通过 Fastify decorate 暴露服务（路由层访问入口）
   app.decorate('services', registry)
   app.decorate(
     'infra',
     Object.freeze({
       mainDb,
-      chatDb,
+      irisDb,
       cacheRedis,
       persistentRedis,
       cacheStore,
       persistentStore,
-      botClient,
       dispatcher,
       taskExecutor,
       queue,
     }) satisfies InfraState,
   )
 
-  app.log.info(`Aemeath 已启动，等待 NapCat 连接 (ws_port=${String(config.NAPCAT_WS_PORT)})`)
+  app.log.info('Aemeath 已启动，多账号连接池初始化中...')
 }
 
 /* 关闭逻辑 */
@@ -276,7 +266,7 @@ async function _startup(
 async function _shutdown(app: FastifyInstance): Promise<void> {
   app.log.info('Aemeath 正在关闭...')
 
-  const { taskExecutor, mainDb, chatDb, cacheRedis, persistentRedis, queue } = app.infra
+  const { taskExecutor, mainDb, irisDb, cacheRedis, persistentRedis, queue } = app.infra
 
   // 停止 TaskExecutor
   await taskExecutor.close()
@@ -290,7 +280,7 @@ async function _shutdown(app: FastifyInstance): Promise<void> {
 
   // 关闭数据库连接
   await mainDb.$disconnect()
-  await chatDb.$disconnect()
+  await irisDb.$disconnect()
 
   // 关闭 Redis 连接
   cacheRedis.disconnect()
@@ -358,11 +348,11 @@ async function bootstrap(): Promise<void> {
     '/health',
     { schema: { response: { 200: OkResponse(HealthDataSchema), 503: FailResponse() } } },
     async () => {
-      const { botClient } = app.infra
+      const pool = app.services.getOptional('account_pool')
       return ok({
         status: 'healthy',
         version: pkg.version,
-        wsConnected: botClient.transport.state === 'connected',
+        wsConnected: (pool?.getAvailableClients().length ?? 0) > 0,
       })
     },
   )

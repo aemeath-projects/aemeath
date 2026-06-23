@@ -4,10 +4,10 @@ import { Service, Provide, Startup } from '@aemeath-projects/exostrider/lifecycl
 import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 
-import { loadConfig } from '../config.js'
-
 import { createOssClient } from './client.js'
 import type { OssBuckets, OssBundle } from './client.js'
+
+import { loadConfig } from '@/core/config.js'
 
 const log: PinoLogger = getLogger('oss') as unknown as PinoLogger
 

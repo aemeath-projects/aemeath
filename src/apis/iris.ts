@@ -1,5 +1,5 @@
 /**
- * 聊天记录 REST API 路由 —— /api/chat。
+ * Iris 聊天记录 REST API 路由 —— /api/iris。
  */
 
 import { getLogger } from '@aemeath-projects/exostrider/logger'
@@ -21,12 +21,16 @@ import {
   PaginatedArchivesDataSchema,
   ArchiveQueryDataSchema,
   ArchiveTriggerDataSchema,
+  IrisSearchQuerySchema,
+  IrisTriggerArchiveBodySchema,
+  IrisSearchDataSchema,
+  IrisStatsDataSchema,
+  IrisTriggerDataSchema,
 } from '@/apis/schemas/index.js'
-import type { ArchiveService } from '@/core/chat/archive.js'
-import type { ChatHistoryService } from '@/core/chat/index.js'
+import type { IrisArchiveService, IrisService } from '@/core/iris/index.js'
 import { ok, fail, OkResponse, FailResponse } from '@/core/schemas/index.js'
 
-const log: PinoLogger = getLogger('chat') as unknown as PinoLogger
+const log: PinoLogger = getLogger('iris') as unknown as PinoLogger
 
 /**
  * 将 Prisma ChatMessage（含 bigint 字段）转换为 JSON-safe 对象。
@@ -58,14 +62,14 @@ interface ArchiveQueue {
 }
 
 /**
- * 聊天记录管理路由插件。
+ * Iris 聊天记录管理路由插件。
  */
-const chatRoutes: FastifyPluginAsync = async (app) => {
+const irisRoutes: FastifyPluginAsync = async (app) => {
   /* 消息查询 */
 
-  /** GET /api/chat/messages/group/:groupId — 获取群聊消息列表（游标分页）。 */
+  /** GET /api/iris/messages/group/:groupId — 获取群聊消息列表（游标分页）。 */
   app.get(
-    '/api/chat/messages/group/:groupId',
+    '/api/iris/messages/group/:groupId',
     {
       schema: {
         params: GroupIdParamSchema,
@@ -91,7 +95,7 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
       }>,
       reply: FastifyReply,
     ) => {
-      const svc = app.services.get('chat_service') as ChatHistoryService
+      const svc = app.services.get('iris') as IrisService
 
       const groupId = BigInt(req.params.groupId)
       const q = req.query
@@ -108,9 +112,9 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
     },
   )
 
-  /** GET /api/chat/messages/private/:userId — 获取私聊消息列表。 */
+  /** GET /api/iris/messages/private/:userId — 获取私聊消息列表。 */
   app.get(
-    '/api/chat/messages/private/:userId',
+    '/api/iris/messages/private/:userId',
     {
       schema: {
         params: UserIdParamSchema,
@@ -129,7 +133,7 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
       }>,
       reply: FastifyReply,
     ) => {
-      const svc = app.services.get('chat_service') as ChatHistoryService
+      const svc = app.services.get('iris') as IrisService
 
       const userId = BigInt(req.params.userId)
       const q = req.query
@@ -142,9 +146,9 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
     },
   )
 
-  /** GET /api/chat/messages/:messageId/context — 获取消息上下文（前后 N 条）。 */
+  /** GET /api/iris/messages/:messageId/context — 获取消息上下文（前后 N 条）。 */
   app.get(
-    '/api/chat/messages/:messageId/context',
+    '/api/iris/messages/:messageId/context',
     {
       schema: {
         params: MessageIdParamSchema,
@@ -163,7 +167,7 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
       }>,
       reply: FastifyReply,
     ) => {
-      const svc = app.services.get('chat_service') as ChatHistoryService
+      const svc = app.services.get('iris') as IrisService
 
       const messageId = BigInt(req.params.messageId)
       const createdAt = new Date(req.query.createdAt)
@@ -182,9 +186,9 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
 
   /* 归档管理 */
 
-  /** GET /api/chat/archives — 获取归档列表。 */
+  /** GET /api/iris/archives — 获取归档列表。 */
   app.get(
-    '/api/chat/archives',
+    '/api/iris/archives',
     {
       schema: {
         querystring: ArchiveListQuerySchema,
@@ -199,7 +203,7 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
       req: FastifyRequest<{ Querystring: { page?: string; pageSize?: string } }>,
       reply: FastifyReply,
     ) => {
-      const svc = app.services.get('archive_service') as ArchiveService
+      const svc = app.services.get('iris_archive') as IrisArchiveService
 
       const page = req.query.page ? parseInt(req.query.page, 10) : 1
       const pageSize = req.query.pageSize ? parseInt(req.query.pageSize, 10) : 20
@@ -209,9 +213,9 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
     },
   )
 
-  /** POST /api/chat/archives/trigger — 手动触发归档任务（发送 BullMQ job）。 */
+  /** POST /api/iris/archives/trigger — 手动触发归档任务（发送 BullMQ job）。 */
   app.post(
-    '/api/chat/archives/trigger',
+    '/api/iris/archives/trigger',
     {
       schema: {
         body: ArchiveTriggerBodySchema,
@@ -225,7 +229,7 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
     async (req: FastifyRequest<{ Body?: { partitionName?: string } }>, reply: FastifyReply) => {
       const queues = app.services.get('queues') as Record<string, ArchiveQueue> | undefined
 
-      const archiveQueue = queues?.['chat-archive']
+      const archiveQueue = queues?.['iris-archive']
       if (archiveQueue === undefined) {
         await reply.status(503).send(fail('归档队列未就绪'))
         return
@@ -233,7 +237,7 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
 
       const partitionName = req.body?.partitionName
       try {
-        const job = await archiveQueue.add('archive_chat_history', { partitionName })
+        const job = await archiveQueue.add('iris_archive', { partitionName })
         await reply.send(ok({ taskId: job.id ?? 'unknown' }, 'Archive task queued'))
       } catch (err) {
         log.error({ err }, '归档任务入队失败')
@@ -242,9 +246,9 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
     },
   )
 
-  /** GET /api/chat/archives/query — 查询已完成的归档记录（按起始时间过滤）。 */
+  /** GET /api/iris/archives/query — 查询已完成的归档记录（按起始时间过滤）。 */
   app.get(
-    '/api/chat/archives/query',
+    '/api/iris/archives/query',
     {
       schema: {
         querystring: ArchiveQuerySchema,
@@ -258,7 +262,7 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
     async (
       req: FastifyRequest<{
         // TODO: groupId 参数已由 querystring schema 定义但未在 handler 中使用，
-        // 待 ArchiveService.listArchives 支持 groupId 筛选后接入
+        // 待 IrisArchiveService.listArchives 支持 groupId 筛选后接入
         Querystring: { periodStart: string; groupId?: string; limit?: string }
       }>,
       reply: FastifyReply,
@@ -270,13 +274,129 @@ const chatRoutes: FastifyPluginAsync = async (app) => {
       }
       const limit = req.query.limit ? parseInt(req.query.limit, 10) : 50
 
-      const svc = app.services.get('archive_service') as ArchiveService
+      const svc = app.services.get('iris_archive') as IrisArchiveService
 
       const result = await svc.listArchives({ periodStart, limit })
       await reply.send(ok(result))
     },
   )
+
+  /* Iris 搜索与统计 */
+
+  /** GET /api/iris/archives/search — 搜索归档消息索引（关键词 + 条件筛选）。 */
+  app.get(
+    '/api/iris/archives/search',
+    {
+      schema: {
+        querystring: IrisSearchQuerySchema,
+        response: {
+          200: OkResponse(IrisSearchDataSchema),
+          400: FailResponse(),
+          500: FailResponse(),
+        },
+      },
+    },
+    async (
+      req: FastifyRequest<{
+        Querystring: {
+          keyword?: string
+          groupId?: string
+          userId?: string
+          startDate?: string
+          endDate?: string
+          limit?: number
+          offset?: number
+        }
+      }>,
+      reply: FastifyReply,
+    ) => {
+      const svc = app.services.get('iris_search')
+      const q = req.query
+
+      const options = {
+        keyword: q.keyword,
+        groupId: q.groupId ? BigInt(q.groupId) : undefined,
+        userId: q.userId ? BigInt(q.userId) : undefined,
+        startDate: q.startDate ? new Date(q.startDate) : undefined,
+        endDate: q.endDate ? new Date(q.endDate) : undefined,
+        limit: q.limit ?? 50,
+        offset: q.offset ?? 0,
+      }
+
+      const [items, total] = await Promise.all([svc.search(options), svc.count(options)])
+
+      const serialized = items.map((item) => ({
+        id: String(item.id),
+        messageId: Number(item.messageId),
+        groupId: item.groupId != null ? Number(item.groupId) : null,
+        userId: Number(item.userId),
+        textSnippet: item.textSnippet,
+        archivedAt: item.createdAt.toISOString(),
+        createdAt: item.createdAt.toISOString(),
+      }))
+
+      await reply.send(
+        ok({ items: serialized, total, limit: options.limit, offset: options.offset }),
+      )
+    },
+  )
+
+  /** GET /api/iris/stats — 获取 Iris 统计信息（当前分区行数、归档阈值）。 */
+  app.get(
+    '/api/iris/stats',
+    {
+      schema: {
+        response: {
+          200: OkResponse(IrisStatsDataSchema),
+          500: FailResponse(),
+        },
+      },
+    },
+    async (_req: FastifyRequest, reply: FastifyReply) => {
+      const archiveSvc = app.services.get('iris_archive') as IrisArchiveService
+      const counter = app.services.get('iris_counter')
+
+      const currentPartitionRows = await archiveSvc.getCurrentPartitionRowCount()
+      const archiveThreshold = counter.getThreshold()
+
+      await reply.send(ok({ currentPartitionRows, archiveThreshold }))
+    },
+  )
+
+  /** POST /api/iris/archives/trigger — 手动触发 Iris 归档任务。 */
+  app.post(
+    '/api/iris/archives/trigger',
+    {
+      schema: {
+        body: IrisTriggerArchiveBodySchema,
+        response: {
+          200: OkResponse(IrisTriggerDataSchema),
+          500: FailResponse(),
+          503: FailResponse(),
+        },
+      },
+    },
+    async (req: FastifyRequest<{ Body?: { reason?: string } }>, reply: FastifyReply) => {
+      const queue = app.services.getOptional('queue') as ArchiveQueue | undefined
+
+      if (!queue) {
+        await reply.status(503).send(fail('任务队列未就绪'))
+        return
+      }
+
+      try {
+        const job = await queue.add('iris_archive', {
+          trigger: 'manual',
+          reason: req.body?.reason,
+        })
+        await reply.send(ok({ taskId: job.id ?? 'unknown' }, 'Archive task queued'))
+      } catch (err) {
+        log.error({ err }, 'Iris 归档任务入队失败')
+        await reply.status(500).send(fail(`归档任务入队失败: ${String(err)}`))
+      }
+    },
+  )
 }
 
-export default chatRoutes
-export { chatRoutes }
+export default irisRoutes
+export { irisRoutes }

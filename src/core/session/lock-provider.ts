@@ -3,7 +3,7 @@
  */
 import type { LockProvider } from '@aemeath-projects/exostrider/session'
 
-import type { RedisStore } from '@/core/redis/store.js'
+import type { RedisStore } from '@/core/redis/index.js'
 
 /** 基于 Redis 的分布式锁实现，供 SessionManager 使用。 */
 export class RedisLockProvider implements LockProvider {

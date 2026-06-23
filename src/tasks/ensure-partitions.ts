@@ -1,14 +1,14 @@
-/** 聊天库分区预创建 BullMQ 处理器骨架 —— 具体业务逻辑后续迭代。 */
+/** Iris 聊天库分区预创建 BullMQ 处理器骨架 —— 具体业务逻辑后续迭代。 */
 
 import type { Job } from 'bullmq'
 
-import type { ChatPrismaClient } from '@/core/db/index.js'
+import type { IrisPrismaClient } from '@/core/db/index.js'
 import type { SelfContainedJobResult, TaskDefinition } from '@/core/tasks/index.js'
 
-export const JOB_NAME = 'ensure-chat-partitions' as const
+export const JOB_NAME = 'ensure-iris-partitions' as const
 
 export interface PartitionsWorkerDeps {
-  chatDb: ChatPrismaClient
+  irisDb: IrisPrismaClient
 }
 
 export async function ensurePartitionsProcessor(
@@ -20,7 +20,7 @@ export async function ensurePartitionsProcessor(
 
 export const taskDefinition: TaskDefinition = {
   jobName: 'ensure_partitions',
-  requires: ['chat_db'],
+  requires: ['iris_db'],
   concurrency: 1,
   schedule: { cron: '0 1 25 * *', tz: 'Asia/Shanghai' },
   processor: async (job: Job, deps: Record<string, unknown>): Promise<SelfContainedJobResult> => {

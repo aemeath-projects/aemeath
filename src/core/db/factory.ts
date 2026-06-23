@@ -3,10 +3,10 @@
  */
 import { PrismaPg } from '@prisma/adapter-pg'
 
-import { PrismaClient as ChatPrismaClient } from '#prisma/chat'
+import { PrismaClient as IrisPrismaClient } from '#prisma/iris'
 import { PrismaClient as MainPrismaClient } from '#prisma/main'
 
-export type { ChatPrismaClient, MainPrismaClient }
+export type { IrisPrismaClient, MainPrismaClient }
 
 /**
  * 创建主库 Prisma Client 实例。
@@ -20,12 +20,12 @@ export function createMainDb(url: string, poolSize?: number): MainPrismaClient {
 }
 
 /**
- * 创建聊天库 Prisma Client 实例。
+ * 创建 Iris 聊天库 Prisma Client 实例。
  *
- * @param url - PostgreSQL 连接字符串（CHAT_DATABASE_URL）
+ * @param url - PostgreSQL 连接字符串（IRIS_DATABASE_URL）
  * @param poolSize - 可选，连接池最大连接数
  */
-export function createChatDb(url: string, poolSize?: number): ChatPrismaClient {
+export function createIrisDb(url: string, poolSize?: number): IrisPrismaClient {
   const adapter = new PrismaPg({ connectionString: url, max: poolSize })
-  return new ChatPrismaClient({ adapter })
+  return new IrisPrismaClient({ adapter })
 }

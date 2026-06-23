@@ -2,16 +2,18 @@
  * 帮助处理器 —— 响应 /help 等指令，返回图片格式的功能帮助。
  */
 
-import { Handler, OnCommand, Scope, handlerRegistry } from '@aemeath-projects/exostrider/dispatch'
-import type { HandlerOptions as HandlerClassMeta } from '@aemeath-projects/exostrider/dispatch'
 import { Inject } from '@aemeath-projects/exostrider/lifecycle'
 import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { Queue } from 'bullmq'
 
-import type { OneBotContext as Context } from '@/core/dispatch/context.js'
+import type {
+  HandlerOptions as HandlerClassMeta,
+  OneBotContext as Context,
+} from '@/core/dispatch/index.js'
+import { Handler, OnCommand, Scope, handlerRegistry } from '@/core/dispatch/index.js'
 import { enqueueRender } from '@/core/utils/index.js'
-import type { HelpData } from '@/renderer/templates/help.js'
+import type { HelpData } from '@/renderer/index.js'
 
 const log: PinoLogger = getLogger('help') as unknown as PinoLogger
 

@@ -119,3 +119,11 @@ export {
 export { HandlerListDataSchema } from './handlers.js'
 
 export { LogStreamQuerySchema } from './logs.js'
+
+export {
+  IrisSearchQuerySchema,
+  IrisTriggerArchiveBodySchema,
+  IrisSearchDataSchema,
+  IrisStatsDataSchema,
+  IrisTriggerDataSchema,
+} from './iris.js'

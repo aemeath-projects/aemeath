@@ -11,8 +11,11 @@ import type { SyncCoordinator } from './sync.js'
 import type { PersonnelService } from './index.js'
 
 import { ValidationError } from '@/core/errors.js'
-import { ok, fail, OkResponse, FailResponse } from '@/core/schemas/index.js'
 import {
+  ok,
+  fail,
+  OkResponse,
+  FailResponse,
   UserIdParamSchema,
   GroupIdParamSchema,
   UserListQuerySchema,
@@ -26,7 +29,7 @@ import {
   PaginatedGroupsDataSchema,
   GroupDetailSchema,
   PaginatedMembersDataSchema,
-} from '@/core/schemas/personnel.js'
+} from '@/core/schemas/index.js'
 function parseBigIntParam(value: string, name: string): bigint {
   if (!/^\d+$/.test(value)) {
     throw new ValidationError(`参数 ${name} 必须为非负整数，收到：${value}`)

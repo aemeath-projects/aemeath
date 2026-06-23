@@ -20,7 +20,7 @@ import { ChatOpenAI } from '@langchain/openai'
 
 import type { LlmModel, LlmProvider } from '#prisma/main'
 
-import { LLMClient } from '@/core/llm/client.js'
+import { LLMClient } from '@/core/llm/index.js'
 
 type MockedChatOpenAI = ReturnType<typeof vi.fn>
 

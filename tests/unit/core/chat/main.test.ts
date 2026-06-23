@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { ChatHistoryService } from '@/core/chat/index.js'
-import type { ChatPrismaClient } from '@/core/db/index.js'
+import type { IrisPrismaClient } from '@/core/db/index.js'
+import { IrisService } from '@/core/iris/index.js'
 
 /** 创建 chatDb mock。 */
 function createMockChatDb() {
@@ -21,13 +21,13 @@ function createMockChatDb() {
 
 type MockChatDb = ReturnType<typeof createMockChatDb>
 
-describe('ChatHistoryService', () => {
+describe('IrisService', () => {
   let mockChatDb: MockChatDb
-  let service: ChatHistoryService
+  let service: IrisService
 
   beforeEach(() => {
     mockChatDb = createMockChatDb()
-    service = new ChatHistoryService(mockChatDb as unknown as ChatPrismaClient)
+    service = new IrisService(mockChatDb as unknown as IrisPrismaClient)
   })
 
   /* saveMessage */

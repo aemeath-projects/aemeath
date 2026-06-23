@@ -9,6 +9,6 @@ export default defineConfig({
     path: './migrations',
   },
   datasource: {
-    url: process.env.CHAT_DATABASE_URL ?? '',
+    url: process.env.IRIS_DATABASE_URL ?? '',
   },
 })

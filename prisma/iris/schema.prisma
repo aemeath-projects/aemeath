@@ -41,3 +41,19 @@ model ChatMessage {
   @@index([messageType, createdAt(sort: Desc)], map: "ix_chat_type_time")
   @@map("chat_history")
 }
+
+/// 归档消息元数据索引 —— 搜索定位用，完整数据在 S3 Parquet 中。
+model ArchivedMessageIndex {
+  id             BigInt   @id                   // 来自原始消息的 id，非自增
+  messageId      BigInt   @map("message_id")
+  groupId        BigInt?  @map("group_id")
+  userId         BigInt   @map("user_id")
+  createdAt      DateTime @map("created_at")
+  senderNickname String   @map("sender_nickname")
+  textSnippet    String   @map("text_snippet")
+  archiveRef     String   @map("archive_ref")
+
+  @@index([groupId, createdAt])
+  @@index([userId, createdAt])
+  @@map("archived_message_index")
+}

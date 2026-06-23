@@ -8,8 +8,8 @@ import type { FriendApi, GroupApi, MessageApi } from '@aemeath-projects/napcat'
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { ContextApis } from '@/core/dispatch/adapter.js'
-import { oneBotContextConfig } from '@/core/dispatch/adapter.js'
+import { oneBotContextConfig } from '@/core/dispatch/index.js'
+import type { ContextApis } from '@/core/dispatch/index.js'
 
 /** 构造最小 HandlerMethod */
 function makeHandlerMethod(

@@ -2,27 +2,27 @@
  * Aemeath 服务字典类型 —— 供 exostrider ServiceRegistry<AemeathServiceMap> 使用。
  */
 import type { EventDispatcher } from '@aemeath-projects/exostrider/dispatch'
-import type {
-  NapCatClient,
-  MessageApi,
-  GroupApi,
-  FriendApi,
-  FileApi,
-  SystemApi,
-  ExtensionApi,
-} from '@aemeath-projects/napcat'
+import type { ClientPool } from '@aemeath-projects/exostrider/pool'
+import type { NapCatClient } from '@aemeath-projects/napcat'
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 import type { Queue } from 'bullmq'
 import type { Redis } from 'ioredis'
 
-import type { MainPrismaClient, ChatPrismaClient } from '@/core/db/index.js'
-import type { ContextApis } from '@/core/dispatch/adapter.js'
-import type { RedisStore } from '@/core/redis/store.js'
+import type {
+  MasterApis,
+  GroupMembershipTracker,
+  AccountRole,
+  MessageRouter,
+} from '@/core/accounts/index.js'
+import type { MainPrismaClient, IrisPrismaClient } from '@/core/db/index.js'
+import type { ContextApis } from '@/core/dispatch/index.js'
+import type { IrisCounter, IrisSearchService } from '@/core/iris/index.js'
+import type { RedisStore } from '@/core/redis/index.js'
 
 export interface AemeathServiceMap {
   // ── 数据库 ──
   db: MainPrismaClient
-  chat_db: ChatPrismaClient
+  iris_db: IrisPrismaClient
 
   // ── Redis ──
   cache: RedisStore
@@ -34,14 +34,15 @@ export interface AemeathServiceMap {
   dispatcher: EventDispatcher<AnyOneBotEvent, ContextApis>
   queue: Queue
 
-  // ── NapCat SDK ──
-  bot_client: NapCatClient
-  msg_api: MessageApi
-  group_api: GroupApi
-  friend_api: FriendApi
-  file_api: FileApi
-  system_api: SystemApi
-  extension_api: ExtensionApi
+  // ── 多账号 ──
+  account_pool: ClientPool<NapCatClient, AccountRole, AnyOneBotEvent>
+  message_router: MessageRouter
+  membership_tracker: GroupMembershipTracker
+  master_apis: MasterApis
+
+  // ── Iris 领域 ──
+  iris_counter: IrisCounter
+  iris_search: IrisSearchService
 
   // ── 业务服务（@Provide 动态注册） ──
   [key: string]: unknown

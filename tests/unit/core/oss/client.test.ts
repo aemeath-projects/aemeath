@@ -1,7 +1,7 @@
 import { Client } from 'minio'
 import { describe, it, expect } from 'vitest'
 
-import { createOssClient } from '@/core/oss/client.js'
+import { createOssClient } from '@/core/oss/index.js'
 
 /** MinIO Client 的内部属性（用于测试验证连接参数解析结果）。 */
 interface ClientInternals {

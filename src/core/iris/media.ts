@@ -7,17 +7,22 @@ import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { Client } from 'minio'
 
-import type { OssBundle, OssBuckets } from '../oss/client.js'
-import { uploadBuffer, objectExists } from '../oss/utils.js'
+import { uploadBuffer, objectExists } from '@/core/oss/index.js'
+import type { OssBundle, OssBuckets } from '@/core/oss/index.js'
 
 const log: PinoLogger = getLogger('media-storage') as unknown as PinoLogger
 
 /** Content-Type 到文件扩展名映射。 */
 const MIME_EXT_MAP: Record<string, string> = {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   'image/png': 'png',
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   'image/jpeg': 'jpg',
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   'image/gif': 'gif',
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   'image/webp': 'webp',
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   'image/bmp': 'bmp',
 }
 
@@ -73,6 +78,7 @@ export class MediaStorageService {
 
     // 6. 上传
     await uploadBuffer(this.client, this.bucket, key, buf, {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       'Content-Type': contentType || `image/${ext}`,
     })
     log.debug({ key, size: buf.byteLength }, '媒体上传完成')

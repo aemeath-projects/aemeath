@@ -1,9 +1,10 @@
 // tests/unit/core/tasks/executor.test.ts
-import type { FriendApi, GroupApi, MessageApi, NapCatClient } from '@aemeath-projects/napcat'
+import type { ClientPool } from '@aemeath-projects/exostrider/pool'
+import type { FriendApi, GroupApi, MessageApi } from '@aemeath-projects/napcat'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { RedisStore } from '@/core/redis/store.js'
-import type { RenderSendJobResult } from '@/core/tasks/models.js'
+import type { RedisStore } from '@/core/redis/index.js'
+import type { RenderSendJobResult } from '@/core/tasks/index.js'
 
 /* BullMQ mock 工厂（每个 test 独立实例化，避免 .mock.results 下标竞争） */
 
@@ -59,10 +60,10 @@ function createMockGroupApi() {
   } as unknown as GroupApi
 }
 
-function createMockClient(connected = true) {
+function createMockPool(hasClients = true) {
   return {
-    transport: { state: connected ? 'connected' : 'disconnected' },
-  } as unknown as NapCatClient
+    getAvailableClients: vi.fn().mockReturnValue(hasClients ? [{}] : []),
+  } as unknown as ClientPool<never, string, unknown>
 }
 
 function createMockCache() {
@@ -99,7 +100,7 @@ describe('TaskExecutor', () => {
       createMockMsgApi(),
       createMockFriendApi(),
       mockGroupApi,
-      createMockClient(),
+      createMockPool(),
       createMockCache(),
       {},
       'aemeath-tasks',
@@ -125,7 +126,7 @@ describe('TaskExecutor', () => {
       createMockMsgApi(),
       createMockFriendApi(),
       mockGroupApi,
-      createMockClient(false),
+      createMockPool(false),
       createMockCache(),
       {},
       'aemeath-tasks',
@@ -154,7 +155,7 @@ describe('TaskExecutor', () => {
       createMockMsgApi(),
       mockFriendApi,
       createMockGroupApi(),
-      createMockClient(),
+      createMockPool(),
       createMockCache(),
       {},
       'aemeath-tasks',
@@ -183,7 +184,7 @@ describe('TaskExecutor', () => {
       createMockMsgApi(),
       createMockFriendApi(),
       mockGroupApi,
-      createMockClient(),
+      createMockPool(),
       createMockCache(),
       {},
       'aemeath-tasks',
@@ -214,7 +215,7 @@ describe('TaskExecutor', () => {
       createMockMsgApi(),
       createMockFriendApi(),
       mockGroupApi,
-      createMockClient(),
+      createMockPool(),
       cache,
       {},
       'aemeath-tasks',
@@ -269,7 +270,7 @@ describe('render-send result', () => {
       mockMsgApi,
       createMockFriendApi(),
       createMockGroupApi(),
-      createMockClient(),
+      createMockPool(),
       cache,
       {},
       'test-queue',
@@ -304,7 +305,7 @@ describe('render-send result', () => {
       mockMsgApi,
       createMockFriendApi(),
       createMockGroupApi(),
-      createMockClient(),
+      createMockPool(),
       cache,
       {},
       'test-queue',
@@ -335,7 +336,7 @@ describe('render-send result', () => {
       mockMsgApi,
       createMockFriendApi(),
       createMockGroupApi(),
-      createMockClient(),
+      createMockPool(),
       cache,
       {},
       'test-queue',

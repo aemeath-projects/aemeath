@@ -7,11 +7,10 @@ import {
 } from '@aemeath-projects/exostrider/dispatch'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { OneBotContext as Context } from '@/core/dispatch/context.js'
+import type { OneBotContext as Context } from '@/core/dispatch/index.js'
 import type { PersonnelService } from '@/core/personnel/index.js'
-import { SettingsPermissionChecker } from '@/core/settings/permission.js'
-import { buildSchemaMap } from '@/core/settings/schema.js'
-import type { SettingsService } from '@/core/settings/service.js'
+import { SettingsPermissionChecker, buildSchemaMap } from '@/core/settings/index.js'
+import type { SettingsService } from '@/core/settings/index.js'
 
 /* Mock 工厂 */
 

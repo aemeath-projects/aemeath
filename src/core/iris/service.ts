@@ -2,20 +2,14 @@
  * 聊天记录业务逻辑 —— 消息持久化、查询、上下文获取。
  */
 
-import { Service, Inject, Provide, Startup, Shutdown } from '@aemeath-projects/exostrider/lifecycle'
 import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
-import type { Client } from 'minio'
 
-import type { ChatMessage } from '#prisma/chat'
+import type { ChatMessage } from '#prisma/iris'
 
-import { ArchiveService } from './archive.js'
 import type { MediaStorageService } from './media.js'
-import { ArchiveS3 } from './s3.js'
 
-import { loadConfig } from '@/core/config.js'
-import type { ChatPrismaClient, MainPrismaClient } from '@/core/db/index.js'
-import type { OssBundle, OssBuckets } from '@/core/oss/client.js'
+import type { IrisPrismaClient } from '@/core/db/index.js'
 
 export type { ChatMessage }
 
@@ -69,11 +63,11 @@ export interface MessageContext {
  *
  * 通过 Startup / Shutdown 生命周期注册，由 LifecycleOrchestrator 管理。
  */
-export class ChatHistoryService {
-  private readonly _log: PinoLogger = getLogger('ChatHistoryService') as unknown as PinoLogger
+export class IrisService {
+  private readonly _log: PinoLogger = getLogger('IrisService') as unknown as PinoLogger
 
   constructor(
-    private readonly chatDb: ChatPrismaClient,
+    private readonly chatDb: IrisPrismaClient,
     private readonly mediaStorage?: MediaStorageService,
   ) {}
 
@@ -291,61 +285,5 @@ export class ChatHistoryService {
   /** 关闭数据库连接。 */
   async close(): Promise<void> {
     await this.chatDb.$disconnect()
-  }
-}
-
-/* 生命周期注册 */
-
-@Service({ name: 'chat_bootstrap' })
-export class ChatBootstrap {
-  /** 注入聊天数据库 */
-  @Inject('chat_db')
-  chatDb!: ChatPrismaClient
-
-  /** 注入主数据库 */
-  @Inject('db')
-  mainDb!: MainPrismaClient
-
-  /** 注入 OSS 客户端与 bucket 配置 */
-  @Inject('oss')
-  oss!: OssBundle
-
-  /** 注入媒体存储服务 */
-  @Inject('media_storage')
-  mediaStorage!: MediaStorageService
-
-  /** 对外暴露聊天历史服务 */
-  @Provide('chat_service')
-  chatService!: ChatHistoryService
-
-  /** 对外暴露归档服务 */
-  @Provide('archive_service')
-  archiveService!: ArchiveService
-
-  @Startup
-  start(): void {
-    const config = loadConfig()
-    const { client, buckets } = this.oss as { client: Client; buckets: OssBuckets }
-
-    this.chatService = new ChatHistoryService(this.chatDb, this.mediaStorage)
-
-    const exporterSettings = {
-      retentionMonths: 12,
-      batchSize: 5000,
-      compression: 'zstd' as const,
-    }
-    const archiveS3 = new ArchiveS3(client, buckets.archive, config.S3_ARCHIVE_PREFIX)
-    this.archiveService = new ArchiveService(
-      this.chatDb,
-      this.mainDb,
-      exporterSettings,
-      archiveS3,
-      config.TMPDIR,
-    )
-  }
-
-  @Shutdown
-  async stop(): Promise<void> {
-    await this.chatService.close()
   }
 }

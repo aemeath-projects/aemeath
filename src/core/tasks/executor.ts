@@ -2,19 +2,17 @@
 
 import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
+import type { ClientPool } from '@aemeath-projects/exostrider/pool'
 import { seg } from '@aemeath-projects/napcat'
 import type { FriendApi, GroupApi, MessageApi, NapCatClient } from '@aemeath-projects/napcat'
 import type { MessageSegment } from '@aemeath-projects/napcat/types'
 import { Job, Queue, QueueEvents } from 'bullmq'
 import type { ConnectionOptions } from 'bullmq'
 
-import type { RedisStore } from '@/core/redis/store.js'
-import {
-  isBotActionResult,
-  isRenderSendResult,
-  isSelfContainedResult,
-} from '@/core/tasks/models.js'
-import type { BotActionJobResult, RenderSendJobResult } from '@/core/tasks/models.js'
+import { isBotActionResult, isRenderSendResult, isSelfContainedResult } from './models.js'
+import type { BotActionJobResult, RenderSendJobResult } from './models.js'
+
+import type { RedisStore } from '@/core/redis/index.js'
 
 const log: PinoLogger = getLogger('TaskExecutor') as unknown as PinoLogger
 
@@ -26,7 +24,7 @@ export class TaskExecutor {
     private readonly msgApi: MessageApi,
     private readonly friendApi: FriendApi,
     private readonly groupApi: GroupApi,
-    private readonly client: NapCatClient,
+    private readonly pool: ClientPool<NapCatClient, string, unknown>,
     private readonly cache: RedisStore,
     connection: ConnectionOptions,
     queueName: string,
@@ -83,8 +81,8 @@ export class TaskExecutor {
   }
 
   private async _executeBotActions(result: BotActionJobResult, jobName: string): Promise<void> {
-    if (this.client.transport.state !== 'connected') {
-      log.warn({ jobName }, 'WS 未连接，跳过 Bot API 调用')
+    if (this.pool.getAvailableClients().length === 0) {
+      log.warn({ jobName }, '无可用账号，跳过 Bot API 调用')
       return
     }
 
@@ -151,8 +149,8 @@ export class TaskExecutor {
   }
 
   private async _executeRenderSend(result: RenderSendJobResult): Promise<void> {
-    if (this.client.transport.state !== 'connected') {
-      log.warn({ tempKey: result.tempKey }, 'WS 未连接，跳过 render-send')
+    if (this.pool.getAvailableClients().length === 0) {
+      log.warn({ tempKey: result.tempKey }, '无可用账号，跳过 render-send')
       return
     }
 

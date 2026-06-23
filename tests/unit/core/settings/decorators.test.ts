@@ -11,7 +11,7 @@ import {
 } from '@aemeath-projects/exostrider/dispatch'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { buildSchemaMap } from '@/core/settings/schema.js'
+import { buildSchemaMap } from '@/core/settings/index.js'
 
 beforeEach(() => {
   handlerRegistry.clear()

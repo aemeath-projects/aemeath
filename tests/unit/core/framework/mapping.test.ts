@@ -15,8 +15,8 @@ import {
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { oneBotContextConfig } from '@/core/dispatch/adapter.js'
-import type { ContextApis } from '@/core/dispatch/adapter.js'
+import { oneBotContextConfig } from '@/core/dispatch/index.js'
+import type { ContextApis } from '@/core/dispatch/index.js'
 
 /* 测试用事件工厂 */
 

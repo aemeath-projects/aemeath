@@ -10,8 +10,8 @@ import type { SessionConfig } from '@aemeath-projects/exostrider/session'
 
 import { RedisLockProvider } from './lock-provider.js'
 
-import type { OneBotContext } from '@/core/dispatch/context.js'
-import type { RedisStore } from '@/core/redis/store.js'
+import type { OneBotContext } from '@/core/dispatch/index.js'
+import type { RedisStore } from '@/core/redis/index.js'
 
 const log: PinoLogger = getLogger('session') as unknown as PinoLogger
 

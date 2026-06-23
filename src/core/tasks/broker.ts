@@ -3,7 +3,7 @@
 import { Queue } from 'bullmq'
 import type { ConnectionOptions } from 'bullmq'
 
-export { createBullMQConnection } from '@/core/redis/factory.js'
+export { createBullMQConnection } from '@/core/redis/index.js'
 
 /** 唯一队列名称。 */
 export const QUEUE_NAME = 'aemeath-tasks' as const

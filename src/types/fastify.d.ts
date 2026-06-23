@@ -3,25 +3,23 @@
  */
 import type { EventDispatcher } from '@aemeath-projects/exostrider/dispatch'
 import type { ServiceRegistry } from '@aemeath-projects/exostrider/lifecycle'
-import type { NapCatClient } from '@aemeath-projects/napcat'
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 import type { Redis } from 'ioredis'
 
-import type { createMainDb, createChatDb } from '@/core/db/index.js'
-import type { ContextApis } from '@/core/dispatch/adapter.js'
+import type { createMainDb, createIrisDb } from '@/core/db/index.js'
+import type { ContextApis } from '@/core/dispatch/index.js'
 import type { AemeathServiceMap } from '@/core/lifecycle.js'
-import type { RedisStore } from '@/core/redis/store.js'
-import type { TaskExecutor } from '@/core/tasks/executor.js'
+import type { RedisStore } from '@/core/redis/index.js'
+import type { TaskExecutor } from '@/core/tasks/index.js'
 
 /** 基础设施依赖（由 _startup 闭包产出，通过 decorate 暴露给路由层）。 */
 export interface InfraState {
   readonly mainDb: ReturnType<typeof createMainDb>
-  readonly chatDb: ReturnType<typeof createChatDb>
+  readonly irisDb: ReturnType<typeof createIrisDb>
   readonly cacheRedis: Redis
   readonly persistentRedis: Redis
   readonly cacheStore: RedisStore
   readonly persistentStore: RedisStore
-  readonly botClient: NapCatClient
   readonly dispatcher: EventDispatcher<AnyOneBotEvent, ContextApis>
   readonly taskExecutor: TaskExecutor
   readonly queue: { close(): Promise<void> }

@@ -13,27 +13,15 @@ import { Default } from '@sinclair/typebox/value'
 
 /** 所有环境变量的 TypeBox Schema。 */
 export const ConfigSchema = Type.Object({
-  // NapCat WebSocket
-  NAPCAT_ACCESS_TOKEN: Type.String({ minLength: 1 }),
-  NAPCAT_MESSAGE_POST_FORMAT: Type.Union([Type.Literal('array'), Type.Literal('string')], {
-    default: 'array',
-  }),
-  NAPCAT_REPORT_SELF_MESSAGE: Type.Boolean({ default: false }),
-  NAPCAT_HEART_INTERVAL: Type.Number({ minimum: 1000, default: 30000 }),
-  NAPCAT_RECONNECT_INTERVAL: Type.Number({ minimum: 1000, default: 5000 }),
-
   // NapCat 资源
   IMAGE_URL_TTL: Type.Number({ minimum: 1, default: 7200 }),
   ENABLE_RKEY_REFRESH: Type.Boolean({ default: true }),
 
-  // NapCat 反向 WebSocket 服务器端口（与 Fastify PORT 分离）
-  NAPCAT_WS_PORT: Type.Number({ minimum: 1, maximum: 65535, default: 3001 }),
-
   // PostgreSQL
   DATABASE_URL: Type.String(),
   DB_POOL_SIZE: Type.Number({ minimum: 1, default: 10 }),
-  CHAT_DATABASE_URL: Type.String(),
-  CHAT_DB_POOL_SIZE: Type.Number({ minimum: 1, default: 5 }),
+  IRIS_DATABASE_URL: Type.String(),
+  IRIS_DB_POOL_SIZE: Type.Number({ minimum: 1, default: 5 }),
 
   // Redis
   BULLMQ_REDIS_URL: Type.String(),
@@ -194,9 +182,8 @@ function isBooleanSchema(schema: unknown): boolean {
 
 /** 业务校验中使用的 key，提取为常量避免 dot-notation lint 问题。 */
 const ENV_KEY = {
-  TOKEN: 'NAPCAT_ACCESS_TOKEN',
   DB_URL: 'DATABASE_URL',
-  CHAT_DB_URL: 'CHAT_DATABASE_URL',
+  IRIS_DB_URL: 'IRIS_DATABASE_URL',
   BULLMQ_REDIS: 'BULLMQ_REDIS_URL',
   CACHE_REDIS: 'CACHE_REDIS_URL',
   PERSISTENT_REDIS: 'PERSISTENT_REDIS_URL',
@@ -204,24 +191,16 @@ const ENV_KEY = {
 
 /** 执行 TypeBox Schema 之外的业务规则校验。 */
 function validateBusinessRules(config: Record<string, unknown>): void {
-  // NAPCAT_ACCESS_TOKEN 不能为空
-  const token = config[ENV_KEY.TOKEN]
-  if (typeof token !== 'string' || token.trim() === '') {
-    throw new Error(
-      'NAPCAT_ACCESS_TOKEN 为空！存在严重安全风险，拒绝启动。请在环境变量或 .env 文件中配置有效的 access token。',
-    )
-  }
-
   // DATABASE_URL 必须以 postgresql:// 开头
   const dbUrl = config[ENV_KEY.DB_URL]
   if (typeof dbUrl === 'string' && !dbUrl.startsWith('postgresql://')) {
     throw new Error(`DATABASE_URL 必须以 'postgresql://' 开头，当前值: "${dbUrl}"`)
   }
 
-  // CHAT_DATABASE_URL 必须以 postgresql:// 开头
-  const chatDbUrl = config[ENV_KEY.CHAT_DB_URL]
+  // IRIS_DATABASE_URL 必须以 postgresql:// 开头
+  const chatDbUrl = config[ENV_KEY.IRIS_DB_URL]
   if (typeof chatDbUrl === 'string' && !chatDbUrl.startsWith('postgresql://')) {
-    throw new Error(`CHAT_DATABASE_URL 必须以 'postgresql://' 开头，当前值: "${chatDbUrl}"`)
+    throw new Error(`IRIS_DATABASE_URL 必须以 'postgresql://' 开头，当前值: "${chatDbUrl}"`)
   }
 
   // Redis URL 格式校验

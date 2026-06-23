@@ -3,7 +3,7 @@ import { Readable } from 'node:stream'
 import type { Client } from 'minio'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-import { uploadBuffer, downloadBuffer, objectExists, deleteObject } from '@/core/oss/utils.js'
+import { uploadBuffer, downloadBuffer, objectExists, deleteObject } from '@/core/oss/index.js'
 
 interface MockClient {
   putObject: ReturnType<typeof vi.fn>

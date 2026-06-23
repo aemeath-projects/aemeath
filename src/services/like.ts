@@ -5,7 +5,7 @@
 import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/lifecycle'
 import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
-import type { FriendApi } from '@aemeath-projects/napcat'
+import type { FriendApi, GroupApi } from '@aemeath-projects/napcat'
 
 import type { LikeTask, LikeHistory, LikeSource, Prisma } from '#prisma/main'
 
@@ -296,9 +296,9 @@ export class LikeBootstrap {
   @Inject('db')
   db!: MainPrismaClient
 
-  /** 注入 Bot API */
-  @Inject('friend_api')
-  friendApi!: FriendApi
+  /** 注入主账号 API bundle */
+  @Inject('master_apis')
+  masterApis!: { groupApi: GroupApi; friendApi: FriendApi }
 
   /** 对外暴露点赞服务实例 */
   @Provide('like_service')
@@ -306,6 +306,6 @@ export class LikeBootstrap {
 
   @Startup
   start(): void {
-    this.likeService = new LikeService(this.db, this.friendApi)
+    this.likeService = new LikeService(this.db, this.masterApis.friendApi)
   }
 }

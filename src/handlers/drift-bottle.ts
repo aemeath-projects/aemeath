@@ -2,6 +2,13 @@
  * 漂流瓶 Bot 处理器 —— 响应「扔漂流瓶」和「捞漂流瓶」关键词。
  */
 
+import { Inject } from '@aemeath-projects/exostrider/lifecycle'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
+import { seg } from '@aemeath-projects/napcat'
+import type { MessageSegment } from '@aemeath-projects/napcat/types'
+
+import type { OneBotContext as Context } from '@/core/dispatch/index.js'
 import {
   Handler,
   OnStartsWith,
@@ -9,14 +16,7 @@ import {
   Scope,
   PermissionDecorator,
   SettingNode,
-} from '@aemeath-projects/exostrider/dispatch'
-import { Inject } from '@aemeath-projects/exostrider/lifecycle'
-import { getLogger } from '@aemeath-projects/exostrider/logger'
-import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
-import { seg } from '@aemeath-projects/napcat'
-import type { MessageSegment } from '@aemeath-projects/napcat/types'
-
-import type { OneBotContext as Context } from '@/core/dispatch/context.js'
+} from '@/core/dispatch/index.js'
 import { MessageBuilder } from '@/core/utils/index.js'
 import type { DriftBottleService } from '@/services/drift-bottle.js'
 

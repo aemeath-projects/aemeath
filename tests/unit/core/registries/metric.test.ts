@@ -1,7 +1,7 @@
 // tests/unit/core/registries/metric.test.ts
 import { describe, it, expect, beforeEach } from 'vitest'
 
-import { MetricRegistry } from '@/core/monitoring/registry.js'
+import { MetricRegistry } from '@/core/monitoring/index.js'
 
 describe('MetricRegistry', () => {
   let registry: MetricRegistry

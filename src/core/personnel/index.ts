@@ -5,6 +5,16 @@
  * 增量事件处理已迁移至 PersonnelEventService（events.ts）。
  */
 
+export { PersonnelQueryService } from './query.js'
+export type {
+  PaginatedResult,
+  UserView,
+  GroupView,
+  GroupMemberView,
+  UserGroupView,
+  ResolveResult,
+} from './query.js'
+
 import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/lifecycle'
 import type { FriendInfo, GroupInfo, GroupMember } from '@aemeath-projects/napcat/types'
 
@@ -12,7 +22,7 @@ import { USER_RELATION_GLOB } from './cache.js'
 import './metrics.js'
 
 import type { MainPrismaClient } from '@/core/db/index.js'
-import type { RedisStore } from '@/core/redis/store.js'
+import type { RedisStore } from '@/core/redis/index.js'
 import { cacheKeyRegistry } from '@/core/registries.js'
 
 /** 用户关系等级。 */

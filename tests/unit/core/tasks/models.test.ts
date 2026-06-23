@@ -1,7 +1,7 @@
 // tests/unit/core/tasks/models.test.ts
 import { describe, expect, it } from 'vitest'
 
-import { isBotActionResult, isSelfContainedResult } from '@/core/tasks/models.js'
+import { isBotActionResult, isSelfContainedResult } from '@/core/tasks/index.js'
 
 describe('JobResult 类型守卫', () => {
   it('isBotActionResult 识别 bot-action 结果', () => {

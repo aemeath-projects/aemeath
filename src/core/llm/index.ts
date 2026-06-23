@@ -2,6 +2,8 @@
  * LLM 业务逻辑层 —— 提供商/模型 CRUD 与 LLM 调用编排。
  */
 
+export { LLMClient } from './client.js'
+
 import { Service, Inject, Provide, Startup, Shutdown } from '@aemeath-projects/exostrider/lifecycle'
 import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
@@ -19,7 +21,7 @@ import {
   type CreateProviderData,
   type UpdateModelData,
   type UpdateProviderData,
-} from '@/core/schemas/llm.js'
+} from '@/core/schemas/index.js'
 
 export type { LlmProvider, LlmModel }
 

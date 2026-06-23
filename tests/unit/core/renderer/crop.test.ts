@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { cropBottom } from '@/renderer/service.js'
+import { cropBottom } from '@/renderer/index.js'
 
 describe('cropBottom', () => {
   function makePixels(

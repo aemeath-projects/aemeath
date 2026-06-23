@@ -7,7 +7,7 @@ import {
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { MainPrismaClient } from '@/core/db/index.js'
-import { buildSchemaMap, cleanOrphanKeys } from '@/core/settings/schema.js'
+import { buildSchemaMap, cleanOrphanKeys } from '@/core/settings/index.js'
 
 beforeEach(() => {
   handlerRegistry.clear()

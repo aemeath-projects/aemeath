@@ -2,12 +2,12 @@
  * 今日老婆 Bot 处理器 —— 响应群聊抽取指令。
  */
 
-import { Handler, OnRegex, Scope, SettingNode } from '@aemeath-projects/exostrider/dispatch'
 import { Inject } from '@aemeath-projects/exostrider/lifecycle'
 import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 
-import type { OneBotContext as Context } from '@/core/dispatch/context.js'
+import type { OneBotContext as Context } from '@/core/dispatch/index.js'
+import { Handler, OnRegex, Scope, SettingNode } from '@/core/dispatch/index.js'
 import { MessageBuilder } from '@/core/utils/index.js'
 import type { JrlpService } from '@/services/jrlp.js'
 

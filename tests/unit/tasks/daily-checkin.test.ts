@@ -3,7 +3,7 @@ import type { Job } from 'bullmq'
 import { describe, expect, it, vi } from 'vitest'
 
 import type { MainPrismaClient } from '@/core/db/index.js'
-import type { RedisStore } from '@/core/redis/store.js'
+import type { RedisStore } from '@/core/redis/index.js'
 // 注册 checkin cache keys，否则 cacheKeyRegistry.buildKey 会抛错
 import '@/services/checkin-cache-keys.js'
 import { dailyCheckinProcessor, JOB_NAME } from '@/tasks/daily-checkin.js'

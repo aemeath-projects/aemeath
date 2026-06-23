@@ -1,6 +1,6 @@
-import type { MessageApi } from '@aemeath-projects/napcat'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { MessageRouter } from '@/core/accounts/index.js'
 import type { MainPrismaClient } from '@/core/db/index.js'
 import { FeedbackService } from '@/services/feedback.js'
 
@@ -22,29 +22,29 @@ function createMockDb() {
   }
 }
 
-function createMockBotApi() {
+function createMockRouter() {
   return {
-    sendPrivateMsg: vi.fn().mockResolvedValue({ status: 'ok', retcode: 0, data: null, echo: '' }),
     sendGroupMsg: vi.fn().mockResolvedValue({ status: 'ok', retcode: 0, data: null, echo: '' }),
+    sendAdminMsg: vi.fn().mockResolvedValue({ status: 'ok', retcode: 0, data: null, echo: '' }),
   }
 }
 
 type MockDb = ReturnType<typeof createMockDb>
-type MockMsgApi = ReturnType<typeof createMockBotApi>
+type MockRouter = ReturnType<typeof createMockRouter>
 
 /* Tests */
 
 describe('FeedbackService', () => {
   let mockDb: MockDb
-  let mockBotApi: MockMsgApi
+  let mockRouter: MockRouter
   let service: FeedbackService
 
   beforeEach(() => {
     mockDb = createMockDb()
-    mockBotApi = createMockBotApi()
+    mockRouter = createMockRouter()
     service = new FeedbackService(
       mockDb as unknown as MainPrismaClient,
-      mockBotApi as unknown as MessageApi,
+      mockRouter as unknown as MessageRouter,
     )
     vi.clearAllMocks()
   })
@@ -213,9 +213,9 @@ describe('FeedbackService', () => {
       // 等待通知的微任务执行
       await new Promise((resolve) => setTimeout(resolve, 10))
 
-      expect(mockBotApi.sendPrivateMsg).toHaveBeenCalledOnce()
-      expect(mockBotApi.sendPrivateMsg).toHaveBeenCalledWith(
-        expect.any(Number),
+      expect(mockRouter.sendAdminMsg).toHaveBeenCalledOnce()
+      expect(mockRouter.sendAdminMsg).toHaveBeenCalledWith(
+        expect.any(BigInt),
         expect.arrayContaining([
           expect.objectContaining({
             type: 'text',

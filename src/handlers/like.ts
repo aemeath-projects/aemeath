@@ -2,16 +2,16 @@
  * 点赞 Bot 处理器 —— 响应 /like 或 /点赞 命令。
  */
 
+import { Inject } from '@aemeath-projects/exostrider/lifecycle'
+
 import {
   Handler,
   OnCommand,
   Scope,
   PermissionDecorator,
   SettingNode,
-} from '@aemeath-projects/exostrider/dispatch'
-import { Inject } from '@aemeath-projects/exostrider/lifecycle'
-
-import type { OneBotContext as Context } from '@/core/dispatch/context.js'
+} from '@/core/dispatch/index.js'
+import type { OneBotContext as Context } from '@/core/dispatch/index.js'
 import type { LikeService } from '@/services/like.js'
 
 const DEFAULT_LIKE_TIMES = 10

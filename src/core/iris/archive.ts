@@ -7,11 +7,11 @@ import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 
 import type { ArchiveStatus } from '#prisma/main'
 
-import { ArchiveExporter, PARTITION_NAME_RE } from './exporter.js'
+import { IrisExporter, PARTITION_NAME_RE } from './exporter.js'
 import type { ArchiveExporterSettings } from './exporter.js'
-import { ArchiveS3 } from './s3.js'
+import { IrisS3 } from './s3.js'
 
-import type { ChatPrismaClient, MainPrismaClient } from '@/core/db/index.js'
+import type { IrisPrismaClient, MainPrismaClient } from '@/core/db/index.js'
 
 /** 归档单个分区的执行结果。 */
 export interface PartitionArchiveResult {
@@ -39,18 +39,18 @@ export interface ArchiveJobData {
 /**
  * 聊天记录归档编排服务 —— 协调分区发现、导出、上传和状态更新。
  */
-export class ArchiveService {
-  private readonly exporter: ArchiveExporter
-  private readonly _log: PinoLogger = getLogger('ArchiveService') as unknown as PinoLogger
+export class IrisArchiveService {
+  private readonly exporter: IrisExporter
+  private readonly _log: PinoLogger = getLogger('IrisArchiveService') as unknown as PinoLogger
 
   constructor(
-    private readonly chatDb: ChatPrismaClient,
+    private readonly chatDb: IrisPrismaClient,
     private readonly mainDb: MainPrismaClient,
     private readonly exporterSettings: ArchiveExporterSettings,
-    private readonly s3: ArchiveS3,
+    private readonly s3: IrisS3,
     private readonly tmpDir: string,
   ) {
-    this.exporter = new ArchiveExporter(chatDb, exporterSettings)
+    this.exporter = new IrisExporter(chatDb, exporterSettings)
   }
 
   // ════════════════════════════════════════════
@@ -175,6 +175,24 @@ export class ArchiveService {
   //  内部方法
   // ════════════════════════════════════════════
 
+  /**
+   * 获取当前月分区的消息行数（供 IrisCounter 启动时同步计数使用）。
+   */
+  async getCurrentPartitionRowCount(): Promise<number> {
+    const now = new Date()
+    const year = now.getFullYear().toString().padStart(4, '0')
+    const month = (now.getMonth() + 1).toString().padStart(2, '0')
+    const partitionName = `chat_history_${year}_${month}`
+
+    interface CountRow {
+      count: bigint
+    }
+    const rows = await this.chatDb.$queryRawUnsafe<CountRow[]>(
+      `SELECT COUNT(*) AS count FROM chat."${partitionName}"`,
+    )
+    return Number(rows[0]?.count ?? 0)
+  }
+
   private async _discoverArchivablePartitions(): Promise<string[]> {
     const retentionMs = this.exporterSettings.retentionMonths * 30 * 24 * 60 * 60 * 1000
     const cutoff = new Date(Date.now() - retentionMs)
@@ -183,6 +201,7 @@ export class ArchiveService {
     const cutoffSuffix = `${year}_${month}`
 
     interface PartitionRow {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
       partition_name: string
     }
     const rows = await this.chatDb.$queryRaw<PartitionRow[]>`
@@ -265,7 +284,7 @@ export class ArchiveService {
         sha256: sha256Hex,
       })
 
-      const manifest = ArchiveS3.buildManifest(
+      const manifest = IrisS3.buildManifest(
         partitionName,
         periodStart,
         periodEnd,
@@ -339,12 +358,12 @@ export class ArchiveService {
 }
 
 /**
- * BullMQ processor 函数 —— 包装 ArchiveService.archive()。
+ * BullMQ processor 函数 —— 包装 IrisArchiveService.archive()。
  *
- * 使用方：在 Worker 进程中注册到 BullMQ Worker，传入 ArchiveService 实例后调用。
+ * 使用方：在 Worker 进程中注册到 BullMQ Worker，传入 IrisArchiveService 实例后调用。
  */
-export function archiveChatHistoryProcessor(
-  service: ArchiveService,
+export function archiveIrisProcessor(
+  service: IrisArchiveService,
 ): (job: { data: ArchiveJobData }) => Promise<ArchiveResult> {
   return async (job) => {
     return service.archive(job.data.partitionName)

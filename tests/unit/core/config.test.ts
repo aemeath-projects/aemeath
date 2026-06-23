@@ -8,9 +8,8 @@ import { loadConfig, normalizeRedisUrl } from '@/core/config.js'
  */
 function validEnv(overrides: Record<string, string> = {}): Record<string, string> {
   return {
-    NAPCAT_ACCESS_TOKEN: 'test-secret-token',
     DATABASE_URL: 'postgresql://aemeath:aemeath@localhost:5432/aemeath',
-    CHAT_DATABASE_URL: 'postgresql://aemeath:aemeath@localhost:5432/chat_history',
+    IRIS_DATABASE_URL: 'postgresql://aemeath:aemeath@localhost:5432/iris',
     BULLMQ_REDIS_URL: 'redis://localhost:6379',
     CACHE_REDIS_URL: 'redis://localhost:6379',
     ...overrides,
@@ -21,18 +20,12 @@ describe('loadConfig', () => {
   it('应当使用全部必填字段返回类型化的 Config 对象', () => {
     const config = loadConfig(validEnv())
 
-    expect(config.NAPCAT_ACCESS_TOKEN).toBe('test-secret-token')
     expect(config.DATABASE_URL).toBe('postgresql://aemeath:aemeath@localhost:5432/aemeath')
-    expect(config.CHAT_DATABASE_URL).toBe(
-      'postgresql://aemeath:aemeath@localhost:5432/chat_history',
-    )
+    expect(config.IRIS_DATABASE_URL).toBe('postgresql://aemeath:aemeath@localhost:5432/iris')
     // 默认值
-    expect(config.NAPCAT_MESSAGE_POST_FORMAT).toBe('array')
-    expect(config.NAPCAT_REPORT_SELF_MESSAGE).toBe(false)
-    expect(config.NAPCAT_HEART_INTERVAL).toBe(30000)
     expect(config.IMAGE_URL_TTL).toBe(7200)
     expect(config.DB_POOL_SIZE).toBe(10)
-    expect(config.CHAT_DB_POOL_SIZE).toBe(5)
+    expect(config.IRIS_DB_POOL_SIZE).toBe(5)
     expect(config.METRICS_ENABLED).toBe(true)
     expect(config.LOG_LEVEL).toBe('info')
     expect(config.LOG_FORMAT).toBe('json')
@@ -42,33 +35,14 @@ describe('loadConfig', () => {
     expect(config.FRONTEND_DIST_DIR).toBe('frontend/dist')
   })
 
-  it('缺少 NAPCAT_ACCESS_TOKEN 时应当抛出错误', () => {
-    const env = validEnv({ NAPCAT_ACCESS_TOKEN: 'placeholder' })
-    const envWithoutToken = Object.fromEntries(
-      Object.entries(env).filter(([key]) => key !== 'NAPCAT_ACCESS_TOKEN'),
-    )
-
-    expect(() => loadConfig(envWithoutToken)).toThrow('NAPCAT_ACCESS_TOKEN')
-  })
-
-  it('NAPCAT_ACCESS_TOKEN 为空字符串时应当抛出错误', () => {
-    expect(() => loadConfig(validEnv({ NAPCAT_ACCESS_TOKEN: '' }))).toThrow('NAPCAT_ACCESS_TOKEN')
-  })
-
-  it('NAPCAT_ACCESS_TOKEN 为纯空白时应当抛出错误', () => {
-    expect(() => loadConfig(validEnv({ NAPCAT_ACCESS_TOKEN: '   ' }))).toThrow(
-      'NAPCAT_ACCESS_TOKEN',
-    )
-  })
-
   it('DATABASE_URL 不以 postgresql:// 开头时应当抛出错误', () => {
     expect(() => loadConfig(validEnv({ DATABASE_URL: 'mysql://localhost/db' }))).toThrow(
       'postgresql://',
     )
   })
 
-  it('CHAT_DATABASE_URL 不以 postgresql:// 开头时应当抛出错误', () => {
-    expect(() => loadConfig(validEnv({ CHAT_DATABASE_URL: 'mysql://localhost/chat' }))).toThrow(
+  it('IRIS_DATABASE_URL 不以 postgresql:// 开头时应当抛出错误', () => {
+    expect(() => loadConfig(validEnv({ IRIS_DATABASE_URL: 'mysql://localhost/iris' }))).toThrow(
       'postgresql://',
     )
   })
@@ -96,12 +70,10 @@ describe('loadConfig', () => {
   it('应当正确解析布尔值环境变量', () => {
     const config = loadConfig(
       validEnv({
-        NAPCAT_REPORT_SELF_MESSAGE: 'true',
         METRICS_ENABLED: '0',
         ENABLE_RKEY_REFRESH: 'yes',
       }),
     )
-    expect(config.NAPCAT_REPORT_SELF_MESSAGE).toBe(true)
     expect(config.METRICS_ENABLED).toBe(false)
     expect(config.ENABLE_RKEY_REFRESH).toBe(true)
   })
@@ -216,16 +188,15 @@ describe('Redis URL 格式校验', () => {
 
 describe('process.env 集成', () => {
   it('应当能从 vi.stubEnv 设置的环境变量加载配置', () => {
-    vi.stubEnv('NAPCAT_ACCESS_TOKEN', 'stub-token')
     vi.stubEnv('DATABASE_URL', 'postgresql://localhost/test')
-    vi.stubEnv('CHAT_DATABASE_URL', 'postgresql://localhost/chat')
+    vi.stubEnv('IRIS_DATABASE_URL', 'postgresql://localhost/iris')
     vi.stubEnv('BULLMQ_REDIS_URL', 'redis://localhost:6379')
     vi.stubEnv('CACHE_REDIS_URL', 'redis://localhost:6379')
     vi.stubEnv('NODE_ENV', 'development')
 
     try {
       const config = loadConfig()
-      expect(config.NAPCAT_ACCESS_TOKEN).toBe('stub-token')
+      expect(config.DATABASE_URL).toBe('postgresql://localhost/test')
     } finally {
       vi.unstubAllEnvs()
     }

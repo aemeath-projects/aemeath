@@ -34,7 +34,7 @@ import {
   OnPoke,
   OnEssence,
   OnOffline,
-} from '@/core/dispatch/decorators.js'
+} from '@/core/dispatch/index.js'
 
 // TC39 Stage 3 方法装饰器测试：通过手动模拟 ClassMethodDecoratorContext 调用装饰器工厂，
 // 验证元数据正确写入 metadata 对象，无需依赖转换器支持 @decorator 语法。

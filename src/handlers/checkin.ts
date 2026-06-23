@@ -2,6 +2,11 @@
  * 用户群签到 Bot 处理器 —— 响应「签到」关键词或「/签到」命令。
  */
 
+import { Inject } from '@aemeath-projects/exostrider/lifecycle'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
+
+import type { OneBotContext as Context } from '@/core/dispatch/index.js'
 import {
   Handler,
   OnCommand,
@@ -9,12 +14,7 @@ import {
   Scope,
   PermissionDecorator,
   SettingNode,
-} from '@aemeath-projects/exostrider/dispatch'
-import { Inject } from '@aemeath-projects/exostrider/lifecycle'
-import { getLogger } from '@aemeath-projects/exostrider/logger'
-import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
-
-import type { OneBotContext as Context } from '@/core/dispatch/context.js'
+} from '@/core/dispatch/index.js'
 import { MessageBuilder } from '@/core/utils/index.js'
 import type { CheckinService } from '@/services/checkin.js'
 

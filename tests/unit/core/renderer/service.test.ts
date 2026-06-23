@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 
-import { RenderService } from '@/renderer/service.js'
-import type { TemplateFunction } from '@/renderer/types.js'
+import { RenderService } from '@/renderer/index.js'
+import type { TemplateFunction } from '@/renderer/index.js'
 
 vi.mock('@/core/logging/index.js', () => ({
   getLogger: vi.fn().mockReturnValue({

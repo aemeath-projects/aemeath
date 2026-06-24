@@ -81,9 +81,9 @@ const driftBottleRoutes: FastifyPluginAsync = async (app) => {
     },
   )
 
-  /** POST /api/drift-bottle-pools/:poolId/delete — 删除漂流瓶池（id=0 的默认池不可删除）。 */
-  app.post(
-    '/api/drift-bottle-pools/:poolId/delete',
+  /** DELETE /api/drift-bottle-pools/:poolId — 删除漂流瓶池（id=0 的默认池不可删除）。 */
+  app.delete(
+    '/api/drift-bottle-pools/:poolId',
     {
       schema: {
         params: PoolIdParamSchema,

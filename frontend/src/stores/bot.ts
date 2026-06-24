@@ -1,7 +1,7 @@
 /** Bot 信息与资料的 Pinia Store（状态管理）。 */
 import { ref, reactive } from 'vue'
 import { defineStore } from 'pinia'
-import http from '@/apis/client'
+import http from '@/apis/http'
 import { getBotInfo, getBotProfile, updateBotProfile } from '@/apis/bot'
 import type { BotProfile, BotProfileUpdate, BotVersionInfo } from '@/apis/bot'
 

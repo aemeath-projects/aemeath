@@ -10,14 +10,10 @@ import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply 
 import {
   JrlpRecordsQuerySchema,
   SetWifeRequestSchema,
-  UpdateRecordRequestSchema,
-  DeleteRecordRequestSchema,
   WifeRecordResponseSchema,
   PaginatedRecordsResponseSchema,
   type JrlpRecordsQuery,
   type SetWifeRequest,
-  type UpdateRecordRequest,
-  type DeleteRecordRequest,
 } from '@/apis/schemas/index.js'
 import { fail, ok, FailResponse, OkResponse } from '@/core/schemas/index.js'
 import type { JrlpService, WifeRecord } from '@/services/jrlp.js'
@@ -90,9 +86,9 @@ const jrlpRoutes: FastifyPluginAsync = async (app) => {
     },
   )
 
-  /** POST /api/jrlp/records/create — 手动设置老婆（创建预设）。 */
+  /** POST /api/jrlp/records — 手动设置老婆（创建预设）。 */
   app.post(
-    '/api/jrlp/records/create',
+    '/api/jrlp/records',
     {
       schema: {
         body: SetWifeRequestSchema,
@@ -122,12 +118,13 @@ const jrlpRoutes: FastifyPluginAsync = async (app) => {
     },
   )
 
-  /** POST /api/jrlp/records/update — 修改记录的老婆信息。 */
-  app.post(
-    '/api/jrlp/records/update',
+  /** PUT /api/jrlp/records/:id — 修改记录的老婆信息。 */
+  app.put<{ Params: { id: string }; Body: { wifeQq: number } }>(
+    '/api/jrlp/records/:id',
     {
       schema: {
-        body: UpdateRecordRequestSchema,
+        params: Type.Object({ id: Type.String() }),
+        body: Type.Object({ wifeQq: Type.Number() }),
         response: {
           200: OkResponse(WifeRecordResponseSchema),
           400: FailResponse(),
@@ -136,10 +133,12 @@ const jrlpRoutes: FastifyPluginAsync = async (app) => {
         },
       },
     },
-    async (req: FastifyRequest<{ Body: UpdateRecordRequest }>, reply: FastifyReply) => {
+    async (req, reply) => {
       const svc = await getJrlpSvc(app)
 
-      const record = await svc.updateRecord(req.body.id, { wifeQq: req.body.wifeQq })
+      const record = await svc.updateRecord(parseInt(req.params.id, 10), {
+        wifeQq: req.body.wifeQq,
+      })
       if (record === null) {
         await reply.status(404).send(fail('记录不存在'))
         return
@@ -148,12 +147,12 @@ const jrlpRoutes: FastifyPluginAsync = async (app) => {
     },
   )
 
-  /** POST /api/jrlp/records/delete — 删除记录。 */
-  app.post(
-    '/api/jrlp/records/delete',
+  /** DELETE /api/jrlp/records/:id — 删除记录。 */
+  app.delete<{ Params: { id: string } }>(
+    '/api/jrlp/records/:id',
     {
       schema: {
-        body: DeleteRecordRequestSchema,
+        params: Type.Object({ id: Type.String() }),
         response: {
           200: OkResponse(Type.Null()),
           400: FailResponse(),
@@ -162,10 +161,10 @@ const jrlpRoutes: FastifyPluginAsync = async (app) => {
         },
       },
     },
-    async (req: FastifyRequest<{ Body: DeleteRecordRequest }>, reply: FastifyReply) => {
+    async (req, reply) => {
       const svc = await getJrlpSvc(app)
 
-      const success = await svc.deleteRecord(req.body.id)
+      const success = await svc.deleteRecord(parseInt(req.params.id, 10))
       if (!success) {
         await reply.status(404).send(fail('记录不存在'))
         return

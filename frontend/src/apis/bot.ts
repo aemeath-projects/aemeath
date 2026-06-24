@@ -1,5 +1,5 @@
 /** Bot 基本信息与资料的 API 封装。 */
-import http from '@/apis/client'
+import http from '@/apis/http'
 
 export interface BotInfo {
   nickname: string | null

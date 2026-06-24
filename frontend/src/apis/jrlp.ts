@@ -2,8 +2,10 @@
  * 今日老婆 API 接口层 —— 封装 /api/jrlp 所有后端接口调用。
  */
 
-import http from './client'
-import type { ApiResponse, PaginatedResult } from './types'
+import { get, post, put, del } from './http'
+import type { PaginatedResult } from './types'
+
+export type { PaginatedResult } from './types'
 
 /* 类型定义 */
 
@@ -51,23 +53,17 @@ export async function listRecords(params: ListRecordsParams): Promise<PaginatedR
   if (params.date) query.date = params.date
   if (params.page) query.page = params.page
   if (params.pageSize) query.pageSize = params.pageSize
-
-  const { data } = await http.get<ApiResponse<PaginatedResult<WifeRecord>>>(`${BASE}/records`, {
-    params: query,
-  })
-  return data.data
+  return get<PaginatedResult<WifeRecord>>(`${BASE}/records`, query)
 }
 
 export async function setWife(body: SetWifeRequest): Promise<WifeRecord> {
-  const { data } = await http.post<ApiResponse<WifeRecord>>(`${BASE}/records/create`, body)
-  return data.data
+  return post<WifeRecord>(`${BASE}/records`, body)
 }
 
 export async function updateRecord(body: UpdateRecordRequest): Promise<WifeRecord> {
-  const { data } = await http.post<ApiResponse<WifeRecord>>(`${BASE}/records/update`, body)
-  return data.data
+  return put<WifeRecord>(`${BASE}/records/${body.id}`, { wifeQq: body.wifeQq })
 }
 
 export async function deleteRecord(body: DeleteRecordRequest): Promise<void> {
-  await http.post<ApiResponse<null>>(`${BASE}/records/delete`, body)
+  await del<null>(`${BASE}/records/${body.id}`)
 }

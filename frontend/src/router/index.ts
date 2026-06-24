@@ -212,6 +212,28 @@ const router = createRouter({
       },
     },
     {
+      path: '/accounts',
+      name: 'accounts',
+      component: () => import('@/views/accounts/AccountsView.vue'),
+      meta: {
+        title: '账号管理',
+        icon: 'mdi-account-cog',
+        subtitle: '管理多账号连接与路由配置',
+        panel: '系统',
+      },
+    },
+    {
+      path: '/drift-bottle',
+      name: 'drift-bottle',
+      component: () => import('@/views/driftBottle/DriftBottleView.vue'),
+      meta: {
+        title: '漂流瓶',
+        icon: 'mdi-bottle-tonic',
+        subtitle: '管理漂流瓶池与群组绑定',
+        panel: '功能模块',
+      },
+    },
+    {
       path: '/queue',
       name: 'queue',
       component: () => import('@/views/system/QueueView.vue'),

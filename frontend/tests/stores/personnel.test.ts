@@ -15,7 +15,6 @@ vi.mock('@/apis/personnel', () => ({
   fetchAdmins: vi.fn(),
   addAdmin: vi.fn(),
   removeAdmin: vi.fn(),
-  resolvePersonnel: vi.fn(),
 }))
 
 import * as api from '@/apis/personnel'
@@ -295,16 +294,8 @@ describe('usePersonnelStore', () => {
       expect(store.getGroupName(100)).toBe('100')
     })
 
-    it('clearCache() 清空缓存后 getUserName 再次返回 ID 字符串', async () => {
-      vi.mocked(api.resolvePersonnel).mockResolvedValue({
-        users: { 1: { nickname: 'Alice', relation: 'friend' } },
-        groups: {},
-      })
+    it('clearCache() 清空缓存后 getUserName 返回 ID 字符串', () => {
       const store = usePersonnelStore()
-
-      store.getUserName(1)
-      await Promise.resolve() // 等待 microtask flush
-
       store.clearCache()
       expect(store.getUserName(1)).toBe('1')
     })

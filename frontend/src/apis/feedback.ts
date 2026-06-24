@@ -2,12 +2,12 @@
  * 用户反馈 API 接口层 —— 封装 /api/feedbacks 所有后端接口调用。
  */
 
-import http from './client'
-import type { ApiResponse, PaginatedResult } from './types'
-
-/* 类型定义 */
+import { get as httpGet, post } from './http'
+import type { PaginatedResult } from './types'
 
 export type { PaginatedResult } from './types'
+
+/* 类型定义 */
 
 export interface Feedback {
   id: string
@@ -51,18 +51,13 @@ export async function list(params: FeedbackListParams): Promise<PaginatedResult<
   if (params.userId) query.userId = params.userId
   if (params.source) query.source = params.source
   if (params.search) query.search = params.search
-
-  const { data } = await http.get<ApiResponse<PaginatedResult<Feedback>>>(`${BASE}`, {
-    params: query,
-  })
-  return data.data
+  return httpGet<PaginatedResult<Feedback>>(BASE, query)
 }
 
 export async function get(id: string): Promise<Feedback> {
-  const { data } = await http.get<ApiResponse<Feedback>>(`${BASE}/${id}`)
-  return data.data
+  return httpGet<Feedback>(`${BASE}/${id}`)
 }
 
 export async function updateStatus(id: string, body: UpdateStatusRequest): Promise<void> {
-  await http.post<ApiResponse<null>>(`${BASE}/${id}/status`, body)
+  await post<null>(`${BASE}/${id}/status`, body)
 }

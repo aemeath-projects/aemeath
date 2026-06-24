@@ -2,8 +2,8 @@
  * 用户群签到 API 接口层 —— 封装 /api/checkin 所有后端接口调用。
  */
 
-import http from './client'
-import type { ApiResponse, PaginatedResult } from './types'
+import { get } from './http'
+import type { PaginatedResult } from './types'
 
 /* 类型定义 */
 
@@ -53,11 +53,7 @@ export async function listRecords(
   if (params.date) query.date = params.date
   if (params.page) query.page = params.page
   if (params.pageSize) query.pageSize = params.pageSize
-
-  const { data } = await http.get<ApiResponse<PaginatedResult<CheckinRecord>>>(`${BASE}/records`, {
-    params: query,
-  })
-  return data.data
+  return get<PaginatedResult<CheckinRecord>>(`${BASE}/records`, query)
 }
 
 export async function getLeaderboard(
@@ -67,8 +63,7 @@ export async function getLeaderboard(
 ): Promise<LeaderEntry[]> {
   const params: Record<string, string | number> = { by, limit }
   if (groupId != null) params.groupId = groupId
-  const { data } = await http.get<ApiResponse<LeaderEntry[]>>(`${BASE}/leaderboard`, { params })
-  return data.data
+  return get<LeaderEntry[]>(`${BASE}/leaderboard`, params)
 }
 
 export async function getDailyTrend(
@@ -77,13 +72,11 @@ export async function getDailyTrend(
 ): Promise<DayCount[]> {
   const params: Record<string, string | number> = { days }
   if (groupId != null) params.groupId = groupId
-  const { data } = await http.get<ApiResponse<DayCount[]>>(`${BASE}/trend`, { params })
-  return data.data
+  return get<DayCount[]>(`${BASE}/trend`, params)
 }
 
 export async function getSummary(groupId: number | null | undefined): Promise<Summary> {
   const params: Record<string, string | number> = {}
   if (groupId != null) params.groupId = groupId
-  const { data } = await http.get<ApiResponse<Summary>>(`${BASE}/summary`, { params })
-  return data.data
+  return get<Summary>(`${BASE}/summary`, params)
 }

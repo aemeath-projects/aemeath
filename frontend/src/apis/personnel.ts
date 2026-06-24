@@ -2,10 +2,8 @@
  * 用户管理 API 接口层 —— 封装 /api/personnel 所有后端接口调用。
  */
 
-import http from './client'
-import type { ApiResponse, PaginatedResult } from './types'
-
-/* 类型定义 */
+import { get, post, del } from './http'
+import type { PaginatedResult } from './types'
 
 export type { PaginatedResult } from './types'
 
@@ -50,20 +48,6 @@ export interface GroupMembershipInfo {
   isActive: boolean
 }
 
-export interface ResolvedUser {
-  nickname: string
-  relation: string
-}
-
-export interface ResolvedGroup {
-  groupName: string
-}
-
-export interface ResolveResult {
-  users: Record<string, ResolvedUser>
-  groups: Record<string, ResolvedGroup>
-}
-
 export interface SyncStatus {
   lastSyncTime: string | null
   durationSeconds: number | null
@@ -72,8 +56,6 @@ export interface SyncStatus {
   groupsSynced: number
   membershipsSynced: number
 }
-
-/* API 调用 */
 
 const BASE = '/api/personnel'
 
@@ -90,21 +72,15 @@ export async function fetchUsers(params: {
   if (params.relation) query.relation = params.relation
   if (params.qq) query.qq = params.qq
   if (params.nickname) query.nickname = params.nickname
-
-  const { data } = await http.get<ApiResponse<PaginatedResult<UserItem>>>(`${BASE}/users`, {
-    params: query,
-  })
-  return data.data
+  return get<PaginatedResult<UserItem>>(`${BASE}/users`, query)
 }
 
 export async function fetchUser(qq: number): Promise<UserDetail> {
-  const { data } = await http.get<ApiResponse<UserDetail>>(`${BASE}/users/${qq}`)
-  return data.data
+  return get<UserDetail>(`${BASE}/users/${qq}`)
 }
 
 export async function fetchUserGroups(qq: number): Promise<GroupItem[]> {
-  const { data } = await http.get<ApiResponse<GroupItem[]>>(`${BASE}/users/${qq}/groups`)
-  return data.data
+  return get<GroupItem[]>(`${BASE}/users/${qq}/groups`)
 }
 
 export async function fetchGroups(params: {
@@ -118,16 +94,11 @@ export async function fetchGroups(params: {
   if (params.pageSize) query.pageSize = params.pageSize
   if (params.groupName) query.groupName = params.groupName
   if (params.isActive !== null && params.isActive !== undefined) query.isActive = params.isActive
-
-  const { data } = await http.get<ApiResponse<PaginatedResult<GroupItem>>>(`${BASE}/groups`, {
-    params: query,
-  })
-  return data.data
+  return get<PaginatedResult<GroupItem>>(`${BASE}/groups`, query)
 }
 
 export async function fetchGroup(groupId: number): Promise<GroupItem> {
-  const { data } = await http.get<ApiResponse<GroupItem>>(`${BASE}/groups/${groupId}`)
-  return data.data
+  return get<GroupItem>(`${BASE}/groups/${groupId}`)
 }
 
 export async function fetchGroupMembers(
@@ -146,43 +117,25 @@ export async function fetchGroupMembers(
   if (params.role) query.role = params.role
   if (params.nickname) query.nickname = params.nickname
   if (params.qq) query.qq = params.qq
-
-  const { data } = await http.get<ApiResponse<PaginatedResult<GroupMemberItem>>>(
-    `${BASE}/groups/${groupId}/members`,
-    { params: query },
-  )
-  return data.data
-}
-
-export async function resolvePersonnel(
-  userIds: number[],
-  groupIds: number[],
-): Promise<ResolveResult> {
-  const { data } = await http.post<ApiResponse<ResolveResult>>(`${BASE}/resolve`, {
-    userIds: userIds,
-    groupIds: groupIds,
-  })
-  return data.data
+  return get<PaginatedResult<GroupMemberItem>>(`${BASE}/groups/${groupId}/members`, query)
 }
 
 export async function triggerSync(): Promise<void> {
-  await http.post<ApiResponse<null>>(`${BASE}/sync`)
+  await post<null>(`${BASE}/sync`)
 }
 
 export async function fetchSyncStatus(): Promise<SyncStatus> {
-  const { data } = await http.get<ApiResponse<SyncStatus>>(`${BASE}/sync/status`)
-  return data.data
+  return get<SyncStatus>(`${BASE}/sync/status`)
 }
 
 export async function fetchAdmins(): Promise<UserItem[]> {
-  const { data } = await http.get<ApiResponse<UserItem[]>>(`${BASE}/admins`)
-  return data.data
+  return get<UserItem[]>(`${BASE}/admins`)
 }
 
 export async function addAdmin(qq: number): Promise<void> {
-  await http.post<ApiResponse<null>>(`${BASE}/admins/${qq}/add`)
+  await post<null>(`${BASE}/admins/${qq}`)
 }
 
 export async function removeAdmin(qq: number): Promise<void> {
-  await http.post<ApiResponse<null>>(`${BASE}/admins/${qq}/delete`)
+  await del<null>(`${BASE}/admins/${qq}`)
 }

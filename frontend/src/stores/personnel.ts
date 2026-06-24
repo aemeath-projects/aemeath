@@ -12,9 +12,15 @@ import type {
   GroupMemberItem,
   SyncStatus,
   PaginatedResult,
-  ResolvedUser,
-  ResolvedGroup,
 } from '@/apis/personnel'
+
+interface ResolvedUser {
+  nickname: string
+  relation: string
+}
+interface ResolvedGroup {
+  groupName: string
+}
 
 export const usePersonnelStore = defineStore('personnel', () => {
   /* 用户列表 */
@@ -193,21 +199,7 @@ export const usePersonnelStore = defineStore('personnel', () => {
     pendingGroupIds.clear()
 
     if (!userIds.length && !groupIds.length) return
-
-    try {
-      const result = await api.resolvePersonnel(userIds, groupIds)
-      for (const [k, v] of Object.entries(result.users)) {
-        userCache.value.set(Number(k), v)
-      }
-      for (const [k, v] of Object.entries(result.groups)) {
-        groupCache.value.set(Number(k), v)
-      }
-      // 统一触发响应式更新
-      triggerRef(userCache)
-      triggerRef(groupCache)
-    } catch {
-      // 静默失败，下次访问时重新尝试
-    }
+    // 后端暂无批量解析端点，缓存功能保留占位
   }
 
   function _scheduleFlush() {

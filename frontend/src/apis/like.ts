@@ -2,8 +2,8 @@
  * 点赞管理 API 接口层 —— 封装 /api/like 所有后端接口调用。
  */
 
-import http from './client'
-import type { ApiResponse, PaginatedResult } from './types'
+import { get, post } from './http'
+import type { PaginatedResult } from './types'
 
 /* 类型定义 */
 
@@ -44,20 +44,15 @@ export interface ListHistoryParams {
 const BASE = '/api/like'
 
 export async function listTasks(params: ListTasksParams = {}): Promise<PaginatedResult<LikeTask>> {
-  const { data } = await http.get<ApiResponse<PaginatedResult<LikeTask>>>(`${BASE}/tasks`, {
-    params,
-  })
-  return data.data
+  return get<PaginatedResult<LikeTask>>(`${BASE}/tasks`, params)
 }
 
 export async function createTask(qq: number): Promise<{ qq: number }> {
-  const { data } = await http.post<ApiResponse<{ qq: number }>>(`${BASE}/tasks`, { qq })
-  return data.data
+  return post<{ qq: number }>(`${BASE}/tasks`, { qq })
 }
 
 export async function cancelTask(qq: number): Promise<{ qq: number }> {
-  const { data } = await http.post<ApiResponse<{ qq: number }>>(`${BASE}/tasks/${qq}/cancel`)
-  return data.data
+  return post<{ qq: number }>(`${BASE}/tasks/${qq}/cancel`)
 }
 
 export async function listHistory(
@@ -70,9 +65,5 @@ export async function listHistory(
   if (params.dateTo) query.dateTo = params.dateTo
   if (params.page != null) query.page = params.page
   if (params.pageSize != null) query.pageSize = params.pageSize
-
-  const { data } = await http.get<ApiResponse<PaginatedResult<LikeHistory>>>(`${BASE}/history`, {
-    params: query,
-  })
-  return data.data
+  return get<PaginatedResult<LikeHistory>>(`${BASE}/history`, query)
 }

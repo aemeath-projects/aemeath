@@ -84,9 +84,9 @@ const plugin: FastifyPluginAsync = async (app) => {
     },
   )
 
-  // POST /api/accounts/:id/update
-  app.post<{ Params: IdParams; Body: UpdateBody }>(
-    '/accounts/:id/update',
+  // PUT /api/accounts/:id
+  app.put<{ Params: IdParams; Body: UpdateBody }>(
+    '/accounts/:id',
     { schema: { params: AccountIdParamsSchema, body: UpdateAccountBodySchema } },
     async (req, reply) => {
       const db = req.server.services.get('db')
@@ -98,9 +98,9 @@ const plugin: FastifyPluginAsync = async (app) => {
     },
   )
 
-  // POST /api/accounts/:id/remove
-  app.post<{ Params: IdParams }>(
-    '/accounts/:id/remove',
+  // DELETE /api/accounts/:id
+  app.delete<{ Params: IdParams }>(
+    '/accounts/:id',
     { schema: { params: AccountIdParamsSchema } },
     async (req, reply) => {
       const db = req.server.services.get('db')

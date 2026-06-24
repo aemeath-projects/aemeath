@@ -30,12 +30,11 @@ export interface ArchiveManifest {
  * 接收外部注入的 MinIO Client 实例（由 OSS Startup 统一管理）。
  */
 export class IrisS3 {
-  private readonly _log: PinoLogger = getLogger('IrisS3') as unknown as PinoLogger
+  private readonly _log: PinoLogger = getLogger('iris:s3') as unknown as PinoLogger
 
   constructor(
     private readonly client: MinioClient,
     readonly bucket: string,
-    readonly prefix: string,
   ) {}
 
   /**

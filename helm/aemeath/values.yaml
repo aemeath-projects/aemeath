@@ -149,8 +149,7 @@ secret:
   S3_ACCESS_KEY_ID: 'minioadmin'
   S3_SECRET_ACCESS_KEY: 'minioadmin'
   S3_REGION: us-east-1
-  S3_ARCHIVE_BUCKET: aemeath-chat-archive
-  S3_ARCHIVE_PREFIX: v1
+  S3_IRIS_BUCKET: aemeath-iris
 
 # 使用已存在的 Secret（优先级高于上方 secret 块）
 existingSecret: ''

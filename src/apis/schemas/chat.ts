@@ -97,7 +97,7 @@ export const MessageContextDataSchema = Type.Object({
   after: Type.Array(ChatMessageSchema, { description: '锚点之后的消息' }),
 })
 
-/** 归档日志 Schema —— 对应 ChatArchiveLog 模型。 */
+/** 归档日志 Schema —— 对应 ArchiveLog 模型。 */
 export const ArchiveLogSchema = Type.Object({
   id: Type.String({ description: '归档记录 UUID' }),
   partitionName: Type.String({ description: '分区名称' }),

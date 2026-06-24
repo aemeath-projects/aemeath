@@ -14,10 +14,13 @@ CREATE TYPE "feedback_status_enum" AS ENUM ('pending', 'done');
 CREATE TYPE "feedback_source_enum" AS ENUM ('group', 'private');
 
 -- CreateEnum
-CREATE TYPE "likesource" AS ENUM ('manual', 'scheduled');
+CREATE TYPE "like_source" AS ENUM ('manual', 'scheduled');
 
 -- CreateEnum
-CREATE TYPE "archive_status_enum" AS ENUM ('pending', 'exporting', 'uploading', 'uploaded', 'partition_dropped', 'completed', 'failed');
+CREATE TYPE "settings_entry_type" AS ENUM ('group', 'user');
+
+-- CreateEnum
+CREATE TYPE "settings_value_type" AS ENUM ('boolean', 'number', 'string', 'enum');
 
 -- CreateTable
 CREATE TABLE "users" (
@@ -145,7 +148,7 @@ CREATE TABLE "like_history" (
     "qq" BIGINT NOT NULL,
     "times" SMALLINT NOT NULL,
     "triggered_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "source" "likesource" NOT NULL,
+    "source" "like_source" NOT NULL,
     "success" BOOLEAN NOT NULL,
 
     CONSTRAINT "like_history_pkey" PRIMARY KEY ("id")
@@ -183,43 +186,30 @@ CREATE TABLE "drift_bottle_items" (
 );
 
 -- CreateTable
-CREATE TABLE "permission_group" (
-    "id" UUID NOT NULL,
-    "group_id" BIGINT NOT NULL,
-    "feature_name" VARCHAR(64) NOT NULL,
-    "enabled" BOOLEAN NOT NULL,
+CREATE TABLE "settings" (
+    "key" TEXT NOT NULL,
+    "type" "settings_entry_type" NOT NULL,
+    "scope" BIGINT NOT NULL,
+    "value" TEXT NOT NULL,
+    "value_type" "settings_value_type" NOT NULL,
 
-    CONSTRAINT "permission_group_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "settings_pkey" PRIMARY KEY ("key","type","scope")
 );
 
 -- CreateTable
-CREATE TABLE "permission_private" (
-    "id" UUID NOT NULL,
-    "feature_name" VARCHAR(64) NOT NULL,
-    "user_qq" BIGINT NOT NULL,
-    "enabled" BOOLEAN NOT NULL DEFAULT true,
+CREATE TABLE "accounts" (
+    "id" SERIAL NOT NULL,
+    "qq" BIGINT NOT NULL,
+    "nickname" TEXT,
+    "role" TEXT NOT NULL,
+    "transport" TEXT NOT NULL,
+    "endpoint" TEXT NOT NULL,
+    "token" TEXT,
+    "is_enabled" BOOLEAN NOT NULL DEFAULT true,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "permission_private_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "chat_archive_log" (
-    "id" UUID NOT NULL,
-    "partition_name" VARCHAR(64) NOT NULL,
-    "period_start" DATE NOT NULL,
-    "period_end" DATE NOT NULL,
-    "total_rows" BIGINT NOT NULL DEFAULT 0,
-    "original_bytes" BIGINT NOT NULL DEFAULT 0,
-    "compressed_bytes" BIGINT NOT NULL DEFAULT 0,
-    "s3_bucket" VARCHAR(128) NOT NULL DEFAULT '',
-    "s3_key" VARCHAR(512) NOT NULL DEFAULT '',
-    "s3_sha256" VARCHAR(64) NOT NULL DEFAULT '',
-    "status" "archive_status_enum" NOT NULL DEFAULT 'pending',
-    "error_message" TEXT,
-    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "completed_at" TIMESTAMPTZ,
-
-    CONSTRAINT "chat_archive_log_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "accounts_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -301,25 +291,7 @@ CREATE INDEX "ix_drift_bottle_items_pool_is_picked" ON "drift_bottle_items"("poo
 CREATE INDEX "drift_bottle_items_sender_id_idx" ON "drift_bottle_items"("sender_id");
 
 -- CreateIndex
-CREATE INDEX "permission_group_group_id_idx" ON "permission_group"("group_id");
-
--- CreateIndex
-CREATE UNIQUE INDEX "uq_group_feature" ON "permission_group"("group_id", "feature_name");
-
--- CreateIndex
-CREATE INDEX "ix_permission_private_feature_name" ON "permission_private"("feature_name");
-
--- CreateIndex
-CREATE UNIQUE INDEX "uq_private_feature_user" ON "permission_private"("feature_name", "user_qq");
-
--- CreateIndex
-CREATE UNIQUE INDEX "chat_archive_log_partition_name_key" ON "chat_archive_log"("partition_name");
-
--- CreateIndex
-CREATE INDEX "ix_archive_log_status" ON "chat_archive_log"("status");
-
--- CreateIndex
-CREATE INDEX "ix_archive_log_period" ON "chat_archive_log"("period_start");
+CREATE UNIQUE INDEX "accounts_qq_key" ON "accounts"("qq");
 
 -- AddForeignKey
 ALTER TABLE "group_memberships" ADD CONSTRAINT "group_memberships_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("qq") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -356,6 +328,3 @@ ALTER TABLE "drift_bottle_group_pools" ADD CONSTRAINT "drift_bottle_group_pools_
 
 -- AddForeignKey
 ALTER TABLE "drift_bottle_items" ADD CONSTRAINT "drift_bottle_items_pool_id_fkey" FOREIGN KEY ("pool_id") REFERENCES "drift_bottle_pools"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "permission_private" ADD CONSTRAINT "permission_private_user_qq_fkey" FOREIGN KEY ("user_qq") REFERENCES "users"("qq") ON DELETE CASCADE ON UPDATE CASCADE;

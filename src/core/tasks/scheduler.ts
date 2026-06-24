@@ -13,7 +13,7 @@ import type { AemeathConfig } from '../../../aemeath.config.js'
 
 import type { TaskDefinition, ScheduleConfig } from './types.js'
 
-const log: PinoLogger = getLogger('task_scheduler') as unknown as PinoLogger
+const log: PinoLogger = getLogger('tasks:scheduler') as unknown as PinoLogger
 
 let _taskDefinitions: TaskDefinition[] = []
 

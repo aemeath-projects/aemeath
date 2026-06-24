@@ -7,7 +7,7 @@ import type { Queue } from 'bullmq'
 
 import type { IrisArchiveService } from './archive.js'
 
-const log: PinoLogger = getLogger('IrisCounter') as unknown as PinoLogger
+const log: PinoLogger = getLogger('iris:counter') as unknown as PinoLogger
 
 export class IrisCounter {
   private count = 0

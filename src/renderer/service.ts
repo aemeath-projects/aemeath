@@ -55,7 +55,6 @@ export class RenderService {
 
   async initialize(): Promise<void> {
     this.fonts = await loadFonts()
-    log.info({ fontCount: this.fonts.length }, '渲染器字体加载完成')
   }
 
   register(name: string, template: TemplateFunction): void {

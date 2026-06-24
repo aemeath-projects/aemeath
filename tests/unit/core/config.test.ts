@@ -30,8 +30,7 @@ describe('loadConfig', () => {
     expect(config.LOG_LEVEL).toBe('info')
     expect(config.LOG_FORMAT).toBe('json')
     expect(config.S3_REGION).toBe('us-east-1')
-    expect(config.S3_ARCHIVE_BUCKET).toBe('aemeath-archive')
-    expect(config.S3_ARCHIVE_PREFIX).toBe('chat-archive')
+    expect(config.S3_IRIS_BUCKET).toBe('aemeath-iris')
     expect(config.FRONTEND_DIST_DIR).toBe('frontend/dist')
   })
 

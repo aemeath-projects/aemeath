@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@aemeath-projects/exostrider':
-        specifier: ^1.1.2
-        version: 1.1.2
+        specifier: ^1.1.4
+        version: 1.1.4
       '@aemeath-projects/napcat':
         specifier: ^1.2.0
         version: 1.2.0
@@ -292,8 +292,8 @@ importers:
 
 packages:
 
-  '@aemeath-projects/exostrider@1.1.2':
-    resolution: {integrity: sha512-V44ExUCF0Q/AGIKSvtue5IFtkdlZaqFf0s9nCWHi/207doa2LU2WjbdThUcZtb3eVyNz7QXa+d0a2RphW8UiVg==}
+  '@aemeath-projects/exostrider@1.1.4':
+    resolution: {integrity: sha512-l2CWUsCJHNABaWQ7L4pSpU5k+AL1LAM9vtwh0UtOteftKt9E8d3VGHknyKTa93+YJV0eZewxTiLvZsOBR9MqPw==}
     engines: {node: '>=24.17.0'}
 
   '@aemeath-projects/napcat@1.2.0':
@@ -5988,7 +5988,7 @@ packages:
 
 snapshots:
 
-  '@aemeath-projects/exostrider@1.1.2':
+  '@aemeath-projects/exostrider@1.1.4':
     dependencies:
       minimatch: 10.2.5
       pino: 10.3.1

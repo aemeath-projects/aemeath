@@ -14,7 +14,7 @@ import type { BotActionJobResult, RenderSendJobResult } from './models.js'
 
 import type { RedisStore } from '@/core/redis/index.js'
 
-const log: PinoLogger = getLogger('TaskExecutor') as unknown as PinoLogger
+const log: PinoLogger = getLogger('tasks:executor') as unknown as PinoLogger
 
 export class TaskExecutor {
   private readonly events: QueueEvents

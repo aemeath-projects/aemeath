@@ -10,10 +10,29 @@ datasource db {
 }
 
 // ═══════════════════════════════════════════════════
+//  Enums
+// ═══════════════════════════════════════════════════
+
+/// 聊天归档任务状态
+enum ArchiveStatus {
+  pending
+  exporting
+  uploading
+  uploaded
+  partition_dropped
+  completed
+  failed
+
+  @@map("archive_status_enum")
+}
+
+// ═══════════════════════════════════════════════════
 //  Models
 // ═══════════════════════════════════════════════════
 
 /// 聊天记录分区表 (PostgreSQL RANGE 分区，Prisma 仅定义逻辑父表)
+/// 父表位于 public schema，月度子分区位于 chat schema（chat.chat_history_YYYY_MM）。
+/// 分区管理由 chat.create_monthly_partition() 函数负责，不经过 Prisma 迁移。
 /// message_type 为 IntEnum: 1=private, 2=group, 3=self_sent (SmallInt 存储)
 model ChatMessage {
   id              BigInt   @default(autoincrement())
@@ -56,4 +75,26 @@ model ArchivedMessageIndex {
   @@index([groupId, createdAt])
   @@index([userId, createdAt])
   @@map("archived_message_index")
+}
+
+/// 聊天记录归档日志表
+model ArchiveLog {
+  id              String        @id @default(uuid()) @db.Uuid
+  partitionName   String        @unique @map("partition_name") @db.VarChar(64)
+  periodStart     DateTime      @map("period_start") @db.Date
+  periodEnd       DateTime      @map("period_end") @db.Date
+  totalRows       BigInt        @default(0) @map("total_rows")
+  originalBytes   BigInt        @default(0) @map("original_bytes")
+  compressedBytes BigInt        @default(0) @map("compressed_bytes")
+  s3Bucket        String        @default("") @map("s3_bucket") @db.VarChar(128)
+  s3Key           String        @default("") @map("s3_key") @db.VarChar(512)
+  s3Sha256        String        @default("") @map("s3_sha256") @db.VarChar(64)
+  status          ArchiveStatus @default(pending)
+  errorMessage    String?       @map("error_message") @db.Text
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  completedAt     DateTime?     @map("completed_at") @db.Timestamptz
+
+  @@index([status], map: "ix_archive_log_status")
+  @@index([periodStart], map: "ix_archive_log_period")
+  @@map("archive_log")
 }

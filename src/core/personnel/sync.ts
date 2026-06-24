@@ -49,7 +49,7 @@ export class SyncCoordinator {
   private readonly _intervalMs: number
   private readonly _initialDelayMs: number
   private readonly _apiDelayMs: number
-  private readonly _log: PinoLogger = getLogger('SyncCoordinator') as unknown as PinoLogger
+  private readonly _log: PinoLogger = getLogger('personnel:sync') as unknown as PinoLogger
 
   constructor(
     private readonly friendApi: FriendApi,

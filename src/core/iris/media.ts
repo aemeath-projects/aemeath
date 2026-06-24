@@ -10,7 +10,7 @@ import type { Client } from 'minio'
 import { uploadBuffer, objectExists } from '@/core/oss/index.js'
 import type { OssBundle, OssBuckets } from '@/core/oss/index.js'
 
-const log: PinoLogger = getLogger('media-storage') as unknown as PinoLogger
+const log: PinoLogger = getLogger('iris:media') as unknown as PinoLogger
 
 /** Content-Type 到文件扩展名映射。 */
 const MIME_EXT_MAP: Record<string, string> = {

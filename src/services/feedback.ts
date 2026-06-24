@@ -42,7 +42,7 @@ export interface ListFeedbacksParams {
  * 通过 Startup 生命周期注册，由 LifecycleOrchestrator 管理。
  */
 export class FeedbackService {
-  private readonly _log: PinoLogger = getLogger('FeedbackService') as unknown as PinoLogger
+  private readonly _log: PinoLogger = getLogger('feedback:service') as unknown as PinoLogger
 
   constructor(
     private readonly db: MainPrismaClient,

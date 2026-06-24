@@ -64,7 +64,7 @@ export interface MessageContext {
  * 通过 Startup / Shutdown 生命周期注册，由 LifecycleOrchestrator 管理。
  */
 export class IrisService {
-  private readonly _log: PinoLogger = getLogger('IrisService') as unknown as PinoLogger
+  private readonly _log: PinoLogger = getLogger('iris:service') as unknown as PinoLogger
 
   constructor(
     private readonly chatDb: IrisPrismaClient,

@@ -12,7 +12,7 @@ export interface OssConfig {
 
 /** OSS bucket 名称配置。 */
 export interface OssBuckets {
-  readonly archive: string
+  readonly iris: string
   readonly media: string
   readonly render: string
 }

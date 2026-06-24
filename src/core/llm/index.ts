@@ -67,7 +67,7 @@ export interface ChatOptions {
  */
 export class LLMService {
   private readonly client: LLMClient
-  private readonly _log: PinoLogger = getLogger('LLMService') as unknown as PinoLogger
+  private readonly _log: PinoLogger = getLogger('llm') as unknown as PinoLogger
 
   constructor(private readonly mainDb: MainPrismaClient) {
     this.client = new LLMClient()

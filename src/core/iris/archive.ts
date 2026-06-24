@@ -5,13 +5,13 @@
 import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 
-import type { ArchiveStatus } from '#prisma/main'
+import type { ArchiveStatus } from '#prisma/iris'
 
 import { IrisExporter, PARTITION_NAME_RE } from './exporter.js'
 import type { ArchiveExporterSettings } from './exporter.js'
 import { IrisS3 } from './s3.js'
 
-import type { IrisPrismaClient, MainPrismaClient } from '@/core/db/index.js'
+import type { IrisPrismaClient } from '@/core/db/index.js'
 
 /** 归档单个分区的执行结果。 */
 export interface PartitionArchiveResult {
@@ -41,11 +41,10 @@ export interface ArchiveJobData {
  */
 export class IrisArchiveService {
   private readonly exporter: IrisExporter
-  private readonly _log: PinoLogger = getLogger('IrisArchiveService') as unknown as PinoLogger
+  private readonly _log: PinoLogger = getLogger('iris:archive') as unknown as PinoLogger
 
   constructor(
     private readonly chatDb: IrisPrismaClient,
-    private readonly mainDb: MainPrismaClient,
     private readonly exporterSettings: ArchiveExporterSettings,
     private readonly s3: IrisS3,
     private readonly tmpDir: string,
@@ -56,6 +55,86 @@ export class IrisArchiveService {
   // ════════════════════════════════════════════
   //  分区管理
   // ════════════════════════════════════════════
+
+  /**
+   * 确保 iris 数据库的基础 schema 与工具函数存在。
+   *
+   * 幂等，可重复调用。新库首次启动时完成 chat schema 和
+   * create_monthly_partition 函数的创建；已存在则跳过。
+   */
+  async ensureSchema(): Promise<void> {
+    await this.chatDb.$executeRawUnsafe(`CREATE SCHEMA IF NOT EXISTS chat`)
+
+    // 若 chat_history 是普通表（Prisma 迁移所建），重建为 RANGE 分区父表
+    // relkind: 'r'=普通表  'p'=分区父表
+    await this.chatDb.$executeRawUnsafe(`
+      DO $do$
+      BEGIN
+        IF EXISTS (
+          SELECT 1 FROM pg_class c
+          JOIN pg_namespace n ON n.oid = c.relnamespace
+          WHERE c.relname = 'chat_history' AND n.nspname = 'public' AND c.relkind = 'r'
+        ) THEN
+          DROP TABLE public.chat_history CASCADE;
+
+          CREATE SEQUENCE IF NOT EXISTS public.chat_history_id_seq AS BIGINT;
+
+          CREATE TABLE public.chat_history (
+            id           BIGINT       NOT NULL DEFAULT nextval('public.chat_history_id_seq'),
+            created_at   TIMESTAMPTZ  NOT NULL,
+            message_id   BIGINT       NOT NULL,
+            message_type SMALLINT     NOT NULL,
+            group_id     BIGINT,
+            user_id      BIGINT       NOT NULL,
+            raw_message  TEXT         NOT NULL DEFAULT '',
+            segments     JSONB        NOT NULL DEFAULT '[]',
+            sender_nickname VARCHAR(64) NOT NULL DEFAULT '',
+            sender_card  VARCHAR(64),
+            sender_role  VARCHAR(10),
+            stored_at    TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT chat_history_pkey PRIMARY KEY (id, created_at)
+          ) PARTITION BY RANGE (created_at);
+
+          ALTER SEQUENCE public.chat_history_id_seq OWNED BY public.chat_history.id;
+
+          CREATE INDEX ix_chat_group_time  ON public.chat_history (group_id,     created_at DESC);
+          CREATE INDEX ix_chat_user_time   ON public.chat_history (user_id,      created_at DESC);
+          CREATE INDEX ix_chat_message_id  ON public.chat_history (message_id,   created_at DESC);
+          CREATE INDEX ix_chat_type_time   ON public.chat_history (message_type, created_at DESC);
+        END IF;
+      END
+      $do$
+    `)
+
+    await this.chatDb.$executeRawUnsafe(`
+      CREATE OR REPLACE FUNCTION chat.create_monthly_partition(target_date DATE)
+      RETURNS void
+      LANGUAGE plpgsql AS $fn$
+      DECLARE
+          v_name  TEXT;
+          v_start DATE;
+          v_end   DATE;
+      BEGIN
+          v_start := DATE_TRUNC('month', target_date)::DATE;
+          v_end   := (DATE_TRUNC('month', target_date) + INTERVAL '1 month')::DATE;
+          v_name  := 'chat_history_' || TO_CHAR(v_start, 'YYYY_MM');
+
+          IF NOT EXISTS (
+              SELECT 1
+              FROM   pg_class     c
+              JOIN   pg_namespace n ON n.oid = c.relnamespace
+              WHERE  c.relname = v_name AND n.nspname = 'chat'
+          ) THEN
+              EXECUTE FORMAT(
+                  'CREATE TABLE chat.%I PARTITION OF public.chat_history
+                   FOR VALUES FROM (%L) TO (%L)',
+                  v_name, v_start, v_end
+              );
+          END IF;
+      END;
+      $fn$
+    `)
+  }
 
   /**
    * 确保当月和下月的分区存在。
@@ -125,12 +204,12 @@ export class IrisArchiveService {
   }> {
     const skip = (page - 1) * pageSize
     const [rawItems, total] = await Promise.all([
-      this.mainDb.chatArchiveLog.findMany({
+      this.chatDb.archiveLog.findMany({
         orderBy: { periodStart: 'desc' },
         skip,
         take: pageSize,
       }),
-      this.mainDb.chatArchiveLog.count(),
+      this.chatDb.archiveLog.count(),
     ])
 
     // BigInt → Number 转换（JSON.stringify 不支持 BigInt）
@@ -154,7 +233,7 @@ export class IrisArchiveService {
    * 查询已完成的归档记录（按起始时间过滤）。
    */
   async listArchives(params: { periodStart: Date; limit?: number }): Promise<unknown[]> {
-    const rows = await this.mainDb.chatArchiveLog.findMany({
+    const rows = await this.chatDb.archiveLog.findMany({
       where: {
         periodStart: { gte: params.periodStart },
         status: 'completed',
@@ -219,7 +298,7 @@ export class IrisArchiveService {
     const archivable = rows.map((r) => r.partition_name)
     if (archivable.length === 0) return []
 
-    const existingLogs = await this.mainDb.chatArchiveLog.findMany({
+    const existingLogs = await this.chatDb.archiveLog.findMany({
       where: {
         partitionName: { in: archivable },
         status: 'completed',
@@ -243,7 +322,7 @@ export class IrisArchiveService {
     const periodStart = new Date(year, month - 1, 1)
     const periodEnd = month === 12 ? new Date(year + 1, 0, 1) : new Date(year, month, 1)
 
-    const archiveLog = await this.mainDb.chatArchiveLog.create({
+    const archiveLog = await this.chatDb.archiveLog.create({
       data: {
         partitionName,
         periodStart,
@@ -274,7 +353,7 @@ export class IrisArchiveService {
 
       const yearPadded = year.toString().padStart(4, '0')
       const monthPadded = month.toString().padStart(2, '0')
-      const s3Key = `${this.s3.prefix}/${yearPadded}/${monthPadded}/${partitionName}.parquet`
+      const s3Key = `${yearPadded}/${monthPadded}/${partitionName}.parquet`
 
       await this.s3.uploadFile(tmpPath, s3Key, {
         partition: partitionName,
@@ -298,7 +377,7 @@ export class IrisArchiveService {
 
       await this._updateArchiveStatus(archiveId, 'uploaded')
 
-      await this.mainDb.chatArchiveLog.update({
+      await this.chatDb.archiveLog.update({
         where: { id: archiveId },
         data: {
           totalRows: BigInt(totalRows),
@@ -317,7 +396,7 @@ export class IrisArchiveService {
 
       await this._updateArchiveStatus(archiveId, 'partition_dropped')
 
-      await this.mainDb.chatArchiveLog.update({
+      await this.chatDb.archiveLog.update({
         where: { id: archiveId },
         data: {
           status: 'completed',
@@ -346,7 +425,7 @@ export class IrisArchiveService {
     status: ArchiveStatus,
     errorMessage?: string,
   ): Promise<void> {
-    await this.mainDb.chatArchiveLog.update({
+    await this.chatDb.archiveLog.update({
       where: { id: archiveId },
       data: {
         status,

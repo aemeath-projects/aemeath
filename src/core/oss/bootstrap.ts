@@ -27,7 +27,7 @@ export class OssBootstrap {
       region: config.S3_REGION,
     })
     const buckets: OssBuckets = {
-      archive: config.S3_ARCHIVE_BUCKET,
+      iris: config.S3_IRIS_BUCKET,
       media: config.S3_MEDIA_BUCKET,
       render: config.S3_RENDER_BUCKET,
     }

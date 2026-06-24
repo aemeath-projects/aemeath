@@ -70,7 +70,7 @@ function filterContent(
   description: '最低权限等级',
 })
 class DriftBottleHandler {
-  private readonly _log: PinoLogger = getLogger('driftBottle') as unknown as PinoLogger
+  private readonly _log: PinoLogger = getLogger('drift-bottle') as unknown as PinoLogger
 
   @Inject('drift_bottle_service')
   private readonly driftBottleService!: DriftBottleService

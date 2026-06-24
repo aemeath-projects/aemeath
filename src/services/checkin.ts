@@ -96,7 +96,7 @@ interface CheckinCache {
  * 通过 Startup 生命周期注册，由 LifecycleOrchestrator 管理。
  */
 export class CheckinService {
-  private readonly _log: PinoLogger = getLogger('CheckinService') as unknown as PinoLogger
+  private readonly _log: PinoLogger = getLogger('checkin:service') as unknown as PinoLogger
 
   constructor(
     private readonly db: MainPrismaClient,

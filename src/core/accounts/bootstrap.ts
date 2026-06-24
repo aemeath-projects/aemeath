@@ -34,7 +34,7 @@ import { MessageRouter } from './router.js'
 
 import type { MainPrismaClient } from '@/core/db/index.js'
 
-const log: PinoLogger = getLogger('MultiAccountBootstrap') as unknown as PinoLogger
+const log: PinoLogger = getLogger('accounts') as unknown as PinoLogger
 
 export type AccountPool = ClientPool<NapCatClient, AccountRole, AnyOneBotEvent>
 

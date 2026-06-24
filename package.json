@@ -8,15 +8,15 @@
   "engines": {
     "node": ">=24.17.0"
   },
-  "packageManager": "pnpm@11.8.0",
+  "packageManager": "pnpm@11.9.0",
   "scripts": {
     "aemeath": "tsx scripts/cli/main.ts",
     "dev": "cross-env NODE_ENV=development LOG_FORMAT=console nodemon",
     "build": "tsup",
     "start": "cross-env NODE_ENV=production node dist/main.js",
     "worker": "cross-env NODE_ENV=production node dist/worker.js",
-    "dev:frontend": "pnpm --filter frontend dev",
-    "build:frontend": "pnpm --filter frontend build",
+    "dev:frontend": "pnpm --filter ./frontend dev",
+    "build:frontend": "pnpm --filter ./frontend build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --check \"src/**/*.ts\" \"scripts/**/*.ts\" \"frontend/src/**/*.{ts,vue}\"",
@@ -42,7 +42,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@aemeath-projects/exostrider": "^1.1.2",
+    "@aemeath-projects/exostrider": "^1.1.4",
     "@aemeath-projects/napcat": "^1.2.0",
     "@fastify/cors": "^11.2.0",
     "@fastify/static": "^9.1.3",

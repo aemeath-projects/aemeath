@@ -90,6 +90,8 @@ interface RouteEchoEntry extends EchoEntry {
 
 /* 模块级生命周期编排器（startup 创建，shutdown 复用同一实例） */
 let _orchestrator: LifecycleOrchestrator<AemeathServiceMap> | null = null
+/* 标记生命周期启动失败——LifecycleOrchestrator 已记录详细错误，bootstrap catch 无需重复打印 */
+let _startupFailed = false
 
 /* 注册核心领域 API 路由辅助函数 */
 
@@ -171,7 +173,13 @@ async function _startup(
 
   // 9. 生命周期编排器：按拓扑顺序启动所有业务模块（@Provide 服务写入 registry）
   _orchestrator = new LifecycleOrchestrator<AemeathServiceMap>(registry, { logger: appLogger })
-  await _orchestrator.startup([...serviceEntryRegistry.values()])
+  try {
+    await _orchestrator.startup([...serviceEntryRegistry.values()])
+  } catch (err) {
+    // LifecycleOrchestrator 已将错误记录至 lifecycle 模块，标记以避免 bootstrap catch 重复打印
+    _startupFailed = true
+    throw err
+  }
 
   // 10. 实例化所有 handler（注入依赖）
   handlerRegistry.instantiate((key) => {
@@ -412,6 +420,9 @@ async function bootstrap(): Promise<void> {
 /* 入口 */
 
 bootstrap().catch((err: unknown) => {
-  logger.error(`启动失败: ${String(err)}`)
+  // _startupFailed 为 true 时，LifecycleOrchestrator 已记录详细错误，此处仅退出
+  if (!_startupFailed) {
+    logger.error(`启动失败: ${String(err)}`)
+  }
   process.exit(1)
 })

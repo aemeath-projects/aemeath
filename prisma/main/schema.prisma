@@ -66,19 +66,6 @@ enum LikeSource {
   @@map("like_source")
 }
 
-/// 聊天归档任务状态
-enum ArchiveStatus {
-  pending
-  exporting
-  uploading
-  uploaded
-  partition_dropped
-  completed
-  failed
-
-  @@map("archive_status_enum")
-}
-
 // ═══════════════════════════════════════════════════
 //  Models
 // ═══════════════════════════════════════════════════
@@ -317,26 +304,34 @@ model DriftBottleItem {
 }
 
 
-/// 聊天记录归档日志表
-model ChatArchiveLog {
-  id             String        @id @default(uuid()) @db.Uuid
-  partitionName  String        @unique @map("partition_name") @db.VarChar(64)
-  periodStart    DateTime      @map("period_start") @db.Date
-  periodEnd      DateTime      @map("period_end") @db.Date
-  totalRows      BigInt        @default(0) @map("total_rows")
-  originalBytes  BigInt        @default(0) @map("original_bytes")
-  compressedBytes BigInt       @default(0) @map("compressed_bytes")
-  s3Bucket       String        @default("") @map("s3_bucket") @db.VarChar(128)
-  s3Key          String        @default("") @map("s3_key") @db.VarChar(512)
-  s3Sha256       String        @default("") @map("s3_sha256") @db.VarChar(64)
-  status         ArchiveStatus @default(pending)
-  errorMessage   String?       @map("error_message") @db.Text
-  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz
-  completedAt    DateTime?     @map("completed_at") @db.Timestamptz
+/// 配置条目类型（群聊/用户）
+enum SettingsEntryType {
+  group
+  user
 
-  @@index([status], map: "ix_archive_log_status")
-  @@index([periodStart], map: "ix_archive_log_period")
-  @@map("chat_archive_log")
+  @@map("settings_entry_type")
+}
+
+/// 配置值类型
+enum SettingsValueType {
+  boolean
+  number
+  string
+  enumValue @map("enum")
+
+  @@map("settings_value_type")
+}
+
+/// 动态配置覆盖表（群聊/用户级 key-value 存储）
+model Settings {
+  key       String            @db.Text
+  type      SettingsEntryType
+  scope     BigInt
+  value     String            @db.Text
+  valueType SettingsValueType @map("value_type")
+
+  @@id([key, type, scope])
+  @@map("settings")
 }
 
 /// 机器人账号表 —— 存储多个 NapCat 实例的连接配置。

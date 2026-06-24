@@ -14,7 +14,7 @@ import { IrisSearchService } from './search.js'
 import { IrisService } from './service.js'
 
 import { loadConfig } from '@/core/config.js'
-import type { IrisPrismaClient, MainPrismaClient } from '@/core/db/index.js'
+import type { IrisPrismaClient } from '@/core/db/index.js'
 import type { OssBundle, OssBuckets } from '@/core/oss/index.js'
 
 /* 生命周期注册 */
@@ -24,10 +24,6 @@ export class IrisBootstrap {
   /** 注入聊天数据库 */
   @Inject('iris_db')
   chatDb!: IrisPrismaClient
-
-  /** 注入主数据库 */
-  @Inject('db')
-  mainDb!: MainPrismaClient
 
   /** 注入 OSS 客户端与 bucket 配置 */
   @Inject('oss')
@@ -69,15 +65,16 @@ export class IrisBootstrap {
       batchSize: 5000,
       compression: 'zstd' as const,
     }
-    const irisS3 = new IrisS3(client, buckets.archive, config.S3_ARCHIVE_PREFIX)
+    const irisS3 = new IrisS3(client, buckets.iris)
     this.irisArchiveService = new IrisArchiveService(
       this.chatDb,
-      this.mainDb,
       exporterSettings,
       irisS3,
       config.TMPDIR,
     )
 
+    await this.irisArchiveService.ensureSchema()
+    await this.irisArchiveService.ensurePartitions()
     this.irisCounter = new IrisCounter(100_000, this.queue, this.irisArchiveService)
     await this.irisCounter.syncFromDb()
 

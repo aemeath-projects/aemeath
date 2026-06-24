@@ -52,7 +52,7 @@ export interface DailyCheckinResult {
  */
 export class DailyCheckinService {
   private _currentTask: Promise<void> | null = null
-  private readonly _log: PinoLogger = getLogger('DailyCheckinService') as unknown as PinoLogger
+  private readonly _log: PinoLogger = getLogger('daily-checkin') as unknown as PinoLogger
 
   constructor(
     private readonly db: MainPrismaClient,

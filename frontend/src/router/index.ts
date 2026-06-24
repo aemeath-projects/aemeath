@@ -266,17 +266,6 @@ const router = createRouter({
         panel: '系统',
       },
     },
-    {
-      path: '/bot',
-      name: 'bot-profile',
-      component: () => import('@/views/bot/BotView.vue'),
-      meta: {
-        title: 'Bot 信息',
-        icon: 'mdi-robot',
-        subtitle: '查看和管理 Bot 账号信息',
-        hideInMenu: true,
-      },
-    },
   ],
 })
 

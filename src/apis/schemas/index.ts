@@ -1,14 +1,6 @@
 /** API 请求/响应 Schema 统一导出。 */
 
 export {
-  BotProfileUpdateRequestSchema,
-  BotInfoDataSchema,
-  BotProfileDataSchema,
-  BotProfileUpdateDataSchema,
-  type BotProfileUpdateRequest,
-} from './bot.js'
-
-export {
   CheckinRecordResponseSchema,
   PaginatedCheckinsResponseSchema,
   LeaderEntryResponseSchema,

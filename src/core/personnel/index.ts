@@ -5,6 +5,20 @@
  * 增量事件处理已迁移至 PersonnelEventService（events.ts）。
  */
 
+import { Service, Inject, Provide, Startup, Shutdown } from '@aemeath-projects/exostrider/lifecycle'
+import type { FriendInfo, GroupInfo, GroupMember } from '@aemeath-projects/napcat/types'
+
+import { USER_RELATION_GLOB } from './cache.js'
+import { PersonnelQueryService } from './query.js'
+import { SyncCoordinator } from './sync.js'
+import type { ConnectionStatus } from './sync.js'
+
+import type { MasterApis, AccountPool } from '@/core/accounts/index.js'
+import type { MainPrismaClient } from '@/core/db/index.js'
+import type { RedisStore } from '@/core/redis/index.js'
+import { cacheKeyRegistry } from '@/core/registries.js'
+
+import './metrics.js'
 export { PersonnelQueryService } from './query.js'
 export type {
   PaginatedResult,
@@ -14,16 +28,6 @@ export type {
   UserGroupView,
   ResolveResult,
 } from './query.js'
-
-import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/lifecycle'
-import type { FriendInfo, GroupInfo, GroupMember } from '@aemeath-projects/napcat/types'
-
-import { USER_RELATION_GLOB } from './cache.js'
-import './metrics.js'
-
-import type { MainPrismaClient } from '@/core/db/index.js'
-import type { RedisStore } from '@/core/redis/index.js'
-import { cacheKeyRegistry } from '@/core/registries.js'
 
 /** 用户关系等级。 */
 export type UserRelation = 'stranger' | 'group_member' | 'friend' | 'admin'
@@ -493,6 +497,20 @@ export class PersonnelService {
 
 /* 生命周期注册 */
 
+@Service({ name: 'personnel_query_bootstrap' })
+export class PersonnelQueryBootstrap {
+  @Inject('db')
+  db!: MainPrismaClient
+
+  @Provide('personnelQueryService')
+  personnelQueryService!: PersonnelQueryService
+
+  @Startup
+  start(): void {
+    this.personnelQueryService = new PersonnelQueryService(this.db)
+  }
+}
+
 @Service({ name: 'personnel_bootstrap' })
 export class PersonnelBootstrap {
   /** 注入主数据库 */
@@ -510,5 +528,55 @@ export class PersonnelBootstrap {
   @Startup
   start(): void {
     this.personnelService = new PersonnelService(this.db, this.cache)
+  }
+}
+
+@Service({ name: 'sync_coordinator_bootstrap' })
+export class SyncCoordinatorBootstrap {
+  @Inject('master_apis')
+  masterApis!: MasterApis
+
+  @Inject('personnelService')
+  personnelService!: PersonnelService
+
+  @Inject('account_pool')
+  accountPool!: AccountPool
+
+  @Provide('syncCoordinator')
+  syncCoordinator!: SyncCoordinator
+
+  @Startup
+  start(): void {
+    const { friendApi, groupApi } = this.masterApis
+    const pool = this.accountPool
+    const connStatus: ConnectionStatus = {
+      get connected() {
+        return pool.getAvailableClients().length > 0
+      },
+    }
+
+    if (!friendApi || !groupApi) {
+      // 无主账号时，创建一个永不执行同步的占位协调器
+      this.syncCoordinator = new SyncCoordinator(
+        { getFriendList: async () => ({ ok: false, error: 'no master account' }) } as never,
+        { getGroupList: async () => ({ ok: false, error: 'no master account' }) } as never,
+        this.personnelService,
+        { connected: false },
+      )
+      return
+    }
+
+    this.syncCoordinator = new SyncCoordinator(
+      friendApi,
+      groupApi,
+      this.personnelService,
+      connStatus,
+    )
+    this.syncCoordinator.start()
+  }
+
+  @Shutdown
+  stop(): void {
+    this.syncCoordinator.stop()
   }
 }

@@ -10,12 +10,11 @@
         >
           <v-card-text class="d-flex align-center ga-4 pa-5">
             <v-avatar size="72" color="surface-variant">
-              <v-img v-if="botStore.avatarUrl" :src="botStore.avatarUrl" />
-              <v-icon v-else icon="mdi-robot" size="40" />
+              <v-icon icon="mdi-robot" size="40" />
             </v-avatar>
             <div class="flex-grow-1">
               <div class="d-flex align-center ga-2 mb-1">
-                <span class="text-h6 font-weight-bold">{{ botStore.nickname ?? '未连接' }}</span>
+                <span class="text-h6 font-weight-bold">Bot</span>
                 <v-chip
                   :color="botStore.online ? 'success' : 'default'"
                   size="x-small"
@@ -24,11 +23,8 @@
                   {{ botStore.online ? '在线' : '离线' }}
                 </v-chip>
               </div>
-              <div class="text-body-2 text-medium-emphasis">
-                {{ botStore.userId ? `QQ: ${botStore.userId}` : '—' }}
-              </div>
+              <div class="text-body-2 text-medium-emphasis">NapCat / OneBot 11</div>
             </div>
-            <v-btn variant="tonal" size="small" to="/bot" prepend-icon="mdi-pencil">管理</v-btn>
           </v-card-text>
         </v-card>
       </v-col>

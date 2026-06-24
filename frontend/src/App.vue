@@ -19,23 +19,16 @@
           ></v-btn>
         </template>
       </v-tooltip>
-      <v-tooltip text="Bot 信息" location="bottom">
+      <v-tooltip :text="botStore.online ? 'Bot 已连接' : 'Bot 未连接'" location="bottom">
         <template #activator="{ props }">
-          <v-btn icon class="ml-1" v-bind="props" @click="router.push({ name: 'bot-profile' })">
+          <v-btn icon class="ml-1" v-bind="props" :ripple="false" style="cursor: default">
             <v-badge
               class="status-badge"
               :color="botStore.online ? 'success' : 'grey-darken-1'"
               dot
               location="bottom end"
             >
-              <v-avatar size="32">
-                <v-img
-                  v-if="botStore.avatarUrl"
-                  :src="botStore.avatarUrl"
-                  :alt="botStore.nickname ?? 'Bot'"
-                ></v-img>
-                <v-icon v-else icon="mdi-robot"></v-icon>
-              </v-avatar>
+              <v-icon icon="mdi-robot"></v-icon>
             </v-badge>
           </v-btn>
         </template>
@@ -71,7 +64,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useTheme } from 'vuetify'
-import { useRouter } from 'vue-router'
 import { useThemeStore } from './stores/theme'
 import { useBotStore } from './stores/bot'
 import { usePersonnelStore } from './stores/personnel'
@@ -79,7 +71,6 @@ import type { ThemePreference } from './stores/theme'
 import Menu from './layouts/Menu.vue'
 
 const vuetifyTheme = useTheme()
-const router = useRouter()
 const themeStore = useThemeStore()
 const botStore = useBotStore()
 const personnelStore = usePersonnelStore()

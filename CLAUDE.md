@@ -52,6 +52,7 @@ pnpm dev:frontend
 ```bash
 pnpm aemeath        # 运行项目内置 CLI 工具（scripts/cli/main.ts）
 pnpm dev            # 开发模式（nodemon + tsx，文件变更自动重启）
+pnpm dev:worker     # Worker 开发模式（nodemon + tsx，文件变更自动重启）
 pnpm build          # TypeScript 编译到 dist/
 pnpm start          # 启动生产服务器（需先 build）
 pnpm worker         # 启动 BullMQ Worker 进程（独立消费队列任务）

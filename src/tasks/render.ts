@@ -19,10 +19,17 @@ import '@/renderer/cache-keys.js'
 
 const log: PinoLogger = getLogger('tasks:render') as unknown as PinoLogger
 
-// Worker 模块级单例（顶层 await，文件被 import 时执行）
-const renderService = new RenderService()
-await renderService.initialize()
-await loadTemplates()
+// 懒初始化：仅在 Worker 首次执行 render job 时加载字体，避免主进程 import 时触发
+let _renderService: RenderService | null = null
+
+async function getRenderer(): Promise<RenderService> {
+  if (_renderService !== null) return _renderService
+  const svc = new RenderService()
+  await svc.initialize()
+  await loadTemplates()
+  _renderService = svc
+  return _renderService
+}
 
 function computeHash(input: unknown): string {
   return createHash('sha256').update(JSON.stringify(input)).digest('hex').slice(0, 32)
@@ -72,6 +79,7 @@ export const taskDefinition: TaskDefinition = {
     // 2. 缓存未命中，执行渲染
     if (pngBuffer === null) {
       try {
+        const renderService = await getRenderer()
         pngBuffer = await renderService.render(template, data, { width, height })
       } catch (err) {
         if (err instanceof TemplateNotFoundError) {

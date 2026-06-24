@@ -73,9 +73,9 @@ interface QueueStateResult {
 }
 
 async function collectQueueState(app: FastifyInstance): Promise<QueueStateResult> {
-  // 定时任务（从 scheduler 服务获取）
+  // 定时任务（从 scheduler 服务获取，key 不存在时跳过）
   const scheduledTasks: unknown[] = []
-  const scheduler = app.services.get('scheduler') as SchedulerApi | undefined
+  const scheduler = app.services.getOptional('scheduler') as SchedulerApi | undefined
   if (scheduler !== undefined) {
     try {
       const schedules = await scheduler.getSchedules()
@@ -97,8 +97,11 @@ async function collectQueueState(app: FastifyInstance): Promise<QueueStateResult
     }
   }
 
-  // BullMQ 队列数据
-  const queues = app.services.get('queues') as Record<string, BullQueue> | undefined
+  // BullMQ 队列数据（从基础设施注册的单队列 'queue' 获取）
+  const rawQueue = app.services.getOptional('queue') as BullQueue | undefined
+  const queues: Record<string, BullQueue> | undefined = rawQueue
+    ? { 'aemeath-tasks': rawQueue }
+    : undefined
   const activeTasks: unknown[] = []
   const pendingTasks: unknown[] = []
   const seenWorkers = new Set<string>()

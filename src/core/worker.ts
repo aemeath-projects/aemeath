@@ -2,14 +2,13 @@
  * Aemeath BullMQ Worker 进程入口 —— 通过 EchoLoader 动态发现任务，按 job.name 路由。
  *
  * 启动方式：
- *   node dist/core/worker.js
- *   pnpm worker
+ *   pnpm dev:worker     # 开发模式（nodemon + tsx，文件变更自动重启）
+ *   pnpm worker         # 生产模式
  */
 
 import { resolve } from 'node:path'
 
 import { loadEchoConfig, EchoLoader } from '@aemeath-projects/exostrider/echo'
-import type { EchoEntry } from '@aemeath-projects/exostrider/echo'
 import { createLogger, setLogger, getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import { Worker } from 'bullmq'
@@ -22,11 +21,6 @@ import { createRedis, createBullMQConnection } from './redis/factory.js'
 import { RedisStore } from './redis/store.js'
 import { WorkerHeartbeatMiddleware } from './tasks/middleware.js'
 import type { TaskDefinition, MinimalSettingSchema } from './tasks/types.js'
-
-/** TaskEchoEntry —— task 类型的 echo 条目（含 taskDefinition 字段）。 */
-interface TaskEchoEntry extends EchoEntry {
-  taskDefinition: TaskDefinition
-}
 
 /** 本地 aemeath.config.ts 扩展了标准 EchoConfig，追加 app 级配置。 */
 interface AemeathAppConfig {
@@ -103,7 +97,11 @@ async function main(): Promise<void> {
   const schemaMap = new Map<string, MinimalSettingSchema>()
 
   for (const entry of taskEntries) {
-    const { taskDefinition: def } = entry as TaskEchoEntry
+    const def = (entry.module as { taskDefinition?: TaskDefinition }).taskDefinition
+    if (!def) {
+      log.warn(`跳过无效 task 模块: ${entry.path}（缺少 taskDefinition 导出）`)
+      continue
+    }
     processorMap.set(def.jobName, def)
     if (def.settings) {
       for (const [k, v] of Object.entries(def.settings)) {

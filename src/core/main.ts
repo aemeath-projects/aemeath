@@ -78,14 +78,14 @@ import '@/core/accounts/bootstrap.js'
 // 触发 SessionManagerBootstrap 的 Startup 注册
 import '@/core/session/bootstrap.js'
 
-/** TaskEchoEntry —— task 类型的 echo 条目（含 taskDefinition 字段）。 */
+/** TaskEchoEntry —— task 类型的 echo 条目，module 为包含 taskDefinition 命名导出的模块命名空间。 */
 interface TaskEchoEntry extends EchoEntry {
-  taskDefinition: TaskDefinition
+  module: { taskDefinition: TaskDefinition }
 }
 
-/** RouteEchoEntry —— route 类型的 echo 条目（含 plugin 字段）。 */
+/** RouteEchoEntry —— route 类型的 echo 条目，module 为以 default 导出 FastifyPluginAsync 的模块命名空间。 */
 interface RouteEchoEntry extends EchoEntry {
-  plugin: FastifyPluginAsync
+  module: { default: FastifyPluginAsync }
 }
 
 /* 模块级生命周期编排器（startup 创建，shutdown 复用同一实例） */
@@ -146,7 +146,7 @@ async function _startup(
 
   // 5. 将 task definitions 传给 scheduler
   const taskEntries = (await loader.discoverByType('task')) as unknown as TaskEchoEntry[]
-  setTaskDefinitions(taskEntries.map((e) => e.taskDefinition))
+  setTaskDefinitions(taskEntries.map((e) => e.module.taskDefinition))
 
   // 6. 预检所有 Redis 连接可达性（连接不可用时立即抛出，避免后续操作无声挂起）
   await checkRedisReachable(config.CACHE_REDIS_URL, 'Cache Redis')
@@ -345,7 +345,7 @@ async function bootstrap(): Promise<void> {
     const loader = new EchoLoader(echoConfig, baseDir)
     const routeEntries = await loader.discoverByType('route')
     for (const entry of routeEntries) {
-      await app.register((entry as unknown as RouteEchoEntry).plugin)
+      await app.register((entry as unknown as RouteEchoEntry).module.default)
     }
   }
 

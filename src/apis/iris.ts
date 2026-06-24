@@ -15,12 +15,10 @@ import {
   MessageContextQuerySchema,
   ArchiveListQuerySchema,
   ArchiveQuerySchema,
-  ArchiveTriggerBodySchema,
   MessageListDataSchema,
   MessageContextDataSchema,
   PaginatedArchivesDataSchema,
   ArchiveQueryDataSchema,
-  ArchiveTriggerDataSchema,
   IrisSearchQuerySchema,
   IrisTriggerArchiveBodySchema,
   IrisSearchDataSchema,
@@ -213,39 +211,6 @@ const irisRoutes: FastifyPluginAsync = async (app) => {
     },
   )
 
-  /** POST /api/iris/archives/trigger — 手动触发归档任务（发送 BullMQ job）。 */
-  app.post(
-    '/api/iris/archives/trigger',
-    {
-      schema: {
-        body: ArchiveTriggerBodySchema,
-        response: {
-          200: OkResponse(ArchiveTriggerDataSchema),
-          500: FailResponse(),
-          503: FailResponse(),
-        },
-      },
-    },
-    async (req: FastifyRequest<{ Body?: { partitionName?: string } }>, reply: FastifyReply) => {
-      const queues = app.services.get('queues') as Record<string, ArchiveQueue> | undefined
-
-      const archiveQueue = queues?.['iris-archive']
-      if (archiveQueue === undefined) {
-        await reply.status(503).send(fail('归档队列未就绪'))
-        return
-      }
-
-      const partitionName = req.body?.partitionName
-      try {
-        const job = await archiveQueue.add('iris_archive', { partitionName })
-        await reply.send(ok({ taskId: job.id ?? 'unknown' }, 'Archive task queued'))
-      } catch (err) {
-        log.error({ err }, '归档任务入队失败')
-        await reply.status(500).send(fail(`归档任务入队失败: ${String(err)}`))
-      }
-    },
-  )
-
   /** GET /api/iris/archives/query — 查询已完成的归档记录（按起始时间过滤）。 */
   app.get(
     '/api/iris/archives/query',
@@ -376,7 +341,10 @@ const irisRoutes: FastifyPluginAsync = async (app) => {
         },
       },
     },
-    async (req: FastifyRequest<{ Body?: { reason?: string } }>, reply: FastifyReply) => {
+    async (
+      req: FastifyRequest<{ Body?: { partitionName?: string; reason?: string } }>,
+      reply: FastifyReply,
+    ) => {
       const queue = app.services.getOptional('queue') as ArchiveQueue | undefined
 
       if (!queue) {
@@ -387,6 +355,7 @@ const irisRoutes: FastifyPluginAsync = async (app) => {
       try {
         const job = await queue.add('iris_archive', {
           trigger: 'manual',
+          partitionName: req.body?.partitionName,
           reason: req.body?.reason,
         })
         await reply.send(ok({ taskId: job.id ?? 'unknown' }, 'Archive task queued'))

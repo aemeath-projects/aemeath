@@ -25,6 +25,7 @@ export const IrisSearchQuerySchema = Type.Object({
 
 /** 手动触发归档任务请求体 —— POST /api/iris/archives/trigger */
 export const IrisTriggerArchiveBodySchema = Type.Object({
+  partitionName: Type.Optional(Type.String({ description: '指定分区名称，不传则自动归档' })),
   reason: Type.Optional(Type.String({ description: '手动触发原因（仅日志记录）' })),
 })
 

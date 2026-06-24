@@ -21,7 +21,7 @@ export class MetricRegistry {
     return new Histogram({
       name,
       help,
-      buckets: opts?.buckets,
+      ...(opts?.buckets ? { buckets: opts.buckets } : {}),
       labelNames: opts?.labelNames ?? [],
       registers: [this._registry],
     })

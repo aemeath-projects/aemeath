@@ -10,7 +10,7 @@ import type { Redis } from 'ioredis'
 
 import type {
   MasterApis,
-  GroupMembershipTracker,
+  GroupBotRegistry,
   AccountRole,
   MessageRouter,
 } from '@/core/accounts/index.js'
@@ -37,7 +37,7 @@ export interface AemeathServiceMap {
   // ── 多账号 ──
   account_pool: ClientPool<NapCatClient, AccountRole, AnyOneBotEvent>
   message_router: MessageRouter
-  membership_tracker: GroupMembershipTracker
+  group_bot_registry: GroupBotRegistry
   master_apis: MasterApis
 
   // ── Iris 领域 ──

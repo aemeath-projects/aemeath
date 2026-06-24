@@ -21,7 +21,7 @@ export interface InfraState {
   readonly cacheStore: RedisStore
   readonly persistentStore: RedisStore
   readonly dispatcher: EventDispatcher<AnyOneBotEvent, ContextApis>
-  readonly taskExecutor: TaskExecutor
+  readonly taskExecutor: TaskExecutor | null
   readonly queue: { close(): Promise<void> }
 }
 

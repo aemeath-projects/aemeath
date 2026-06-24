@@ -9,7 +9,7 @@ import { MessageApi } from '@aemeath-projects/napcat'
 import type { NapCatClient, Result } from '@aemeath-projects/napcat'
 import type { MessageSegment, AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 
-import type { GroupMembershipTracker } from './membership.js'
+import type { GroupBotRegistry } from './group-bot-registry.js'
 import type { AccountRole } from './roles.js'
 
 import { AppError } from '@/core/errors.js'
@@ -18,7 +18,7 @@ export class MessageRouter {
   constructor(
     private readonly pool: ClientPool<NapCatClient, AccountRole, AnyOneBotEvent>,
     private readonly routingTable: RoutingTable<bigint>,
-    private readonly membershipTracker: GroupMembershipTracker,
+    private readonly membershipTracker: GroupBotRegistry,
   ) {}
 
   /** 常规群消息发送 —— 走路由策略（sticky + 优先级）。 */

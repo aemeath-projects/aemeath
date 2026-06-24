@@ -21,10 +21,13 @@ import { ClientPool, RoutingTable, PriorityStickyStrategy } from '@aemeath-proje
 import type { NapCatClient } from '@aemeath-projects/napcat'
 import { MessageApi, GroupApi, FriendApi } from '@aemeath-projects/napcat'
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
+import pLimit from 'p-limit'
+import type { LimitFunction } from 'p-limit'
 
 import { NapCatClientAdapter } from './adapter.js'
 import { OneBotDedupKeyExtractor } from './dedup.js'
-import { GroupMembershipTracker } from './membership.js'
+import { GroupBotRegistry } from './group-bot-registry.js'
+import type { GroupBotRole } from './group-bot-registry.js'
 import { getRolesForMode } from './roles.js'
 import type { AccountRole } from './roles.js'
 import { MessageRouter } from './router.js'
@@ -35,11 +38,11 @@ const log: PinoLogger = getLogger('MultiAccountBootstrap') as unknown as PinoLog
 
 export type AccountPool = ClientPool<NapCatClient, AccountRole, AnyOneBotEvent>
 
-/** 主账号 API bundle —— 供需要特定账号操作的 service 注入。 */
+/** 主账号 API bundle —— 供需要特定账号操作的 service 注入。无主账号时各字段为 null。 */
 export interface MasterApis {
-  msgApi: MessageApi
-  groupApi: GroupApi
-  friendApi: FriendApi
+  msgApi: MessageApi | null
+  groupApi: GroupApi | null
+  friendApi: FriendApi | null
 }
 
 @Service({ name: 'multi_account_bootstrap' })
@@ -53,8 +56,8 @@ export class MultiAccountBootstrap {
   @Provide('message_router')
   router!: MessageRouter
 
-  @Provide('membership_tracker')
-  tracker!: GroupMembershipTracker
+  @Provide('group_bot_registry')
+  registry!: GroupBotRegistry
 
   @Provide('master_apis')
   masterApis!: MasterApis
@@ -82,31 +85,66 @@ export class MultiAccountBootstrap {
     })
 
     // 3. 注册所有账号，addClient 会自动调用 adapter.wireToPool 完成事件绑定
+    const adaptersList: NapCatClientAdapter[] = [] // 保存引用，步骤 5 后绑定 notice 事件
     for (const account of accounts) {
       const adapter = new NapCatClientAdapter(account)
+      adaptersList.push(adapter)
       this.pool.addClient(adapter, account.role as AccountRole)
     }
 
     // 4. 并行连接（重连由 napcat SDK WebSocketTransport 管理）
     await this.pool.connectAll()
 
-    // 5. 初始化群关系追踪
-    this.tracker = new GroupMembershipTracker()
+    // 5. 初始化 GroupBotRegistry 并同步各账号在群内的 role
+    this.registry = new GroupBotRegistry()
+    const limitOuter = pLimit(3) // 外层：同时处理 3 个账号
+    const limitInner = pLimit(10) // 内层：每个账号的群成员查询并发不超过 10
+
     const available = this.pool.getAvailableClients()
     await Promise.all(
-      available.map(async (adapter) => {
-        const napCatAdapter = adapter as NapCatClientAdapter
-        const groupApi = new GroupApi(napCatAdapter.client)
-        await this.tracker.syncFromClient(napCatAdapter, groupApi)
-      }),
+      available.map((adapter) =>
+        limitOuter(async () => {
+          const napCatAdapter = adapter as NapCatClientAdapter
+          await this._syncClientGroupRoles(napCatAdapter, limitInner)
+        }),
+      ),
     )
+
+    // 增量更新 GroupBotRegistry：在 dedup 之前监听各账号的原始 notice 事件
+    const botQqs = new Set(accounts.map((a) => Number(a.qq))) // Set<number>
+
+    for (const adapter of adaptersList) {
+      adapter.client.on('notice', (event) => {
+        const noticeType = (event as { noticeType?: string }).noticeType
+        const subType = (event as { subType?: string }).subType
+        const groupId = (event as { groupId?: number | bigint }).groupId
+        const userId = (event as { userId?: number }).userId
+
+        if (noticeType === 'group_admin' && groupId != null && userId != null) {
+          if (!botQqs.has(userId)) return
+          const role: GroupBotRole = subType === 'set' ? 'admin' : 'member'
+          this.registry.setRole(BigInt(groupId), adapter.id, role)
+        }
+
+        if (noticeType === 'group_decrease' && groupId != null) {
+          if (subType === 'kick_me' || subType === 'leave') {
+            this.registry.removeClient(BigInt(groupId), adapter.id)
+          }
+        }
+
+        if (noticeType === 'group_increase' && groupId != null && userId != null) {
+          if (!botQqs.has(userId)) return
+          this.registry.setRole(BigInt(groupId), adapter.id, 'member')
+        }
+      })
+    }
 
     // 6. 创建路由表和消息路由器
     this._routingTable = new RoutingTable<bigint>({
       strategy: new PriorityStickyStrategy(),
       keySerializer: (groupId) => String(groupId),
     })
-    this.router = new MessageRouter(this.pool, this._routingTable, this.tracker)
+    this.router = new MessageRouter(this.pool, this._routingTable, this.registry)
 
     // 7. 构建主账号 API bundle
     const masterAdapters = this.pool.getClientsByRole('master')
@@ -120,9 +158,9 @@ export class MultiAccountBootstrap {
     } else {
       log.warn('MultiAccountBootstrap: 未找到主账号，master_apis 将不可用')
       this.masterApis = {
-        msgApi: null as unknown as MessageApi,
-        groupApi: null as unknown as GroupApi,
-        friendApi: null as unknown as FriendApi,
+        msgApi: null,
+        groupApi: null,
+        friendApi: null,
       }
     }
 
@@ -133,17 +171,45 @@ export class MultiAccountBootstrap {
         log.warn(`账号 ${clientId} 下线，已清除路由映射`)
       }
       if (to === 'connected') {
-        const adapter = this.pool.getClient(clientId) as NapCatClientAdapter | undefined
-        if (adapter) {
-          const groupApi = new GroupApi(adapter.client)
-          void this.tracker.syncFromClient(adapter, groupApi)
-        }
+        void (async () => {
+          const adapter = this.pool.getClient(clientId) as NapCatClientAdapter | undefined
+          if (adapter) {
+            const limit2 = pLimit(10)
+            await this._syncClientGroupRoles(adapter, limit2)
+          }
+        })().catch((err: unknown) => {
+          log.error({ err }, `账号 ${clientId} 重连后同步群角色失败`)
+        })
       }
     })
 
     // 9. 启动健康检测
     this.pool.startHealthCheck(appConfig.routing?.healthCheckIntervalMs ?? 30_000)
     log.info('MultiAccountBootstrap: 多账号系统启动完成')
+  }
+
+  /** 同步指定 bot 账号在各群内的角色至 GroupBotRegistry。 */
+  private async _syncClientGroupRoles(
+    adapter: NapCatClientAdapter,
+    limit: LimitFunction,
+  ): Promise<void> {
+    const groupApi = new GroupApi(adapter.client)
+    const listResult = await groupApi.getGroupList()
+    if (!listResult.ok) return
+
+    await Promise.all(
+      listResult.data.map((group) =>
+        limit(async () => {
+          const memberInfoResult = await groupApi.getGroupMemberInfo(
+            group.groupId,
+            Number(adapter.qq), // 使用 .qq（bigint），不能用 .id（"bot-xxx" 字符串）
+          )
+          if (!memberInfoResult.ok) return
+          const role = memberInfoResult.data.role
+          this.registry.setRole(BigInt(group.groupId), adapter.id, role)
+        }),
+      ),
+    )
   }
 
   @Shutdown

@@ -32,6 +32,7 @@ import { createMainDb, createIrisDb } from './db/index.js'
 import { oneBotContextConfig } from './dispatch/index.js'
 import type { ContextApis, OneBotContext, FeatureChecker } from './dispatch/index.js'
 import {
+  CapabilityInterceptor,
   FeatureCheckInterceptor,
   IrisInterceptor,
   LoggingInterceptor,
@@ -182,6 +183,11 @@ async function _startup(
   })
 
   // 11. 构建 mapping 和 Dispatcher
+  // 提前获取 pool（供 CapabilityInterceptor 使用）
+  const pool = registry.get('account_pool')
+  const groupBotRegistry = registry.get('group_bot_registry')
+  const capabilityInterceptor = new CapabilityInterceptor(groupBotRegistry, pool)
+
   const featureCheckInterceptor = new FeatureCheckInterceptor()
   const loggingInterceptor = new LoggingInterceptor()
   const sessionInterceptor = new SessionInterceptor()
@@ -200,6 +206,7 @@ async function _startup(
       irisInterceptor, // 最高优先级，第一个
       featureCheckInterceptor,
       loggingInterceptor,
+      capabilityInterceptor, // logging 之后，session 之前
       sessionInterceptor,
     ],
     contextConfig: oneBotContextConfig,
@@ -221,7 +228,6 @@ async function _startup(
   }
 
   // 14. 从 registry 获取多账号服务实例，接入事件管道
-  const pool = registry.get('account_pool')
   const router = registry.get('message_router')
   pool.on('event', (aggregated) => {
     void dispatcher.dispatch(aggregated.event, buildContextApis(aggregated, router, pool))
@@ -229,17 +235,22 @@ async function _startup(
 
   // 15. 启动 TaskExecutor（监听 job completed 事件）
   const masterApis = registry.get('master_apis')
-  const taskExecutor = new TaskExecutor(
-    masterApis.msgApi,
-    masterApis.friendApi,
-    masterApis.groupApi,
-    pool,
-    cacheStore,
-    bullConn,
-    queueName,
-    config.TASK_SEND_DELAY_MS,
-  )
-  taskExecutor.start()
+  let taskExecutor: TaskExecutor | null = null
+  if (!masterApis.msgApi || !masterApis.friendApi || !masterApis.groupApi) {
+    app.log.warn('未找到主账号，TaskExecutor 不启动')
+  } else {
+    taskExecutor = new TaskExecutor(
+      masterApis.msgApi,
+      masterApis.friendApi,
+      masterApis.groupApi,
+      pool,
+      cacheStore,
+      bullConn,
+      queueName,
+      config.TASK_SEND_DELAY_MS,
+    )
+    taskExecutor.start()
+  }
 
   // 16. 通过 Fastify decorate 暴露服务（路由层访问入口）
   app.decorate('services', registry)
@@ -268,8 +279,8 @@ async function _shutdown(app: FastifyInstance): Promise<void> {
 
   const { taskExecutor, mainDb, irisDb, cacheRedis, persistentRedis, queue } = app.infra
 
-  // 停止 TaskExecutor
-  await taskExecutor.close()
+  // 停止 TaskExecutor（无主账号时为 null）
+  await taskExecutor?.close()
 
   // 关闭业务模块（@Shutdown 按启动逆序，复用 startup 时创建的同一编排器实例）
   try {

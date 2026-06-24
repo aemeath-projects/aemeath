@@ -1,6 +1,7 @@
 export { NapCatClientAdapter } from './adapter.js'
 export { OneBotDedupKeyExtractor } from './dedup.js'
-export { GroupMembershipTracker } from './membership.js'
+export { GroupBotRegistry } from './group-bot-registry.js'
+export type { GroupBotRole } from './group-bot-registry.js'
 export { MessageRouter } from './router.js'
 export { buildContextApis } from './context-apis.js'
 export { MultiAccountBootstrap } from './bootstrap.js'

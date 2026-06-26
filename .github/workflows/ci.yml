@@ -200,7 +200,7 @@ jobs:
 
   github-release:
     name: Create GitHub Release
-    needs: [docker, helm]
+    needs: [backend, frontend]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
@@ -214,22 +214,7 @@ jobs:
         id: changelog
         env:
           VERSION_TAG: ${{ github.ref_name }}
-        run: |
-          NOTES_FILE="/tmp/release_notes.txt"
-          if [ -f "CHANGELOG.md" ]; then
-            # 提取对应版本段落：从 "## vX.Y.Z" 行开始，到下一个 "## " 或文件末尾
-            awk "/^## ${VERSION_TAG}[[:space:]]*/,/^## [^${VERSION_TAG}]/" CHANGELOG.md \
-              | tail -n +2 \
-              | sed '/^## /d' \
-              | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' \
-              > "$NOTES_FILE"
-            if [ ! -s "$NOTES_FILE" ]; then
-              echo "未在 CHANGELOG.md 中找到 ${VERSION_TAG} 的条目" > "$NOTES_FILE"
-            fi
-          else
-            echo "未找到 CHANGELOG.md" > "$NOTES_FILE"
-          fi
-          echo "notes_file=${NOTES_FILE}" >> "$GITHUB_OUTPUT"
+        run: bash scripts/release/extract-changelog.sh
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3

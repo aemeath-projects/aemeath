@@ -1,8 +1,8 @@
-// Texas — 聊天库 Prisma Schema
+// 聊天库 Prisma Schema
 
 generator client {
-  provider        = "prisma-client-js"
-  output          = "./generated"
+  provider = "prisma-client-js"
+  output   = "./generated"
 }
 
 datasource db {
@@ -35,22 +35,22 @@ enum ArchiveStatus {
 /// 分区管理由 chat.create_monthly_partition() 函数负责，不经过 Prisma 迁移。
 /// message_type 为 IntEnum: 1=private, 2=group, 3=self_sent (SmallInt 存储)
 model ChatMessage {
-  id              BigInt   @default(autoincrement())
-  createdAt       DateTime @map("created_at") @db.Timestamptz
+  id        BigInt   @default(autoincrement())
+  createdAt DateTime @map("created_at") @db.Timestamptz
 
-  messageId       BigInt   @map("message_id")
-  messageType     Int      @map("message_type") @db.SmallInt
-  groupId         BigInt?  @map("group_id")
-  userId          BigInt   @map("user_id")
+  messageId   BigInt  @map("message_id")
+  messageType Int     @map("message_type") @db.SmallInt
+  groupId     BigInt? @map("group_id")
+  userId      BigInt  @map("user_id")
 
-  rawMessage      String   @default("") @map("raw_message") @db.Text
-  segments        Json     @db.JsonB
+  rawMessage String @default("") @map("raw_message") @db.Text
+  segments   Json   @db.JsonB
 
-  senderNickname  String   @default("") @map("sender_nickname") @db.VarChar(64)
-  senderCard      String?  @map("sender_card") @db.VarChar(64)
-  senderRole      String?  @map("sender_role") @db.VarChar(10)
+  senderNickname String  @default("") @map("sender_nickname") @db.VarChar(64)
+  senderCard     String? @map("sender_card") @db.VarChar(64)
+  senderRole     String? @map("sender_role") @db.VarChar(10)
 
-  storedAt        DateTime @default(now()) @map("stored_at") @db.Timestamptz
+  storedAt DateTime @default(now()) @map("stored_at") @db.Timestamptz
 
   // 分区表复合主键 (id + created_at)
   @@id([id, createdAt])
@@ -63,7 +63,7 @@ model ChatMessage {
 
 /// 归档消息元数据索引 —— 搜索定位用，完整数据在 S3 Parquet 中。
 model ArchivedMessageIndex {
-  id             BigInt   @id                   // 来自原始消息的 id，非自增
+  id             BigInt   @id // 来自原始消息的 id，非自增
   messageId      BigInt   @map("message_id")
   groupId        BigInt?  @map("group_id")
   userId         BigInt   @map("user_id")

@@ -11,7 +11,6 @@ import {
   connectAccount,
   disconnectAccount,
   getRoutingTable,
-  setRoutingPriorityMode,
   type Account,
   type AccountStatus,
   type CreateAccountDto,
@@ -120,10 +119,6 @@ async function onDeleteExecute() {
   await deleteAccount(deleteTargetId.value)
   deleteDialog.value = false
   await load()
-}
-
-async function onPriorityModeChange(mode: string) {
-  await setRoutingPriorityMode(mode)
 }
 
 function resetForm() {

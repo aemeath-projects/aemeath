@@ -59,6 +59,16 @@ export default defineConfigWithVueTs(
   },
 
   {
+    name: 'app/no-unused-vars',
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+      }],
+    },
+  },
+
+  {
     name: 'app/tests-overrides',
     files: ['tests/**/*.{ts,vue}'],
     rules: {

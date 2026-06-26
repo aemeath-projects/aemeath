@@ -1,8 +1,8 @@
-// Texas — 主库 Prisma Schema
+// 主库 Prisma Schema
 
 generator client {
-  provider        = "prisma-client-js"
-  output          = "./generated"
+  provider = "prisma-client-js"
+  output   = "./generated"
 }
 
 datasource db {
@@ -78,12 +78,15 @@ model User {
 
   lastSynced DateTime @default(now()) @map("last_synced") @db.Timestamptz
 
-  /* Relations */
-  memberships              GroupMembership[]
-  feedbacks                Feedback[]           @relation("FeedbackUser")
-  checkin_records          CheckinRecord[]      @relation("CheckinUser")
-  jrlp_as_user             WifeRecord[]         @relation("JrlpUser")
-  jrlp_as_wife             WifeRecord[]         @relation("JrlpWife")
+  /**
+   * Relations
+   */
+  memberships     GroupMembership[]
+  feedbacks       Feedback[]        @relation("FeedbackUser")
+  checkin_records CheckinRecord[]   @relation("CheckinUser")
+  jrlp_as_user    WifeRecord[]      @relation("JrlpUser")
+  jrlp_as_wife    WifeRecord[]      @relation("JrlpWife")
+
   @@map("users")
 }
 
@@ -98,11 +101,13 @@ model Group {
 
   lastSynced DateTime @default(now()) @map("last_synced") @db.Timestamptz
 
-  /* Relations */
-  memberships    GroupMembership[]
-  feedbacks      Feedback[]      @relation("FeedbackGroup")
-  checkin_records CheckinRecord[] @relation("CheckinGroup")
-  jrlp_records    WifeRecord[]    @relation("JrlpGroup")
+  /**
+   * Relations
+   */
+  memberships     GroupMembership[]
+  feedbacks       Feedback[]        @relation("FeedbackGroup")
+  checkin_records CheckinRecord[]   @relation("CheckinGroup")
+  jrlp_records    WifeRecord[]      @relation("JrlpGroup")
 
   @@index([isActive])
   @@map("groups")
@@ -110,19 +115,21 @@ model Group {
 
 /// 群聊成员关系表
 model GroupMembership {
-  id              String   @id @default(uuid()) @db.Uuid
-  userId          BigInt   @map("user_id")
-  groupId         BigInt   @map("group_id")
-  card            String   @default("") @db.VarChar(64)
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          BigInt    @map("user_id")
+  groupId         BigInt    @map("group_id")
+  card            String    @default("") @db.VarChar(64)
   role            GroupRole @default(member)
-  joinTime        BigInt   @default(0) @map("join_time")
-  lastActiveTime  BigInt   @default(0) @map("last_active_time")
-  title           String   @default("") @db.VarChar(64)
-  titleExpireTime BigInt   @default(0) @map("title_expire_time")
-  level           String   @default("") @db.VarChar(10)
-  isActive        Boolean  @default(true) @map("is_active")
+  joinTime        BigInt    @default(0) @map("join_time")
+  lastActiveTime  BigInt    @default(0) @map("last_active_time")
+  title           String    @default("") @db.VarChar(64)
+  titleExpireTime BigInt    @default(0) @map("title_expire_time")
+  level           String    @default("") @db.VarChar(10)
+  isActive        Boolean   @default(true) @map("is_active")
 
-  /* Relations */
+  /**
+   * Relations
+   */
   user  User  @relation(fields: [userId], references: [qq])
   group Group @relation(fields: [groupId], references: [groupId])
 
@@ -143,7 +150,9 @@ model LlmProvider {
   timeout       Int    @default(60)
   retryInterval Int    @default(1) @map("retry_interval")
 
-  /* Relations */
+  /**
+   * Relations
+   */
   models LlmModel[]
 
   @@map("llm_providers")
@@ -163,7 +172,9 @@ model LlmModel {
   extraParams Json    @default("{}") @map("extra_params") @db.JsonB
   isEnabled   Boolean @default(true) @map("is_enabled")
 
-  /* Relations */
+  /**
+   * Relations
+   */
   provider LlmProvider @relation(fields: [providerId], references: [id])
 
   @@unique([providerId, modelName], map: "uq_provider_model")
@@ -173,19 +184,21 @@ model LlmModel {
 
 /// 用户反馈表
 model Feedback {
-  id           String          @id @default(uuid()) @db.Uuid
-  userId       BigInt          @map("user_id")
-  feedbackType FeedbackType?   @map("feedback_type")
-  content      String          @db.Text
-  status       FeedbackStatus  @default(pending)
-  adminReply   String?         @map("admin_reply") @db.Text
+  id           String         @id @default(uuid()) @db.Uuid
+  userId       BigInt         @map("user_id")
+  feedbackType FeedbackType?  @map("feedback_type")
+  content      String         @db.Text
+  status       FeedbackStatus @default(pending)
+  adminReply   String?        @map("admin_reply") @db.Text
   source       FeedbackSource
-  groupId      BigInt?         @map("group_id")
-  createdAt    DateTime        @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt    DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
-  processedAt  DateTime?       @map("processed_at") @db.Timestamptz
+  groupId      BigInt?        @map("group_id")
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  processedAt  DateTime?      @map("processed_at") @db.Timestamptz
 
-  /* Relations */
+  /**
+   * Relations
+   */
   user  User   @relation("FeedbackUser", fields: [userId], references: [qq], onDelete: Cascade)
   group Group? @relation("FeedbackGroup", fields: [groupId], references: [groupId], onDelete: SetNull)
 
@@ -204,7 +217,9 @@ model CheckinRecord {
   checkinDate DateTime @map("checkin_date") @db.Date
   checkinAt   DateTime @map("checkin_at") @db.Timestamptz
 
-  /* Relations */
+  /**
+   * Relations
+   */
   group Group @relation("CheckinGroup", fields: [groupId], references: [groupId], onDelete: Cascade)
   user  User  @relation("CheckinUser", fields: [userId], references: [qq], onDelete: Cascade)
 
@@ -217,14 +232,16 @@ model CheckinRecord {
 
 /// 今日老婆抽取/预设记录表
 model WifeRecord {
-  id      Int      @id @default(autoincrement())
-  groupId BigInt   @map("group_id")
-  userId  BigInt   @map("user_id")
-  wifeQq  BigInt   @map("wife_qq")
-  date    DateTime @db.Date
+  id      Int       @id @default(autoincrement())
+  groupId BigInt    @map("group_id")
+  userId  BigInt    @map("user_id")
+  wifeQq  BigInt    @map("wife_qq")
+  date    DateTime  @db.Date
   drawnAt DateTime? @map("drawn_at") @db.Timestamptz
 
-  /* Relations */
+  /**
+   * Relations
+   */
   group Group @relation("JrlpGroup", fields: [groupId], references: [groupId], onDelete: Cascade)
   user  User  @relation("JrlpUser", fields: [userId], references: [qq], onDelete: Cascade)
   wife  User  @relation("JrlpWife", fields: [wifeQq], references: [qq], onDelete: Cascade)
@@ -265,9 +282,11 @@ model DriftBottlePool {
   id   Int    @id
   name String @unique @db.VarChar(64)
 
-  /* Relations */
+  /**
+   * Relations
+   */
   group_pools DriftBottleGroupPool[]
-  items      DriftBottleItem[]
+  items       DriftBottleItem[]
 
   @@map("drift_bottle_pools")
 }
@@ -277,7 +296,9 @@ model DriftBottleGroupPool {
   groupId BigInt @id @map("group_id")
   poolId  Int    @map("pool_id")
 
-  /* Relations */
+  /**
+   * Relations
+   */
   pool DriftBottlePool @relation(fields: [poolId], references: [id], onDelete: Restrict)
 
   @@map("drift_bottle_group_pools")
@@ -295,14 +316,15 @@ model DriftBottleItem {
   pickedAt      DateTime? @map("picked_at") @db.Timestamptz
   createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
-  /* Relations */
+  /**
+   * Relations
+   */
   pool DriftBottlePool @relation(fields: [poolId], references: [id], onDelete: Cascade)
 
   @@index([poolId, isPicked], map: "ix_drift_bottle_items_pool_is_picked")
   @@index([senderId])
   @@map("drift_bottle_items")
 }
-
 
 /// 配置条目类型（群聊/用户）
 enum SettingsEntryType {
@@ -339,13 +361,13 @@ model Account {
   id        Int      @id @default(autoincrement())
   qq        BigInt   @unique
   nickname  String?
-  role      String   // 'master' | 'normal' | 'readonly'
-  transport String   // 'ws' | 'sse'
-  endpoint  String   // ws://host:port 或 http://host:port
-  token     String?  // 列级加密待后续统一设计，当前明文存储
-  isEnabled Boolean  @default(true)  @map("is_enabled")
+  role      String // 'master' | 'normal' | 'readonly'
+  transport String // 'ws' | 'sse'
+  endpoint  String // ws://host:port 或 http://host:port
+  token     String? // 列级加密待后续统一设计，当前明文存储
+  isEnabled Boolean  @default(true) @map("is_enabled")
   createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt      @map("updated_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("accounts")
 }

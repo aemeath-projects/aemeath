@@ -82,6 +82,7 @@ model User {
   checkin_records CheckinRecord[]   @relation("CheckinUser")
   jrlp_as_user    WifeRecord[]      @relation("JrlpUser")
   jrlp_as_wife    WifeRecord[]      @relation("JrlpWife")
+  mailboxMessages MailboxMessage[]  @relation("MailboxRecipient")
 
   @@map("users")
 }
@@ -213,6 +214,26 @@ model Feedback {
   @@index([status])
   @@index([groupId])
   @@map("feedbacks")
+}
+
+/// 站内信表 —— 每条记录对应一个收件人的一次通知
+model MailboxMessage {
+  id          String    @id @default(uuid()) @db.Uuid
+  recipientId BigInt    @map("recipient_id")
+  title       String    @db.Text
+  content     String    @db.Text // Markdown 格式，前端渲染
+  isRead      Boolean   @default(false) @map("is_read")
+  readAt      DateTime? @map("read_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  /**
+   * Relations
+   */
+  recipient User @relation("MailboxRecipient", fields: [recipientId], references: [qq], onDelete: Cascade)
+
+  @@index([recipientId, isRead])
+  @@index([recipientId, createdAt])
+  @@map("mailbox_messages")
 }
 
 /// 用户群签到记录表

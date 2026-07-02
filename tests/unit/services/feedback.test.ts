@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { MessageRouter } from '@/core/accounts/index.js'
 import type { MainPrismaClient } from '@/core/db/index.js'
+import type { MailboxService } from '@/core/mailbox/index.js'
 import { FeedbackService } from '@/services/feedback.js'
 
 /* Mock 工厂 */
@@ -15,10 +16,6 @@ function createMockDb() {
       update: vi.fn(),
       count: vi.fn(),
     },
-    user: {
-      findMany: vi.fn(),
-      findUnique: vi.fn(),
-    },
   }
 }
 
@@ -29,22 +26,32 @@ function createMockRouter() {
   }
 }
 
+function createMockMailbox() {
+  return {
+    notifyAdmins: vi.fn().mockResolvedValue([]),
+  }
+}
+
 type MockDb = ReturnType<typeof createMockDb>
 type MockRouter = ReturnType<typeof createMockRouter>
+type MockMailbox = ReturnType<typeof createMockMailbox>
 
 /* Tests */
 
 describe('FeedbackService', () => {
   let mockDb: MockDb
   let mockRouter: MockRouter
+  let mockMailbox: MockMailbox
   let service: FeedbackService
 
   beforeEach(() => {
     mockDb = createMockDb()
     mockRouter = createMockRouter()
+    mockMailbox = createMockMailbox()
     service = new FeedbackService(
       mockDb as unknown as MainPrismaClient,
       mockRouter as unknown as MessageRouter,
+      mockMailbox as unknown as MailboxService,
     )
     vi.clearAllMocks()
   })
@@ -68,8 +75,6 @@ describe('FeedbackService', () => {
 
     it('应当调用 db.feedback.create() 并返回创建的反馈', async () => {
       mockDb.feedback.create.mockResolvedValue(baseFeedback)
-      // 通知管理员时查用户
-      mockDb.user.findMany.mockResolvedValue([])
 
       const result = await service.createFeedback({
         userId: 123456n,
@@ -91,10 +96,35 @@ describe('FeedbackService', () => {
       expect(result).toEqual(baseFeedback)
     })
 
+    it('应当调用 mailbox.notifyAdmins 广播反馈通知', async () => {
+      mockDb.feedback.create.mockResolvedValue(baseFeedback)
+      mockMailbox.notifyAdmins.mockResolvedValue([])
+
+      await service.createFeedback({
+        userId: 123456n,
+        content: '这是一个 bug',
+        source: 'group',
+        groupId: 987654n,
+        feedbackType: 'bug',
+      })
+
+      // 等待异步通知的微任务执行
+      await new Promise((resolve) => setTimeout(resolve, 10))
+
+      expect(mockMailbox.notifyAdmins).toHaveBeenCalledOnce()
+      expect(mockMailbox.notifyAdmins).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: '新反馈通知',
+          content: expect.stringContaining(baseFeedback.id),
+          notifyText: expect.stringContaining(baseFeedback.id),
+        }),
+      )
+    })
+
     it('通知管理员失败时不应抛出错误', async () => {
       mockDb.feedback.create.mockResolvedValue(baseFeedback)
       // 通知管理员时抛出错误
-      mockDb.user.findMany.mockRejectedValue(new Error('DB 连接失败'))
+      mockMailbox.notifyAdmins.mockRejectedValue(new Error('站内信服务异常'))
 
       // 不应抛出
       await expect(
@@ -111,7 +141,6 @@ describe('FeedbackService', () => {
         ...baseFeedback,
         feedbackType: null,
       })
-      mockDb.user.findMany.mockResolvedValue([])
 
       await service.createFeedback({
         userId: 123456n,

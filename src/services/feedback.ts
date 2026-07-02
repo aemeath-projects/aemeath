@@ -11,6 +11,7 @@ import type { Prisma, Feedback, FeedbackStatus, FeedbackSource, FeedbackType } f
 
 import type { MessageRouter } from '@/core/accounts/index.js'
 import type { MainPrismaClient } from '@/core/db/index.js'
+import type { MailboxService } from '@/core/mailbox/index.js'
 
 export type { Feedback, FeedbackStatus, FeedbackSource, FeedbackType }
 
@@ -47,6 +48,7 @@ export class FeedbackService {
   constructor(
     private readonly db: MainPrismaClient,
     private readonly router: MessageRouter,
+    private readonly mailbox: MailboxService,
   ) {}
 
   // 反馈 CRUD
@@ -66,10 +68,8 @@ export class FeedbackService {
       },
     })
 
-    // 通知管理员（不阻塞主流程）
-    this._notifyAdmins(feedback).catch((err: unknown) => {
-      this._log.error({ feedbackId: feedback.id, err }, '通知管理员失败')
-    })
+    // 通知管理员（不阻塞主流程；_notifyAdmins 内部已保证不会 reject）
+    void this._notifyAdmins(feedback)
 
     return feedback
   }
@@ -167,35 +167,25 @@ export class FeedbackService {
   // 内部辅助
 
   private async _notifyAdmins(feedback: Feedback): Promise<void> {
-    const admins = await this.db.user.findMany({
-      where: { relation: 'admin' },
-    })
-
-    if (admins.length === 0) {
-      this._log.warn('无管理员可通知')
-      return
-    }
-
     const sourceText = feedback.source === 'group' ? '群聊' : '私聊'
     const typeText = feedback.feedbackType ?? '未分类'
-    const message =
-      `【新反馈通知】\n` +
-      `来源：${sourceText}\n` +
-      `类型：${typeText}\n` +
-      `用户：${String(feedback.userId)}\n` +
-      `内容：${feedback.content}\n` +
-      `ID：${feedback.id}`
 
-    // 并发通知所有管理员
-    const sendTasks = admins.map(async (admin) => {
-      try {
-        await this.router.sendAdminMsg(admin.qq, [seg.text(message)])
-      } catch (err: unknown) {
-        this._log.warn({ adminQq: admin.qq, feedbackId: feedback.id, err }, '通知管理员失败')
-      }
-    })
+    const title = '新反馈通知'
+    const content =
+      `- **来源**：${sourceText}\n` +
+      `- **类型**：${typeText}\n` +
+      `- **用户**：${String(feedback.userId)}\n` +
+      `- **内容**：${feedback.content}\n` +
+      `- **ID**：${feedback.id}`
+    const notifyText =
+      `【新反馈通知】\n来源：${sourceText}\n类型：${typeText}\n` +
+      `用户：${String(feedback.userId)}\n内容：${feedback.content}\nID：${feedback.id}`
 
-    await Promise.allSettled(sendTasks)
+    try {
+      await this.mailbox.notifyAdmins({ title, content, notifyText })
+    } catch (err: unknown) {
+      this._log.error({ feedbackId: feedback.id, err }, '站内信通知管理员失败')
+    }
   }
 
   private async _notifyUser(feedback: Feedback): Promise<void> {
@@ -231,12 +221,16 @@ export class FeedbackBootstrap {
   @Inject('message_router')
   router!: MessageRouter
 
+  /** 注入站内信服务 */
+  @Inject('mailbox')
+  mailbox!: MailboxService
+
   /** 对外暴露反馈服务实例 */
   @Provide('feedback_service')
   feedbackService!: FeedbackService
 
   @Startup
   start(): void {
-    this.feedbackService = new FeedbackService(this.db, this.router)
+    this.feedbackService = new FeedbackService(this.db, this.router, this.mailbox)
   }
 }

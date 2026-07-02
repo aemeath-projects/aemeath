@@ -77,6 +77,8 @@ import '@/core/iris/bootstrap.js'
 import '@/core/accounts/bootstrap.js'
 // 触发 SessionManagerBootstrap 的 Startup 注册
 import '@/core/session/bootstrap.js'
+// 触发 MailboxBootstrap 的 Startup 注册
+import '@/core/mailbox/bootstrap.js'
 
 /** TaskEchoEntry —— task 类型的 echo 条目，module 为包含 taskDefinition 命名导出的模块命名空间。 */
 interface TaskEchoEntry extends EchoEntry {
@@ -114,6 +116,18 @@ async function _registerCoreRoutes(app: FastifyInstance): Promise<void> {
     await registerPersonnelRoutes(app)
   } catch (err) {
     app.log.warn({ err }, '人员管理路由注册失败')
+  }
+
+  try {
+    const { mailboxRoutes } = await import('@/core/mailbox/api.js')
+    await app.register(
+      async (fastify) => {
+        await mailboxRoutes(fastify)
+      },
+      { prefix: '/api/mailbox' },
+    )
+  } catch (err) {
+    app.log.warn({ err }, '站内信路由注册失败')
   }
 }
 

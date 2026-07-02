@@ -1,0 +1,148 @@
+/**
+ * 站内信 REST API 路由 —— Fastify 插件，挂载于 /api/mailbox。
+ */
+
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
+
+import {
+  MailboxIdParamSchema,
+  MailboxListQuerySchema,
+  UnreadCountQuerySchema,
+  PaginatedMailboxDataSchema,
+  UnreadCountDataSchema,
+  MailboxMessageSchema,
+} from './schemas.js'
+
+import type { MailboxMessage, MailboxService } from './index.js'
+
+import { NotFoundError, ValidationError } from '@/core/errors.js'
+import { ok, fail, OkResponse, FailResponse } from '@/core/schemas/index.js'
+
+function getMailboxService(request: FastifyRequest): MailboxService {
+  return request.server.services.get('mailbox') as MailboxService
+}
+
+function parseBigIntParam(value: string, name: string): bigint {
+  if (!/^\d+$/.test(value)) {
+    throw new ValidationError(`参数 ${name} 必须为非负整数，收到：${value}`)
+  }
+  return BigInt(value)
+}
+
+async function handleError(reply: FastifyReply, err: unknown): Promise<void> {
+  if (err instanceof NotFoundError) {
+    await reply.status(404).send(fail(err.message))
+    return
+  }
+  if (err instanceof ValidationError) {
+    await reply.status(422).send(fail(err.message))
+    return
+  }
+  const message = err instanceof Error ? err.message : '内部服务器错误'
+  await reply.status(500).send(fail(message))
+}
+
+function mailboxMessageToDict(m: MailboxMessage): Record<string, unknown> {
+  return {
+    id: m.id,
+    recipientId: String(m.recipientId),
+    title: m.title,
+    content: m.content,
+    isRead: m.isRead,
+    readAt: m.readAt instanceof Date ? m.readAt.toISOString() : m.readAt,
+    createdAt: m.createdAt instanceof Date ? m.createdAt.toISOString() : m.createdAt,
+  }
+}
+
+export async function mailboxRoutes(fastify: FastifyInstance): Promise<void> {
+  fastify.get<{
+    Querystring: { recipientId: string; page?: string; pageSize?: string; isRead?: string }
+  }>(
+    '/',
+    {
+      schema: {
+        querystring: MailboxListQuerySchema,
+        response: {
+          200: OkResponse(PaginatedMailboxDataSchema),
+          422: FailResponse(),
+          500: FailResponse(),
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        const { recipientId, page, pageSize, isRead } = request.query
+        const pageNum = Math.max(1, Number(page ?? 1))
+        const pageSizeNum = Math.min(100, Math.max(1, Number(pageSize ?? 20)))
+
+        const [items, total] = await getMailboxService(request).listMessages({
+          recipientId: parseBigIntParam(recipientId, 'recipientId'),
+          page: pageNum,
+          pageSize: pageSizeNum,
+          isRead: isRead != null ? isRead === 'true' : undefined,
+        })
+
+        await reply.send(
+          ok({
+            items: items.map((item) => mailboxMessageToDict(item)),
+            total,
+            page: pageNum,
+            pageSize: pageSizeNum,
+            pages: Math.ceil(total / pageSizeNum),
+          }),
+        )
+      } catch (err) {
+        await handleError(reply, err)
+      }
+    },
+  )
+
+  fastify.get<{ Querystring: { recipientId: string } }>(
+    '/unread-count',
+    {
+      schema: {
+        querystring: UnreadCountQuerySchema,
+        response: {
+          200: OkResponse(UnreadCountDataSchema),
+          422: FailResponse(),
+          500: FailResponse(),
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        const count = await getMailboxService(request).getUnreadCount(
+          parseBigIntParam(request.query.recipientId, 'recipientId'),
+        )
+        await reply.send(ok({ count }))
+      } catch (err) {
+        await handleError(reply, err)
+      }
+    },
+  )
+
+  fastify.post<{ Params: { id: string } }>(
+    '/:id/read',
+    {
+      schema: {
+        params: MailboxIdParamSchema,
+        response: {
+          200: OkResponse(MailboxMessageSchema),
+          404: FailResponse(),
+          500: FailResponse(),
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        const updated = await getMailboxService(request).markRead(request.params.id)
+        if (updated === null) {
+          throw new NotFoundError(`站内信不存在：${request.params.id}`)
+        }
+        await reply.send(ok(mailboxMessageToDict(updated)))
+      } catch (err) {
+        await handleError(reply, err)
+      }
+    },
+  )
+}

@@ -18,7 +18,7 @@ import {
 
 import type { IrisPrismaClient } from '@/core/db/index.js'
 
-// ── WASM 初始化（模块加载时执行一次）──────────────────────────────
+// WASM 初始化（模块加载时执行一次）
 const _require = createRequire(import.meta.url)
 initSync({ module: readFileSync(_require.resolve('parquet-wasm/esm/parquet_wasm_bg.wasm')) })
 
@@ -82,7 +82,7 @@ export class IrisExporter {
     periodEnd: Date,
     outputPath: string,
   ): Promise<[number, number, number, string, bigint]> {
-    // ── 1. 游标分批读取所有行 ─────────────────────────────────────
+    // 1. 游标分批读取所有行
     const allRows: RawRow[] = []
     let cursor: bigint | undefined
     let hasMore = true
@@ -129,13 +129,13 @@ export class IrisExporter {
     const lastItem = allRows[allRows.length - 1]
     const maxExportedId = lastItem !== undefined ? lastItem.id : 0n
 
-    // ── 2. 无数据时直接返回 ───────────────────────────────────────
+    // 2. 无数据时直接返回
     if (totalRows === 0) {
       await writeFile(outputPath, Buffer.alloc(0))
       return [0, 0, 0, '', maxExportedId]
     }
 
-    // ── 3. 构建 Apache Arrow 列式数组 ────────────────────────────
+    // 3. 构建 Apache Arrow 列式数组
     // 使用 BigInt64Array / Int32Array 等强类型列，保证 Parquet 类型映射准确
     const colId = new BigInt64Array(totalRows)
     const colCreatedAt = new BigInt64Array(totalRows) // Unix 毫秒时间戳
@@ -182,7 +182,7 @@ export class IrisExporter {
     })
     /* eslint-enable @typescript-eslint/naming-convention */
 
-    // ── 4. Arrow → IPC Stream → WASM Table → Parquet bytes ───────
+    // 4. Arrow → IPC Stream → WASM Table → Parquet bytes
     const ipcBytes = tableToIPC(arrowTable, 'stream')
     const wasmTable = Table.fromIPCStream(ipcBytes)
 
@@ -190,7 +190,7 @@ export class IrisExporter {
     const writerProps = new WriterPropertiesBuilder().setCompression(compression).build()
     const parquetBytes = writeParquet(wasmTable, writerProps)
 
-    // ── 5. 写入文件并计算摘要 ─────────────────────────────────────
+    // 5. 写入文件并计算摘要
     await writeFile(outputPath, parquetBytes)
 
     const fileStats = await stat(outputPath)

@@ -55,9 +55,7 @@ export interface PaginationParams {
 export class DriftBottleService {
   constructor(private readonly db: MainPrismaClient) {}
 
-  // ════════════════════════════════════════════
-  //  工具方法
-  // ════════════════════════════════════════════
+  // 工具方法
 
   /**
    * 查询群所属池 id，无记录返回默认池 id。
@@ -70,9 +68,7 @@ export class DriftBottleService {
     return row?.poolId ?? DRIFT_BOTTLE_DEFAULT_POOL_ID
   }
 
-  // ════════════════════════════════════════════
-  //  Bot 核心功能
-  // ════════════════════════════════════════════
+  // Bot 核心功能
 
   /**
    * 投入一个漂流瓶。
@@ -143,9 +139,7 @@ export class DriftBottleService {
     }
   }
 
-  // ════════════════════════════════════════════
-  //  后台池管理
-  // ════════════════════════════════════════════
+  // 后台池管理
 
   /**
    * 列出所有池，含各池未捞取瓶数统计。

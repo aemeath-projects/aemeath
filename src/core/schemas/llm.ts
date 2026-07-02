@@ -113,7 +113,7 @@ export const ChatRequestSchema = Type.Object({
   stream: Type.Boolean({ default: false, description: '是否流式输出' }),
 })
 
-/* ──── 路径参数 ──── */
+/* 路径参数 */
 
 /** 提供商 ID 路径参数 —— UUID 格式。 */
 export const ProviderIdParamSchema = Type.Object({
@@ -131,7 +131,7 @@ export const ModelIdParamSchema = Type.Object({
   }),
 })
 
-/* ──── 查询参数 ──── */
+/* 查询参数 */
 
 /** 模型列表查询参数 —— GET /api/llm/models?providerId= */
 export const ModelListQuerySchema = Type.Object({

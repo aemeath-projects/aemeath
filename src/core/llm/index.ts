@@ -73,9 +73,7 @@ export class LLMService {
     this.client = new LLMClient()
   }
 
-  // ══════════════════════════════════════════════
-  //  提供商 CRUD
-  // ══════════════════════════════════════════════
+  // 提供商 CRUD
 
   /** 列出所有提供商（含模型数量）。 */
   async listProviders(limit = 200): Promise<ProviderDto[]> {
@@ -161,9 +159,7 @@ export class LLMService {
     this._log.info({ providerId }, 'LLM 提供商已删除')
   }
 
-  // ══════════════════════════════════════════════
-  //  模型 CRUD
-  // ══════════════════════════════════════════════
+  // 模型 CRUD
 
   /** 列出模型（可按提供商筛选）。 */
   async listModels(providerId?: string, limit = 500): Promise<ModelDto[]> {
@@ -246,9 +242,7 @@ export class LLMService {
     this._log.info({ modelId }, 'LLM 模型已删除')
   }
 
-  // ══════════════════════════════════════════════
-  //  LLM 调用
-  // ══════════════════════════════════════════════
+  // LLM 调用
 
   /**
    * 使用指定模型名进行对话，返回完整回复文本。
@@ -312,9 +306,7 @@ export class LLMService {
     this.client.clear()
   }
 
-  // ══════════════════════════════════════════════
-  //  内部辅助
-  // ══════════════════════════════════════════════
+  // 内部辅助
 
   private _providerToDto(provider: LlmProvider, models: LlmModel[]): ProviderDto {
     return {

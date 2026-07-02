@@ -14,7 +14,7 @@ export const QueueStreamQuerySchema = Type.Object({
   ),
 })
 
-/* ──── 响应数据 Schema ──── */
+/* 响应数据 Schema */
 
 /** 定时任务条目 Schema。 */
 const ScheduledTaskSchema = Type.Object({
@@ -66,7 +66,7 @@ export const QueueLengthDataSchema = Type.Object({
   length: Type.Union([Type.Number(), Type.Null()]),
 })
 
-/* ──── 列表响应数据 Schema ──── */
+/* 列表响应数据 Schema */
 
 /** 定时任务列表响应数据 —— GET /api/queue/scheduled-tasks */
 export const ScheduledTasksDataSchema = Type.Array(ScheduledTaskSchema)

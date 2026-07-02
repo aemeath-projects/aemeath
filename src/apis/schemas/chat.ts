@@ -7,7 +7,7 @@
 
 import { Type } from '@sinclair/typebox'
 
-/* ──── 路径参数 ──── */
+/* 路径参数 */
 
 /** 群 ID 路径参数 */
 export const GroupIdParamSchema = Type.Object({
@@ -24,7 +24,7 @@ export const MessageIdParamSchema = Type.Object({
   messageId: Type.String({ pattern: '^\\d+$', description: '消息 ID' }),
 })
 
-/* ──── 查询参数（Querystring） ──── */
+/* 查询参数（Querystring） */
 
 /** 群聊消息列表查询参数 —— GET /api/chat/messages/group/:groupId */
 export const GroupMessageQuerySchema = Type.Object({
@@ -57,19 +57,19 @@ export const ArchiveListQuerySchema = Type.Object({
 /** 归档查询参数 —— GET /api/chat/archives/query */
 export const ArchiveQuerySchema = Type.Object({
   periodStart: Type.String({ description: '起始月份（ISO 8601，必填）' }),
-  // TODO: groupId 参数已由 schema 定义但 handler 中未传递给 listArchives，待服务支持后接入
+  // groupId 参数已由 schema 定义，待 listArchives 服务支持筛选后接入 handler
   groupId: Type.Optional(Type.String({ pattern: '^\\d+$', description: '按群号筛选' })),
   limit: Type.Optional(Type.String({ pattern: '^\\d+$', description: '返回条数（默认 50）' })),
 })
 
-/* ──── 请求体（Body） ──── */
+/* 请求体（Body） */
 
 /** 触发归档任务请求体 —— POST /api/chat/archives/trigger */
 export const ArchiveTriggerBodySchema = Type.Object({
   partitionName: Type.Optional(Type.String({ description: '指定分区名称，不传则自动归档上月' })),
 })
 
-/* ──── 响应数据 Schema ──── */
+/* 响应数据 Schema */
 
 /** 聊天消息 Schema —— 对应 ChatMessage 模型。 */
 export const ChatMessageSchema = Type.Object({

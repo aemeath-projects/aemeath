@@ -40,9 +40,7 @@ export interface ListRecordsParams {
 export class JrlpService {
   constructor(private readonly db: MainPrismaClient) {}
 
-  // ════════════════════════════════════════════
-  //  核心抽取
-  // ════════════════════════════════════════════
+  // 核心抽取
 
   /**
    * 查询或抽取今日老婆。
@@ -131,9 +129,7 @@ export class JrlpService {
     }
   }
 
-  // ════════════════════════════════════════════
-  //  管理接口
-  // ════════════════════════════════════════════
+  // 管理接口
 
   /**
    * 分页查询抽取/预设记录。返回 [items, total] 元组。
@@ -229,9 +225,7 @@ export class JrlpService {
     }
   }
 
-  // ════════════════════════════════════════════
-  //  内部辅助
-  // ════════════════════════════════════════════
+  // 内部辅助
 
   private async _findRecord(
     groupId: bigint,

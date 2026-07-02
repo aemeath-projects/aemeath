@@ -125,6 +125,11 @@ function resetForm() {
   form.value = { qq: '', role: 'normal', transport: 'ws', endpoint: '' }
 }
 
+function onCreateOpen() {
+  resetForm()
+  createDialog.value = true
+}
+
 onMounted(load)
 </script>
 
@@ -134,16 +139,7 @@ onMounted(load)
     <div class="d-flex align-center mb-4">
       <span class="text-h6">账号管理</span>
       <v-spacer />
-      <v-btn
-        color="primary"
-        prepend-icon="mdi-plus"
-        @click="
-          resetForm()
-          createDialog = true
-        "
-      >
-        新增账户
-      </v-btn>
+      <v-btn color="primary" prepend-icon="mdi-plus" @click="onCreateOpen"> 新增账户 </v-btn>
     </div>
 
     <!-- 账号卡片网格 -->

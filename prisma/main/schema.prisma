@@ -9,9 +9,7 @@ datasource db {
   provider = "postgresql"
 }
 
-// ═══════════════════════════════════════════════════
-//  Enums (PostgreSQL native ENUM types)
-// ═══════════════════════════════════════════════════
+// Enums (PostgreSQL native ENUM types)
 
 /// 用户与机器人的关系等级
 enum UserRelation {
@@ -66,9 +64,7 @@ enum LikeSource {
   @@map("like_source")
 }
 
-// ═══════════════════════════════════════════════════
-//  Models
-// ═══════════════════════════════════════════════════
+// Models
 
 /// 机器人已知用户表
 model User {

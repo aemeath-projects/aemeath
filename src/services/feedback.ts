@@ -49,9 +49,7 @@ export class FeedbackService {
     private readonly router: MessageRouter,
   ) {}
 
-  // ════════════════════════════════════════════
-  //  反馈 CRUD
-  // ════════════════════════════════════════════
+  // 反馈 CRUD
 
   /**
    * 创建反馈记录并通知所有管理员。
@@ -166,9 +164,7 @@ export class FeedbackService {
     })
   }
 
-  // ════════════════════════════════════════════
-  //  内部辅助
-  // ════════════════════════════════════════════
+  // 内部辅助
 
   private async _notifyAdmins(feedback: Feedback): Promise<void> {
     const admins = await this.db.user.findMany({

@@ -19,7 +19,7 @@ export const BatchSetRequestSchema = Type.Object({
   ),
 })
 
-/* ──── 路径参数 ──── */
+/* 路径参数 */
 
 /** 群 ID 路径参数 */
 export const SettingsGroupIdParamSchema = Type.Object({
@@ -48,7 +48,7 @@ export const SettingsUserKeyParamsSchema = Type.Object({
   key: Type.String({ minLength: 1, description: '配置项 key（如 bot.enabled）' }),
 })
 
-/* ──── 查询参数 ──── */
+/* 查询参数 */
 
 /** 配置查询参数 —— GET /api/settings/schemas, /groups/:groupId, /users/:userId */
 export const SettingsQuerySchema = Type.Object({
@@ -65,7 +65,7 @@ export interface BatchSetRequest {
   entries: { key: string; value: unknown }[]
 }
 
-/* ──── 响应数据 Schema ──── */
+/* 响应数据 Schema */
 
 /** 配置项 Schema 元信息 —— GET /api/settings/schemas */
 export const SettingNodeSchemaItem = Type.Object({

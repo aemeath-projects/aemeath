@@ -233,9 +233,7 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* =====================
-   遮罩动画
-   ===================== */
+/* 遮罩动画 */
 .backdrop-enter-active,
 .backdrop-leave-active {
   transition: opacity 0.22s ease;
@@ -245,9 +243,7 @@ onUnmounted(() => {
   opacity: 0;
 }
 
-/* =====================
-   面板滑入动画
-   ===================== */
+/* 面板滑入动画 */
 .panel-enter-active {
   transition: transform 0.22s cubic-bezier(0, 0, 0.2, 1);
 }
@@ -259,9 +255,7 @@ onUnmounted(() => {
   transform: translateX(-100%);
 }
 
-/* =====================
-   遮罩层
-   ===================== */
+/* 遮罩层 */
 .mega-menu-backdrop {
   position: fixed;
   inset: 0;
@@ -269,9 +263,7 @@ onUnmounted(() => {
   z-index: 200;
 }
 
-/* =====================
-   菜单面板
-   ===================== */
+/* 菜单面板 */
 .mega-menu-panel {
   position: fixed;
   left: 0;
@@ -284,9 +276,7 @@ onUnmounted(() => {
   box-shadow: 4px 0 32px rgba(var(--v-theme-on-surface), 0.15);
 }
 
-/* =====================
-   左侧面板导航列
-   ===================== */
+/* 左侧面板导航列 */
 .panel-nav {
   width: 256px;
   flex-shrink: 0;
@@ -357,9 +347,7 @@ onUnmounted(() => {
   margin-bottom: 4px;
 }
 
-/* =====================
-   右侧面板内容区
-   ===================== */
+/* 右侧面板内容区 */
 .panel-content {
   padding: 16px 20px;
   background: rgb(var(--v-theme-surface));

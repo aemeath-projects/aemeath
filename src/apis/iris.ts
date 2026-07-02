@@ -226,8 +226,7 @@ const irisRoutes: FastifyPluginAsync = async (app) => {
     },
     async (
       req: FastifyRequest<{
-        // TODO: groupId 参数已由 querystring schema 定义但未在 handler 中使用，
-        // 待 IrisArchiveService.listArchives 支持 groupId 筛选后接入
+        // groupId 参数已由 querystring schema 定义，待 IrisArchiveService.listArchives 支持筛选后接入
         Querystring: { periodStart: string; groupId?: string; limit?: string }
       }>,
       reply: FastifyReply,

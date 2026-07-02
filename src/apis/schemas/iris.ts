@@ -4,7 +4,7 @@
 
 import { Type } from '@sinclair/typebox'
 
-/* ──── 查询参数（Querystring） ──── */
+/* 查询参数（Querystring） */
 
 /** 归档消息搜索查询参数 —— GET /api/iris/archives/search */
 export const IrisSearchQuerySchema = Type.Object({
@@ -21,7 +21,7 @@ export const IrisSearchQuerySchema = Type.Object({
   offset: Type.Optional(Type.Integer({ minimum: 0, default: 0, description: '跳过条数' })),
 })
 
-/* ──── 请求体（Body） ──── */
+/* 请求体（Body） */
 
 /** 手动触发归档任务请求体 —— POST /api/iris/archives/trigger */
 export const IrisTriggerArchiveBodySchema = Type.Object({
@@ -31,7 +31,7 @@ export const IrisTriggerArchiveBodySchema = Type.Object({
   reason: Type.Optional(Type.String({ description: '手动触发原因（仅日志记录）' })),
 })
 
-/* ──── 响应数据 Schema ──── */
+/* 响应数据 Schema */
 
 /** 归档消息搜索结果数据 Schema —— GET /api/iris/archives/search */
 export const IrisSearchDataSchema = Type.Object({

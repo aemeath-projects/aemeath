@@ -22,7 +22,7 @@ export function fail(message: string, data: unknown = null): ApiResponse {
   return { code: -1, data, message }
 }
 
-/* ──── TypeBox 响应 Schema 工具 ──── */
+/* TypeBox 响应 Schema 工具 */
 
 /**
  * 构造成功响应 Schema 包装器。

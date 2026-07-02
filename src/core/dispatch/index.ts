@@ -68,7 +68,7 @@ export { oneBotContextConfig } from './adapter.js'
 export { OneBotContext } from './context.js'
 export type { FeatureChecker } from './types.js'
 
-// ─── 路由装饰器类型适配包装 ──────────────────────────────────────────────────
+// 路由装饰器类型适配包装
 //
 // exostrider 将装饰目标限定为 `(...args: unknown[]) => unknown`。
 // 对参数使用逆变检查时，具体 Context 类型无法满足该约束。

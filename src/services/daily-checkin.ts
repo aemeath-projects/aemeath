@@ -62,9 +62,7 @@ export class DailyCheckinService {
     private readonly settings: SettingsService,
   ) {}
 
-  // ════════════════════════════════════════════
-  //  公共接口
-  // ════════════════════════════════════════════
+  // 公共接口
 
   /** 是否有打卡任务正在执行。 */
   get isRunning(): boolean {
@@ -90,9 +88,7 @@ export class DailyCheckinService {
     return true
   }
 
-  // ════════════════════════════════════════════
-  //  内部实现
-  // ════════════════════════════════════════════
+  // 内部实现
 
   private async _runCheckin(source: CheckinSource): Promise<void> {
     if (this.pool.getAvailableClients().length === 0) {

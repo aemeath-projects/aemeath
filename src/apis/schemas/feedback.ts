@@ -7,14 +7,14 @@
 
 import { Type } from '@sinclair/typebox'
 
-/* ──── 路径参数 ──── */
+/* 路径参数 */
 
 /** 反馈 ID 路径参数 */
 export const FeedbackIdParamSchema = Type.Object({
   feedbackId: Type.String({ minLength: 1, description: '反馈记录 ID（UUID）' }),
 })
 
-/* ──── 查询参数（Querystring） ──── */
+/* 查询参数（Querystring） */
 
 /** 反馈列表查询参数 —— GET /api/feedbacks */
 export const FeedbackListQuerySchema = Type.Object({
@@ -29,7 +29,7 @@ export const FeedbackListQuerySchema = Type.Object({
   search: Type.Optional(Type.String({ description: '模糊搜索内容关键词' })),
 })
 
-/* ──── 请求体（Body） ──── */
+/* 请求体（Body） */
 
 /** 更新反馈状态请求体 —— POST /api/feedbacks/:feedbackId/status */
 export const FeedbackUpdateBodySchema = Type.Object({
@@ -42,7 +42,7 @@ export const FeedbackUpdateBodySchema = Type.Object({
   ),
 })
 
-/* ──── 响应数据 Schema ──── */
+/* 响应数据 Schema */
 
 /** 反馈条目 Schema —— 对应 Feedback 模型 + feedbackToDict 转换。 */
 export const FeedbackItemSchema = Type.Object({

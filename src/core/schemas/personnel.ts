@@ -7,7 +7,7 @@
 
 import { type Static, Type } from '@sinclair/typebox'
 
-/* ──── 公共路径参数 ──── */
+/* 公共路径参数 */
 
 /** 用户 ID 路径参数 —— 必须为纯数字非负整数字符串。 */
 export const UserIdParamSchema = Type.Object({
@@ -19,7 +19,7 @@ export const GroupIdParamSchema = Type.Object({
   groupId: Type.String({ pattern: '^\\d+$', description: '群号 / 群 ID' }),
 })
 
-/* ──── 查询参数（Querystring） ──── */
+/* 查询参数（Querystring） */
 
 /** 分页查询用户列表 —— GET /api/personnel/users */
 export const UserListQuerySchema = Type.Object({
@@ -57,7 +57,7 @@ export const MemberListQuerySchema = Type.Object({
   qq: Type.Optional(Type.String({ pattern: '^\\d+$', description: '按 QQ 号精确查找' })),
 })
 
-/* ──── 响应数据 Schema ──── */
+/* 响应数据 Schema */
 
 /** 用户详情 Schema —— 对应 UserView。 */
 export const UserDetailSchema = Type.Object({
@@ -155,7 +155,7 @@ export const SyncStatusDataSchema = Type.Object({
   membershipsSynced: Type.Number(),
 })
 
-/* ──── 静态类型推导 ──── */
+/* 静态类型推导 */
 
 export type UserListQuery = Static<typeof UserListQuerySchema>
 export type GroupListQuery = Static<typeof GroupListQuerySchema>

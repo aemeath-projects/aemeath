@@ -13,6 +13,7 @@ import {
   batchSetGroupSettings,
 } from '@/apis/settings'
 import type { SettingValue } from '@/apis/settings'
+import { useSettingsSchemaStore } from '@/stores/settingsSchema'
 
 export interface SettingsEditorScope {
   group?: number | null
@@ -46,7 +47,6 @@ export function useSettingsEditor(options: {
 
       // 按 category 过滤（客户端侧，依赖 schema store）
       if (options.category) {
-        const { useSettingsSchemaStore } = await import('@/stores/settingsSchema')
         const schemaStore = useSettingsSchemaStore()
         await schemaStore.ensureLoaded()
         const allowedKeys = new Set(

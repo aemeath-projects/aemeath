@@ -63,9 +63,7 @@ export class LikeService {
     private readonly friendApi: FriendApi,
   ) {}
 
-  // ════════════════════════════════════════════
-  //  公共接口
-  // ════════════════════════════════════════════
+  // 公共接口
 
   /** 是否有定时点赞任务正在执行。 */
   get isRunning(): boolean {
@@ -254,9 +252,7 @@ export class LikeService {
     return true
   }
 
-  // ════════════════════════════════════════════
-  //  内部实现
-  // ════════════════════════════════════════════
+  // 内部实现
 
   private async _runScheduledLikes(): Promise<void> {
     const tasks = await this.db.likeTask.findMany({ select: { qq: true } })

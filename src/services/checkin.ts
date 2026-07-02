@@ -103,9 +103,7 @@ export class CheckinService {
     private readonly cache: RedisStore,
   ) {}
 
-  // ════════════════════════════════════════════
-  //  核心签到
-  // ════════════════════════════════════════════
+  // 核心签到
 
   /**
    * 执行签到，返回 rank / streak / total / isDuplicate。
@@ -188,9 +186,7 @@ export class CheckinService {
     return this._rebuildCache(BigInt(groupId), BigInt(userId))
   }
 
-  // ════════════════════════════════════════════
-  //  管理 / 统计接口
-  // ════════════════════════════════════════════
+  // 管理 / 统计接口
 
   /**
    * 分页查询签到记录。返回 [items, total] 元组。
@@ -369,9 +365,7 @@ export class CheckinService {
     return { totalCheckins, todayCheckins, activeUsers }
   }
 
-  // ════════════════════════════════════════════
-  //  内部辅助
-  // ════════════════════════════════════════════
+  // 内部辅助
 
   private async _rebuildCache(groupId: bigint, userId: bigint): Promise<CheckinCache> {
     const total = await this.db.checkinRecord.count({

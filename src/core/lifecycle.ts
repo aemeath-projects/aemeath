@@ -20,29 +20,29 @@ import type { IrisSearchService } from '@/core/iris/index.js'
 import type { RedisStore } from '@/core/redis/index.js'
 
 export interface AemeathServiceMap {
-  // ── 数据库 ──
+  // 数据库
   db: MainPrismaClient
   iris_db: IrisPrismaClient
 
-  // ── Redis ──
+  // Redis
   cache: RedisStore
   persistent: RedisStore
   cache_redis: Redis
   persistent_redis: Redis
 
-  // ── 框架核心 ──
+  // 框架核心
   dispatcher: EventDispatcher<AnyOneBotEvent, ContextApis>
   queue: Queue
 
-  // ── 多账号 ──
+  // 多账号
   account_pool: ClientPool<NapCatClient, AccountRole, AnyOneBotEvent>
   message_router: MessageRouter
   group_bot_registry: GroupBotRegistry
   master_apis: MasterApis
 
-  // ── Iris 领域 ──
+  // Iris 领域
   iris_search: IrisSearchService
 
-  // ── 业务服务（@Provide 动态注册） ──
+  // 业务服务（@Provide 动态注册）
   [key: string]: unknown
 }

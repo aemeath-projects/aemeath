@@ -53,9 +53,7 @@ async function handleError(reply: FastifyReply, err: unknown): Promise<void> {
  * 注册于 /api/llm，提供提供商和模型的 CRUD 接口。
  */
 export async function llmRoutes(fastify: FastifyInstance): Promise<void> {
-  // ══════════════════════════════════════════════
-  //  提供商 CRUD
-  // ══════════════════════════════════════════════
+  // 提供商 CRUD
 
   /** GET /providers — 列出所有提供商 */
   fastify.get(
@@ -169,9 +167,7 @@ export async function llmRoutes(fastify: FastifyInstance): Promise<void> {
     },
   )
 
-  // ══════════════════════════════════════════════
-  //  模型 CRUD
-  // ══════════════════════════════════════════════
+  // 模型 CRUD
 
   /** GET /models — 列出所有模型（支持按提供商筛选 ?providerId=xxx） */
   fastify.get<{ Querystring: { providerId?: string } }>(

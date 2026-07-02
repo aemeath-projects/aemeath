@@ -9,9 +9,7 @@ datasource db {
   provider = "postgresql"
 }
 
-// ═══════════════════════════════════════════════════
-//  Enums
-// ═══════════════════════════════════════════════════
+// Enums
 
 /// 聊天归档任务状态
 enum ArchiveStatus {
@@ -26,9 +24,7 @@ enum ArchiveStatus {
   @@map("archive_status_enum")
 }
 
-// ═══════════════════════════════════════════════════
-//  Models
-// ═══════════════════════════════════════════════════
+// Models
 
 /// 聊天记录表
 /// message_type 为 IntEnum: 1=private, 2=group, 3=self_sent (SmallInt 存储)

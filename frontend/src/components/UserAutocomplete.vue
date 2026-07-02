@@ -13,13 +13,7 @@ import type { Density } from 'vuetify/lib/composables/density.js'
 // 配合 watch 响应搜索文本变化（而非仅监听 @update:search 事件）。
 
 type FieldVariant =
-  | 'outlined'
-  | 'plain'
-  | 'solo-filled'
-  | 'filled'
-  | 'solo'
-  | 'solo-inverted'
-  | 'underlined'
+  'outlined' | 'plain' | 'solo-filled' | 'filled' | 'solo' | 'solo-inverted' | 'underlined'
 
 interface Props {
   modelValue: number | null

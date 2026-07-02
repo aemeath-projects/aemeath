@@ -1,21 +1,24 @@
 /**
- * 聊天记录归档服务与 BullMQ 任务 —— 编排冷数据归档流程（发现分区 → 导出 → 上传 S3 → 清理）。
+ * 聊天记录归档服务 —— 按群归档，_discoverGroupCycles，僵尸检测，分批 DELETE。
  */
+
+import { rm } from 'node:fs/promises'
+import { setTimeout } from 'node:timers/promises'
 
 import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 
 import type { ArchiveStatus } from '#prisma/iris'
 
-import { IrisExporter, PARTITION_NAME_RE } from './exporter.js'
+import { IrisExporter } from './exporter.js'
 import type { ArchiveExporterSettings } from './exporter.js'
 import { IrisS3 } from './s3.js'
 
-import type { IrisPrismaClient } from '@/core/db/index.js'
+import type { IrisPrismaClient, MainPrismaClient } from '@/core/db/index.js'
 
-/** 归档单个分区的执行结果。 */
-export interface PartitionArchiveResult {
-  partition: string
+/** 单群归档结果。 */
+export interface GroupArchiveResult {
+  groupId: string
   status: 'completed' | 'empty' | 'failed'
   rows?: number
   originalBytes?: number
@@ -26,18 +29,17 @@ export interface PartitionArchiveResult {
 
 /** 归档入口结果。 */
 export interface ArchiveResult {
-  status: 'completed' | 'no_partitions'
-  message?: string
-  results?: PartitionArchiveResult[]
+  status: 'completed' | 'no_groups'
+  results?: GroupArchiveResult[]
 }
 
 /** BullMQ job data 结构。 */
 export interface ArchiveJobData {
-  partitionName?: string
+  groupId?: string // BigInt 序列化为 string
 }
 
 /**
- * 聊天记录归档编排服务 —— 协调分区发现、导出、上传和状态更新。
+ * 聊天记录归档编排服务 —— 按群 + 时间段归档，_discoverGroupCycles，僵尸检测，分批 DELETE。
  */
 export class IrisArchiveService {
   private readonly exporter: IrisExporter
@@ -45,7 +47,8 @@ export class IrisArchiveService {
 
   constructor(
     private readonly chatDb: IrisPrismaClient,
-    private readonly exporterSettings: ArchiveExporterSettings,
+    private readonly mainDb: MainPrismaClient,
+    exporterSettings: ArchiveExporterSettings,
     private readonly s3: IrisS3,
     private readonly tmpDir: string,
   ) {
@@ -53,136 +56,50 @@ export class IrisArchiveService {
   }
 
   // ════════════════════════════════════════════
-  //  分区管理
-  // ════════════════════════════════════════════
-
-  /**
-   * 确保 iris 数据库的基础 schema 与工具函数存在。
-   *
-   * 幂等，可重复调用。新库首次启动时完成 chat schema 和
-   * create_monthly_partition 函数的创建；已存在则跳过。
-   */
-  async ensureSchema(): Promise<void> {
-    await this.chatDb.$executeRawUnsafe(`CREATE SCHEMA IF NOT EXISTS chat`)
-
-    // 若 chat_history 是普通表（Prisma 迁移所建），重建为 RANGE 分区父表
-    // relkind: 'r'=普通表  'p'=分区父表
-    await this.chatDb.$executeRawUnsafe(`
-      DO $do$
-      BEGIN
-        IF EXISTS (
-          SELECT 1 FROM pg_class c
-          JOIN pg_namespace n ON n.oid = c.relnamespace
-          WHERE c.relname = 'chat_history' AND n.nspname = 'public' AND c.relkind = 'r'
-        ) THEN
-          DROP TABLE public.chat_history CASCADE;
-
-          CREATE SEQUENCE IF NOT EXISTS public.chat_history_id_seq AS BIGINT;
-
-          CREATE TABLE public.chat_history (
-            id           BIGINT       NOT NULL DEFAULT nextval('public.chat_history_id_seq'),
-            created_at   TIMESTAMPTZ  NOT NULL,
-            message_id   BIGINT       NOT NULL,
-            message_type SMALLINT     NOT NULL,
-            group_id     BIGINT,
-            user_id      BIGINT       NOT NULL,
-            raw_message  TEXT         NOT NULL DEFAULT '',
-            segments     JSONB        NOT NULL DEFAULT '[]',
-            sender_nickname VARCHAR(64) NOT NULL DEFAULT '',
-            sender_card  VARCHAR(64),
-            sender_role  VARCHAR(10),
-            stored_at    TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            CONSTRAINT chat_history_pkey PRIMARY KEY (id, created_at)
-          ) PARTITION BY RANGE (created_at);
-
-          ALTER SEQUENCE public.chat_history_id_seq OWNED BY public.chat_history.id;
-
-          CREATE INDEX ix_chat_group_time  ON public.chat_history (group_id,     created_at DESC);
-          CREATE INDEX ix_chat_user_time   ON public.chat_history (user_id,      created_at DESC);
-          CREATE INDEX ix_chat_message_id  ON public.chat_history (message_id,   created_at DESC);
-          CREATE INDEX ix_chat_type_time   ON public.chat_history (message_type, created_at DESC);
-        END IF;
-      END
-      $do$
-    `)
-
-    await this.chatDb.$executeRawUnsafe(`
-      CREATE OR REPLACE FUNCTION chat.create_monthly_partition(target_date DATE)
-      RETURNS void
-      LANGUAGE plpgsql AS $fn$
-      DECLARE
-          v_name  TEXT;
-          v_start DATE;
-          v_end   DATE;
-      BEGIN
-          v_start := DATE_TRUNC('month', target_date)::DATE;
-          v_end   := (DATE_TRUNC('month', target_date) + INTERVAL '1 month')::DATE;
-          v_name  := 'chat_history_' || TO_CHAR(v_start, 'YYYY_MM');
-
-          IF NOT EXISTS (
-              SELECT 1
-              FROM   pg_class     c
-              JOIN   pg_namespace n ON n.oid = c.relnamespace
-              WHERE  c.relname = v_name AND n.nspname = 'chat'
-          ) THEN
-              EXECUTE FORMAT(
-                  'CREATE TABLE chat.%I PARTITION OF public.chat_history
-                   FOR VALUES FROM (%L) TO (%L)',
-                  v_name, v_start, v_end
-              );
-          END IF;
-      END;
-      $fn$
-    `)
-  }
-
-  /**
-   * 确保当月和下月的分区存在。
-   */
-  async ensurePartitions(): Promise<{ status: string; message: string }> {
-    await this.chatDb.$executeRaw`SELECT chat.create_monthly_partition(CURRENT_DATE)`
-    await this.chatDb
-      .$executeRaw`SELECT chat.create_monthly_partition((CURRENT_DATE + INTERVAL '1 month')::DATE)`
-    return { status: 'ok', message: '分区已就绪' }
-  }
-
-  // ════════════════════════════════════════════
-  //  归档主流程
+  //  归档主入口
   // ════════════════════════════════════════════
 
   /**
    * 执行归档流程。
    *
-   * 如果未指定 partitionName，则自动发现超过保留月数的分区。
+   * 指定 groupId 时只归档该群；不指定时自动发现所有已配置周期的群。
    */
-  async archive(partitionName?: string): Promise<ArchiveResult> {
-    let partitions: string[]
+  async archive(groupId?: bigint): Promise<ArchiveResult> {
+    let cycles: Map<bigint, number>
 
-    if (partitionName != null) {
-      if (!PARTITION_NAME_RE.test(partitionName)) {
-        throw new Error(`非法分区名: ${partitionName}，格式须为 chat_history_YYYY_MM`)
+    if (groupId != null) {
+      // 单群：查该群显式 settings 记录，无记录则默认 180 天
+      interface SettingsRow {
+        value: string
       }
-      partitions = [partitionName]
+      const rows = await this.mainDb.$queryRaw<SettingsRow[]>`
+        SELECT value FROM settings
+        WHERE key = 'iris.archive_cycle_days'
+          AND type = 'group'::settings_entry_type
+          AND scope = ${groupId}
+          AND value ~ '^\d+$'
+      `
+      const days = rows[0] ? parseInt(rows[0].value, 10) : 180
+      if (days === 0) return { status: 'no_groups' }
+      cycles = new Map([[groupId, days]])
     } else {
-      partitions = await this._discoverArchivablePartitions()
+      cycles = await this._discoverGroupCycles()
     }
 
-    if (partitions.length === 0) {
-      return { status: 'no_partitions', message: '没有需要归档的分区' }
-    }
+    if (cycles.size === 0) return { status: 'no_groups' }
 
-    const results: PartitionArchiveResult[] = []
-    for (const part of partitions) {
+    // 单群模式：保留所有结果（含 empty），多群模式：过滤 empty
+    const isSingleGroup = groupId != null
+    const results: GroupArchiveResult[] = []
+    for (const [gId, cycleDays] of cycles) {
       try {
-        const result = await this._archivePartition(part)
-        results.push(result)
+        const r = await this._archiveGroup(gId, cycleDays)
+        if (isSingleGroup || r.status !== 'empty') {
+          results.push(r)
+        }
       } catch (err) {
-        this._log.error({ partition: part, err }, '归档分区失败')
-        results.push({
-          partition: part,
-          status: 'failed',
-          error: String(err),
-        })
+        this._log.error({ groupId: gId.toString(), err }, '归档群失败')
+        results.push({ groupId: gId.toString(), status: 'failed', error: String(err) })
       }
     }
 
@@ -215,6 +132,7 @@ export class IrisArchiveService {
     // BigInt → Number 转换（JSON.stringify 不支持 BigInt）
     const items = rawItems.map((r) => ({
       ...r,
+      groupId: r.groupId != null ? r.groupId.toString() : null,
       totalRows: Number(r.totalRows),
       originalBytes: Number(r.originalBytes),
       compressedBytes: Number(r.compressedBytes),
@@ -241,9 +159,9 @@ export class IrisArchiveService {
       orderBy: { periodStart: 'desc' },
       take: params.limit ?? 50,
     })
-    // BigInt → Number 转换
     return rows.map((r) => ({
       ...r,
+      groupId: r.groupId != null ? r.groupId.toString() : null,
       totalRows: Number(r.totalRows),
       originalBytes: Number(r.originalBytes),
       compressedBytes: Number(r.compressedBytes),
@@ -255,108 +173,134 @@ export class IrisArchiveService {
   // ════════════════════════════════════════════
 
   /**
-   * 获取当前月分区的消息行数（供 IrisCounter 启动时同步计数使用）。
+   * 发现各群归档周期配置。
+   *
+   * 1. 查 settings 表中显式配置的群，value > 0 才纳入归档
+   * 2. 查 master 账号所在的群，若无显式配置则默认 180 天
    */
-  async getCurrentPartitionRowCount(): Promise<number> {
-    const now = new Date()
-    const year = now.getFullYear().toString().padStart(4, '0')
-    const month = (now.getMonth() + 1).toString().padStart(2, '0')
-    const partitionName = `chat_history_${year}_${month}`
+  private async _discoverGroupCycles(): Promise<Map<bigint, number>> {
+    const result = new Map<bigint, number>()
 
-    interface CountRow {
-      count: bigint
+    // 第一步：查显式 settings 记录
+    interface SettingsRow {
+      scope: bigint
+      value: string
     }
-    const rows = await this.chatDb.$queryRawUnsafe<CountRow[]>(
-      `SELECT COUNT(*) AS count FROM chat."${partitionName}"`,
-    )
-    return Number(rows[0]?.count ?? 0)
-  }
-
-  private async _discoverArchivablePartitions(): Promise<string[]> {
-    const retentionMs = this.exporterSettings.retentionMonths * 30 * 24 * 60 * 60 * 1000
-    const cutoff = new Date(Date.now() - retentionMs)
-    const year = cutoff.getFullYear().toString().padStart(4, '0')
-    const month = (cutoff.getMonth() + 1).toString().padStart(2, '0')
-    const cutoffSuffix = `${year}_${month}`
-
-    interface PartitionRow {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      partition_name: string
-    }
-    const rows = await this.chatDb.$queryRaw<PartitionRow[]>`
-      SELECT c.relname AS partition_name
-      FROM pg_inherits i
-      JOIN pg_class c ON c.oid = i.inhrelid
-      JOIN pg_class p ON p.oid = i.inhparent
-      JOIN pg_namespace n ON n.oid = p.relnamespace
-      WHERE n.nspname = 'chat'
-        AND p.relname = 'chat_history'
-        AND replace(c.relname, 'chat_history_', '') < ${cutoffSuffix}
-      ORDER BY c.relname
+    const settingsRows = await this.mainDb.$queryRaw<SettingsRow[]>`
+      SELECT scope, value FROM settings
+      WHERE key = 'iris.archive_cycle_days'
+        AND type = 'group'::settings_entry_type
+        AND value ~ '^\d+$'
     `
-
-    const archivable = rows.map((r) => r.partition_name)
-    if (archivable.length === 0) return []
-
-    const existingLogs = await this.chatDb.archiveLog.findMany({
-      where: {
-        partitionName: { in: archivable },
-        status: 'completed',
-      },
-      select: { partitionName: true },
-    })
-    const alreadyArchived = new Set(existingLogs.map((l) => l.partitionName))
-    return archivable.filter((p) => !alreadyArchived.has(p))
-  }
-
-  private async _archivePartition(partitionName: string): Promise<PartitionArchiveResult> {
-    if (!PARTITION_NAME_RE.test(partitionName)) {
-      throw new Error(`非法分区名: ${partitionName}，格式须为 chat_history_YYYY_MM`)
+    const explicitGroups = new Set<bigint>()
+    for (const row of settingsRows) {
+      explicitGroups.add(row.scope)
+      const days = parseInt(row.value, 10)
+      if (days > 0) result.set(row.scope, days)
     }
 
-    const suffix = partitionName.replace('chat_history_', '')
-    const parts = suffix.split('_')
-    const year = Number(parts[0])
-    const month = Number(parts[1])
+    // 第二步：查 master 账号所在群，补充默认 180 天
+    interface MasterGroupRow {
+      groupId: bigint
+    }
+    const masterGroups = await this.mainDb.$queryRaw<MasterGroupRow[]>`
+      SELECT DISTINCT gm.group_id AS "groupId"
+      FROM group_memberships gm
+      JOIN accounts a ON a.qq = gm.user_id
+      WHERE a.role = 'master' AND a.is_enabled = true AND gm.is_active = true
+    `
+    for (const row of masterGroups) {
+      if (!explicitGroups.has(row.groupId)) {
+        result.set(row.groupId, 180)
+      }
+    }
 
-    const periodStart = new Date(year, month - 1, 1)
-    const periodEnd = month === 12 ? new Date(year + 1, 0, 1) : new Date(year, month, 1)
+    return result
+  }
+
+  /** 单群归档主流程。 */
+  private async _archiveGroup(groupId: bigint, cycleDays: number): Promise<GroupArchiveResult> {
+    const groupIdStr = groupId.toString()
+
+    // 关闭僵尸记录（上次运行意外中止的记录）
+    await this.chatDb.archiveLog.updateMany({
+      where: {
+        groupId,
+        status: { in: ['exporting', 'uploading', 'deleting'] },
+      },
+      data: {
+        status: 'failed',
+        errorMessage: '上次运行意外中止，已标记为失败',
+      },
+    })
+
+    // periodEnd = now - cycleDays，截断到当天 00:00 UTC
+    const now = new Date()
+    const periodEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+    periodEnd.setUTCDate(periodEnd.getUTCDate() - cycleDays)
+
+    // periodStart = 上次 completed 的 periodEnd，或 MIN(created_at)
+    const prevLogs = await this.chatDb.archiveLog.findMany({
+      where: { groupId, status: 'completed' },
+      orderBy: { periodEnd: 'desc' },
+      take: 1,
+    })
+    let periodStart: Date
+
+    if (prevLogs.length > 0 && prevLogs[0]) {
+      periodStart = prevLogs[0].periodEnd
+    } else {
+      interface MinRow {
+        minCreatedAt: Date | null
+      }
+      const minRows = await this.chatDb.$queryRaw<MinRow[]>`
+        SELECT MIN(created_at) AS "minCreatedAt"
+        FROM chat_history
+        WHERE group_id = ${groupId}
+      `
+      const minCreatedAt = minRows[0]?.minCreatedAt ?? null
+      if (!minCreatedAt) {
+        return { groupId: groupIdStr, status: 'empty' }
+      }
+      periodStart = minCreatedAt
+    }
+
+    if (periodStart >= periodEnd) {
+      return { groupId: groupIdStr, status: 'empty' }
+    }
+
+    // seq = MAX(seq) + 1（所有状态，防止唯一约束冲突）
+    const maxSeqResult = await this.chatDb.archiveLog.aggregate({
+      where: { groupId },
+      _max: { seq: true },
+    })
+    const seq = (maxSeqResult._max.seq ?? 0) + 1
+    const seqStr = seq.toString().padStart(3, '0')
+    const s3Key = `groups/${groupIdStr}/${seqStr}.parquet`
+    const tmpPath = `${this.tmpDir}/iris_${groupIdStr}_${seqStr}_${Date.now().toString()}.parquet`
 
     const archiveLog = await this.chatDb.archiveLog.create({
-      data: {
-        partitionName,
-        periodStart,
-        periodEnd,
-        s3Bucket: this.s3.bucket,
-        s3Key: '',
-        s3Sha256: '',
-        status: 'pending',
-      },
+      data: { groupId, seq, periodStart, periodEnd, s3Key, s3Sha256: '', status: 'pending' },
     })
-
     const archiveId = archiveLog.id
 
     try {
-      await this._updateArchiveStatus(archiveId, 'exporting')
+      await this._updateStatus(archiveId, 'exporting')
 
-      const tmpPath = `${this.tmpDir}/${partitionName}_${Date.now().toString()}.parquet`
-
-      const [totalRows, originalBytes, compressedBytes, sha256Hex] =
-        await this.exporter.exportPartition(partitionName, tmpPath)
+      const [totalRows, originalBytes, compressedBytes, sha256Hex, maxExportedId] =
+        await this.exporter.exportGroup(groupId, periodStart, periodEnd, tmpPath)
 
       if (totalRows === 0) {
-        await this._updateArchiveStatus(archiveId, 'completed', '分区为空，跳过')
-        return { partition: partitionName, status: 'empty', rows: 0 }
+        await rm(tmpPath, { force: true })
+        await this._updateStatus(archiveId, 'completed', undefined, new Date())
+        return { groupId: groupIdStr, status: 'empty', rows: 0 }
       }
 
-      await this._updateArchiveStatus(archiveId, 'uploading')
-
-      const yearPadded = year.toString().padStart(4, '0')
-      const monthPadded = month.toString().padStart(2, '0')
-      const s3Key = `${yearPadded}/${monthPadded}/${partitionName}.parquet`
+      await this._updateStatus(archiveId, 'uploading')
 
       await this.s3.uploadFile(tmpPath, s3Key, {
-        partition: partitionName,
+        groupId: groupIdStr,
+        seq: String(seq),
         periodStart: periodStart.toISOString().slice(0, 10),
         periodEnd: periodEnd.toISOString().slice(0, 10),
         totalRows: String(totalRows),
@@ -364,7 +308,8 @@ export class IrisArchiveService {
       })
 
       const manifest = IrisS3.buildManifest(
-        partitionName,
+        groupId,
+        seq,
         periodStart,
         periodEnd,
         totalRows,
@@ -372,42 +317,51 @@ export class IrisArchiveService {
         compressedBytes,
         sha256Hex,
       )
-      const manifestKey = s3Key.replace('.parquet', '.manifest.json')
-      await this.s3.uploadManifest(manifest, manifestKey)
-
-      await this._updateArchiveStatus(archiveId, 'uploaded')
+      await this.s3.uploadManifest(manifest, s3Key.replace('.parquet', '.manifest.json'))
 
       await this.chatDb.archiveLog.update({
         where: { id: archiveId },
         data: {
+          status: 'uploaded',
           totalRows: BigInt(totalRows),
           originalBytes: BigInt(originalBytes),
           compressedBytes: BigInt(compressedBytes),
-          s3Key,
           s3Sha256: sha256Hex,
         },
       })
 
-      // 分离并删除分区表（分区名已通过正则白名单验证）
-      await this.chatDb.$executeRawUnsafe(
-        `ALTER TABLE chat.chat_history DETACH PARTITION chat."${partitionName}"`,
-      )
-      await this.chatDb.$executeRawUnsafe(`DROP TABLE chat."${partitionName}"`)
+      await rm(tmpPath, { force: true })
 
-      await this._updateArchiveStatus(archiveId, 'partition_dropped')
+      // 分批 DELETE，每批 1000 行，批次间暂停 10ms 避免长事务阻塞写入
+      await this._updateStatus(archiveId, 'deleting')
+      let deleted = 1
+      while (deleted > 0) {
+        const result = await this.chatDb.$executeRawUnsafe(
+          `DELETE FROM chat_history
+           WHERE id IN (
+             SELECT id FROM chat_history
+             WHERE group_id = $1
+               AND created_at < $2
+               AND id <= $3
+             LIMIT 1000
+           )`,
+          groupId,
+          periodEnd,
+          maxExportedId,
+        )
+        deleted = result
+        if (deleted > 0) await setTimeout(10)
+      }
 
       await this.chatDb.archiveLog.update({
         where: { id: archiveId },
-        data: {
-          status: 'completed',
-          completedAt: new Date(),
-        },
+        data: { status: 'completed', completedAt: new Date() },
       })
 
-      this._log.info({ partition: partitionName, rows: totalRows, compressedBytes }, '归档完成')
+      this._log.info({ groupId: groupIdStr, seq, rows: totalRows, compressedBytes }, '归档完成')
 
       return {
-        partition: partitionName,
+        groupId: groupIdStr,
         status: 'completed',
         rows: totalRows,
         originalBytes,
@@ -415,22 +369,23 @@ export class IrisArchiveService {
         s3Key,
       }
     } catch (err) {
-      await this._updateArchiveStatus(archiveId, 'failed', String(err))
+      await this._updateStatus(archiveId, 'failed', String(err))
       throw err
     }
   }
 
-  private async _updateArchiveStatus(
-    archiveId: string,
+  private async _updateStatus(
+    id: string,
     status: ArchiveStatus,
     errorMessage?: string,
+    completedAt?: Date,
   ): Promise<void> {
     await this.chatDb.archiveLog.update({
-      where: { id: archiveId },
+      where: { id },
       data: {
         status,
         ...(errorMessage != null ? { errorMessage } : {}),
-        ...(status === 'completed' ? { completedAt: new Date() } : {}),
+        ...(completedAt != null ? { completedAt } : {}),
       },
     })
   }
@@ -445,6 +400,7 @@ export function archiveIrisProcessor(
   service: IrisArchiveService,
 ): (job: { data: ArchiveJobData }) => Promise<ArchiveResult> {
   return async (job) => {
-    return service.archive(job.data.partitionName)
+    const groupId = job.data.groupId != null ? BigInt(job.data.groupId) : undefined
+    return service.archive(groupId)
   }
 }

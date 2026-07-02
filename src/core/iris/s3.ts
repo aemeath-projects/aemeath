@@ -9,7 +9,8 @@ import type { Client as MinioClient } from 'minio'
 /** Parquet 归档 manifest 结构。 */
 export interface ArchiveManifest {
   version: number
-  partition: string
+  groupId: string
+  seq: number
   period: { start: string; end: string }
   stats: { totalRows: number }
   archive: {
@@ -80,7 +81,8 @@ export class IrisS3 {
    * 构建归档 manifest 对象。
    */
   static buildManifest(
-    partitionName: string,
+    groupId: bigint,
+    seq: number,
     periodStart: Date,
     periodEnd: Date,
     totalRows: number,
@@ -93,7 +95,8 @@ export class IrisS3 {
 
     return {
       version: 1,
-      partition: partitionName,
+      groupId: groupId.toString(),
+      seq,
       period: {
         start: periodStart.toISOString().slice(0, 10),
         end: periodEnd.toISOString().slice(0, 10),

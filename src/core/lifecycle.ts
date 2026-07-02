@@ -16,7 +16,7 @@ import type {
 } from '@/core/accounts/index.js'
 import type { MainPrismaClient, IrisPrismaClient } from '@/core/db/index.js'
 import type { ContextApis } from '@/core/dispatch/index.js'
-import type { IrisCounter, IrisSearchService } from '@/core/iris/index.js'
+import type { IrisSearchService } from '@/core/iris/index.js'
 import type { RedisStore } from '@/core/redis/index.js'
 
 export interface AemeathServiceMap {
@@ -41,7 +41,6 @@ export interface AemeathServiceMap {
   master_apis: MasterApis
 
   // ── Iris 领域 ──
-  iris_counter: IrisCounter
   iris_search: IrisSearchService
 
   // ── 业务服务（@Provide 动态注册） ──

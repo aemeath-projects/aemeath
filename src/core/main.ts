@@ -71,7 +71,7 @@ import '@/core/personnel/index.js'
 import '@/core/oss/bootstrap.js'
 // 触发 MediaStorageService 的 Startup 注册
 import '@/core/iris/media.js'
-// 触发 IrisBootstrap 的 Startup 注册（IrisService / IrisArchiveService / IrisCounter / IrisSearchService）
+// 触发 IrisBootstrap 的 Startup 注册（IrisService / IrisArchiveService / IrisSearchService）
 import '@/core/iris/bootstrap.js'
 // 触发 BotClientBootstrap 的 Startup 注册
 import '@/core/accounts/bootstrap.js'
@@ -200,10 +200,7 @@ async function _startup(
   const loggingInterceptor = new LoggingInterceptor()
   const sessionInterceptor = new SessionInterceptor()
 
-  const irisInterceptor = new IrisInterceptor(
-    registry.get('iris') as IrisService,
-    registry.get('iris_counter'),
-  )
+  const irisInterceptor = new IrisInterceptor(registry.get('iris') as IrisService)
 
   const composite = handlerRegistry.buildMappings()
 
@@ -229,8 +226,7 @@ async function _startup(
 
   // 13. 注入 SessionManager 到会话拦截器（延迟绑定）
   const sessionManager = registry.getOptional('session_manager') as
-    | SessionManager<OneBotContext>
-    | undefined
+    SessionManager<OneBotContext> | undefined
   if (sessionManager !== undefined) {
     sessionInterceptor.setSessionManager(sessionManager)
   }

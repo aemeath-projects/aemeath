@@ -14,13 +14,7 @@ import type { Density } from 'vuetify/lib/composables/density.js'
 // 参见文档 TIP：focus 会将 search 设为当前 model 的 title，blur 会清空 search。
 
 type FieldVariant =
-  | 'outlined'
-  | 'plain'
-  | 'solo-filled'
-  | 'filled'
-  | 'solo'
-  | 'solo-inverted'
-  | 'underlined'
+  'outlined' | 'plain' | 'solo-filled' | 'filled' | 'solo' | 'solo-inverted' | 'underlined'
 
 interface Props {
   modelValue: number | null

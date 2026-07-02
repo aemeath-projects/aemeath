@@ -32,9 +32,6 @@ export interface ArchiveExporterSettings {
   compression: 'zstd' | 'gzip' | 'none'
 }
 
-/** 分区名白名单正则：只允许 chat_history_YYYY_MM 格式。 */
-export const PARTITION_NAME_RE = /^chat_history_\d{4}_\d{2}$/
-
 /** 数据库原始行类型。 */
 interface RawRow {
   id: bigint
@@ -71,41 +68,52 @@ export class IrisExporter {
   ) {}
 
   /**
-   * 批量读取分区数据并导出为 Parquet 文件（ZSTD 压缩）。
+   * 按群 + 时间段导出聊天记录为 Parquet 文件。
    *
-   * @param partitionName - 分区名（须通过 PARTITION_NAME_RE 验证）
+   * @param groupId - 群号
+   * @param periodStart - 时间段起始（含）
+   * @param periodEnd - 时间段结束（不含）
    * @param outputPath - 输出文件路径
-   * @returns [totalRows, originalBytes（近似）, compressedBytes, sha256Hex]
+   * @returns [totalRows, originalBytes（近似）, compressedBytes, sha256Hex, maxExportedId]
    */
-  async exportPartition(
-    partitionName: string,
+  async exportGroup(
+    groupId: bigint,
+    periodStart: Date,
+    periodEnd: Date,
     outputPath: string,
-  ): Promise<[number, number, number, string]> {
+  ): Promise<[number, number, number, string, bigint]> {
     // ── 1. 游标分批读取所有行 ─────────────────────────────────────
     const allRows: RawRow[] = []
     let cursor: bigint | undefined
     let hasMore = true
 
     while (hasMore) {
-      // 分区名已通过 PARTITION_NAME_RE 正则白名单验证；动态值通过 $N 位置参数化，消除拼接注入风险
-      const rows =
+      const rows: RawRow[] =
         cursor !== undefined
           ? await this.chatDb.$queryRawUnsafe<RawRow[]>(
               `SELECT id, created_at, message_id, message_type, group_id, user_id,
                       raw_message, segments, sender_nickname, sender_card, sender_role, stored_at
-               FROM chat."${partitionName}"
-               WHERE id > $1
+               FROM chat_history
+               WHERE group_id = $1 AND created_at >= $2 AND created_at < $3
+                 AND id > $4
                ORDER BY id ASC
-               LIMIT $2`,
+               LIMIT $5`,
+              groupId,
+              periodStart,
+              periodEnd,
               cursor,
               this.settings.batchSize,
             )
           : await this.chatDb.$queryRawUnsafe<RawRow[]>(
               `SELECT id, created_at, message_id, message_type, group_id, user_id,
                       raw_message, segments, sender_nickname, sender_card, sender_role, stored_at
-               FROM chat."${partitionName}"
+               FROM chat_history
+               WHERE group_id = $1 AND created_at >= $2 AND created_at < $3
                ORDER BY id ASC
-               LIMIT $1`,
+               LIMIT $4`,
+              groupId,
+              periodStart,
+              periodEnd,
               this.settings.batchSize,
             )
 
@@ -113,15 +121,21 @@ export class IrisExporter {
       allRows.push(...rows)
 
       const lastRow = rows[rows.length - 1]
-      if (lastRow !== undefined) {
-        cursor = lastRow.id
-      }
+      if (lastRow !== undefined) cursor = lastRow.id
       hasMore = rows.length >= this.settings.batchSize
     }
 
     const totalRows = allRows.length
+    const lastItem = allRows[allRows.length - 1]
+    const maxExportedId = lastItem !== undefined ? lastItem.id : 0n
 
-    // ── 2. 构建 Apache Arrow 列式数组 ────────────────────────────
+    // ── 2. 无数据时直接返回 ───────────────────────────────────────
+    if (totalRows === 0) {
+      await writeFile(outputPath, Buffer.alloc(0))
+      return [0, 0, 0, '', maxExportedId]
+    }
+
+    // ── 3. 构建 Apache Arrow 列式数组 ────────────────────────────
     // 使用 BigInt64Array / Int32Array 等强类型列，保证 Parquet 类型映射准确
     const colId = new BigInt64Array(totalRows)
     const colCreatedAt = new BigInt64Array(totalRows) // Unix 毫秒时间戳
@@ -168,7 +182,7 @@ export class IrisExporter {
     })
     /* eslint-enable @typescript-eslint/naming-convention */
 
-    // ── 3. Arrow → IPC Stream → WASM Table → Parquet bytes ───────
+    // ── 4. Arrow → IPC Stream → WASM Table → Parquet bytes ───────
     const ipcBytes = tableToIPC(arrowTable, 'stream')
     const wasmTable = Table.fromIPCStream(ipcBytes)
 
@@ -176,17 +190,17 @@ export class IrisExporter {
     const writerProps = new WriterPropertiesBuilder().setCompression(compression).build()
     const parquetBytes = writeParquet(wasmTable, writerProps)
 
-    // ── 4. 写入文件并计算摘要 ─────────────────────────────────────
+    // ── 5. 写入文件并计算摘要 ─────────────────────────────────────
     await writeFile(outputPath, parquetBytes)
 
     const fileStats = await stat(outputPath)
     const compressedBytes = fileStats.size
     const sha256Hex = await _computeFileSha256(outputPath)
 
-    // originalBytes 近似值：行数 × 平均行字节估算（与原实现保持一致）
+    // originalBytes 近似值：行数 × 平均行字节估算
     const originalBytes = totalRows * 512
 
-    return [totalRows, originalBytes, compressedBytes, sha256Hex]
+    return [totalRows, originalBytes, compressedBytes, sha256Hex, maxExportedId]
   }
 }
 

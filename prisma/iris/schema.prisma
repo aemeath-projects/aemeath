@@ -19,7 +19,7 @@ enum ArchiveStatus {
   exporting
   uploading
   uploaded
-  partition_dropped
+  deleting
   completed
   failed
 
@@ -30,12 +30,10 @@ enum ArchiveStatus {
 //  Models
 // ═══════════════════════════════════════════════════
 
-/// 聊天记录分区表 (PostgreSQL RANGE 分区，Prisma 仅定义逻辑父表)
-/// 父表位于 public schema，月度子分区位于 chat schema（chat.chat_history_YYYY_MM）。
-/// 分区管理由 chat.create_monthly_partition() 函数负责，不经过 Prisma 迁移。
+/// 聊天记录表
 /// message_type 为 IntEnum: 1=private, 2=group, 3=self_sent (SmallInt 存储)
 model ChatMessage {
-  id        BigInt   @default(autoincrement())
+  id        BigInt   @id @default(autoincrement()) @db.BigInt
   createdAt DateTime @map("created_at") @db.Timestamptz
 
   messageId   BigInt  @map("message_id")
@@ -43,17 +41,13 @@ model ChatMessage {
   groupId     BigInt? @map("group_id")
   userId      BigInt  @map("user_id")
 
-  rawMessage String @default("") @map("raw_message") @db.Text
-  segments   Json   @db.JsonB
+  rawMessage     String   @default("") @map("raw_message")     @db.Text
+  segments       Json     @db.JsonB
+  senderNickname String   @default("") @map("sender_nickname") @db.Text
+  senderCard     String?  @map("sender_card")                  @db.Text
+  senderRole     String?  @map("sender_role")                  @db.Text
+  storedAt       DateTime @default(now()) @map("stored_at")    @db.Timestamptz
 
-  senderNickname String  @default("") @map("sender_nickname") @db.VarChar(64)
-  senderCard     String? @map("sender_card") @db.VarChar(64)
-  senderRole     String? @map("sender_role") @db.VarChar(10)
-
-  storedAt DateTime @default(now()) @map("stored_at") @db.Timestamptz
-
-  // 分区表复合主键 (id + created_at)
-  @@id([id, createdAt])
   @@index([groupId, createdAt(sort: Desc)], map: "ix_chat_group_time")
   @@index([userId, createdAt(sort: Desc)], map: "ix_chat_user_time")
   @@index([messageId, createdAt(sort: Desc)], map: "ix_chat_message_id")
@@ -61,40 +55,25 @@ model ChatMessage {
   @@map("chat_history")
 }
 
-/// 归档消息元数据索引 —— 搜索定位用，完整数据在 S3 Parquet 中。
-model ArchivedMessageIndex {
-  id             BigInt   @id // 来自原始消息的 id，非自增
-  messageId      BigInt   @map("message_id")
-  groupId        BigInt?  @map("group_id")
-  userId         BigInt   @map("user_id")
-  createdAt      DateTime @map("created_at")
-  senderNickname String   @map("sender_nickname")
-  textSnippet    String   @map("text_snippet")
-  archiveRef     String   @map("archive_ref")
-
-  @@index([groupId, createdAt])
-  @@index([userId, createdAt])
-  @@map("archived_message_index")
-}
-
 /// 聊天记录归档日志表
 model ArchiveLog {
-  id              String        @id @default(uuid()) @db.Uuid
-  partitionName   String        @unique @map("partition_name") @db.VarChar(64)
-  periodStart     DateTime      @map("period_start") @db.Date
-  periodEnd       DateTime      @map("period_end") @db.Date
-  totalRows       BigInt        @default(0) @map("total_rows")
-  originalBytes   BigInt        @default(0) @map("original_bytes")
-  compressedBytes BigInt        @default(0) @map("compressed_bytes")
-  s3Bucket        String        @default("") @map("s3_bucket") @db.VarChar(128)
-  s3Key           String        @default("") @map("s3_key") @db.VarChar(512)
-  s3Sha256        String        @default("") @map("s3_sha256") @db.VarChar(64)
+  id              String        @id @default(uuid())            @db.Uuid
+  groupId         BigInt?       @map("group_id")
+  seq             Int           @default(0)
+  periodStart     DateTime      @map("period_start")            @db.Timestamptz
+  periodEnd       DateTime      @map("period_end")              @db.Timestamptz
+  totalRows       BigInt        @default(0)  @map("total_rows")
+  originalBytes   BigInt        @default(0)  @map("original_bytes")
+  compressedBytes BigInt        @default(0)  @map("compressed_bytes")
+  s3Key           String        @default("") @map("s3_key")     @db.Text
+  s3Sha256        String        @default("") @map("s3_sha256")  @db.VarChar(64)
   status          ArchiveStatus @default(pending)
-  errorMessage    String?       @map("error_message") @db.Text
+  errorMessage    String?       @map("error_message")           @db.Text
   createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz
-  completedAt     DateTime?     @map("completed_at") @db.Timestamptz
+  completedAt     DateTime?     @map("completed_at")            @db.Timestamptz
 
-  @@index([status], map: "ix_archive_log_status")
-  @@index([periodStart], map: "ix_archive_log_period")
+  @@unique([groupId, seq])
+  @@index([status],               map: "ix_archive_log_status")
+  @@index([groupId, periodStart], map: "ix_archive_log_group_period")
   @@map("archive_log")
 }

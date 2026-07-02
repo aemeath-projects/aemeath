@@ -319,12 +319,8 @@ const irisRoutes: FastifyPluginAsync = async (app) => {
     },
     async (_req: FastifyRequest, reply: FastifyReply) => {
       const archiveSvc = app.services.get('iris_archive') as IrisArchiveService
-      const counter = app.services.get('iris_counter')
-
-      const currentPartitionRows = await archiveSvc.getCurrentPartitionRowCount()
-      const archiveThreshold = counter.getThreshold()
-
-      await reply.send(ok({ currentPartitionRows, archiveThreshold }))
+      const { total: completedArchives } = await archiveSvc.getArchiveLogs(1, 1)
+      await reply.send(ok({ totalMessages: 0, completedArchives }))
     },
   )
 
@@ -342,7 +338,7 @@ const irisRoutes: FastifyPluginAsync = async (app) => {
       },
     },
     async (
-      req: FastifyRequest<{ Body?: { partitionName?: string; reason?: string } }>,
+      req: FastifyRequest<{ Body?: { groupId?: string; reason?: string } }>,
       reply: FastifyReply,
     ) => {
       const queue = app.services.getOptional('queue') as ArchiveQueue | undefined
@@ -355,7 +351,7 @@ const irisRoutes: FastifyPluginAsync = async (app) => {
       try {
         const job = await queue.add('iris_archive', {
           trigger: 'manual',
-          partitionName: req.body?.partitionName,
+          groupId: req.body?.groupId,
           reason: req.body?.reason,
         })
         await reply.send(ok({ taskId: job.id ?? 'unknown' }, 'Archive task queued'))

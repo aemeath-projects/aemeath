@@ -29,6 +29,16 @@ const BUILTIN_NODES: SettingNodeSchema[] = [
     ownerDisplayName: '系统',
     category: 'permission',
   },
+  {
+    key: 'iris.archive_cycle_days',
+    type: 'number',
+    default: 0,
+    description: '归档周期（天），0 表示禁用；master 账号所在群未设置时默认 180',
+    scope: 'group',
+    owner: '__system__',
+    ownerDisplayName: '系统',
+    category: 'config',
+  },
 ]
 
 function toSchema(
@@ -43,8 +53,7 @@ function toSchema(
   const scope: 'all' | 'group' | 'user' = rawScope === 'group' ? 'group' : 'all'
   const category = (options.category ??
     (key.endsWith('.enabled') || key.endsWith('.permission') ? 'permission' : 'config')) as
-    | 'permission'
-    | 'config'
+    'permission' | 'config'
 
   return {
     key,

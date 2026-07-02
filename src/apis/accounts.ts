@@ -42,8 +42,7 @@ const plugin: FastifyPluginAsync = async (app) => {
       if (!account) return reply.send(fail('账号不存在'))
 
       const pool = req.server.services.get('account_pool') as
-        | ClientPool<NapCatClient, AccountRole, AnyOneBotEvent>
-        | undefined
+        ClientPool<NapCatClient, AccountRole, AnyOneBotEvent> | undefined
       const clientId = `bot-${String(account.qq)}`
       const adapter = pool?.getClient(clientId) as NapCatClientAdapter | undefined
 
@@ -108,8 +107,7 @@ const plugin: FastifyPluginAsync = async (app) => {
       if (!account) return reply.send(fail('账号不存在'))
 
       const pool = req.server.services.get('account_pool') as
-        | ClientPool<NapCatClient, AccountRole, AnyOneBotEvent>
-        | undefined
+        ClientPool<NapCatClient, AccountRole, AnyOneBotEvent> | undefined
       const clientId = `bot-${String(account.qq)}`
       const adapter = pool?.getClient(clientId)
       if (adapter) await adapter.disconnect()
@@ -129,8 +127,7 @@ const plugin: FastifyPluginAsync = async (app) => {
       if (!account) return reply.send(fail('账号不存在'))
 
       const pool = req.server.services.get('account_pool') as
-        | ClientPool<NapCatClient, AccountRole, AnyOneBotEvent>
-        | undefined
+        ClientPool<NapCatClient, AccountRole, AnyOneBotEvent> | undefined
       const clientId = `bot-${String(account.qq)}`
       const adapter = pool?.getClient(clientId)
       if (!adapter) return reply.send(fail('账号未在连接池中'))
@@ -149,8 +146,7 @@ const plugin: FastifyPluginAsync = async (app) => {
       if (!account) return reply.send(fail('账号不存在'))
 
       const pool = req.server.services.get('account_pool') as
-        | ClientPool<NapCatClient, AccountRole, AnyOneBotEvent>
-        | undefined
+        ClientPool<NapCatClient, AccountRole, AnyOneBotEvent> | undefined
       const clientId = `bot-${String(account.qq)}`
       const adapter = pool?.getClient(clientId)
       if (adapter) await adapter.disconnect()
@@ -161,8 +157,7 @@ const plugin: FastifyPluginAsync = async (app) => {
   // GET /api/routing/table
   app.get('/routing/table', async (req, reply) => {
     const pool = req.server.services.get('account_pool') as
-      | ClientPool<NapCatClient, AccountRole, AnyOneBotEvent>
-      | undefined
+      ClientPool<NapCatClient, AccountRole, AnyOneBotEvent> | undefined
     const available = pool?.getAvailableClients() ?? []
     return reply.send(ok(available.map((c) => ({ clientId: c.id, state: c.state }))))
   })

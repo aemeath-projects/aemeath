@@ -11,7 +11,7 @@ import type {
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 
 import type { ContextApis } from '@/core/dispatch/adapter.js'
-import type { IrisCounter, IrisService } from '@/core/iris/index.js'
+import type { IrisService } from '@/core/iris/index.js'
 
 /** 将 OneBot 消息类型字符串映射为数字（与 Prisma schema 中的 SmallInt 对应）。 */
 function resolveMessageType(messageType: string): number {
@@ -22,10 +22,7 @@ function resolveMessageType(messageType: string): number {
 }
 
 export class IrisInterceptor implements HandlerInterceptor<AnyOneBotEvent, ContextApis> {
-  constructor(
-    private readonly irisService: IrisService,
-    private readonly counter: IrisCounter,
-  ) {}
+  constructor(private readonly irisService: IrisService) {}
 
   async preHandle(
     ctx: Context<AnyOneBotEvent, ContextApis>,
@@ -63,11 +60,6 @@ export class IrisInterceptor implements HandlerInterceptor<AnyOneBotEvent, Conte
       senderRole: msgEvent.sender.role ?? null,
       createdAt: new Date(msgEvent.time * 1000),
     })
-
-    this.counter.increment()
-    if (this.counter.shouldArchiveAndLock()) {
-      await this.counter.triggerArchive()
-    }
 
     return true
   }

@@ -25,7 +25,9 @@ export const IrisSearchQuerySchema = Type.Object({
 
 /** 手动触发归档任务请求体 —— POST /api/iris/archives/trigger */
 export const IrisTriggerArchiveBodySchema = Type.Object({
-  partitionName: Type.Optional(Type.String({ description: '指定分区名称，不传则自动归档' })),
+  groupId: Type.Optional(
+    Type.String({ pattern: '^\\d+$', description: '群 ID（BigInt 字符串），不传则全量归档' }),
+  ),
   reason: Type.Optional(Type.String({ description: '手动触发原因（仅日志记录）' })),
 })
 
@@ -51,8 +53,8 @@ export const IrisSearchDataSchema = Type.Object({
 
 /** Iris 统计数据 Schema —— GET /api/iris/stats */
 export const IrisStatsDataSchema = Type.Object({
-  currentPartitionRows: Type.Number({ description: '当前月分区消息行数' }),
-  archiveThreshold: Type.Number({ description: '触发归档的消息数阈值' }),
+  totalMessages: Type.Number({ description: '聊天记录总行数' }),
+  completedArchives: Type.Number({ description: '已完成的归档记录数' }),
 })
 
 /** 手动触发归档响应数据 Schema —— POST /api/iris/archives/trigger */

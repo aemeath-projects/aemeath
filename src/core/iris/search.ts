@@ -1,8 +1,7 @@
 /**
- * IrisSearchService —— 查询 archived_message_index 元数据表。
- * 支持按 groupId、userId、时间范围、关键词（pg_trgm 模糊搜索）查询。
+ * IrisSearchService —— 归档消息搜索服务。
+ * TODO(Task 7): 基于新的 ArchiveLog 结构重新实现搜索逻辑。
  */
-import type { IrisPrismaClient } from '@/core/db/index.js'
 
 export interface SearchOptions {
   keyword?: string
@@ -26,50 +25,12 @@ export interface SearchResult {
 }
 
 export class IrisSearchService {
-  constructor(private readonly irisDb: IrisPrismaClient) {}
-
-  async search(options: SearchOptions): Promise<SearchResult[]> {
-    const { keyword, groupId, userId, startDate, endDate, limit = 50, offset = 0 } = options
-    return this.irisDb.archivedMessageIndex.findMany({
-      where: {
-        ...(groupId !== undefined && { groupId }),
-        ...(userId !== undefined && { userId }),
-        ...(startDate !== undefined || endDate !== undefined
-          ? {
-              createdAt: {
-                ...(startDate !== undefined && { gte: startDate }),
-                ...(endDate !== undefined && { lte: endDate }),
-              },
-            }
-          : {}),
-        ...(keyword !== undefined && {
-          textSnippet: { contains: keyword, mode: 'insensitive' },
-        }),
-      },
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-      skip: offset,
-    })
+  // TODO(Task 7): 重新实现搜索逻辑，archivedMessageIndex 模型已从 iris schema 中移除
+  async search(_options: SearchOptions): Promise<SearchResult[]> {
+    return []
   }
 
-  async count(options: Omit<SearchOptions, 'limit' | 'offset'>): Promise<number> {
-    const { keyword, groupId, userId, startDate, endDate } = options
-    return this.irisDb.archivedMessageIndex.count({
-      where: {
-        ...(groupId !== undefined && { groupId }),
-        ...(userId !== undefined && { userId }),
-        ...(startDate !== undefined || endDate !== undefined
-          ? {
-              createdAt: {
-                ...(startDate !== undefined && { gte: startDate }),
-                ...(endDate !== undefined && { lte: endDate }),
-              },
-            }
-          : {}),
-        ...(keyword !== undefined && {
-          textSnippet: { contains: keyword, mode: 'insensitive' },
-        }),
-      },
-    })
+  async count(_options: Omit<SearchOptions, 'limit' | 'offset'>): Promise<number> {
+    return 0
   }
 }

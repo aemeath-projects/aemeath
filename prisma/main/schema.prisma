@@ -73,7 +73,7 @@ enum LikeSource {
 /// 机器人已知用户表
 model User {
   qq       BigInt       @id @map("qq")
-  nickname String       @default("") @db.VarChar(64)
+  nickname String       @default("") @db.Text
   relation UserRelation @default(stranger)
 
   lastSynced DateTime @default(now()) @map("last_synced") @db.Timestamptz
@@ -93,7 +93,7 @@ model User {
 /// 机器人群聊表
 model Group {
   groupId        BigInt  @id @map("group_id")
-  groupName      String  @default("") @map("group_name") @db.VarChar(128)
+  groupName      String  @default("") @map("group_name") @db.Text
   memberCount    Int     @default(0) @map("member_count")
   maxMemberCount Int     @default(0) @map("max_member_count")
   isActive       Boolean @default(true) @map("is_active")
@@ -118,13 +118,13 @@ model GroupMembership {
   id              String    @id @default(uuid()) @db.Uuid
   userId          BigInt    @map("user_id")
   groupId         BigInt    @map("group_id")
-  card            String    @default("") @db.VarChar(64)
+  card            String    @default("") @db.Text
   role            GroupRole @default(member)
   joinTime        BigInt    @default(0) @map("join_time")
   lastActiveTime  BigInt    @default(0) @map("last_active_time")
-  title           String    @default("") @db.VarChar(64)
+  title           String    @default("") @db.Text
   titleExpireTime BigInt    @default(0) @map("title_expire_time")
-  level           String    @default("") @db.VarChar(10)
+  level           String    @default("") @db.Text
   isActive        Boolean   @default(true) @map("is_active")
 
   /**
@@ -143,9 +143,9 @@ model GroupMembership {
 /// LLM 提供商表
 model LlmProvider {
   id            String @id @default(uuid()) @db.Uuid
-  name          String @unique @db.VarChar(64)
-  apiBase       String @map("api_base") @db.VarChar(512)
-  apiKey        String @map("api_key") @db.VarChar(512)
+  name          String @unique @db.Text
+  apiBase       String @map("api_base") @db.Text
+  apiKey        String @map("api_key") @db.Text
   maxRetries    Int    @default(2) @map("max_retries")
   timeout       Int    @default(60)
   retryInterval Int    @default(1) @map("retry_interval")
@@ -162,8 +162,8 @@ model LlmProvider {
 model LlmModel {
   id          String  @id @default(uuid()) @db.Uuid
   providerId  String  @map("provider_id") @db.Uuid
-  modelName   String  @map("model_name") @db.VarChar(128)
-  displayName String? @map("display_name") @db.VarChar(128)
+  modelName   String  @map("model_name") @db.Text
+  displayName String? @map("display_name") @db.Text
   inputPrice  Decimal @default(0) @map("input_price") @db.Decimal(12, 6)
   outputPrice Decimal @default(0) @map("output_price") @db.Decimal(12, 6)
   temperature Float   @default(0.7) @db.DoublePrecision
@@ -280,7 +280,7 @@ model LikeHistory {
 /// 漂流瓶池表
 model DriftBottlePool {
   id   Int    @id
-  name String @unique @db.VarChar(64)
+  name String @unique @db.Text
 
   /**
    * Relations

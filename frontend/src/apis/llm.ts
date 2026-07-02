@@ -6,9 +6,12 @@ import { get, post, put, del } from './http'
 
 /* 类型定义 */
 
+export type LlmProviderType = 'openai' | 'anthropic' | 'gemini'
+
 export interface ProviderItem {
   id: string
   name: string
+  type: LlmProviderType
   apiBase: string
   apiKeyMasked: string
   maxRetries: number
@@ -24,6 +27,7 @@ export interface ProviderDetail extends ProviderItem {
 
 export interface ProviderCreateData {
   name: string
+  type: LlmProviderType
   apiBase: string
   apiKey: string
   maxRetries?: number
@@ -33,6 +37,7 @@ export interface ProviderCreateData {
 
 export interface ProviderUpdateData {
   name?: string
+  type?: LlmProviderType
   apiBase?: string
   apiKey?: string
   maxRetries?: number

@@ -2,16 +2,11 @@
  * LLM 业务逻辑层 —— 提供商/模型 CRUD 与 LLM 调用编排。
  */
 
-export { LLMClient } from './client.js'
-
-import { Service, Inject, Provide, Startup, Shutdown } from '@aemeath-projects/exostrider/lifecycle'
+import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/lifecycle'
 import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 
 import type { LlmModel, LlmProvider } from '#prisma/main'
-
-import { LLMClient } from './client.js'
-import type { ChatMessage } from './completion.js'
 
 import type { MainPrismaClient } from '@/core/db/index.js'
 import { NotFoundError } from '@/core/errors.js'
@@ -29,6 +24,7 @@ export type { LlmProvider, LlmModel }
 export interface ProviderDto {
   id: string
   name: string
+  type: 'openai' | 'anthropic' | 'gemini'
   apiBase: string
   apiKeyMasked: string
   maxRetries: number
@@ -53,25 +49,15 @@ export interface ModelDto {
   extraParams: Record<string, unknown>
 }
 
-/** 对话选项。 */
-export interface ChatOptions {
-  temperature?: number
-  maxTokens?: number
-  stream?: boolean
-}
-
 /**
  * LLM 核心服务 —— 封装提供商/模型 CRUD、调用编排。
  *
  * 通过 Startup / Shutdown 注册生命周期。
  */
 export class LLMService {
-  private readonly client: LLMClient
   private readonly _log: PinoLogger = getLogger('llm') as unknown as PinoLogger
 
-  constructor(private readonly mainDb: MainPrismaClient) {
-    this.client = new LLMClient()
-  }
+  constructor(private readonly mainDb: MainPrismaClient) {}
 
   // 提供商 CRUD
 
@@ -102,6 +88,7 @@ export class LLMService {
     const provider = await this.mainDb.llmProvider.create({
       data: {
         name: data.name,
+        type: data.type,
         apiBase: data.apiBase,
         apiKey: data.apiKey,
         maxRetries: data.maxRetries,
@@ -124,6 +111,7 @@ export class LLMService {
       where: { id: providerId },
       data: {
         ...(data.name !== undefined ? { name: data.name } : {}),
+        ...(data.type !== undefined ? { type: data.type } : {}),
         ...(data.apiBase !== undefined ? { apiBase: data.apiBase } : {}),
         ...(data.apiKey !== undefined ? { apiKey: data.apiKey } : {}),
         ...(data.maxRetries !== undefined ? { maxRetries: data.maxRetries } : {}),
@@ -132,16 +120,6 @@ export class LLMService {
       },
       include: { models: true },
     })
-
-    if (
-      data.apiBase !== undefined ||
-      data.apiKey !== undefined ||
-      data.maxRetries !== undefined ||
-      data.timeout !== undefined ||
-      data.retryInterval !== undefined
-    ) {
-      this.client.invalidate(providerId)
-    }
 
     this._log.info({ providerId }, 'LLM 提供商已更新')
     return this._providerToDto(provider, provider.models)
@@ -155,7 +133,6 @@ export class LLMService {
     if (!existing) throw new NotFoundError(`提供商不存在: ${providerId}`)
 
     await this.mainDb.llmProvider.delete({ where: { id: providerId } })
-    this.client.invalidate(providerId)
     this._log.info({ providerId }, 'LLM 提供商已删除')
   }
 
@@ -242,76 +219,13 @@ export class LLMService {
     this._log.info({ modelId }, 'LLM 模型已删除')
   }
 
-  // LLM 调用
-
-  /**
-   * 使用指定模型名进行对话，返回完整回复文本。
-   */
-  async chatByName(
-    modelName: string,
-    messages: ChatMessage[],
-    _opts: ChatOptions = {},
-  ): Promise<string> {
-    const model = await this.mainDb.llmModel.findFirst({
-      where: { modelName, isEnabled: true },
-      include: { provider: true },
-    })
-    if (!model) throw new NotFoundError(`找不到模型: ${modelName}`)
-
-    const chatModel = this.client.createChatModel(model.provider, model)
-
-    const langchainMessages = messages.map((m) => ({
-      role: m.role,
-      content: m.content,
-    }))
-
-    const response = await chatModel.invoke(langchainMessages)
-
-    return typeof response.content === 'string'
-      ? response.content
-      : JSON.stringify(response.content)
-  }
-
-  /**
-   * 流式调用 LLM，逐块 yield 文本内容。
-   */
-  async *chatStreamByName(
-    modelName: string,
-    messages: ChatMessage[],
-    _opts: Omit<ChatOptions, 'stream'> = {},
-  ): AsyncGenerator<string> {
-    const model = await this.mainDb.llmModel.findFirst({
-      where: { modelName, isEnabled: true },
-      include: { provider: true },
-    })
-    if (!model) throw new NotFoundError(`找不到模型: ${modelName}`)
-
-    const chatModel = this.client.createChatModel(model.provider, model)
-
-    const langchainMessages = messages.map((m) => ({
-      role: m.role,
-      content: m.content,
-    }))
-
-    const stream = await chatModel.stream(langchainMessages)
-
-    for await (const chunk of stream) {
-      const text = typeof chunk.content === 'string' ? chunk.content : ''
-      if (text) yield text
-    }
-  }
-
-  /** 释放内部资源。 */
-  close(): void {
-    this.client.clear()
-  }
-
   // 内部辅助
 
   private _providerToDto(provider: LlmProvider, models: LlmModel[]): ProviderDto {
     return {
       id: provider.id,
       name: provider.name,
+      type: provider.type,
       apiBase: provider.apiBase,
       apiKeyMasked: maskApiKey(provider.apiKey),
       maxRetries: provider.maxRetries,
@@ -353,10 +267,5 @@ export class LlmBootstrap {
   @Startup
   start(): void {
     this.llmService = new LLMService(this.db)
-  }
-
-  @Shutdown
-  stop(): void {
-    this.llmService.close()
   }
 }

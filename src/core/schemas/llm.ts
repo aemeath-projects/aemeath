@@ -6,9 +6,16 @@ import { type Static, Type } from '@sinclair/typebox'
 
 /* 提供商 */
 
+/** 供应商协议类型 Schema。 */
+export const LlmProviderTypeSchema = Type.Union(
+  [Type.Literal('openai'), Type.Literal('anthropic'), Type.Literal('gemini')],
+  { description: '供应商协议类型' },
+)
+
 /** 提供商创建请求 Schema。 */
 export const CreateProviderSchema = Type.Object({
   name: Type.String({ minLength: 1, maxLength: 64, description: '提供商名称' }),
+  type: LlmProviderTypeSchema,
   apiBase: Type.String({ minLength: 1, maxLength: 512, description: 'API 基础地址' }),
   apiKey: Type.String({ minLength: 1, maxLength: 512, description: 'API 密钥' }),
   maxRetries: Type.Integer({ minimum: 0, maximum: 10, default: 2, description: '最大重试次数' }),
@@ -25,6 +32,7 @@ export const CreateProviderSchema = Type.Object({
 export const UpdateProviderSchema = Type.Partial(
   Type.Object({
     name: Type.String({ minLength: 1, maxLength: 64 }),
+    type: LlmProviderTypeSchema,
     apiBase: Type.String({ minLength: 1, maxLength: 512 }),
     apiKey: Type.String({ minLength: 1, maxLength: 512 }),
     maxRetries: Type.Integer({ minimum: 0, maximum: 10 }),
@@ -37,6 +45,7 @@ export const UpdateProviderSchema = Type.Partial(
 export const LlmProviderSchema = Type.Object({
   id: Type.String(),
   name: Type.String(),
+  type: LlmProviderTypeSchema,
   apiBase: Type.String(),
   apiKeyMasked: Type.String({ description: 'API Key 掩码（sk-****abcd）' }),
   maxRetries: Type.Integer(),
@@ -94,25 +103,6 @@ export const LlmModelSchema = Type.Object({
 /** 模型列表响应数据 Schema —— GET /api/llm/models */
 export const ModelListDataSchema = Type.Array(LlmModelSchema)
 
-/* Chat */
-
-/** 单条对话消息 Schema。 */
-export const ChatMessageSchema = Type.Object({
-  role: Type.Union([Type.Literal('system'), Type.Literal('user'), Type.Literal('assistant')], {
-    description: '消息角色',
-  }),
-  content: Type.String({ description: '消息内容' }),
-})
-
-/** Chat 请求 Schema。 */
-export const ChatRequestSchema = Type.Object({
-  modelId: Type.String({ description: '模型 UUID' }),
-  messages: Type.Array(ChatMessageSchema, { minItems: 1, description: '消息列表' }),
-  temperature: Type.Optional(Type.Number({ minimum: 0, maximum: 2, description: '覆盖温度' })),
-  maxTokens: Type.Optional(Type.Integer({ description: '覆盖最大 token 数' })),
-  stream: Type.Boolean({ default: false, description: '是否流式输出' }),
-})
-
 /* 路径参数 */
 
 /** 提供商 ID 路径参数 —— UUID 格式。 */
@@ -159,4 +149,3 @@ export type CreateProviderData = Static<typeof CreateProviderSchema>
 export type UpdateProviderData = Static<typeof UpdateProviderSchema>
 export type CreateModelData = Static<typeof CreateModelSchema>
 export type UpdateModelData = Static<typeof UpdateModelSchema>
-export type ChatRequestData = Static<typeof ChatRequestSchema>

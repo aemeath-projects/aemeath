@@ -22,6 +22,7 @@ import * as llmApi from '@/apis/llm'
 const mockProvider = {
   id: 'p1',
   name: 'OpenAI',
+  type: 'openai' as const,
   apiBase: 'https://api.openai.com/v1',
   apiKeyMasked: 'sk-****',
   maxRetries: 3,

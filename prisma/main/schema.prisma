@@ -136,15 +136,25 @@ model GroupMembership {
   @@map("group_memberships")
 }
 
+/// LLM 供应商协议类型
+enum LlmProviderType {
+  openai
+  anthropic
+  gemini
+
+  @@map("llm_provider_type_enum")
+}
+
 /// LLM 提供商表
 model LlmProvider {
-  id            String @id @default(uuid()) @db.Uuid
-  name          String @unique @db.Text
-  apiBase       String @map("api_base") @db.Text
-  apiKey        String @map("api_key") @db.Text
-  maxRetries    Int    @default(2) @map("max_retries")
-  timeout       Int    @default(60)
-  retryInterval Int    @default(1) @map("retry_interval")
+  id            String          @id @default(uuid()) @db.Uuid
+  name          String          @unique @db.Text
+  type          LlmProviderType
+  apiBase       String          @map("api_base") @db.Text
+  apiKey        String          @map("api_key") @db.Text
+  maxRetries    Int             @default(2) @map("max_retries")
+  timeout       Int             @default(60)
+  retryInterval Int             @default(1) @map("retry_interval")
 
   /**
    * Relations

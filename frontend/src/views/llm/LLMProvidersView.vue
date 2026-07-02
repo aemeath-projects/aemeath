@@ -27,8 +27,11 @@
           lg="3"
         >
           <v-card variant="elevated" class="h-100">
-            <v-card-title class="d-flex align-center">
+            <v-card-title class="d-flex align-center ga-2">
               <span class="text-truncate">{{ provider.name }}</span>
+              <v-chip size="small" variant="elevated" color="secondary">
+                {{ typeLabel(provider.type) }}
+              </v-chip>
             </v-card-title>
 
             <v-card-text>
@@ -111,11 +114,22 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useLLMStore } from '@/stores/llm'
-import type { ProviderItem } from '@/apis/llm'
+import type { ProviderItem, LlmProviderType } from '@/apis/llm'
 import PageLayout from '@/layouts/PageLayout.vue'
 import ProviderFormDialog from '@/components/llm/ProviderFormDialog.vue'
 
 const store = useLLMStore()
+
+/** 供应商协议类型展示文本映射 */
+const TYPE_LABELS: Record<LlmProviderType, string> = {
+  openai: 'OpenAI 兼容',
+  anthropic: 'Anthropic',
+  gemini: 'Gemini',
+}
+
+function typeLabel(type: LlmProviderType): string {
+  return TYPE_LABELS[type]
+}
 
 const formDialog = ref(false)
 const editingProvider = ref<ProviderItem | null>(null)

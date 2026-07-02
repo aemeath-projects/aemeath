@@ -20,6 +20,15 @@
             class="mb-3"
             placeholder="如 OpenAI、DeepSeek"
           />
+          <v-select
+            v-model="form.type"
+            label="协议类型"
+            :items="typeOptions"
+            :rules="[rules.required]"
+            variant="solo-filled"
+            density="compact"
+            class="mb-3"
+          />
           <v-text-field
             v-model="form.apiBase"
             label="API 基础地址"
@@ -99,7 +108,13 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useLLMStore } from '@/stores/llm'
-import type { ProviderItem } from '@/apis/llm'
+import type { ProviderItem, LlmProviderType } from '@/apis/llm'
+
+const typeOptions = [
+  { title: 'OpenAI 兼容', value: 'openai' },
+  { title: 'Anthropic', value: 'anthropic' },
+  { title: 'Gemini', value: 'gemini' },
+]
 
 const props = defineProps<{
   modelValue: boolean
@@ -119,8 +134,24 @@ const showKey = ref(false)
 const saving = ref(false)
 const formRef = ref()
 
-function defaultForm() {
-  return { name: '', apiBase: '', apiKey: '', maxRetries: 2, timeout: 60, retryInterval: 1 }
+function defaultForm(): {
+  name: string
+  type: LlmProviderType | undefined
+  apiBase: string
+  apiKey: string
+  maxRetries: number
+  timeout: number
+  retryInterval: number
+} {
+  return {
+    name: '',
+    type: undefined,
+    apiBase: '',
+    apiKey: '',
+    maxRetries: 2,
+    timeout: 60,
+    retryInterval: 1,
+  }
 }
 
 const form = ref(defaultForm())
@@ -138,6 +169,7 @@ watch(
       if (props.provider) {
         form.value = {
           name: props.provider.name,
+          type: props.provider.type,
           apiBase: props.provider.apiBase,
           apiKey: '',
           maxRetries: props.provider.maxRetries,
@@ -161,6 +193,7 @@ async function submitForm() {
     if (isEdit.value && props.provider) {
       const payload: Record<string, unknown> = {}
       if (form.value.name !== props.provider.name) payload.name = form.value.name
+      if (form.value.type !== props.provider.type) payload.type = form.value.type
       if (form.value.apiBase !== props.provider.apiBase) payload.apiBase = form.value.apiBase
       if (form.value.apiKey) payload.apiKey = form.value.apiKey
       if (form.value.maxRetries !== props.provider.maxRetries)
@@ -172,6 +205,7 @@ async function submitForm() {
     } else {
       await store.createProvider({
         name: form.value.name,
+        type: form.value.type as LlmProviderType,
         apiBase: form.value.apiBase,
         apiKey: form.value.apiKey,
         maxRetries: form.value.maxRetries,

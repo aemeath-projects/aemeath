@@ -94,7 +94,6 @@ model Group {
   memberCount    Int     @default(0) @map("member_count")
   maxMemberCount Int     @default(0) @map("max_member_count")
   isActive       Boolean @default(true) @map("is_active")
-  botEnabled     Boolean @default(true) @map("bot_enabled")
 
   lastSynced DateTime @default(now()) @map("last_synced") @db.Timestamptz
 
@@ -353,14 +352,6 @@ model DriftBottleItem {
   @@map("drift_bottle_items")
 }
 
-/// 配置条目类型（群聊/用户）
-enum SettingsEntryType {
-  group
-  user
-
-  @@map("settings_entry_type")
-}
-
 /// 配置值类型
 enum SettingsValueType {
   boolean
@@ -371,16 +362,17 @@ enum SettingsValueType {
   @@map("settings_value_type")
 }
 
-/// 动态配置覆盖表（群聊/用户级 key-value 存储）
-model Settings {
+/// 树状 scope 动态配置覆盖表 —— scope 为空串表示系统级（根），非空时由 Path 通过 toScope() 生成
+model SettingValue {
+  id        String            @id @default(uuid()) @db.Uuid
   key       String            @db.Text
-  type      SettingsEntryType
-  scope     BigInt
+  scope     String            @db.Text
   value     String            @db.Text
   valueType SettingsValueType @map("value_type")
 
-  @@id([key, type, scope])
-  @@map("settings")
+  @@unique([key, scope])
+  @@index([scope, key])
+  @@map("setting_values")
 }
 
 /// 机器人账号表 —— 存储多个 NapCat 实例的连接配置。

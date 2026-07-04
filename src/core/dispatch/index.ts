@@ -30,10 +30,8 @@ export {
   Scope,
   Priority,
   Interceptor,
-  SettingNode,
   HANDLER_METHODS,
   HANDLER_CLASS_INTERCEPTORS,
-  HANDLER_SETTINGS,
   HANDLER_NAME,
   HANDLER_OPTIONS,
 } from '@aemeath-projects/exostrider/dispatch'
@@ -52,10 +50,8 @@ export type {
   EventDispatcherOptions,
   OnCommandOptions,
   EventMatchConfig,
-  SettingNodeOptions,
   MethodMetaEntry,
   InterceptorEntry,
-  SettingNodeEntry,
   HandlerOptions as HandlerDecoratorOptions,
 } from '@aemeath-projects/exostrider/dispatch'
 

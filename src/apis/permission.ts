@@ -1,7 +1,5 @@
 /**
  * 配置管理 REST API —— /api/settings。
- *
- * 替代原 /api/permissions 路由，通过 SettingsService 读写配置项。
  */
 
 import { Type } from '@sinclair/typebox'
@@ -10,37 +8,43 @@ import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply 
 import {
   SetValueRequestSchema,
   BatchSetRequestSchema,
-  SettingsGroupIdParamSchema,
-  SettingsUserIdParamSchema,
-  SettingsGroupKeyParamsSchema,
-  SettingsUserKeyParamsSchema,
+  SettingsKeyParamSchema,
   SettingsQuerySchema,
+  SettingsValuesQuerySchema,
   SettingsSchemaListDataSchema,
   SettingsRecordDataSchema,
+  type PathValue,
+  type SetValueRequest,
+  type BatchSetRequest,
 } from '@/apis/schemas/index.js'
+import { ValidationError } from '@/core/errors.js'
 import { ok, fail, OkResponse, FailResponse } from '@/core/schemas/index.js'
 import type { SettingsService } from '@/core/settings/index.js'
+
+/** API 层代表管理员写入任意模块的配置，不归属任何具体业务模块。 */
+const ADMIN_OWNER = '__admin__'
 
 function getSettings(app: FastifyInstance): SettingsService {
   return app.services.get('settings') as SettingsService
 }
 
-/* 请求体接口 */
-
-interface SetValueBody {
-  value: unknown
-}
-
-interface BatchSetBody {
-  entries: { key: string; value: unknown }[]
+/** 解析 URL 编码的 Path JSON 数组，缺省或空串时视为系统级（空数组）。 */
+function parsePathQuery(raw: string | undefined): PathValue {
+  if (!raw) return []
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    throw new ValidationError('[settings] path 参数不是合法的 JSON 数组')
+  }
+  if (!Array.isArray(parsed)) throw new ValidationError('[settings] path 必须是数组')
+  return parsed as PathValue
 }
 
 /**
  * 配置管理路由插件。
  */
 const permissionRoutes: FastifyPluginAsync = async (app) => {
-  /* Schema 查询 */
-
   /** GET /api/settings/schemas — 获取所有配置项 Schema（供前端渲染表单）。 */
   app.get(
     '/api/settings/schemas',
@@ -61,15 +65,12 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
     },
   )
 
-  /* 群级配置 */
-
-  /** GET /api/settings/groups/:groupId — 读取群级配置（含 Schema 默认值回退）。 */
+  /** GET /api/settings/values — 读取指定 path 下的配置值（含 Schema 默认值回退）。 */
   app.get(
-    '/api/settings/groups/:groupId',
+    '/api/settings/values',
     {
       schema: {
-        params: SettingsGroupIdParamSchema,
-        querystring: SettingsQuerySchema,
+        querystring: SettingsValuesQuerySchema,
         response: {
           200: OkResponse(SettingsRecordDataSchema),
           400: FailResponse(),
@@ -78,23 +79,26 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
       },
     },
     async (
-      req: FastifyRequest<{ Params: { groupId: string }; Querystring: { prefix?: string } }>,
+      req: FastifyRequest<{ Querystring: { prefix?: string; path?: string } }>,
       reply: FastifyReply,
     ) => {
       const svc = getSettings(app)
-      const groupId = BigInt(req.params.groupId)
-      const prefix = req.query.prefix ?? ''
-      const data = await svc.getAll(prefix, { group: groupId })
-      await reply.send(ok(data))
+      try {
+        const path = parsePathQuery(req.query.path)
+        const data = await svc.getAll(req.query.prefix ?? '', path)
+        await reply.send(ok(data))
+      } catch (err) {
+        await reply.status(400).send(fail(String(err)))
+      }
     },
   )
 
-  /** POST /api/settings/groups/:groupId/:key — 设置群级单项配置。 */
+  /** POST /api/settings/values/:key — 设置单项配置。 */
   app.post(
-    '/api/settings/groups/:groupId/:key',
+    '/api/settings/values/:key',
     {
       schema: {
-        params: SettingsGroupKeyParamsSchema,
+        params: SettingsKeyParamSchema,
         body: SetValueRequestSchema,
         response: {
           200: OkResponse(Type.Null()),
@@ -104,12 +108,14 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
       },
     },
     async (
-      req: FastifyRequest<{ Params: { groupId: string; key: string }; Body: SetValueBody }>,
+      req: FastifyRequest<{ Params: { key: string }; Body: SetValueRequest }>,
       reply: FastifyReply,
     ) => {
       const svc = getSettings(app)
       try {
-        await svc.set(req.params.key, req.body.value, { group: BigInt(req.params.groupId) })
+        await svc.set(req.params.key, req.body.value, req.body.path, ADMIN_OWNER, {
+          bypassOwnership: true,
+        })
         await reply.send(ok(null, 'ok'))
       } catch (err) {
         await reply.status(400).send(fail(String(err)))
@@ -117,12 +123,11 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
     },
   )
 
-  /** POST /api/settings/groups/:groupId/batch — 批量设置群级配置。 */
+  /** POST /api/settings/values/batch — 批量设置指定 path 下的配置。 */
   app.post(
-    '/api/settings/groups/:groupId/batch',
+    '/api/settings/values/batch',
     {
       schema: {
-        params: SettingsGroupIdParamSchema,
         body: BatchSetRequestSchema,
         response: {
           200: OkResponse(Type.Null()),
@@ -131,69 +136,10 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
         },
       },
     },
-    async (
-      req: FastifyRequest<{ Params: { groupId: string }; Body: BatchSetBody }>,
-      reply: FastifyReply,
-    ) => {
+    async (req: FastifyRequest<{ Body: BatchSetRequest }>, reply: FastifyReply) => {
       const svc = getSettings(app)
       try {
-        await svc.batchSet(req.body.entries, { group: BigInt(req.params.groupId) })
-        await reply.send(ok(null, 'ok'))
-      } catch (err) {
-        await reply.status(400).send(fail(String(err)))
-      }
-    },
-  )
-
-  /* 用户级配置 */
-
-  /** GET /api/settings/users/:userId — 读取用户级配置（含 Schema 默认值回退）。 */
-  app.get(
-    '/api/settings/users/:userId',
-    {
-      schema: {
-        params: SettingsUserIdParamSchema,
-        querystring: SettingsQuerySchema,
-        response: {
-          200: OkResponse(SettingsRecordDataSchema),
-          400: FailResponse(),
-          500: FailResponse(),
-        },
-      },
-    },
-    async (
-      req: FastifyRequest<{ Params: { userId: string }; Querystring: { prefix?: string } }>,
-      reply: FastifyReply,
-    ) => {
-      const svc = getSettings(app)
-      const userId = BigInt(req.params.userId)
-      const prefix = req.query.prefix ?? ''
-      const data = await svc.getAll(prefix, { user: userId })
-      await reply.send(ok(data))
-    },
-  )
-
-  /** POST /api/settings/users/:userId/:key — 设置用户级单项配置。 */
-  app.post(
-    '/api/settings/users/:userId/:key',
-    {
-      schema: {
-        params: SettingsUserKeyParamsSchema,
-        body: SetValueRequestSchema,
-        response: {
-          200: OkResponse(Type.Null()),
-          400: FailResponse(),
-          500: FailResponse(),
-        },
-      },
-    },
-    async (
-      req: FastifyRequest<{ Params: { userId: string; key: string }; Body: SetValueBody }>,
-      reply: FastifyReply,
-    ) => {
-      const svc = getSettings(app)
-      try {
-        await svc.set(req.params.key, req.body.value, { user: BigInt(req.params.userId) })
+        await svc.batchSet(req.body.entries, req.body.path, ADMIN_OWNER, { bypassOwnership: true })
         await reply.send(ok(null, 'ok'))
       } catch (err) {
         await reply.status(400).send(fail(String(err)))

@@ -6,26 +6,44 @@ import type { Redis } from 'ioredis'
 
 import { Prisma } from '#prisma/main'
 
+import { buildAncestorScopes, toScope } from './path.js'
+import type { Path } from './path.js'
 import type { SettingNodeSchema } from './schema.js'
 
 import type { MainPrismaClient } from '@/core/db/index.js'
-import { ValidationError } from '@/core/errors.js'
+import { ForbiddenError, ValidationError } from '@/core/errors.js'
 
 /* 常量 */
 
 const NULL_SENTINEL = '__NULL__'
+/** 正向缓存 TTL（秒）—— 与"写入时精确失效"互为对称保底。 */
+const POSITIVE_TTL_SECONDS = 300
+/** 未命中哨兵 TTL（秒），略长于正向缓存，降低同一 scope 链条反复穿透 DB 的概率。 */
+const SENTINEL_TTL_SECONDS = 600
 
 /* 内部类型 */
 
-interface SettingsDbRow {
-  key: string
+interface CandidateRow {
+  scope: string
   value: string
-  value_type: string
 }
 
-export interface SettingsScope {
-  group?: bigint
-  user?: bigint
+interface PrefixRow {
+  key: string
+  scope: string
+  value: string
+}
+
+export interface SettingsGetAllEntry {
+  value: unknown
+  overridden: boolean
+  /** 相对 path 根的深度：0 表示系统级根，path.length 表示叶子层；未覆盖时为 null。 */
+  overriddenAtDepth: number | null
+}
+
+export interface SetOptions {
+  /** 仅限管理端 API 层内部使用，绕过模块写权限归属校验。 */
+  bypassOwnership?: boolean
 }
 
 /* Service */
@@ -46,55 +64,49 @@ export class SettingsService {
   }
 
   /**
-   * 读取单项配置。
-   * 群聊链路: group Redis/DB → Schema default
-   * 私聊链路: user Redis/DB → Schema default
+   * 读取单项配置，沿 path 从叶子到根逐级回退，全部未命中时回退 Schema default。
    */
-  async get<T = unknown>(key: string, scope?: SettingsScope): Promise<T> {
+  async get<T = unknown>(key: string, path: Path = []): Promise<T> {
     const schema = this.schemaMap.get(key)
-
-    if (scope?.group) {
-      const result = await this._resolve(key, 'group', scope.group)
-      if (result !== undefined) return this._deserialize(result, schema) as T
-    } else if (scope?.user) {
-      const result = await this._resolve(key, 'user', scope.user)
-      if (result !== undefined) return this._deserialize(result, schema) as T
-    }
-
-    // 直接回退到 Schema default
+    const candidates = buildAncestorScopes(path)
+    const raw = await this._resolveCandidates(key, candidates)
+    if (raw !== undefined) return this._deserialize(raw, schema) as T
     if (schema) return schema.default as T
     return undefined as T
   }
 
   /**
-   * 读取前缀下所有配置，返回带覆盖标记的 Record。
-   * Schema default 为基底，有 scope 时用 DB 覆盖行叠加。
+   * 读取前缀下所有配置，返回带覆盖深度标记的 Record。
+   * Schema defaults 为基底，path 链条上任意层级的覆盖行会取"最具体"的一层。
    */
-  async getAll(
-    prefix: string,
-    scope?: SettingsScope,
-  ): Promise<Record<string, { value: unknown; overridden: boolean }>> {
-    const result: Record<string, { value: unknown; overridden: boolean }> = {}
+  async getAll(prefix: string, path: Path = []): Promise<Record<string, SettingsGetAllEntry>> {
+    const result: Record<string, SettingsGetAllEntry> = {}
 
-    // Schema defaults 作为基底
     for (const [key, schema] of this.schemaMap) {
       if (key.startsWith(prefix)) {
-        result[key] = { value: schema.default, overridden: false }
+        result[key] = { value: schema.default, overridden: false, overriddenAtDepth: null }
       }
     }
 
-    // DB scope 覆盖
-    if (scope?.group || scope?.user) {
-      const { type, scopeId } = this._resolveScope(scope)
-      const rows: SettingsDbRow[] = await this.db.$queryRaw`
-        SELECT key, value, value_type FROM settings
-        WHERE type = ${type}::settings_entry_type AND scope = ${scopeId} AND key LIKE ${prefix + '%'}
-      `
-      for (const row of rows) {
-        result[row.key] = {
-          value: this._deserialize(row.value, this.schemaMap.get(row.key)),
-          overridden: true,
-        }
+    const candidates = buildAncestorScopes(path) // 索引 0 最具体（叶子），最后一项恒为 ""
+    const rows: PrefixRow[] = await this.db.$queryRaw`
+      SELECT key, scope, value FROM setting_values
+      WHERE key LIKE ${prefix + '%'} AND scope = ANY(${candidates})
+    `
+
+    const depthByScope = new Map(candidates.map((s, idx) => [s, path.length - idx]))
+    const bestCandidateIdx = new Map<string, number>()
+    for (const row of rows) {
+      const idx = candidates.indexOf(row.scope)
+      const existing = bestCandidateIdx.get(row.key)
+      if (existing === undefined || idx < existing) bestCandidateIdx.set(row.key, idx)
+    }
+    for (const row of rows) {
+      if (bestCandidateIdx.get(row.key) !== candidates.indexOf(row.scope)) continue
+      result[row.key] = {
+        value: this._deserialize(row.value, this.schemaMap.get(row.key)),
+        overridden: true,
+        overriddenAtDepth: depthByScope.get(row.scope) ?? null,
       }
     }
 
@@ -102,44 +114,52 @@ export class SettingsService {
   }
 
   /**
-   * 写入单项配置，校验 + DB 写入 + 缓存失效。
-   * value 为 null 时表示重置（删除覆盖行，回退到 Schema default）。
+   * 写入单项配置，校验模块写权限归属 + 类型校验 + DB 写入 + 精确失效该 scope 缓存。
+   * value 为 null 时表示重置（删除该 scope 的覆盖行，回退到上一级）。
    */
-  async set(key: string, value: unknown, scope: SettingsScope): Promise<void> {
-    // null 表示重置，删除该 scope 的覆盖行
+  async set(
+    key: string,
+    value: unknown,
+    path: Path,
+    ownerName: string,
+    opts: SetOptions = {},
+  ): Promise<void> {
+    this._checkOwnership(key, ownerName, opts)
+    const scope = toScope(path)
+
     if (value === null) {
-      const { type, scopeId } = this._resolveScope(scope)
-      await this.db.$executeRaw`
-        DELETE FROM settings WHERE key = ${key} AND type = ${type}::settings_entry_type AND scope = ${scopeId}
-      `
-      await this._invalidateCache(type, scopeId, key)
+      await this.db.$executeRaw`DELETE FROM setting_values WHERE key = ${key} AND scope = ${scope}`
+      await this._invalidateCache(key, scope)
       return
     }
 
     const schema = this.schemaMap.get(key)
     if (!schema) throw new ValidationError(`[settings] 未知配置项: ${key}`)
-
     const serialized = this._validate(key, value, schema)
-    const { type, scopeId } = this._resolveScope(scope)
 
     await this.db.$executeRaw`
-      INSERT INTO settings (key, type, scope, value, value_type)
-      VALUES (${key}, ${type}::settings_entry_type, ${scopeId}, ${serialized}, ${schema.type}::settings_value_type)
-      ON CONFLICT (key, type, scope) DO UPDATE SET value = ${serialized}
+      INSERT INTO setting_values (key, scope, value, value_type)
+      VALUES (${key}, ${scope}, ${serialized}, ${schema.type}::settings_value_type)
+      ON CONFLICT (key, scope) DO UPDATE SET value = ${serialized}
     `
 
-    await this._invalidateCache(type, scopeId, key)
+    await this._invalidateCache(key, scope)
   }
 
   /**
-   * 批量写入，自动校验 + 失效缓存。
+   * 批量写入同一 path 下的多项配置，预先校验全部条目再单条 SQL 批量 UPSERT。
    */
-  async batchSet(entries: { key: string; value: unknown }[], scope: SettingsScope): Promise<void> {
+  async batchSet(
+    entries: { key: string; value: unknown }[],
+    path: Path,
+    ownerName: string,
+    opts: SetOptions = {},
+  ): Promise<void> {
     if (entries.length === 0) return
-    const { type, scopeId } = this._resolveScope(scope)
+    const scope = toScope(path)
 
-    // 预先校验所有条目，提前暴露错误，避免部分写入
     const validated = entries.map((entry) => {
+      this._checkOwnership(entry.key, ownerName, opts)
       const schema = this.schemaMap.get(entry.key)
       if (!schema) throw new ValidationError(`[settings] 未知配置项: ${entry.key}`)
       return {
@@ -149,25 +169,27 @@ export class SettingsService {
       }
     })
 
-    // 单条 SQL 批量 UPSERT，消除 N 次串行写入
     const valueRows = validated.map(
-      (e) =>
-        Prisma.sql`(${e.key}, ${type}::settings_entry_type, ${scopeId}, ${e.serialized}, ${e.valueType}::settings_value_type)`,
+      (e) => Prisma.sql`(${e.key}, ${scope}, ${e.serialized}, ${e.valueType}::settings_value_type)`,
     )
     await this.db.$executeRaw(
       Prisma.sql`
-        INSERT INTO settings (key, type, scope, value, value_type)
+        INSERT INTO setting_values (key, scope, value, value_type)
         VALUES ${Prisma.join(valueRows)}
-        ON CONFLICT (key, type, scope) DO UPDATE SET value = EXCLUDED.value
+        ON CONFLICT (key, scope) DO UPDATE SET value = EXCLUDED.value
       `,
     )
 
-    // 批量失效缓存
     const pipeline = this.redis.pipeline()
     for (const entry of entries) {
-      pipeline.del(this._cacheKey(type, scopeId, entry.key))
+      pipeline.del(this._cacheKey(entry.key, scope))
     }
     await pipeline.exec()
+  }
+
+  /** 返回绑定了 ownerName 的轻量包装，业务代码通过它调用无需每次传 ownerName。 */
+  scopedTo(ownerName: string): ScopedSettingsService {
+    return new ScopedSettingsService(this, ownerName)
   }
 
   /** 获取 Schema 列表（供后台渲染表单）。 */
@@ -188,43 +210,75 @@ export class SettingsService {
 
   /* 私有方法 */
 
-  private _cacheKey(type: string, scope: bigint, key: string): string {
-    return `settings:${type}:${scope.toString()}:${key}`
+  private _checkOwnership(key: string, ownerName: string, opts: SetOptions): void {
+    if (opts.bypassOwnership) return
+    if (!key.startsWith(`${ownerName}.`)) {
+      throw new ForbiddenError(`[settings] ${ownerName} 无权修改配置项: ${key}`)
+    }
   }
 
-  /** 尝试从 Redis/DB 解析单个 key，返回原始 value 字符串或 undefined（表示不存在）。 */
-  private async _resolve(key: string, type: string, scope: bigint): Promise<string | undefined> {
-    const cacheKey = this._cacheKey(type, scope, key)
+  private _cacheKey(key: string, scope: string): string {
+    return `settings:${key}:${scope}`
+  }
 
-    // Redis 查询
-    const cached = await this.redis.get(cacheKey)
-    if (cached !== null) {
-      return cached === NULL_SENTINEL ? undefined : cached
+  /**
+   * 沿候选 scope 链条批量查询：Redis MGET 一次取全部候选缓存，
+   * 未命中的候选批量查 DB（scope = ANY），写回 Redis（含未命中哨兵），
+   * 返回候选顺序中第一个命中的原始字符串值。
+   */
+  private async _resolveCandidates(key: string, candidates: string[]): Promise<string | undefined> {
+    const cacheKeys = candidates.map((scope) => this._cacheKey(key, scope))
+    const cached = await this.redis.mget(...cacheKeys)
+
+    const missingScopes: string[] = []
+    for (const [i, scope] of candidates.entries()) {
+      if (cached[i] === null) missingScopes.push(scope)
     }
 
-    // DB 查询
-    const rows: SettingsDbRow[] = await this.db.$queryRaw`
-      SELECT key, value, value_type FROM settings
-      WHERE key = ${key} AND type = ${type}::settings_entry_type AND scope = ${scope}
-      LIMIT 1
-    `
+    let dbRows: CandidateRow[] = []
+    if (missingScopes.length > 0) {
+      dbRows = await this.db.$queryRaw`
+        SELECT scope, value FROM setting_values
+        WHERE key = ${key} AND scope = ANY(${missingScopes})
+      `
+    }
+    const dbByScope = new Map(dbRows.map((r) => [r.scope, r.value]))
 
-    const row = rows[0]
-    if (row) {
-      await this.redis.set(cacheKey, row.value)
-      return row.value
+    const pipeline = this.redis.pipeline()
+    let result: string | undefined
+
+    for (const [i, scope] of candidates.entries()) {
+      let value: string | undefined
+      const cachedValue = cached[i]
+      if (cachedValue !== null && cachedValue !== undefined) {
+        value = cachedValue === NULL_SENTINEL ? undefined : cachedValue
+      } else {
+        value = dbByScope.get(scope)
+        const cacheValue = value ?? NULL_SENTINEL
+        const ttl = value !== undefined ? POSITIVE_TTL_SECONDS : SENTINEL_TTL_SECONDS
+        pipeline.set(this._cacheKey(key, scope), cacheValue, 'EX', ttl)
+      }
+      if (value !== undefined && result === undefined) {
+        result = value
+      }
     }
 
-    // 穿透防护
-    await this.redis.set(cacheKey, NULL_SENTINEL)
-    return undefined
+    if (missingScopes.length > 0) await pipeline.exec()
+    return result
   }
 
-  private async _invalidateCache(type: string, scope: bigint, key: string): Promise<void> {
-    await this.redis.del(this._cacheKey(type, scope, key))
+  /**
+   * 失效指定 scope 的缓存。
+   * 已知权衡：与并发 get() 之间存在经典的缓存旁路"失效竞态"——若 get() 的 DB 读发生在
+   * set() 写入之前、但其 Redis 写回发生在本次 del 之后，会写回一份陈旧值，
+   * 最长 POSITIVE_TTL_SECONDS（300 秒）后自愈。当前未引入版本号/二次延迟删除等加固手段，
+   * 该窗口期内敏感的权限类配置读取可能短暂读到旧值，属于已接受的设计权衡。
+   */
+  private async _invalidateCache(key: string, scope: string): Promise<void> {
+    await this.redis.del(this._cacheKey(key, scope))
   }
 
-  /** 根据 Schema 类型反序列化字符串值。 */
+  /** 根据 Schema 类型反序列化字符串值（原样保留，未改动）。 */
   private _deserialize(raw: string, schema?: SettingNodeSchema): unknown {
     if (!schema) return raw
     switch (schema.type) {
@@ -238,7 +292,7 @@ export class SettingsService {
     }
   }
 
-  /** 校验值合法性，返回序列化字符串。 */
+  /** 校验值合法性，返回序列化字符串（原样保留，未改动）。 */
   private _validate(key: string, value: unknown, schema: SettingNodeSchema): string {
     switch (schema.type) {
       case 'boolean':
@@ -262,11 +316,28 @@ export class SettingsService {
       }
     }
   }
+}
 
-  /** 将 scope 参数转为 type + scopeId，scope 必须指定 group 或 user。 */
-  private _resolveScope(scope: SettingsScope): { type: string; scopeId: bigint } {
-    if (scope.group) return { type: 'group', scopeId: scope.group }
-    if (scope.user) return { type: 'user', scopeId: scope.user }
-    throw new ValidationError('[settings] scope 必须指定 group 或 user')
+/** 绑定了固定 ownerName 的轻量包装，业务 handler 通过 ctx.settings 拿到的即为此类型实例。 */
+export class ScopedSettingsService {
+  constructor(
+    private readonly inner: SettingsService,
+    private readonly ownerName: string,
+  ) {}
+
+  get<T = unknown>(key: string, path: Path = []): Promise<T> {
+    return this.inner.get<T>(key, path)
+  }
+
+  getAll(prefix: string, path: Path = []): Promise<Record<string, SettingsGetAllEntry>> {
+    return this.inner.getAll(prefix, path)
+  }
+
+  set(key: string, value: unknown, path: Path): Promise<void> {
+    return this.inner.set(key, value, path, this.ownerName)
+  }
+
+  batchSet(entries: { key: string; value: unknown }[], path: Path): Promise<void> {
+    return this.inner.batchSet(entries, path, this.ownerName)
   }
 }

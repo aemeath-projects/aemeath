@@ -4,6 +4,7 @@
 
 import { Permission, handlerRegistry } from '@aemeath-projects/exostrider/dispatch'
 
+import { Path } from './path.js'
 import type { SettingNodeSchema } from './schema.js'
 import type { SettingsService } from './service.js'
 
@@ -66,17 +67,20 @@ export class SettingsPermissionChecker implements FeatureChecker {
     const gid = BigInt(groupId)
 
     // bot 总开关
-    const botEnabled = await this.settings.get<boolean>('bot.enabled', { group: gid })
+    const botEnabled = await this.settings.get<boolean>('bot.enabled', Path.group(gid.toString()))
     if (!botEnabled) return false
 
     // 功能开关
-    const enabled = await this.settings.get<boolean>(`${featureName}.enabled`, { group: gid })
+    const enabled = await this.settings.get<boolean>(
+      `${featureName}.enabled`,
+      Path.group(gid.toString()),
+    )
     if (!enabled) return false
 
     // 配置树中的 permission（enum 标签），如果存在则覆盖装饰器静态权限
     const permissionKey = `${featureName}.permission`
     if (this.schemaMap.has(permissionKey)) {
-      const label = await this.settings.get<string>(permissionKey, { group: gid })
+      const label = await this.settings.get<string>(permissionKey, Path.group(gid.toString()))
       const minLevel = this.settings.resolveEnum(permissionKey, label)
       return this._checkGroupRole(ctx, minLevel)
     }
@@ -87,7 +91,10 @@ export class SettingsPermissionChecker implements FeatureChecker {
 
   private async _checkPrivate(ctx: Context, featureName: string): Promise<boolean> {
     const userId = BigInt(ctx.userId)
-    const enabled = await this.settings.get<boolean>(`${featureName}.enabled`, { user: userId })
+    const enabled = await this.settings.get<boolean>(
+      `${featureName}.enabled`,
+      Path.private(userId.toString()),
+    )
     return enabled
   }
 

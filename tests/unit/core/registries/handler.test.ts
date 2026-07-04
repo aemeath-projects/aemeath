@@ -20,7 +20,6 @@ function makeEntry(name: string, displayName = ''): HandlerRegistryData {
     metadata: {},
     methods: [],
     classInterceptors: [],
-    settingNodes: [],
   }
 }
 

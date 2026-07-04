@@ -2,12 +2,19 @@
  * Settings 模块入口 —— 统一导出 + Startup 生命周期注册。
  */
 
-export { SettingNode } from '@aemeath-projects/exostrider/dispatch'
-export type { SettingNodeMeta, SettingNodeOptions, SettingValueType } from './decorators.js'
+export { SettingNode, collectSettingNodes } from './decorators.js'
+export type {
+  SettingNodeMeta,
+  SettingNodeOptions,
+  SettingNodeEntry,
+  SettingValueType,
+} from './decorators.js'
+export { Path, toScope, parseScope, buildAncestorScopes } from './path.js'
+export type { PathSegment } from './path.js'
 export { buildSchemaMap, cleanOrphanKeys } from './schema.js'
 export type { SettingNodeSchema } from './schema.js'
-export { SettingsService } from './service.js'
-export type { SettingsScope } from './service.js'
+export { SettingsService, ScopedSettingsService } from './service.js'
+export type { SettingsGetAllEntry, SetOptions } from './service.js'
 export { SettingsPermissionChecker } from './permission.js'
 export type { MinimalSettingSchema, SettingsQueryContext } from './query.js'
 export { getSettingValue } from './query.js'

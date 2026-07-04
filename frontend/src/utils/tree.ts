@@ -39,10 +39,10 @@ export function mergeSettingValues(
 ): Record<string, SettingValue> {
   const result: Record<string, SettingValue> = {}
   for (const [key, value] of Object.entries(defaults)) {
-    result[key] = { value, overridden: false }
+    result[key] = { value, overridden: false, overriddenAtDepth: null }
   }
   for (const [key, sv] of Object.entries(overrides)) {
-    result[key] = { value: sv.value, overridden: true }
+    result[key] = { value: sv.value, overridden: true, overriddenAtDepth: sv.overriddenAtDepth }
   }
   return result
 }

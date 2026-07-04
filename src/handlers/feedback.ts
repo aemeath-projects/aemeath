@@ -9,7 +9,8 @@ import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 
 import type { OneBotContext as Context } from '@/core/dispatch/index.js'
-import { Handler, OnCommand, PermissionDecorator, SettingNode } from '@/core/dispatch/index.js'
+import { Handler, OnCommand, PermissionDecorator, Permission } from '@/core/dispatch/index.js'
+import { SettingNode } from '@/core/settings/decorators.js'
 import type { FeedbackService } from '@/services/feedback.js'
 
 type FeedbackType = 'bug' | 'suggestion' | 'complaint'
@@ -47,7 +48,7 @@ function parseQuickFeedback(args: string): [FeedbackType | null, string] {
 @SettingNode('permission', {
   type: 'enum',
   default: 'ANYONE',
-  enumOptions: { ANYONE: 0, GROUP_MEMBER: 10, GROUP_ADMIN: 20, GROUP_OWNER: 30, ADMIN: 100 },
+  enumOptions: Permission,
   description: '最低权限等级',
 })
 class FeedbackHandler {

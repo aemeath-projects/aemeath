@@ -6,7 +6,7 @@ import type { MainPrismaClient } from '@/core/db/index.js'
 import type { RedisStore } from '@/core/redis/index.js'
 import { cacheKeyRegistry } from '@/core/registries.js'
 import type { MinimalSettingSchema } from '@/core/settings/index.js'
-import { getSettingValue } from '@/core/settings/index.js'
+import { getSettingValue, Path } from '@/core/settings/index.js'
 import type { BotActionJobResult, PostCacheOp, TaskDefinition } from '@/core/tasks/index.js'
 
 export const JOB_NAME = 'daily-checkin' as const
@@ -39,14 +39,14 @@ export async function dailyCheckinProcessor(
     const botEnabled = await getSettingValue<boolean>('bot.enabled', {
       db,
       schemaMap,
-      group: g.groupId,
+      path: Path.group(g.groupId.toString()),
     })
     if (!botEnabled) continue
 
     const featureEnabled = await getSettingValue<boolean>('daily_checkin.enabled', {
       db,
       schemaMap,
-      group: g.groupId,
+      path: Path.group(g.groupId.toString()),
     })
     if (!featureEnabled) continue
 

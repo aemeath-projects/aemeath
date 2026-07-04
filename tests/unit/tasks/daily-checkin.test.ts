@@ -49,12 +49,8 @@ describe('dailyCheckinProcessor', () => {
     // bot.enabled=true，daily_checkin.enabled=true（需 DB 覆盖）
     db.$queryRaw = vi
       .fn()
-      .mockImplementationOnce(() =>
-        Promise.resolve([{ key: 'bot.enabled', value: 'true', value_type: 'boolean' }]),
-      )
-      .mockImplementationOnce(() =>
-        Promise.resolve([{ key: 'daily_checkin.enabled', value: 'true', value_type: 'boolean' }]),
-      )
+      .mockImplementationOnce(() => Promise.resolve([{ scope: 'group:100', value: 'true' }]))
+      .mockImplementationOnce(() => Promise.resolve([{ scope: 'group:100', value: 'true' }]))
     const cache = createMockCache(true) // 已打卡
     const result = await dailyCheckinProcessor({} as Job, { db, cache, schemaMap: workerSchemaMap })
     expect(result.calls).toHaveLength(0)
@@ -73,12 +69,8 @@ describe('dailyCheckinProcessor', () => {
     const db = createMockDb([{ groupId: 300n }])
     db.$queryRaw = vi
       .fn()
-      .mockImplementationOnce(() =>
-        Promise.resolve([{ key: 'bot.enabled', value: 'true', value_type: 'boolean' }]),
-      )
-      .mockImplementationOnce(() =>
-        Promise.resolve([{ key: 'daily_checkin.enabled', value: 'true', value_type: 'boolean' }]),
-      )
+      .mockImplementationOnce(() => Promise.resolve([{ scope: 'group:300', value: 'true' }]))
+      .mockImplementationOnce(() => Promise.resolve([{ scope: 'group:300', value: 'true' }]))
     const cache = createMockCache(false)
     const result = await dailyCheckinProcessor({} as Job, { db, cache, schemaMap: workerSchemaMap })
     expect(result.type).toBe('bot-action')

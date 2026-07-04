@@ -6,13 +6,20 @@ import { get, post } from './http'
 
 /* 类型定义 */
 
+export interface PathSegment {
+  readonly type: string
+  readonly id: string
+}
+
+export type Path = readonly PathSegment[]
+
 export interface SettingNodeSchema {
   key: string
   type: 'boolean' | 'number' | 'string' | 'enum'
   default: unknown
   description: string
   enumOptions?: Record<string, number>
-  scope: 'all' | 'group' | 'user'
+  applicableScopeHint?: string[]
   owner: string
   ownerDisplayName: string
   category: 'permission' | 'config'
@@ -21,6 +28,7 @@ export interface SettingNodeSchema {
 export interface SettingValue {
   value: unknown
   overridden: boolean
+  overriddenAtDepth: number | null
 }
 
 /* API 函数 */
@@ -33,38 +41,25 @@ export async function fetchSchemas(prefix?: string): Promise<SettingNodeSchema[]
   return get<SettingNodeSchema[]>(`${BASE}/schemas`, params)
 }
 
-/** 读取指定群的配置值（含 Schema 默认值回退）。 */
-export async function fetchGroupSettings(
-  groupId: number,
+/** 读取指定 path 下的配置值（含 Schema 默认值回退，含覆盖深度标记）。 */
+export async function fetchSettingValues(
+  path: Path,
   prefix?: string,
 ): Promise<Record<string, SettingValue>> {
-  const params = prefix ? { prefix } : {}
-  return get<Record<string, SettingValue>>(`${BASE}/groups/${groupId}`, params)
+  const params: Record<string, string> = { path: JSON.stringify(path) }
+  if (prefix) params.prefix = prefix
+  return get<Record<string, SettingValue>>(`${BASE}/values`, params)
 }
 
-/** 读取指定用户的配置值（含 Schema 默认值回退）。 */
-export async function fetchUserSettings(
-  userId: number,
-  prefix?: string,
-): Promise<Record<string, SettingValue>> {
-  const params = prefix ? { prefix } : {}
-  return get<Record<string, SettingValue>>(`${BASE}/users/${userId}`, params)
+/** 设置单项配置，value 为 null 时重置为默认值（回退到上一级）。 */
+export async function setSettingValue(path: Path, key: string, value: unknown): Promise<void> {
+  await post<null>(`${BASE}/values/${encodeURIComponent(key)}`, { value, path })
 }
 
-/** 设置群级单项配置，value 为 null 时重置为默认值。 */
-export async function setGroupSetting(groupId: number, key: string, value: unknown): Promise<void> {
-  await post<null>(`${BASE}/groups/${groupId}/${encodeURIComponent(key)}`, { value })
-}
-
-/** 设置用户级单项配置，value 为 null 时重置为默认值。 */
-export async function setUserSetting(userId: number, key: string, value: unknown): Promise<void> {
-  await post<null>(`${BASE}/users/${userId}/${encodeURIComponent(key)}`, { value })
-}
-
-/** 批量设置群级配置。 */
-export async function batchSetGroupSettings(
-  groupId: number,
+/** 批量设置指定 path 下的配置。 */
+export async function batchSetSettingValues(
+  path: Path,
   entries: { key: string; value: unknown }[],
 ): Promise<void> {
-  await post<null>(`${BASE}/groups/${groupId}/batch`, { entries })
+  await post<null>(`${BASE}/values/batch`, { entries, path })
 }

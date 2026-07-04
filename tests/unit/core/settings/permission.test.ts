@@ -1,14 +1,10 @@
-import {
-  Permission,
-  handlerRegistry,
-  Handler,
-  SettingNode,
-  type SettingNodeEntry,
-} from '@aemeath-projects/exostrider/dispatch'
+import { Permission, handlerRegistry, Handler } from '@aemeath-projects/exostrider/dispatch'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { OneBotContext as Context } from '@/core/dispatch/index.js'
 import type { PersonnelService } from '@/core/personnel/index.js'
+import { SettingNode } from '@/core/settings/decorators.js'
+import type { SettingNodeOptions } from '@/core/settings/decorators.js'
 import { SettingsPermissionChecker, buildSchemaMap } from '@/core/settings/index.js'
 import type { SettingsService } from '@/core/settings/index.js'
 
@@ -88,7 +84,7 @@ function registerTestHandler(): void {
     addInitializer: () => {},
     name: 'TestHandler',
   }
-  const nodes: { key: string; options: SettingNodeEntry['options'] }[] = [
+  const nodes: { key: string; options: SettingNodeOptions }[] = [
     { key: 'enabled', options: { type: 'boolean', default: true } },
     {
       key: 'permission',

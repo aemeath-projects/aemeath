@@ -13,7 +13,6 @@ import {
   OnEndsWith,
   OnFullMatch,
   OnEvent,
-  SettingNode,
   handlerRegistry,
 } from '@aemeath-projects/exostrider/dispatch'
 import {
@@ -21,8 +20,6 @@ import {
   type MethodMetaEntry,
   HANDLER_CLASS_INTERCEPTORS,
   type InterceptorEntry,
-  HANDLER_SETTINGS,
-  type SettingNodeEntry,
 } from '@aemeath-projects/exostrider/dispatch'
 import { Inject } from '@aemeath-projects/exostrider/lifecycle'
 import { describe, it, expect, afterEach } from 'vitest'
@@ -320,56 +317,6 @@ describe('@Interceptor', () => {
   })
 })
 
-/* @SettingNode */
-
-describe('@SettingNode', () => {
-  it('单个 @SettingNode 应向 HANDLER_SETTINGS 写入一条条目', () => {
-    const metadata = applyClassDecorator(SettingNode('enabled', { type: 'boolean', default: true }))
-    const settings = metadata[HANDLER_SETTINGS] as SettingNodeEntry[]
-    expect(settings).toHaveLength(1)
-    expect(settings[0]!.key).toBe('enabled')
-    expect(settings[0]!.options.type).toBe('boolean')
-    expect(settings[0]!.options.default).toBe(true)
-  })
-
-  it('多个 @SettingNode 应在 HANDLER_SETTINGS 中累积（顺序：先调用先入）', () => {
-    // 手动模拟多次调用（内层先执行：先 maxRetries，再 enabled）
-    let metadata = applyClassDecorator(SettingNode('maxRetries', { type: 'number', default: 3 }))
-    metadata = applyClassDecorator(
-      SettingNode('enabled', { type: 'boolean', default: true }),
-      metadata,
-    )
-
-    const settings = metadata[HANDLER_SETTINGS] as SettingNodeEntry[]
-    expect(settings).toHaveLength(2)
-    expect(settings[0]!.key).toBe('maxRetries')
-    expect(settings[0]!.options.type).toBe('number')
-    expect(settings[0]!.options.default).toBe(3)
-    expect(settings[1]!.key).toBe('enabled')
-    expect(settings[1]!.options.type).toBe('boolean')
-    expect(settings[1]!.options.default).toBe(true)
-  })
-
-  it('应正确保存可选字段 description、enumOptions、scope、category', () => {
-    const metadata = applyClassDecorator(
-      SettingNode('mode', {
-        type: 'enum',
-        default: 'fast',
-        description: '运行模式',
-        enumOptions: { fast: 'fast', slow: 'slow' },
-        scope: 'group',
-        category: 'advanced',
-      }),
-    )
-    const settings = metadata[HANDLER_SETTINGS] as SettingNodeEntry[]
-    const opts = settings[0]!.options
-    expect(opts.description).toBe('运行模式')
-    expect(opts.enumOptions).toEqual({ fast: 'fast', slow: 'slow' })
-    expect(opts.scope).toBe('group')
-    expect(opts.category).toBe('advanced')
-  })
-})
-
 /* @Permission / @Scope / @Priority */
 
 describe('@Permission', () => {
@@ -482,11 +429,6 @@ describe('@Handler', () => {
     let metadata = applyMethodDecorator(Permission(20), 'handle')
     metadata = applyMethodDecorator(Scope('group'), 'handle', metadata)
     metadata = applyMethodDecorator(OnCommand('test'), 'handle', metadata)
-    // 模拟：@SettingNode('enabled') 作用于类
-    metadata = applyClassDecorator(
-      SettingNode('enabled', { type: 'boolean', default: true }),
-      metadata,
-    )
     // 模拟：@Handler 作用于类（最外层，最后执行）
     applyHandlerDecorator(
       { name: 'test_handler', displayName: 'Test' },
@@ -499,7 +441,6 @@ describe('@Handler', () => {
     expect(entry!.methods).toHaveLength(1)
     expect(entry!.methods[0]!.mappingType).toBe('command')
     expect(entry!.methods[0]!.permission).toBe(20)
-    expect(entry!.settingNodes[0]!.key).toBe('test_handler.enabled')
   })
 
   it('should collect @Inject fields into handler entry injects', () => {

@@ -16,6 +16,7 @@ import type { AccountRole } from '@/core/accounts/index.js'
 import type { MainPrismaClient } from '@/core/db/index.js'
 import type { RedisStore } from '@/core/redis/index.js'
 import { cacheKeyRegistry } from '@/core/registries.js'
+import { Path } from '@/core/settings/index.js'
 import type { SettingsService } from '@/core/settings/index.js'
 import { SHANGHAI_TZ } from '@/core/utils/index.js'
 
@@ -124,7 +125,10 @@ export class DailyCheckinService {
       // 功能开关：通过 SettingsService 查询群级配置
       let enabled: boolean
       try {
-        enabled = await this.settings.get<boolean>(`${FEATURE_NAME}.enabled`, { group: groupId })
+        enabled = await this.settings.get<boolean>(
+          `${FEATURE_NAME}.enabled`,
+          Path.group(groupId.toString()),
+        )
       } catch (err) {
         this._log.warn({ groupId, err }, '功能开关查询失败，跳过该群')
         skipped++
@@ -174,7 +178,10 @@ export class DailyCheckinService {
     // 通过 SettingsService 过滤 bot.enabled=true 的群
     const checks = await Promise.all(
       rows.map(async (r) => {
-        const enabled = await this.settings.get<boolean>('bot.enabled', { group: r.groupId })
+        const enabled = await this.settings.get<boolean>(
+          'bot.enabled',
+          Path.group(r.groupId.toString()),
+        )
         return enabled ? r.groupId : null
       }),
     )

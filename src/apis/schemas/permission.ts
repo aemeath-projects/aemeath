@@ -4,9 +4,23 @@
 
 import { Type } from '@sinclair/typebox'
 
+/* Path 相关 —— 与 src/core/settings/path.ts 的字符限制保持一致（禁止 ':' 和 '/'） */
+
+/** scope 路径单段 Schema。 */
+export const PathSegmentSchema = Type.Object({
+  type: Type.String({ pattern: '^[^:/]+$', description: "段类型，禁止包含 ':' 或 '/'" }),
+  id: Type.String({ pattern: '^[^:/]+$', description: "段 ID，禁止包含 ':' 或 '/'" }),
+})
+
+/** scope 路径 Schema，从外到内排序，空数组表示系统级。 */
+export const PathSchema = Type.Array(PathSegmentSchema)
+
+/* 请求体 */
+
 /** 单项设置值请求 Schema（value 可以是任意类型，由 SettingsService 内部校验）。 */
 export const SetValueRequestSchema = Type.Object({
   value: Type.Unknown(),
+  path: PathSchema,
 })
 
 /** 批量设置值请求 Schema。 */
@@ -17,52 +31,46 @@ export const BatchSetRequestSchema = Type.Object({
       value: Type.Unknown(),
     }),
   ),
+  path: PathSchema,
 })
 
 /* 路径参数 */
-
-/** 群 ID 路径参数 */
-export const SettingsGroupIdParamSchema = Type.Object({
-  groupId: Type.String({ pattern: '^\\d+$', description: '群号 / 群 ID' }),
-})
-
-/** 用户 ID 路径参数 */
-export const SettingsUserIdParamSchema = Type.Object({
-  userId: Type.String({ pattern: '^\\d+$', description: 'QQ 号 / 用户 ID' }),
-})
 
 /** 配置项 key 路径参数 */
 export const SettingsKeyParamSchema = Type.Object({
   key: Type.String({ minLength: 1, description: '配置项 key（如 bot.enabled）' }),
 })
 
-/** 群级单项配置路径参数 —— :groupId + :key */
-export const SettingsGroupKeyParamsSchema = Type.Object({
-  groupId: Type.String({ pattern: '^\\d+$', description: '群号 / 群 ID' }),
-  key: Type.String({ minLength: 1, description: '配置项 key（如 bot.enabled）' }),
-})
-
-/** 用户级单项配置路径参数 —— :userId + :key */
-export const SettingsUserKeyParamsSchema = Type.Object({
-  userId: Type.String({ pattern: '^\\d+$', description: 'QQ 号 / 用户 ID' }),
-  key: Type.String({ minLength: 1, description: '配置项 key（如 bot.enabled）' }),
-})
-
 /* 查询参数 */
 
-/** 配置查询参数 —— GET /api/settings/schemas, /groups/:groupId, /users/:userId */
+/** GET /api/settings/schemas 查询参数。 */
 export const SettingsQuerySchema = Type.Object({
   prefix: Type.Optional(Type.String({ description: '按前缀筛选配置项' })),
 })
 
+/** GET /api/settings/values 查询参数 —— path 为 URL 编码的 JSON 数组字符串。 */
+export const SettingsValuesQuerySchema = Type.Object({
+  prefix: Type.Optional(Type.String({ description: '按前缀筛选配置项' })),
+  path: Type.Optional(Type.String({ description: 'URL 编码的 Path JSON 数组，省略即系统级' })),
+})
+
 /* TypeScript 接口 */
+
+export interface PathSegment {
+  readonly type: string
+  readonly id: string
+}
+
+export type PathValue = readonly PathSegment[]
 
 export interface SetValueRequest {
   value: unknown
+  path: PathValue
 }
 
 export interface BatchSetRequest {
   entries: { key: string; value: unknown }[]
+  path: PathValue
 }
 
 /* 响应数据 Schema */
@@ -77,7 +85,7 @@ export const SettingNodeSchemaItem = Type.Object({
   default: Type.Unknown({ description: '默认值' }),
   description: Type.String({ description: '描述' }),
   enumOptions: Type.Optional(Type.Record(Type.String(), Type.Number())),
-  scope: Type.Union([Type.Literal('all'), Type.Literal('group'), Type.Literal('user')]),
+  applicableScopeHint: Type.Optional(Type.Array(Type.String())),
   owner: Type.String({ description: '所属组件名' }),
   ownerDisplayName: Type.String({ description: '所属组件显示名称' }),
   category: Type.Union([Type.Literal('permission'), Type.Literal('config')]),
@@ -86,11 +94,14 @@ export const SettingNodeSchemaItem = Type.Object({
 /** Schema 列表响应数据 —— GET /api/settings/schemas */
 export const SettingsSchemaListDataSchema = Type.Array(SettingNodeSchemaItem)
 
-/** 单项配置条目 Schema —— { value, overridden } */
+/** 单项配置条目 Schema —— { value, overridden, overriddenAtDepth } */
 export const SettingsEntrySchema = Type.Object({
   value: Type.Unknown({ description: '当前生效值' }),
   overridden: Type.Boolean({ description: '是否已被覆盖（非默认值）' }),
+  overriddenAtDepth: Type.Union([Type.Number(), Type.Null()], {
+    description: '覆盖发生的深度：0 表示系统级根，null 表示未覆盖',
+  }),
 })
 
-/** 配置 Record 响应数据 —— GET /api/settings/groups/:groupId, /users/:userId */
+/** 配置 Record 响应数据 —— GET /api/settings/values */
 export const SettingsRecordDataSchema = Type.Record(Type.String(), SettingsEntrySchema)

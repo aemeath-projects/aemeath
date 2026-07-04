@@ -9,9 +9,10 @@ import {
   OnCommand,
   Scope,
   PermissionDecorator,
-  SettingNode,
+  Permission,
 } from '@/core/dispatch/index.js'
 import type { OneBotContext as Context } from '@/core/dispatch/index.js'
+import { SettingNode } from '@/core/settings/decorators.js'
 import type { LikeService } from '@/services/like.js'
 
 const DEFAULT_LIKE_TIMES = 10
@@ -37,7 +38,7 @@ const USAGE =
 @SettingNode('permission', {
   type: 'enum',
   default: 'ANYONE',
-  enumOptions: { ANYONE: 0, GROUP_MEMBER: 10, GROUP_ADMIN: 20, GROUP_OWNER: 30, ADMIN: 100 },
+  enumOptions: Permission,
   description: '最低权限等级',
 })
 class LikeHandler {

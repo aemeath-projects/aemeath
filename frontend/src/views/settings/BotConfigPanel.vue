@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /**
  * BotConfigPanel —— Bot 配置面板，按 owner 分组展示所有 config 类配置项。
+ * scope 三级选择：系统默认 / 群（全体或指定成员）/ 私聊用户。
  */
 import { ref, computed, watch, onMounted } from 'vue'
 import GroupAutocomplete from '@/components/GroupAutocomplete.vue'
@@ -8,27 +9,53 @@ import UserAutocomplete from '@/components/UserAutocomplete.vue'
 import SettingField from '@/components/settings/SettingField.vue'
 import { useSettingsSchemaStore } from '@/stores/settingsSchema'
 import { useSettingsEditor } from '@/composables/useSettingsEditor'
+import type { Path } from '@/apis/settings'
 
 const schemaStore = useSettingsSchemaStore()
 
 /* 作用域状态 */
 
-type ScopeType = 'group' | 'user'
-const scopeType = ref<ScopeType>('group')
+type ScopeMode = 'system' | 'group' | 'private'
+type GroupTarget = 'whole' | 'member'
+
+const scopeMode = ref<ScopeMode>('system')
 const selectedGroup = ref<number | null>(null)
+const groupTarget = ref<GroupTarget>('whole')
+const selectedMember = ref<number | null>(null)
 const selectedUser = ref<number | null>(null)
 
-/** 响应式 scope 对象，传给 useSettingsEditor。 */
-const scope = computed(() => ({
-  group: scopeType.value === 'group' ? selectedGroup.value : null,
-  user: scopeType.value === 'user' ? selectedUser.value : null,
-}))
+/** 是否已选择完整目标（系统默认恒为 true）。 */
+const hasTarget = computed(() => {
+  if (scopeMode.value === 'system') return true
+  if (scopeMode.value === 'group') {
+    if (selectedGroup.value === null) return false
+    return groupTarget.value === 'whole' || selectedMember.value !== null
+  }
+  return selectedUser.value !== null
+})
+
+/** 响应式 Path，传给 useSettingsEditor。 */
+const path = computed<Path>(() => {
+  if (scopeMode.value === 'group' && selectedGroup.value !== null) {
+    if (groupTarget.value === 'member' && selectedMember.value !== null) {
+      return [
+        { type: 'group', id: String(selectedGroup.value) },
+        { type: 'member', id: String(selectedMember.value) },
+      ]
+    }
+    return [{ type: 'group', id: String(selectedGroup.value) }]
+  }
+  if (scopeMode.value === 'private' && selectedUser.value !== null) {
+    return [{ type: 'private', id: String(selectedUser.value) }]
+  }
+  return []
+})
 
 /* 设置编辑器 */
 
 const { values, loading, error, save, reset } = useSettingsEditor({
   prefix: '',
-  scope,
+  path,
   category: 'config',
 })
 
@@ -62,11 +89,6 @@ const configOwners = computed(() =>
   ),
 )
 
-/** 是否已选择目标（group 或 user）。 */
-const hasTarget = computed(() =>
-  scopeType.value === 'group' ? selectedGroup.value !== null : selectedUser.value !== null,
-)
-
 onMounted(() => schemaStore.ensureLoaded())
 </script>
 
@@ -75,27 +97,37 @@ onMounted(() => schemaStore.ensureLoaded())
     <!-- 作用域选择器 -->
     <v-card rounded="lg" class="mb-4">
       <v-card-text class="pa-4">
-        <div class="d-flex align-center gap-4 flex-wrap">
-          <v-radio-group v-model="scopeType" inline hide-details density="compact" class="mr-2">
+        <div class="d-flex flex-column gap-3">
+          <v-radio-group v-model="scopeMode" inline hide-details density="compact">
+            <v-radio label="系统默认" value="system" />
             <v-radio label="群聊" value="group" />
-            <v-radio label="用户" value="user" />
+            <v-radio label="私聊用户" value="private" />
           </v-radio-group>
-          <div style="width: 300px">
-            <GroupAutocomplete
-              v-if="scopeType === 'group'"
-              v-model="selectedGroup"
-              label="选择群聊"
-            />
-            <UserAutocomplete v-else v-model="selectedUser" label="选择用户" />
+
+          <div v-if="scopeMode === 'group'" class="d-flex align-center gap-4 flex-wrap">
+            <div style="width: 300px">
+              <GroupAutocomplete v-model="selectedGroup" label="选择群聊" />
+            </div>
+            <v-radio-group v-model="groupTarget" inline hide-details density="compact">
+              <v-radio label="该群全体" value="whole" />
+              <v-radio label="群内指定成员" value="member" />
+            </v-radio-group>
+            <div v-if="groupTarget === 'member'" style="width: 300px">
+              <UserAutocomplete v-model="selectedMember" label="选择成员" />
+            </div>
+          </div>
+
+          <div v-else-if="scopeMode === 'private'" style="width: 300px">
+            <UserAutocomplete v-model="selectedUser" label="选择用户" />
           </div>
         </div>
         <v-alert v-if="error" type="error" density="compact" class="mt-3">{{ error }}</v-alert>
       </v-card-text>
     </v-card>
 
-    <!-- 未选择目标时提示 -->
+    <!-- 未选择完整目标时提示 -->
     <v-alert v-if="!hasTarget" type="info" variant="tonal" class="mb-4">
-      请先选择{{ scopeType === 'group' ? '群聊' : '用户' }}，然后编辑配置
+      请完成作用域选择后再编辑配置
     </v-alert>
 
     <!-- 左右分栏 -->

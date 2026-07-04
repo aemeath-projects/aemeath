@@ -1,28 +1,17 @@
 /**
- * useSettingsEditor —— 作用域感知的配置读写 Composable。
- * 支持群/用户两种作用域，可按前缀和分类过滤。
+ * useSettingsEditor —— path 感知的配置读写 Composable。
+ * 支持任意深度的 Path（系统级/群/群内成员/私聊用户/业务自定义），可按前缀和分类过滤。
  */
 
 import { ref, watch } from 'vue'
 import type { Ref } from 'vue'
-import {
-  fetchGroupSettings,
-  fetchUserSettings,
-  setGroupSetting,
-  setUserSetting,
-  batchSetGroupSettings,
-} from '@/apis/settings'
-import type { SettingValue } from '@/apis/settings'
+import { fetchSettingValues, setSettingValue, batchSetSettingValues } from '@/apis/settings'
+import type { Path, SettingValue } from '@/apis/settings'
 import { useSettingsSchemaStore } from '@/stores/settingsSchema'
-
-export interface SettingsEditorScope {
-  group?: number | null
-  user?: number | null
-}
 
 export function useSettingsEditor(options: {
   prefix?: string
-  scope: Ref<SettingsEditorScope>
+  path: Ref<Path>
   category?: 'permission' | 'config'
 }) {
   const values = ref<Record<string, SettingValue>>({})
@@ -30,20 +19,10 @@ export function useSettingsEditor(options: {
   const error = ref<string | null>(null)
 
   async function reload(): Promise<void> {
-    const s = options.scope.value
-    if (!s.group && !s.user) {
-      values.value = {}
-      return
-    }
     loading.value = true
     error.value = null
     try {
-      let raw: Record<string, SettingValue>
-      if (s.group) {
-        raw = await fetchGroupSettings(s.group, options.prefix)
-      } else {
-        raw = await fetchUserSettings(s.user!, options.prefix)
-      }
+      let raw = await fetchSettingValues(options.path.value, options.prefix)
 
       // 按 category 过滤（客户端侧，依赖 schema store）
       if (options.category) {
@@ -63,41 +42,39 @@ export function useSettingsEditor(options: {
     }
   }
 
-  /** 保存单项配置，value 为 null 时后端会重置为默认值。 */
+  /** 保存单项配置，value 为 null 时后端会重置为默认值（回退到上一级）。 */
   async function save(key: string, value: unknown): Promise<void> {
-    const s = options.scope.value
     try {
-      if (s.group) {
-        await setGroupSetting(s.group, key, value)
-      } else if (s.user) {
-        await setUserSetting(s.user, key, value)
+      await setSettingValue(options.path.value, key, value)
+      // 乐观更新本地状态：写入场景的覆盖深度即当前 path 长度，重置场景（value=null）
+      // 无法在本地推算真实回退深度，需重新拉取才能得到准确值，交由调用方决定是否 reload
+      values.value[key] = {
+        value,
+        overridden: value !== null,
+        overriddenAtDepth: value === null ? null : options.path.value.length,
       }
-      // 乐观更新本地状态
-      values.value[key] = { value, overridden: value !== null }
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : '保存失败'
       throw e
     }
   }
 
-  /** 重置配置项为默认值（POST value=null），重置后重新拉取实际默认值。 */
+  /** 重置配置项为默认值（POST value=null），重置后重新拉取实际回退值。 */
   async function reset(key: string): Promise<void> {
     await save(key, null)
     await reload()
   }
 
-  /** 批量保存配置（仅支持群作用域）。 */
+  /** 批量保存指定 path 下的配置，不再限定仅群维度。 */
   async function batchSave(entries: { key: string; value: unknown }[]): Promise<void> {
-    const s = options.scope.value
-    if (!s.group) {
-      error.value = 'batchSave 仅支持群作用域'
-      return
-    }
     try {
-      await batchSetGroupSettings(s.group, entries)
-      // 乐观更新本地状态
+      await batchSetSettingValues(options.path.value, entries)
       for (const entry of entries) {
-        values.value[entry.key] = { value: entry.value, overridden: entry.value !== null }
+        values.value[entry.key] = {
+          value: entry.value,
+          overridden: entry.value !== null,
+          overriddenAtDepth: entry.value === null ? null : options.path.value.length,
+        }
       }
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : '批量保存失败'
@@ -105,8 +82,8 @@ export function useSettingsEditor(options: {
     }
   }
 
-  // scope 变化时自动重新加载
-  watch(() => options.scope.value, reload, { deep: true, immediate: true })
+  // path 变化时自动重新加载
+  watch(() => options.path.value, reload, { deep: true, immediate: true })
 
   return { values, loading, error, save, reset, batchSave, reload }
 }

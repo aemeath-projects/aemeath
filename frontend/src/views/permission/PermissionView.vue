@@ -10,7 +10,7 @@ import UserAutocomplete from '@/components/UserAutocomplete.vue'
 import SettingField from '@/components/settings/SettingField.vue'
 import { useSettingsSchemaStore } from '@/stores/settingsSchema'
 import { useSettingsEditor } from '@/composables/useSettingsEditor'
-import type { SettingNodeSchema } from '@/apis/settings'
+import type { SettingNodeSchema, Path } from '@/apis/settings'
 
 const schemaStore = useSettingsSchemaStore()
 
@@ -21,17 +21,22 @@ const scopeType = ref<ScopeType>('group')
 const selectedGroup = ref<number | null>(null)
 const selectedUser = ref<number | null>(null)
 
-/** 响应式 scope 对象，传给 useSettingsEditor。 */
-const scope = computed(() => ({
-  group: scopeType.value === 'group' ? selectedGroup.value : null,
-  user: scopeType.value === 'user' ? selectedUser.value : null,
-}))
+/** 响应式 Path，传给 useSettingsEditor。 */
+const path = computed<Path>(() => {
+  if (scopeType.value === 'group' && selectedGroup.value !== null) {
+    return [{ type: 'group', id: String(selectedGroup.value) }]
+  }
+  if (scopeType.value === 'user' && selectedUser.value !== null) {
+    return [{ type: 'private', id: String(selectedUser.value) }]
+  }
+  return []
+})
 
 /* 设置编辑器（仅 category='permission'） */
 
 const { values, loading, error, save, reset } = useSettingsEditor({
   prefix: '',
-  scope,
+  path,
   category: 'permission',
 })
 

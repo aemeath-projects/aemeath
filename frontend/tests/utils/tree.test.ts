@@ -19,7 +19,6 @@ function makeSchema(
     type: 'boolean',
     default: false,
     description: '',
-    scope: 'all',
     owner,
     ownerDisplayName,
     category,
@@ -102,21 +101,25 @@ describe('mergeSettingValues', () => {
   it('无覆盖时所有项 overridden: false', () => {
     const defaults = { 'a.enabled': false, 'b.config': 10 }
     const result = mergeSettingValues(defaults, {})
-    expect(result['a.enabled']).toEqual({ value: false, overridden: false })
-    expect(result['b.config']).toEqual({ value: 10, overridden: false })
+    expect(result['a.enabled']).toEqual({ value: false, overridden: false, overriddenAtDepth: null })
+    expect(result['b.config']).toEqual({ value: 10, overridden: false, overriddenAtDepth: null })
   })
 
   it('覆盖项标记 overridden: true 并使用覆盖值', () => {
     const defaults = { 'a.enabled': false }
-    const overrides: Record<string, SettingValue> = { 'a.enabled': { value: true, overridden: true } }
+    const overrides: Record<string, SettingValue> = {
+      'a.enabled': { value: true, overridden: true, overriddenAtDepth: 1 },
+    }
     const result = mergeSettingValues(defaults, overrides)
-    expect(result['a.enabled']).toEqual({ value: true, overridden: true })
+    expect(result['a.enabled']).toEqual({ value: true, overridden: true, overriddenAtDepth: 1 })
   })
 
   it('覆盖中有 defaults 不存在的 key 时正常写入', () => {
-    const overrides: Record<string, SettingValue> = { 'new.key': { value: 42, overridden: true } }
+    const overrides: Record<string, SettingValue> = {
+      'new.key': { value: 42, overridden: true, overriddenAtDepth: 0 },
+    }
     const result = mergeSettingValues({}, overrides)
-    expect(result['new.key']).toEqual({ value: 42, overridden: true })
+    expect(result['new.key']).toEqual({ value: 42, overridden: true, overriddenAtDepth: 0 })
   })
 
   it('defaults 和 overrides 均为空时返回空对象', () => {

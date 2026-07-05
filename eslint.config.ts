@@ -151,15 +151,15 @@ export default tseslint.config(
     //   $queryRaw 直接映射数据库列名（snake_case），类型声明须与列名一致（core/settings/query.ts）
     //
     // Prisma 复合唯一键 / settings 点分 key（如 'userId_groupId', 'bot.enabled'）：
-    //   ORM compound key 和 settings key 均为持久化字符串契约（personnel/events.ts、personnel/index.ts、settings/service.ts）
+    //   ORM compound key 和 settings key 均为持久化字符串契约（user/events.ts、user/index.ts、settings/service.ts）
     files: [
       'src/core/lifecycle.ts',
       'src/core/main.ts',
       'src/core/worker.ts',
       'src/apis/queue.ts',
       'src/core/chat/media.ts',
-      'src/core/personnel/events.ts',
-      'src/core/personnel/index.ts',
+      'src/core/user/events.ts',
+      'src/core/user/index.ts',
       'src/core/settings/query.ts',
       'src/core/settings/service.ts',
       'src/tasks/daily-checkin.ts',

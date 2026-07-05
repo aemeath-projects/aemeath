@@ -156,7 +156,7 @@ docker build -t aemeath:latest .
 - `EventDispatcher` → `CompositeHandlerMapping` → 具体 Mapping 策略
 - 内置路由策略：`CommandHandlerMapping`（`/cmd`）、`RegexHandlerMapping`、`KeywordHandlerMapping`、`StartsWith`、`EndsWith`、`FullMatch`、`EventTypeHandlerMapping` 等
 - `EchoLoader`（来自 exostrider）根据根目录 `aemeath.config.ts` 配置动态 import 各类型目录，装饰器副作用自动注册组件
-- 系统级功能（如 `personnel`）内聚于对应领域包（如 `src/core/personnel/`）
+- 系统级功能（如 `user`）内聚于对应领域包（如 `src/core/user/`）
 - 拦截器：`LoggingInterceptor`（Pino 结构化日志）、`MetricsInterceptor`（Prometheus）、`SessionInterceptor`（多轮会话）
 
 ### Handler 开发约定
@@ -237,7 +237,7 @@ export class MyServiceBootstrap {
 
 > ⚠️ 旧的单账号 key（`bot_client`、`msg_api`、`group_api`、`friend_api`、`file_api`、`system_api`、`extension_api`）已随 `src/core/napcat.ts` 移除，详见「多账号连接管理」章节。
 
-业务服务 key（由 `@Provide` 注册后可通过 `@Inject` 使用）：`oss`、`media_storage`、`task_scheduler`、`iris`、`iris_archive`、`iris_search`、`renderer`、`settings`、`settings_checker`、`personnelService` 等
+业务服务 key（由 `@Provide` 注册后可通过 `@Inject` 使用）：`oss`、`media_storage`、`task_scheduler`、`iris`、`iris_archive`、`iris_search`、`renderer`、`settings`、`settings_checker`、`userService` 等
 
 `EchoLoader`（来自 `@aemeath-projects/exostrider/echo`）按 `aemeath.config.ts` 的 `echoes` 配置扫描各目录（默认：`handler→src/handlers`、`service→src/services`、`task→src/tasks`、`route→src/apis`），import 触发副作用自动注册到注册表。
 
@@ -252,7 +252,7 @@ export class MyServiceBootstrap {
 ```
 src/
 ├── core/        # 框架基础设施
-│   ├── schemas/     # 共享 TypeBox schemas（common、llm、personnel、response）
+│   ├── schemas/     # 共享 TypeBox schemas（common、llm、user、response）
 │   ├── accounts/    # 多账号路由领域（adapter、bootstrap、context-apis、dedup、group-bot-registry、roles、router）
 │   ├── iris/        # 聊天记录领域（archive、exporter、media、s3、search、service、bootstrap）
 │   ├── db/          # Prisma 客户端工厂（factory、extensions、guards）
@@ -261,7 +261,7 @@ src/
 │   ├── llm/         # LLM 领域（api、client、completion、schemas）
 │   ├── monitoring/  # Prometheus 指标
 │   ├── oss/         # OSS/MinIO 客户端（client、utils、bootstrap）
-│   ├── personnel/   # 人员领域（api、events、query、sync）
+│   ├── user/        # 用户领域（api、events、query、sync）
 │   ├── plugins/     # Fastify 插件（auth、cors、swagger）
 │   ├── redis/       # Redis 工厂、cacheKeyRegistry、RedisStore、分布式锁
 │   ├── session/     # 交互式多轮会话（manager、state-machine、context）
@@ -295,7 +295,7 @@ aemeath.config.ts    # EchoLoader 扫描路径配置（echoes: handler/service/t
 | -------------- | ------------------------------------------ |
 | `common.ts`    | 通用分页、ID 等基础 schema                 |
 | `llm.ts`       | LLM 配置相关请求/响应 schema               |
-| `personnel.ts` | 人员查询相关 schema                        |
+| `user.ts`      | 用户查询相关 schema                        |
 | `response.ts`  | 统一响应格式 TypeBox schema（`ok`/`fail`） |
 | `index.ts`     | 统一导出入口                               |
 
@@ -350,15 +350,15 @@ aemeath.config.ts    # EchoLoader 扫描路径配置（echoes: handler/service/t
 | `completion.ts` | `llmComplete`/`llmStream`：高层 LLM 调用接口 |
 | `api.ts`        | Fastify 路由：LLM 提供商/模型 CRUD           |
 
-**`src/core/personnel/`** — 人员领域
+**`src/core/user/`** — 用户领域
 
 | 文件        | 职责                                                      |
 | ----------- | --------------------------------------------------------- |
-| `main.ts`   | `PersonnelService`：用户/群聊写操作（upsert、管理员管理） |
-| `query.ts`  | `PersonnelQueryService`：用户/群聊只读查询                |
-| `events.ts` | `PersonnelEventsService`：好友/群成员增量事件处理         |
+| `index.ts`  | `UserService`：用户/群聊写操作（upsert、管理员管理）       |
+| `query.ts`  | `UserQueryService`：用户/群聊只读查询                     |
+| `events.ts` | `UserEventService`：好友/群成员增量事件处理                |
 | `sync.ts`   | `SyncCoordinator`：定时从 NapCat 同步用户数据             |
-| `api.ts`    | Fastify 路由：人员查询 API                                |
+| `api.ts`    | Fastify 路由：用户查询 API                                |
 
 ### 功能业务服务层 (`src/services/`)
 
@@ -477,7 +477,7 @@ BullMQ（任务队列）取代原有的 Dramatiq。Worker 进程运行在 `src/c
 
 - 统一响应格式 `{code: 0, data, message}` / `{code: -1, data, message}`，使用 `src/core/response.ts` 的 `ok()` / `fail()`
 - 后端路由 `src/apis/<module>.ts` 与前端 `frontend/src/apis/<module>.ts` 一一对应（目录名为 `apis`）
-- 核心层 API 路由随领域包内聚：`src/core/llm/api.ts`、`src/core/personnel/api.ts`
+- 核心层 API 路由随领域包内聚：`src/core/llm/api.ts`、`src/core/user/api.ts`
 - 前端 API 层统一通过 `frontend/src/apis/client.ts` 的 Axios 实例发请求
 - `src/apis/logs.ts`：SSE 实时日志推送（`GET /logs/stream`）
 - `src/apis/queue.ts`：BullMQ 队列监控（`GET /queue/*`，含 Worker 信息、定时任务、SSE 实时推送）

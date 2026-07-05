@@ -46,7 +46,7 @@
         <v-list-item
           v-for="entry in leaderboard"
           :key="entry.userId"
-          :subtitle="`${personnelStore.getUserName(entry.userId)}（${entry.userId}）`"
+          :subtitle="`${userStore.getUserName(entry.userId)}（${entry.userId}）`"
         >
           <template #prepend>
             <v-avatar size="32" class="mr-2">
@@ -101,9 +101,9 @@ import { computed, onMounted, ref, watch } from 'vue'
 import * as checkinApi from '@/apis/checkin'
 import type { DayCount, LeaderEntry, Summary } from '@/apis/checkin'
 import PageLayout from '@/layouts/PageLayout.vue'
-import { usePersonnelStore } from '@/stores/personnel'
+import { useUserStore } from '@/stores/user'
 
-const personnelStore = usePersonnelStore()
+const userStore = useUserStore()
 
 const groupId = ref<number | null>(null)
 
@@ -171,7 +171,7 @@ async function loadLeaderboard() {
   try {
     leaderboard.value = await checkinApi.getLeaderboard(groupId.value, leaderBy.value)
     const userIds = leaderboard.value.map((e) => e.userId)
-    personnelStore.prefetchIds(userIds, [])
+    userStore.prefetchIds(userIds, [])
   } finally {
     leaderLoading.value = false
   }

@@ -107,17 +107,17 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { usePersonnelStore } from '@/stores/personnel'
-import type { GroupItem } from '@/apis/personnel'
-import SyncDialog from '@/components/personnel/SyncDialog.vue'
+import { useUserStore } from '@/stores/user'
+import type { GroupItem } from '@/apis/user'
+import SyncDialog from '@/components/user/SyncDialog.vue'
 import PageLayout from '@/layouts/PageLayout.vue'
 import GroupInfoCard from '@/components/GroupInfoCard.vue'
 import UserInfoCard from '@/components/UserInfoCard.vue'
 import { formatTime } from '@/utils/format'
-import { activeColor, activeLabel } from '@/utils/personnel'
+import { activeColor, activeLabel } from '@/utils/user'
 import { usePagination } from '@/composables/usePagination'
 
-const store = usePersonnelStore()
+const store = useUserStore()
 
 const filterName = ref<string | null>(null)
 const filterActive = ref<boolean | null>(null)

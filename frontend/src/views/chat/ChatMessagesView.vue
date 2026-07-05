@@ -6,9 +6,9 @@
         <SessionSelector
           :active-type="currentSession?.type ?? null"
           :active-id="currentSession?.id ?? null"
-          :groups="personnelStore.sessionGroups"
-          :users="personnelStore.sessionUsers"
-          :loading="personnelStore.sessionLoading"
+          :groups="userStore.sessionGroups"
+          :users="userStore.sessionUsers"
+          :loading="userStore.sessionLoading"
           @select="onSessionSelect"
         />
       </v-col>
@@ -148,7 +148,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted } from 'vue'
 import { useChatStore } from '@/stores/chat'
-import { usePersonnelStore } from '@/stores/personnel'
+import { useUserStore } from '@/stores/user'
 import type { ChatMessage } from '@/apis/chat'
 import SessionSelector from '@/components/chat/SessionSelector.vue'
 import MessageBubble from '@/components/chat/MessageBubble.vue'
@@ -158,7 +158,7 @@ import UserAutocomplete from '@/components/UserAutocomplete.vue'
 import ImagePreviewDialog from '@/components/chat/ImagePreviewDialog.vue'
 
 const store = useChatStore()
-const personnelStore = usePersonnelStore()
+const userStore = useUserStore()
 
 const reversedMessages = computed(() => [...store.messages].reverse())
 
@@ -293,6 +293,6 @@ function onScroll() {
 }
 
 onMounted(() => {
-  personnelStore.loadSessionData()
+  userStore.loadSessionData()
 })
 </script>

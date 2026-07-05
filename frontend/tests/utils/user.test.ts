@@ -1,4 +1,4 @@
-/** 人员工具函数单元测试：关系颜色、标签、图标等展示辅助函数。 */
+/** 用户工具函数单元测试：关系颜色、标签、图标等展示辅助函数。 */
 import { describe, it, expect } from 'vitest'
 import {
   relationColor,
@@ -9,7 +9,7 @@ import {
   activeColor,
   activeLabel,
   roleOptions,
-} from '@/utils/personnel'
+} from '@/utils/user'
 
 describe('relationColor', () => {
   it.each([

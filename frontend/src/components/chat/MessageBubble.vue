@@ -75,7 +75,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { ChatMessage } from '@/apis/chat'
-import { roleColor, roleLabel } from '@/utils/personnel'
+import { roleColor, roleLabel } from '@/utils/user'
 import MessageSegmentRenderer from './MessageSegmentRenderer.vue'
 
 const props = defineProps<{

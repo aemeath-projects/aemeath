@@ -14,7 +14,7 @@ import { cacheKeyRegistry } from '@/core/registries.js'
 /**
  * 处理 Bot 实时增量事件，维护用户与群成员关系的即时状态。
  */
-export class PersonnelEventService {
+export class UserEventService {
   constructor(
     private readonly db: AemeathPrismaClient,
     private readonly cache: RedisStore,
@@ -38,7 +38,7 @@ export class PersonnelEventService {
       })
     }
 
-    await this.cache.del(cacheKeyRegistry.buildKey('personnel', 'relation', String(userId)))
+    await this.cache.del(cacheKeyRegistry.buildKey('user', 'relation', String(userId)))
   }
 
   /** 群成员增加：创建成员关系记录，若为 stranger 则升级为 group_member。 */
@@ -79,7 +79,7 @@ export class PersonnelEventService {
       update: { isActive: true },
     })
 
-    await this.cache.del(cacheKeyRegistry.buildKey('personnel', 'relation', String(userId)))
+    await this.cache.del(cacheKeyRegistry.buildKey('user', 'relation', String(userId)))
   }
 
   /** 群成员减少：标记成员关系为非活跃，重算 relation。 */
@@ -117,7 +117,7 @@ export class PersonnelEventService {
       }
     }
 
-    await this.cache.del(cacheKeyRegistry.buildKey('personnel', 'relation', String(userId)))
+    await this.cache.del(cacheKeyRegistry.buildKey('user', 'relation', String(userId)))
   }
 
   /** 群管理员变动：更新成员关系的 role 字段。 */

@@ -138,12 +138,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { usePersonnelStore } from '@/stores/personnel'
-import type { UserItem } from '@/apis/personnel'
+import { useUserStore } from '@/stores/user'
+import type { UserItem } from '@/apis/user'
 import PageLayout from '@/layouts/PageLayout.vue'
 import UserInfoCard from '@/components/UserInfoCard.vue'
 
-const store = usePersonnelStore()
+const store = useUserStore()
 
 // 添加超级管理员
 const addDialog = ref(false)

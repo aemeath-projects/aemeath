@@ -10,7 +10,7 @@ import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { FriendApi, GroupApi } from '@aemeath-projects/napcat'
 import type { FriendInfo, GroupInfo, GroupMember } from '@aemeath-projects/napcat/types'
 
-import type { PersonnelService } from './index.js'
+import type { UserService } from './index.js'
 
 /** 同步触发来源。 */
 export type SyncSource = 'ws_connect' | 'manual' | 'scheduled'
@@ -49,12 +49,12 @@ export class SyncCoordinator {
   private readonly _intervalMs: number
   private readonly _initialDelayMs: number
   private readonly _apiDelayMs: number
-  private readonly _log: PinoLogger = getLogger('personnel:sync') as unknown as PinoLogger
+  private readonly _log: PinoLogger = getLogger('user:sync') as unknown as PinoLogger
 
   constructor(
     private readonly friendApi: FriendApi,
     private readonly groupApi: GroupApi,
-    private readonly personnelService: PersonnelService,
+    private readonly userService: UserService,
     private readonly connStatus: ConnectionStatus,
     opts?: SyncCoordinatorOptions,
   ) {
@@ -171,7 +171,7 @@ export class SyncCoordinator {
       }
 
       // 4. 持久化到数据库
-      await this.personnelService.persistSyncData(
+      await this.userService.persistSyncData(
         Array.isArray(friendsData) ? friendsData : null,
         Array.isArray(groupsData) ? groupsData : null,
         Object.keys(membersData).length > 0 ? membersData : null,

@@ -2,11 +2,11 @@ import { Permission, handlerRegistry, Handler } from '@aemeath-projects/exostrid
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { OneBotContext as Context } from '@/core/dispatch/index.js'
-import type { PersonnelService } from '@/core/personnel/index.js'
 import { SettingNode } from '@/core/settings/decorators.js'
 import type { SettingNodeOptions } from '@/core/settings/decorators.js'
 import { SettingsPermissionChecker, buildSchemaMap } from '@/core/settings/index.js'
 import type { SettingsService } from '@/core/settings/index.js'
+import type { UserService } from '@/core/user/index.js'
 
 /* Mock 工厂 */
 
@@ -19,10 +19,10 @@ function createMockSettings(overrides: Record<string, unknown> = {}) {
   } as unknown as SettingsService
 }
 
-function createMockPersonnel(adminQqs: bigint[] = []) {
+function createMockUserService(adminQqs: bigint[] = []) {
   return {
     getAdminQqSet: vi.fn().mockResolvedValue(new Set(adminQqs)),
-  } as unknown as PersonnelService
+  } as unknown as UserService
 }
 
 function createGroupContext(
@@ -105,11 +105,11 @@ function buildChecker(settingsValues: Record<string, unknown> = {}, adminQqs: bi
   registerTestHandler()
   const schemaMap = buildSchemaMap()
   const settings = createMockSettings(settingsValues)
-  const personnel = createMockPersonnel(adminQqs)
+  const userService = createMockUserService(adminQqs)
   return {
-    checker: new SettingsPermissionChecker(settings, personnel, schemaMap),
+    checker: new SettingsPermissionChecker(settings, userService, schemaMap),
     settings,
-    personnel,
+    userService,
   }
 }
 
@@ -128,12 +128,12 @@ describe('system 功能直通', () => {
 
     const schemaMap = buildSchemaMap()
     const settings = createMockSettings()
-    const personnel = createMockPersonnel()
-    const checker = new SettingsPermissionChecker(settings, personnel, schemaMap)
+    const userService = createMockUserService()
+    const checker = new SettingsPermissionChecker(settings, userService, schemaMap)
 
     const ctx = createGroupContext({ componentName: 'sys_feature' })
     expect(await checker.check(ctx as Context)).toBe(true)
-    expect(personnel.getAdminQqSet).not.toHaveBeenCalled()
+    expect(userService.getAdminQqSet).not.toHaveBeenCalled()
   })
 })
 

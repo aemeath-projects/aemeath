@@ -12,13 +12,13 @@ describe('CacheKeyRegistry', () => {
 
   it('注册并获取 key 定义', () => {
     registry.register({
-      namespace: 'personnel',
+      namespace: 'user',
       name: 'sync_status',
-      build: () => 'aemeath:personnel:sync_status',
+      build: () => 'aemeath:user:sync_status',
     })
-    const def = registry.get('personnel', 'sync_status')
+    const def = registry.get('user', 'sync_status')
     expect(def).toBeDefined()
-    expect(def!.build()).toBe('aemeath:personnel:sync_status')
+    expect(def!.build()).toBe('aemeath:user:sync_status')
   })
 
   it('buildKey 正确调用 build 函数', () => {

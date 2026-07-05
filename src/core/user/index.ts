@@ -1,15 +1,15 @@
 /**
  * 用户管理写操作服务 —— upsert、同步持久化、管理员管理。
  *
- * 只读查询已迁移至 PersonnelQueryService（query.ts）。
- * 增量事件处理已迁移至 PersonnelEventService（events.ts）。
+ * 只读查询已迁移至 UserQueryService（query.ts）。
+ * 增量事件处理已迁移至 UserEventService（events.ts）。
  */
 
 import { Service, Inject, Provide, Startup, Shutdown } from '@aemeath-projects/exostrider/lifecycle'
 import type { FriendInfo, GroupInfo, GroupMember } from '@aemeath-projects/napcat/types'
 
 import { USER_RELATION_GLOB } from './cache.js'
-import { PersonnelQueryService } from './query.js'
+import { UserQueryService } from './query.js'
 import { SyncCoordinator } from './sync.js'
 import type { ConnectionStatus } from './sync.js'
 
@@ -19,7 +19,7 @@ import type { RedisStore } from '@/core/redis/index.js'
 import { cacheKeyRegistry } from '@/core/registries.js'
 
 import './metrics.js'
-export { PersonnelQueryService } from './query.js'
+export { UserQueryService } from './query.js'
 export type {
   PaginatedResult,
   UserView,
@@ -71,7 +71,7 @@ export function computeRelation(
 /**
  * 用户管理核心服务 —— 封装 upsert、同步编排、缓存管理。
  */
-export class PersonnelService {
+export class UserService {
   constructor(
     private readonly db: AemeathPrismaClient,
     private readonly cache: RedisStore,
@@ -316,7 +316,7 @@ export class PersonnelService {
       groupsSynced,
       membershipsSynced,
     }
-    await this.cache.set(cacheKeyRegistry.buildKey('personnel', 'sync_status'), statusData, 0)
+    await this.cache.set(cacheKeyRegistry.buildKey('user', 'sync_status'), statusData, 0)
 
     // 清除用户关系缓存
     await this._invalidateAllRelationCache()
@@ -332,8 +332,8 @@ export class PersonnelService {
     if (!user) return false
 
     await this.db.user.update({ where: { qq }, data: { relation: 'admin' } })
-    await this.cache.del(cacheKeyRegistry.buildKey('personnel', 'relation', String(qq)))
-    await this.cache.del(cacheKeyRegistry.buildKey('personnel', 'admins'))
+    await this.cache.del(cacheKeyRegistry.buildKey('user', 'relation', String(qq)))
+    await this.cache.del(cacheKeyRegistry.buildKey('user', 'admins'))
     return true
   }
 
@@ -349,8 +349,8 @@ export class PersonnelService {
 
     const newRelation: UserRelation = hasMembership ? 'group_member' : 'stranger'
     await this.db.user.update({ where: { qq }, data: { relation: newRelation } })
-    await this.cache.del(cacheKeyRegistry.buildKey('personnel', 'relation', String(qq)))
-    await this.cache.del(cacheKeyRegistry.buildKey('personnel', 'admins'))
+    await this.cache.del(cacheKeyRegistry.buildKey('user', 'relation', String(qq)))
+    await this.cache.del(cacheKeyRegistry.buildKey('user', 'admins'))
     return true
   }
 
@@ -369,7 +369,7 @@ export class PersonnelService {
 
   /** 获取所有超级管理员的 QQ 号集合（带 Redis 缓存）。 */
   async getAdminQqSet(): Promise<Set<bigint>> {
-    const key = cacheKeyRegistry.buildKey('personnel', 'admins')
+    const key = cacheKeyRegistry.buildKey('user', 'admins')
     const cached = await this.cache.get<number[]>(key)
     if (cached !== null && Array.isArray(cached)) {
       return new Set(cached.map((q) => BigInt(q)))
@@ -386,9 +386,7 @@ export class PersonnelService {
 
   /** 获取最近一次同步状态。 */
   async getSyncStatus(): Promise<SyncStatus> {
-    const data = await this.cache.get<SyncStatus>(
-      cacheKeyRegistry.buildKey('personnel', 'sync_status'),
-    )
+    const data = await this.cache.get<SyncStatus>(cacheKeyRegistry.buildKey('user', 'sync_status'))
     if (data !== null && typeof data === 'object') {
       return data
     }
@@ -404,7 +402,7 @@ export class PersonnelService {
 
   /** 获取用户关系等级（带缓存）。 */
   async getUserRelation(qq: bigint): Promise<string> {
-    const key = cacheKeyRegistry.buildKey('personnel', 'relation', String(qq))
+    const key = cacheKeyRegistry.buildKey('user', 'relation', String(qq))
     const cached = await this.cache.get<string>(key)
     if (cached !== null) return cached
 
@@ -488,7 +486,7 @@ export class PersonnelService {
   private async _invalidateAllRelationCache(): Promise<void> {
     try {
       await this.cache.deleteByPattern(USER_RELATION_GLOB)
-      await this.cache.del(cacheKeyRegistry.buildKey('personnel', 'admins'))
+      await this.cache.del(cacheKeyRegistry.buildKey('user', 'admins'))
     } catch {
       // 缓存清除失败不影响主流程
     }
@@ -497,22 +495,22 @@ export class PersonnelService {
 
 /* 生命周期注册 */
 
-@Service({ name: 'personnel_query_bootstrap' })
-export class PersonnelQueryBootstrap {
+@Service({ name: 'user_query_bootstrap' })
+export class UserQueryBootstrap {
   @Inject('db')
   db!: AemeathPrismaClient
 
-  @Provide('personnelQueryService')
-  personnelQueryService!: PersonnelQueryService
+  @Provide('userQueryService')
+  userQueryService!: UserQueryService
 
   @Startup
   start(): void {
-    this.personnelQueryService = new PersonnelQueryService(this.db)
+    this.userQueryService = new UserQueryService(this.db)
   }
 }
 
-@Service({ name: 'personnel_bootstrap' })
-export class PersonnelBootstrap {
+@Service({ name: 'user_bootstrap' })
+export class UserBootstrap {
   /** 注入主数据库 */
   @Inject('db')
   db!: AemeathPrismaClient
@@ -521,13 +519,13 @@ export class PersonnelBootstrap {
   @Inject('cache')
   cache!: RedisStore
 
-  /** 对外暴露人员服务实例 */
-  @Provide('personnelService')
-  personnelService!: PersonnelService
+  /** 对外暴露用户服务实例 */
+  @Provide('userService')
+  userService!: UserService
 
   @Startup
   start(): void {
-    this.personnelService = new PersonnelService(this.db, this.cache)
+    this.userService = new UserService(this.db, this.cache)
   }
 }
 
@@ -536,8 +534,8 @@ export class SyncCoordinatorBootstrap {
   @Inject('master_apis')
   masterApis!: MasterApis
 
-  @Inject('personnelService')
-  personnelService!: PersonnelService
+  @Inject('userService')
+  userService!: UserService
 
   @Inject('account_pool')
   accountPool!: AccountPool
@@ -560,18 +558,13 @@ export class SyncCoordinatorBootstrap {
       this.syncCoordinator = new SyncCoordinator(
         { getFriendList: async () => ({ ok: false, error: 'no master account' }) } as never,
         { getGroupList: async () => ({ ok: false, error: 'no master account' }) } as never,
-        this.personnelService,
+        this.userService,
         { connected: false },
       )
       return
     }
 
-    this.syncCoordinator = new SyncCoordinator(
-      friendApi,
-      groupApi,
-      this.personnelService,
-      connStatus,
-    )
+    this.syncCoordinator = new SyncCoordinator(friendApi, groupApi, this.userService, connStatus)
     this.syncCoordinator.start()
   }
 

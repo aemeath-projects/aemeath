@@ -3,7 +3,7 @@
  *
  * 指标按领域拆分：
  *  - 通用基础设施指标（WS、事件、API、HTTP）定义于本文件
- *  - 人员管理指标已迁移至 @/core/personnel/metrics.js
+ *  - 用户管理指标已迁移至 @/core/user/metrics.js
  */
 
 import { metricRegistry } from './registry.js'

@@ -4,7 +4,7 @@
 
 import { ref, shallowRef, triggerRef } from 'vue'
 import { defineStore } from 'pinia'
-import * as api from '@/apis/personnel'
+import * as api from '@/apis/user'
 import type {
   UserItem,
   UserDetail,
@@ -12,7 +12,7 @@ import type {
   GroupMemberItem,
   SyncStatus,
   PaginatedResult,
-} from '@/apis/personnel'
+} from '@/apis/user'
 
 interface ResolvedUser {
   nickname: string
@@ -22,7 +22,7 @@ interface ResolvedGroup {
   groupName: string
 }
 
-export const usePersonnelStore = defineStore('personnel', () => {
+export const useUserStore = defineStore('user', () => {
   /* 用户列表 */
   const users = ref<PaginatedResult<UserItem>>({
     items: [],
@@ -122,7 +122,7 @@ export const usePersonnelStore = defineStore('personnel', () => {
     }
   }
 
-  /* 会话选择器专用列表（不影响人员管理页面的分页状态） */
+  /* 会话选择器专用列表（不影响用户管理页面的分页状态） */
   const sessionGroups = ref<GroupItem[]>([])
   const sessionUsers = ref<UserItem[]>([])
   const sessionLoading = ref(false)

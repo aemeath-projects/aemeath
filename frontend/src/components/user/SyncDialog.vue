@@ -117,12 +117,12 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { usePersonnelStore } from '@/stores/personnel'
+import { useUserStore } from '@/stores/user'
 import { formatTime } from '@/utils/format'
 
 const dialog = defineModel<boolean>({ default: false })
 
-const store = usePersonnelStore()
+const store = useUserStore()
 
 const snackbar = ref(false)
 const snackText = ref('')

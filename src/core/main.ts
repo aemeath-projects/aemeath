@@ -65,8 +65,8 @@ import type { InfraState } from '@/types/fastify.js'
  *
  * 新增框架级服务时：若其 Bootstrap 类位于 src/core/ 下，须在此处添加对应的侧效应导入。
  */
-// 触发 PersonnelService 的 Startup 注册（EchoLoader 不扫描 src/core/，需手动引入）
-import '@/core/personnel/index.js'
+// 触发 UserService 的 Startup 注册（EchoLoader 不扫描 src/core/，需手动引入）
+import '@/core/user/index.js'
 // 触发 OSS 模块的 Startup 注册
 import '@/core/oss/bootstrap.js'
 // 触发 MediaStorageService 的 Startup 注册
@@ -112,10 +112,10 @@ async function _registerCoreRoutes(app: FastifyInstance): Promise<void> {
   }
 
   try {
-    const { registerPersonnelRoutes } = await import('@/core/personnel/api.js')
-    await registerPersonnelRoutes(app)
+    const { registerUserRoutes } = await import('@/core/user/api.js')
+    await registerUserRoutes(app)
   } catch (err) {
-    app.log.warn({ err }, '人员管理路由注册失败')
+    app.log.warn({ err }, '用户管理路由注册失败')
   }
 
   try {

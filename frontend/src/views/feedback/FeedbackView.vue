@@ -101,7 +101,7 @@
               <v-img :src="`https://q1.qlogo.cn/g?b=qq&nk=${item.userId}&s=40`" />
             </v-avatar>
             <span class="text-caption">
-              {{ personnelStore.getUserName(item.userId) }}（{{ item.userId }}）
+              {{ userStore.getUserName(item.userId) }}（{{ item.userId }}）
             </span>
           </div>
         </template>
@@ -154,9 +154,9 @@ import {
 } from '@/utils/feedback'
 import FeedbackDetailDrawer from '@/components/feedback/FeedbackDetailDrawer.vue'
 import FeedbackExportDialog from '@/components/feedback/FeedbackExportDialog.vue'
-import { usePersonnelStore } from '@/stores/personnel'
+import { useUserStore } from '@/stores/user'
 
-const personnelStore = usePersonnelStore()
+const userStore = useUserStore()
 
 const loading = ref(false)
 const items = ref<Feedback[]>([])
@@ -201,7 +201,7 @@ async function fetchFeedbacks(p: number, size: number) {
     const groupIds = [
       ...new Set(result.items.map((f) => f.groupId).filter((id): id is number => id != null)),
     ]
-    personnelStore.prefetchIds(userIds, groupIds)
+    userStore.prefetchIds(userIds, groupIds)
   } catch {
     items.value = []
     total.value = 0

@@ -1,5 +1,5 @@
 /**
- * Personnel 领域 TypeBox 请求/响应 Schema 定义。
+ * User 领域 TypeBox 请求/响应 Schema 定义。
  *
  * 覆盖路由的 Params（路径参数）和 Querystring（查询参数）校验，
  * 通过 Fastify `schema` 选项接入运行时验证。
@@ -21,7 +21,7 @@ export const GroupIdParamSchema = Type.Object({
 
 /* 查询参数（Querystring） */
 
-/** 分页查询用户列表 —— GET /api/personnel/users */
+/** 分页查询用户列表 —— GET /api/user/users */
 export const UserListQuerySchema = Type.Object({
   page: Type.Optional(Type.String({ pattern: '^\\d+$', description: '页码（默认 1）' })),
   pageSize: Type.Optional(
@@ -32,7 +32,7 @@ export const UserListQuerySchema = Type.Object({
   nickname: Type.Optional(Type.String({ description: '按昵称模糊查找' })),
 })
 
-/** 分页查询群列表 —— GET /api/personnel/groups */
+/** 分页查询群列表 —— GET /api/user/groups */
 export const GroupListQuerySchema = Type.Object({
   page: Type.Optional(Type.String({ pattern: '^\\d+$', description: '页码（默认 1）' })),
   pageSize: Type.Optional(
@@ -46,7 +46,7 @@ export const GroupListQuerySchema = Type.Object({
   ),
 })
 
-/** 分页查询群成员 —— GET /api/personnel/groups/:groupId/members */
+/** 分页查询群成员 —— GET /api/user/groups/:groupId/members */
 export const MemberListQuerySchema = Type.Object({
   page: Type.Optional(Type.String({ pattern: '^\\d+$', description: '页码（默认 1）' })),
   pageSize: Type.Optional(
@@ -68,7 +68,7 @@ export const UserDetailSchema = Type.Object({
   lastSynced: Type.Union([Type.String(), Type.Null()]),
 })
 
-/** 分页用户列表响应数据 Schema —— GET /api/personnel/users */
+/** 分页用户列表响应数据 Schema —— GET /api/user/users */
 export const PaginatedUsersDataSchema = Type.Object({
   items: Type.Array(UserDetailSchema),
   total: Type.Number(),
@@ -90,7 +90,7 @@ export const UserGroupSchema = Type.Object({
   joinTime: Type.Number({ description: '入群时间戳' }),
 })
 
-/** 用户群列表响应数据 Schema —— GET /api/personnel/users/:userId/groups */
+/** 用户群列表响应数据 Schema —— GET /api/user/users/:userId/groups */
 export const UserGroupsDataSchema = Type.Array(UserGroupSchema)
 
 /** 群聊详情 Schema —— 对应 GroupView。 */
@@ -103,7 +103,7 @@ export const GroupDetailSchema = Type.Object({
   lastSynced: Type.Union([Type.String(), Type.Null()]),
 })
 
-/** 分页群列表响应数据 Schema —— GET /api/personnel/groups */
+/** 分页群列表响应数据 Schema —— GET /api/user/groups */
 export const PaginatedGroupsDataSchema = Type.Object({
   items: Type.Array(GroupDetailSchema),
   total: Type.Number(),
@@ -125,7 +125,7 @@ export const MemberDetailSchema = Type.Object({
   level: Type.String({ description: '等级' }),
 })
 
-/** 分页群成员列表响应数据 Schema —— GET /api/personnel/groups/:groupId/members */
+/** 分页群成员列表响应数据 Schema —— GET /api/user/groups/:groupId/members */
 export const PaginatedMembersDataSchema = Type.Object({
   items: Type.Array(MemberDetailSchema),
   total: Type.Number(),
@@ -142,10 +142,10 @@ export const AdminInfoSchema = Type.Object({
   lastSynced: Type.Union([Type.String(), Type.Null()]),
 })
 
-/** 管理员列表响应数据 Schema —— GET /api/personnel/admins */
+/** 管理员列表响应数据 Schema —— GET /api/user/admins */
 export const AdminListDataSchema = Type.Array(AdminInfoSchema)
 
-/** 同步状态 Schema —— GET /api/personnel/sync/status */
+/** 同步状态 Schema —— GET /api/user/sync/status */
 export const SyncStatusDataSchema = Type.Object({
   lastSyncTime: Type.Union([Type.String(), Type.Null()]),
   durationSeconds: Type.Union([Type.Number(), Type.Null()]),

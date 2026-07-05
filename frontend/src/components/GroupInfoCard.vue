@@ -142,11 +142,11 @@
  * 群聊信息卡片组件 —— 展示群基本信息及可筛选分页的成员列表。
  *
  * 成员行点击触发 open-user 事件，父组件可据此打开 UserInfoCard 群成员变体实现钻取。
- * 注意：成员数据复用 personnelStore.groupMembers 共享状态，依赖模态弹窗保证同时只有一个实例。
+ * 注意：成员数据复用 userStore.groupMembers 共享状态，依赖模态弹窗保证同时只有一个实例。
  */
 import { ref, watch } from 'vue'
-import { usePersonnelStore } from '@/stores/personnel'
-import type { GroupItem } from '@/apis/personnel'
+import { useUserStore } from '@/stores/user'
+import type { GroupItem } from '@/apis/user'
 import { formatTimestamp } from '@/utils/format'
 import {
   activeColor,
@@ -156,7 +156,7 @@ import {
   roleColor,
   roleLabel,
   roleOptions,
-} from '@/utils/personnel'
+} from '@/utils/user'
 import { debounce } from '@/utils/ui'
 
 const props = defineProps<{
@@ -170,7 +170,7 @@ const emit = defineEmits<{
   'open-user': [qq: number, groupId: number]
 }>()
 
-const store = usePersonnelStore()
+const store = useUserStore()
 
 const headerLoading = ref(false)
 const groupInfo = ref<GroupItem | null>(null)

@@ -9,7 +9,7 @@ import type { SettingNodeSchema } from './schema.js'
 import type { SettingsService } from './service.js'
 
 import type { OneBotContext as Context, FeatureChecker } from '@/core/dispatch/index.js'
-import type { PersonnelService } from '@/core/personnel/index.js'
+import type { UserService } from '@/core/user/index.js'
 
 /** dispatcher 注入到 Context 的 handler 方法元数据。 */
 interface HandlerMethodMeta {
@@ -31,7 +31,7 @@ interface HandlerMethodMeta {
 export class SettingsPermissionChecker implements FeatureChecker {
   constructor(
     private readonly settings: SettingsService,
-    private readonly personnelService: PersonnelService,
+    private readonly userService: UserService,
     private readonly schemaMap: ReadonlyMap<string, SettingNodeSchema>,
   ) {}
 
@@ -46,7 +46,7 @@ export class SettingsPermissionChecker implements FeatureChecker {
     if (this._isSystem(featureName)) return true
 
     // 超级管理员绕过
-    const adminSet = await this.personnelService.getAdminQqSet()
+    const adminSet = await this.userService.getAdminQqSet()
     if (adminSet.has(BigInt(ctx.userId))) return true
 
     // ADMIN 权限硬编码，非管理员直接拒绝

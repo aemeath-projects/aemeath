@@ -98,18 +98,18 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 import PageLayout from '@/layouts/PageLayout.vue'
 import { useBotStore } from '@/stores/bot'
-import { usePersonnelStore } from '@/stores/personnel'
+import { useUserStore } from '@/stores/user'
 import { useQueueStore } from '@/stores/queue'
 
 const botStore = useBotStore()
 const queueStore = useQueueStore()
-const personnelStore = usePersonnelStore()
+const userStore = useUserStore()
 
 // 当前时间（每分钟刷新）
 const currentTime = ref(new Date().toLocaleString('zh-CN'))
 let clockTimer: ReturnType<typeof setInterval> | null = null
 
-const personnelLoading = ref(true)
+const userLoading = ref(true)
 
 const stats = computed(() => [
   {
@@ -130,19 +130,19 @@ const stats = computed(() => [
   },
   {
     label: '群聊',
-    value: personnelStore.groups.total,
+    value: userStore.groups.total,
     icon: 'mdi-forum',
     color: 'indigo',
     desc: '已加入群组',
-    loading: personnelLoading.value,
+    loading: userLoading.value,
   },
   {
     label: '用户',
-    value: personnelStore.users.total,
+    value: userStore.users.total,
     icon: 'mdi-account-group',
     color: 'teal',
     desc: '已知用户总数',
-    loading: personnelLoading.value,
+    loading: userLoading.value,
   },
 ])
 
@@ -169,14 +169,14 @@ const quickNavs = [
     color: 'teal',
   },
   {
-    to: '/personnel/users',
+    to: '/user/users',
     icon: 'mdi-account-group',
     title: '用户管理',
     subtitle: '管理用户信息',
     color: 'indigo',
   },
   {
-    to: '/personnel/groups',
+    to: '/user/groups',
     icon: 'mdi-forum',
     title: '群聊管理',
     subtitle: '管理群组信息',
@@ -214,10 +214,10 @@ onMounted(async () => {
   queueStore.connect(30)
 
   await Promise.allSettled([
-    personnelStore.loadUsers({ page: 1, pageSize: 1 }),
-    personnelStore.loadGroups({ page: 1, pageSize: 1 }),
+    userStore.loadUsers({ page: 1, pageSize: 1 }),
+    userStore.loadGroups({ page: 1, pageSize: 1 }),
   ])
-  personnelLoading.value = false
+  userLoading.value = false
 })
 
 onUnmounted(() => {

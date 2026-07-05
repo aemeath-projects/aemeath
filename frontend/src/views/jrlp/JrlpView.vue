@@ -64,7 +64,7 @@
               </v-img>
             </v-avatar>
             <span class="text-caption"
-              >{{ personnelStore.getGroupName(item.groupId) }}（{{ item.groupId }}）</span
+              >{{ userStore.getGroupName(item.groupId) }}（{{ item.groupId }}）</span
             >
           </div>
         </template>
@@ -83,7 +83,7 @@
               </v-img>
             </v-avatar>
             <span class="text-caption"
-              >{{ personnelStore.getUserName(item.userId) }}（{{ item.userId }}）</span
+              >{{ userStore.getUserName(item.userId) }}（{{ item.userId }}）</span
             >
           </div>
         </template>
@@ -102,7 +102,7 @@
               </v-img>
             </v-avatar>
             <span class="text-caption"
-              >{{ personnelStore.getUserName(item.wifeQq) }}（{{ item.wifeQq }}）</span
+              >{{ userStore.getUserName(item.wifeQq) }}（{{ item.wifeQq }}）</span
             >
           </div>
         </template>
@@ -223,10 +223,10 @@ import UserInfoCard from '@/components/UserInfoCard.vue'
 import GroupAutocomplete from '@/components/GroupAutocomplete.vue'
 import UserAutocomplete from '@/components/UserAutocomplete.vue'
 import { formatTime } from '@/utils/format'
-import { usePersonnelStore } from '@/stores/personnel'
+import { useUserStore } from '@/stores/user'
 import { usePagination } from '@/composables/usePagination'
 
-const personnelStore = usePersonnelStore()
+const userStore = useUserStore()
 
 /* 记录列表 */
 const loading = ref(false)
@@ -262,7 +262,7 @@ async function fetchRecords(p: number, size: number) {
     // 预取本页所有 ID，减少名称解析闪烁
     const userIds = [...new Set(result.items.flatMap((r) => [r.userId, r.wifeQq]))]
     const groupIds = [...new Set(result.items.map((r) => r.groupId))]
-    personnelStore.prefetchIds(userIds, groupIds)
+    userStore.prefetchIds(userIds, groupIds)
   } finally {
     loading.value = false
   }

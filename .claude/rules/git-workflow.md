@@ -34,7 +34,7 @@
 ```
 feat(api): 添加 LLM 模型配置的分页查询接口
 fix(ws): 修复 HeartbeatMonitor 在断线重连时的内存泄漏
-refactor(services): 将 PersonnelService 的重试逻辑抽取为公共工具函数
+refactor(services): 将 UserService 的重试逻辑抽取为公共工具函数
 ```
 
 ## 提交粒度

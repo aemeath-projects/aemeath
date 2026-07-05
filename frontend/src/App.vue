@@ -66,14 +66,14 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useTheme } from 'vuetify'
 import { useThemeStore } from './stores/theme'
 import { useBotStore } from './stores/bot'
-import { usePersonnelStore } from './stores/personnel'
+import { useUserStore } from './stores/user'
 import type { ThemePreference } from './stores/theme'
 import Menu from './layouts/Menu.vue'
 
 const vuetifyTheme = useTheme()
 const themeStore = useThemeStore()
 const botStore = useBotStore()
-const personnelStore = usePersonnelStore()
+const userStore = useUserStore()
 
 const dialogDark = ref(false)
 const menuOpen = ref(false)
@@ -91,7 +91,7 @@ onMounted(() => {
   themeStore.initTheme(vuetifyTheme)
   botStore.startPolling()
   // 全局预加载会话数据，供全站 GroupAutocomplete/UserAutocomplete 本地搜索使用
-  personnelStore.loadSessionData()
+  userStore.loadSessionData()
 })
 
 onUnmounted(() => {

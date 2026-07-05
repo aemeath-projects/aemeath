@@ -48,7 +48,7 @@
 | 层                     | 规则                       | 正确示例                                              | 错误示例                                  |
 | ---------------------- | -------------------------- | ----------------------------------------------------- | ----------------------------------------- |
 | 数据库表/列/枚举       | `snake_case`               | `chat_messages`, `group_id`, `like_source`            | `ChatMessage`, `groupId`, `likesource`    |
-| Redis key              | `snake_case`（段间 `:` 分隔） | `aemeath:personnel:sync_status`, `aemeath:render:result` | `aemeath:personnel:syncStatus`        |
+| Redis key              | `snake_case`（段间 `:` 分隔） | `aemeath:user:sync_status`, `aemeath:render:result` | `aemeath:user:syncStatus`        |
 | API 端点路由           | `kebab-case`               | `/api/chat-history`, `/api/drift-bottle-pools`        | `/api/chatHistory`, `/api/drift_bottle`   |
 | TypeScript 变量/函数   | `camelCase`                | `groupId`, `userName`, `fetchGroups()`                | `group_id`, `user_name`, `fetch_groups()` |
 | 类/接口/类型           | `PascalCase`               | `UserDetail`, `ChatMessageSchema`                     | `userDetail`, `chat_message_schema`       |

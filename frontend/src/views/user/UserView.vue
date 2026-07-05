@@ -118,16 +118,16 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { usePersonnelStore } from '@/stores/personnel'
-import SyncDialog from '@/components/personnel/SyncDialog.vue'
+import { useUserStore } from '@/stores/user'
+import SyncDialog from '@/components/user/SyncDialog.vue'
 import PageLayout from '@/layouts/PageLayout.vue'
 import UserInfoCard from '@/components/UserInfoCard.vue'
 import GroupInfoCard from '@/components/GroupInfoCard.vue'
 import { formatTime } from '@/utils/format'
-import { relationColor, relationLabel, relationIcon } from '@/utils/personnel'
+import { relationColor, relationLabel, relationIcon } from '@/utils/user'
 import { usePagination } from '@/composables/usePagination'
 
-const store = usePersonnelStore()
+const store = useUserStore()
 
 const filterRelation = ref<string | null>(null)
 const filterQQ = ref<string | null>(null)

@@ -1,5 +1,5 @@
 /**
- * 用户管理只读查询服务 —— 分页列表、详情查询，SRP 分离自 PersonnelService。
+ * 用户管理只读查询服务 —— 分页列表、详情查询，SRP 分离自 UserService。
  */
 
 import type { AemeathPrismaClient } from '@/core/db/index.js'
@@ -72,7 +72,7 @@ function ceilDiv(a: number, b: number): number {
 /**
  * 用户管理只读查询服务。
  */
-export class PersonnelQueryService {
+export class UserQueryService {
   constructor(private readonly db: AemeathPrismaClient) {}
 
   /* 用户查询 */

@@ -4,9 +4,9 @@
  * 用户选择器 —— 支持按 QQ 号/昵称混合搜索的 Vuetify autocomplete 组件。
  */
 import { ref, computed, watch } from 'vue'
-import { usePersonnelStore } from '@/stores/personnel'
-import { fetchUsers, fetchUser } from '@/apis/personnel'
-import type { UserItem } from '@/apis/personnel'
+import { useUserStore } from '@/stores/user'
+import { fetchUsers, fetchUser } from '@/apis/user'
+import type { UserItem } from '@/apis/user'
 import type { Density } from 'vuetify/lib/composables/density.js'
 
 // Vuetify 4 推荐的 async autocomplete 模式：通过 v-model:search 双向绑定 search 状态，
@@ -41,7 +41,7 @@ const emit = defineEmits<{
   'update:modelValue': [value: number | null]
 }>()
 
-const store = usePersonnelStore()
+const store = useUserStore()
 const suggestions = ref<UserItem[]>([])
 const loading = ref(false)
 // v-model:search 双向绑定——Vuetify 4 async autocomplete 必需（类型为 string | undefined）

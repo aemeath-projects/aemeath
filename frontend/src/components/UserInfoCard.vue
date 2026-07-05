@@ -232,11 +232,11 @@
  * - 普通用户变体（groupId 为空）：展示用户基本信息 + 所属群聊列表
  * - 群成员变体（groupId 有值）：展示用户在特定群内的成员信息
  *
- * 组件内部自动从 personnelStore 加载数据。
+ * 组件内部自动从 userStore 加载数据。
  */
 import { ref, computed, watch } from 'vue'
-import { usePersonnelStore } from '@/stores/personnel'
-import type { UserDetail, GroupItem, GroupMemberItem } from '@/apis/personnel'
+import { useUserStore } from '@/stores/user'
+import type { UserDetail, GroupItem, GroupMemberItem } from '@/apis/user'
 import { formatTime, formatTimestamp } from '@/utils/format'
 import {
   activeColor,
@@ -246,7 +246,7 @@ import {
   relationIcon,
   roleColor,
   roleLabel,
-} from '@/utils/personnel'
+} from '@/utils/user'
 
 const props = defineProps<{
   modelValue: boolean
@@ -259,7 +259,7 @@ defineEmits<{
   'open-group': [groupId: number]
 }>()
 
-const store = usePersonnelStore()
+const store = useUserStore()
 
 const loading = ref(false)
 const userData = ref<UserDetail | null>(null)

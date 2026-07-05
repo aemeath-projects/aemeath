@@ -2,7 +2,7 @@
  * 用户管理只读查询服务 —— 分页列表、详情查询，SRP 分离自 PersonnelService。
  */
 
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 
 /** 分页结果。 */
 export interface PaginatedResult<T> {
@@ -73,7 +73,7 @@ function ceilDiv(a: number, b: number): number {
  * 用户管理只读查询服务。
  */
 export class PersonnelQueryService {
-  constructor(private readonly db: MainPrismaClient) {}
+  constructor(private readonly db: AemeathPrismaClient) {}
 
   /* 用户查询 */
 

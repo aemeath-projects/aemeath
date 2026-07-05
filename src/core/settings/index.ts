@@ -26,14 +26,14 @@ import { SettingsPermissionChecker } from './permission.js'
 import { buildSchemaMap, cleanOrphanKeys } from './schema.js'
 import { SettingsService } from './service.js'
 
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 import type { PersonnelService } from '@/core/personnel/index.js'
 
 @Service({ name: 'settings_bootstrap' })
 export class SettingsBootstrap {
   /** 注入主数据库 */
   @Inject('db')
-  db!: MainPrismaClient
+  db!: AemeathPrismaClient
 
   /** 注入缓存 Redis 实例 */
   @Inject('cache_redis')

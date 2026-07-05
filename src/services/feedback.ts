@@ -7,10 +7,16 @@ import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import { seg } from '@aemeath-projects/napcat'
 
-import type { Prisma, Feedback, FeedbackStatus, FeedbackSource, FeedbackType } from '#prisma/main'
+import type {
+  Prisma,
+  Feedback,
+  FeedbackStatus,
+  FeedbackSource,
+  FeedbackType,
+} from '#prisma/aemeath'
 
 import type { MessageRouter } from '@/core/accounts/index.js'
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 import type { MailboxService } from '@/core/mailbox/index.js'
 
 export type { Feedback, FeedbackStatus, FeedbackSource, FeedbackType }
@@ -46,7 +52,7 @@ export class FeedbackService {
   private readonly _log: PinoLogger = getLogger('feedback:service') as unknown as PinoLogger
 
   constructor(
-    private readonly db: MainPrismaClient,
+    private readonly db: AemeathPrismaClient,
     private readonly router: MessageRouter,
     private readonly mailbox: MailboxService,
   ) {}
@@ -215,7 +221,7 @@ export class FeedbackService {
 export class FeedbackBootstrap {
   /** 注入主数据库 */
   @Inject('db')
-  db!: MainPrismaClient
+  db!: AemeathPrismaClient
 
   /** 注入消息路由器 */
   @Inject('message_router')

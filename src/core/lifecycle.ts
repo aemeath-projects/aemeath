@@ -14,14 +14,14 @@ import type {
   AccountRole,
   MessageRouter,
 } from '@/core/accounts/index.js'
-import type { MainPrismaClient, IrisPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient, IrisPrismaClient } from '@/core/db/index.js'
 import type { ContextApis } from '@/core/dispatch/index.js'
 import type { IrisSearchService } from '@/core/iris/index.js'
 import type { RedisStore } from '@/core/redis/index.js'
 
 export interface AemeathServiceMap {
   // 数据库
-  db: MainPrismaClient
+  db: AemeathPrismaClient
   iris_db: IrisPrismaClient
 
   // Redis

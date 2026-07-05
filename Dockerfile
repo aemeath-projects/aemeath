@@ -33,8 +33,8 @@ RUN groupadd -g 1000 aemeath && useradd -u 1000 -g aemeath -s /bin/sh -m aemeath
 
 # 从构建阶段复制产物
 COPY --from=builder --chown=aemeath:aemeath /app/dist ./dist
-COPY --from=builder --chown=aemeath:aemeath /app/prisma/main/generated ./prisma/main/generated
-COPY --from=builder --chown=aemeath:aemeath /app/prisma/chat/generated ./prisma/chat/generated
+COPY --from=builder --chown=aemeath:aemeath /app/prisma/aemeath/generated ./prisma/aemeath/generated
+COPY --from=builder --chown=aemeath:aemeath /app/prisma/iris/generated ./prisma/iris/generated
 COPY --from=builder --chown=aemeath:aemeath /app/frontend/dist ./frontend/dist
 COPY --from=builder --chown=aemeath:aemeath /app/node_modules ./node_modules
 COPY --from=builder --chown=aemeath:aemeath /app/package.json ./

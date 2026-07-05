@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { IrisPrismaClient, MainPrismaClient } from '@/core/db/index.js'
+import type { IrisPrismaClient, AemeathPrismaClient } from '@/core/db/index.js'
 import { IrisArchiveService } from '@/core/iris/archive.js'
 import type { OssBundle } from '@/core/oss/index.js'
 import { archiveIrisProcessor } from '@/tasks/chat-archive.js'
@@ -31,7 +31,7 @@ describe('archiveIrisProcessor', () => {
     const job = { data: {} } as Parameters<typeof archiveIrisProcessor>[0]
     const deps = {
       iris_db: {} as IrisPrismaClient,
-      db: {} as MainPrismaClient,
+      db: {} as AemeathPrismaClient,
       oss: {
         client: {},
         buckets: { iris: 'aemeath-iris', media: 'aemeath-media', render: 'aemeath-render' },
@@ -61,7 +61,7 @@ describe('archiveIrisProcessor', () => {
     const job = { data: {} } as Parameters<typeof archiveIrisProcessor>[0]
     const deps = {
       iris_db: {} as IrisPrismaClient,
-      db: {} as MainPrismaClient,
+      db: {} as AemeathPrismaClient,
       oss: {
         client: {},
         buckets: { iris: 'aemeath-iris', media: 'aemeath-media', render: 'aemeath-render' },

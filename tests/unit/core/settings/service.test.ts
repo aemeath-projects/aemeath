@@ -2,7 +2,7 @@ import { Handler, handlerRegistry } from '@aemeath-projects/exostrider/dispatch'
 import type { Redis } from 'ioredis'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 import { SettingNode } from '@/core/settings/decorators.js'
 import type { SettingNodeOptions } from '@/core/settings/decorators.js'
 import { buildSchemaMap, SettingsService } from '@/core/settings/index.js'
@@ -87,7 +87,7 @@ function createMockDb(rows: Record<string, { key: string; value: string }[]> = {
       return Promise.resolve(flat.filter((r) => inScope(r) && (key === undefined || r.key === key)))
     }),
     $executeRaw: vi.fn().mockResolvedValue(1),
-  } as unknown as MainPrismaClient
+  } as unknown as AemeathPrismaClient
 }
 
 class TestFeature {

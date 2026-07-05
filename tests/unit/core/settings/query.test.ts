@@ -1,7 +1,7 @@
 // tests/unit/core/settings/query.test.ts
 import { describe, expect, it, vi } from 'vitest'
 
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 import { getSettingValue } from '@/core/settings/index.js'
 import type { SettingsQueryContext } from '@/core/settings/index.js'
 import { Path } from '@/core/settings/path.js'
@@ -9,7 +9,7 @@ import { Path } from '@/core/settings/path.js'
 function createMockDb(rows: { scope: string; value: string }[] = []) {
   return {
     $queryRaw: vi.fn().mockImplementation(() => Promise.resolve(rows)),
-  } as unknown as MainPrismaClient
+  } as unknown as AemeathPrismaClient
 }
 
 describe('getSettingValue', () => {

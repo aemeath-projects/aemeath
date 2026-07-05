@@ -4,13 +4,13 @@
 
 import type { Redis } from 'ioredis'
 
-import { Prisma } from '#prisma/main'
+import { Prisma } from '#prisma/aemeath'
 
 import { buildAncestorScopes, toScope } from './path.js'
 import type { Path } from './path.js'
 import type { SettingNodeSchema } from './schema.js'
 
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 import { ForbiddenError, ValidationError } from '@/core/errors.js'
 
 /* 常量 */
@@ -49,12 +49,12 @@ export interface SetOptions {
 /* Service */
 
 export class SettingsService {
-  private readonly db: MainPrismaClient
+  private readonly db: AemeathPrismaClient
   private readonly redis: Redis
   private readonly schemaMap: ReadonlyMap<string, SettingNodeSchema>
 
   constructor(
-    db: MainPrismaClient,
+    db: AemeathPrismaClient,
     redis: Redis,
     schemaMap: ReadonlyMap<string, SettingNodeSchema>,
   ) {

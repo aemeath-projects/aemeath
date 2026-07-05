@@ -3,10 +3,10 @@
  */
 import { PrismaPg } from '@prisma/adapter-pg'
 
+import { PrismaClient as AemeathPrismaClient } from '#prisma/aemeath'
 import { PrismaClient as IrisPrismaClient } from '#prisma/iris'
-import { PrismaClient as MainPrismaClient } from '#prisma/main'
 
-export type { IrisPrismaClient, MainPrismaClient }
+export type { IrisPrismaClient, AemeathPrismaClient }
 
 /**
  * 创建主库 Prisma Client 实例。
@@ -14,9 +14,9 @@ export type { IrisPrismaClient, MainPrismaClient }
  * @param url - PostgreSQL 连接字符串（DATABASE_URL）
  * @param poolSize - 可选，连接池最大连接数
  */
-export function createMainDb(url: string, poolSize?: number): MainPrismaClient {
+export function createAemeathDb(url: string, poolSize?: number): AemeathPrismaClient {
   const adapter = new PrismaPg({ connectionString: url, max: poolSize })
-  return new MainPrismaClient({ adapter })
+  return new AemeathPrismaClient({ adapter })
 }
 
 /**

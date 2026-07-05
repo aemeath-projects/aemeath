@@ -7,9 +7,9 @@ import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { FriendApi, GroupApi } from '@aemeath-projects/napcat'
 
-import type { LikeTask, LikeHistory, LikeSource, Prisma } from '#prisma/main'
+import type { LikeTask, LikeHistory, LikeSource, Prisma } from '#prisma/aemeath'
 
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 import { isPrismaKnownError } from '@/core/db/index.js'
 
 export type { LikeTask, LikeHistory, LikeSource }
@@ -59,7 +59,7 @@ export class LikeService {
   private readonly _log: PinoLogger = getLogger('like') as unknown as PinoLogger
 
   constructor(
-    private readonly db: MainPrismaClient,
+    private readonly db: AemeathPrismaClient,
     private readonly friendApi: FriendApi,
   ) {}
 
@@ -290,7 +290,7 @@ export class LikeService {
 export class LikeBootstrap {
   /** 注入主数据库 */
   @Inject('db')
-  db!: MainPrismaClient
+  db!: AemeathPrismaClient
 
   /** 注入主账号 API bundle */
   @Inject('master_apis')

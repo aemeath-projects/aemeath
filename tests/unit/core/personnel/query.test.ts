@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 import { PersonnelQueryService } from '@/core/personnel/index.js'
 
-/** 创建 mock MainPrismaClient（仅包含 personnel 查询需要的方法）。 */
+/** 创建 mock AemeathPrismaClient（仅包含 personnel 查询需要的方法）。 */
 function createMockDb() {
   return {
     user: {
@@ -33,7 +33,7 @@ describe('PersonnelQueryService', () => {
 
   beforeEach(() => {
     mockDb = createMockDb()
-    svc = new PersonnelQueryService(mockDb as unknown as MainPrismaClient)
+    svc = new PersonnelQueryService(mockDb as unknown as AemeathPrismaClient)
   })
 
   describe('getUser', () => {

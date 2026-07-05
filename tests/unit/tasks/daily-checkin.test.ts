@@ -2,7 +2,7 @@
 import type { Job } from 'bullmq'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 import type { RedisStore } from '@/core/redis/index.js'
 // 注册 checkin cache keys，否则 cacheKeyRegistry.buildKey 会抛错
 import '@/services/checkin-cache-keys.js'
@@ -14,7 +14,7 @@ function createMockDb(groups: { groupId: bigint }[] = []) {
       findMany: vi.fn().mockResolvedValue(groups),
     },
     $queryRaw: vi.fn().mockImplementation(() => Promise.resolve([])),
-  } as unknown as MainPrismaClient
+  } as unknown as AemeathPrismaClient
 }
 
 function createMockCache(existsValue = false) {

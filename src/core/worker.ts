@@ -14,7 +14,7 @@ import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import { Worker } from 'bullmq'
 
 import { loadConfig } from './config.js'
-import { createMainDb, createIrisDb } from './db/index.js'
+import { createAemeathDb, createIrisDb } from './db/index.js'
 import { createOssClient } from './oss/client.js'
 import type { OssBuckets } from './oss/client.js'
 import { createRedis, createBullMQConnection } from './redis/factory.js'
@@ -45,7 +45,7 @@ async function main(): Promise<void> {
   /** 基础设施初始化 */
 
   const bullConn = createBullMQConnection(config.BULLMQ_REDIS_URL)
-  const db = createMainDb(config.DATABASE_URL)
+  const db = createAemeathDb(config.DATABASE_URL)
   const irisDb = createIrisDb(config.IRIS_DATABASE_URL)
   const cacheRedis = createRedis(config.CACHE_REDIS_URL)
   const cacheStore = new RedisStore(cacheRedis, config.CACHE_DEFAULT_TTL)

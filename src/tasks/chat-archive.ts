@@ -3,7 +3,7 @@
 import type { Job } from 'bullmq'
 
 import { loadConfig } from '@/core/config.js'
-import type { IrisPrismaClient, MainPrismaClient } from '@/core/db/index.js'
+import type { IrisPrismaClient, AemeathPrismaClient } from '@/core/db/index.js'
 import { IrisArchiveService } from '@/core/iris/archive.js'
 import { IrisS3 } from '@/core/iris/s3.js'
 import type { OssBundle } from '@/core/oss/index.js'
@@ -14,7 +14,7 @@ export interface ArchiveJobData {
 }
 
 export interface ArchiveWorkerDeps {
-  db: MainPrismaClient
+  db: AemeathPrismaClient
   // eslint-disable-next-line @typescript-eslint/naming-convention
   iris_db: IrisPrismaClient
   oss: OssBundle

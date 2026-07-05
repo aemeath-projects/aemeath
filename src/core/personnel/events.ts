@@ -7,7 +7,7 @@
 
 import { computeRelation } from './index.js'
 
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 import type { RedisStore } from '@/core/redis/index.js'
 import { cacheKeyRegistry } from '@/core/registries.js'
 
@@ -16,7 +16,7 @@ import { cacheKeyRegistry } from '@/core/registries.js'
  */
 export class PersonnelEventService {
   constructor(
-    private readonly db: MainPrismaClient,
+    private readonly db: AemeathPrismaClient,
     private readonly cache: RedisStore,
   ) {}
 

@@ -8,10 +8,10 @@ import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/
 import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 
-import { Prisma } from '#prisma/main'
-import type { CheckinRecord } from '#prisma/main'
+import { Prisma } from '#prisma/aemeath'
+import type { CheckinRecord } from '#prisma/aemeath'
 
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 import { isPrismaKnownError } from '@/core/db/index.js'
 import type { RedisStore } from '@/core/redis/index.js'
 import { cacheKeyRegistry } from '@/core/registries.js'
@@ -99,7 +99,7 @@ export class CheckinService {
   private readonly _log: PinoLogger = getLogger('checkin:service') as unknown as PinoLogger
 
   constructor(
-    private readonly db: MainPrismaClient,
+    private readonly db: AemeathPrismaClient,
     private readonly cache: RedisStore,
   ) {}
 
@@ -437,7 +437,7 @@ export class CheckinService {
 export class CheckinServiceBootstrap {
   /** 注入主数据库 */
   @Inject('db')
-  db!: MainPrismaClient
+  db!: AemeathPrismaClient
 
   /** 注入缓存存储 */
   @Inject('cache')

@@ -19,7 +19,7 @@
 | 基础设施      | `src/core/`                   | 框架、协议、DB 客户端、缓存、工具函数                     |
 | API 控制器    | `src/apis/`                   | Fastify 路由，只做请求解析和响应组装                      |
 | 业务逻辑      | `src/services/`               | 所有业务规则，可被 API 和 Handler 复用                    |
-| Prisma Schema | `prisma/main/` `prisma/chat/` | 数据库表定义（`schema.prisma`）；迁移文件与 schema 同目录 |
+| Prisma Schema | `prisma/aemeath/` `prisma/iris/` | 数据库表定义（`schema.prisma`）；迁移文件与 schema 同目录 |
 | Bot 处理器    | `src/handlers/`               | 事件处理，调用 Service，不直接操作 DB                     |
 | 异步任务      | `src/tasks/`                  | BullMQ 任务处理器，调用 Service                           |
 
@@ -85,12 +85,12 @@
 ```typescript
 // ✅ 正确
 import { logger } from '@logger'
-import { mainDb } from '#prisma/main'
+import { aemeathDb } from '#prisma/aemeath'
 import { someUtil } from '@/core/utils/helpers.js'
 
 // ❌ 禁止
 import { logger } from '../../../core/logging/index.js'
-import { mainDb } from '../../../prisma/main/generated/index.js'
+import { aemeathDb } from '../../../prisma/aemeath/generated/index.js'
 ```
 
 - 同一文件内的相对导入（同目录或相邻目录）仍允许使用相对路径

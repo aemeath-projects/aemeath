@@ -14,7 +14,7 @@ import { IrisExporter } from './exporter.js'
 import type { ArchiveExporterSettings } from './exporter.js'
 import { IrisS3 } from './s3.js'
 
-import type { IrisPrismaClient, MainPrismaClient } from '@/core/db/index.js'
+import type { IrisPrismaClient, AemeathPrismaClient } from '@/core/db/index.js'
 
 /** 单群归档结果。 */
 export interface GroupArchiveResult {
@@ -47,7 +47,7 @@ export class IrisArchiveService {
 
   constructor(
     private readonly chatDb: IrisPrismaClient,
-    private readonly mainDb: MainPrismaClient,
+    private readonly aemeathDb: AemeathPrismaClient,
     exporterSettings: ArchiveExporterSettings,
     private readonly s3: IrisS3,
     private readonly tmpDir: string,
@@ -70,7 +70,7 @@ export class IrisArchiveService {
       interface SettingsRow {
         value: string
       }
-      const rows = await this.mainDb.$queryRaw<SettingsRow[]>`
+      const rows = await this.aemeathDb.$queryRaw<SettingsRow[]>`
         SELECT value FROM settings
         WHERE key = 'iris.archive_cycle_days'
           AND type = 'group'::settings_entry_type
@@ -182,7 +182,7 @@ export class IrisArchiveService {
       scope: bigint
       value: string
     }
-    const settingsRows = await this.mainDb.$queryRaw<SettingsRow[]>`
+    const settingsRows = await this.aemeathDb.$queryRaw<SettingsRow[]>`
       SELECT scope, value FROM settings
       WHERE key = 'iris.archive_cycle_days'
         AND type = 'group'::settings_entry_type
@@ -199,7 +199,7 @@ export class IrisArchiveService {
     interface MasterGroupRow {
       groupId: bigint
     }
-    const masterGroups = await this.mainDb.$queryRaw<MasterGroupRow[]>`
+    const masterGroups = await this.aemeathDb.$queryRaw<MasterGroupRow[]>`
       SELECT DISTINCT gm.group_id AS "groupId"
       FROM group_memberships gm
       JOIN accounts a ON a.qq = gm.user_id

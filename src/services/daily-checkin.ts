@@ -13,7 +13,7 @@ import type { GroupApi, FriendApi, NapCatClient } from '@aemeath-projects/napcat
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 
 import type { AccountRole } from '@/core/accounts/index.js'
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 import type { RedisStore } from '@/core/redis/index.js'
 import { cacheKeyRegistry } from '@/core/registries.js'
 import { Path } from '@/core/settings/index.js'
@@ -56,7 +56,7 @@ export class DailyCheckinService {
   private readonly _log: PinoLogger = getLogger('daily-checkin') as unknown as PinoLogger
 
   constructor(
-    private readonly db: MainPrismaClient,
+    private readonly db: AemeathPrismaClient,
     private readonly cache: RedisStore,
     private readonly groupApi: GroupApi,
     private readonly pool: AccountPool,
@@ -195,7 +195,7 @@ export class DailyCheckinService {
 export class DailyCheckinBootstrap {
   /** 注入主数据库 */
   @Inject('db')
-  db!: MainPrismaClient
+  db!: AemeathPrismaClient
 
   /** 注入缓存存储 */
   @Inject('cache')

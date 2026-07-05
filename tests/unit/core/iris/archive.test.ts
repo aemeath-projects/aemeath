@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import type { IrisPrismaClient, MainPrismaClient } from '@/core/db/index.js'
+import type { IrisPrismaClient, AemeathPrismaClient } from '@/core/db/index.js'
 import { IrisArchiveService } from '@/core/iris/archive.js'
 import type { IrisS3 } from '@/core/iris/s3.js'
 
@@ -26,7 +26,7 @@ function makeMockMainDb(settingsRows: unknown[] = [], masterGroups: unknown[] = 
       .fn()
       .mockResolvedValueOnce(settingsRows) // settings 查询
       .mockResolvedValueOnce(masterGroups), // master 群查询
-  } as unknown as MainPrismaClient
+  } as unknown as AemeathPrismaClient
 }
 
 function makeMockS3() {
@@ -91,13 +91,13 @@ describe('IrisArchiveService.archive（单群）', () => {
     // MIN(created_at) 返回 null → 无数据
     irisDb.$queryRaw = vi.fn().mockResolvedValue([{ minCreatedAt: null }])
 
-    const mainDb = {
+    const aemeathDb = {
       $queryRaw: vi.fn().mockResolvedValueOnce([{ scope: 123n, value: '30' }]), // settings 查询（单群路径）
-    } as unknown as MainPrismaClient
+    } as unknown as AemeathPrismaClient
 
     const service = new IrisArchiveService(
       irisDb,
-      mainDb,
+      aemeathDb,
       { retentionMonths: 6, batchSize: 100, compression: 'zstd' },
       makeMockS3(),
       '/tmp',

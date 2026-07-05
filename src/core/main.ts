@@ -28,7 +28,7 @@ import pkg from '../../package.json' with { type: 'json' }
 const logger = getLogger('main')
 
 import { loadConfig } from './config.js'
-import { createMainDb, createIrisDb } from './db/index.js'
+import { createAemeathDb, createIrisDb } from './db/index.js'
 import { oneBotContextConfig } from './dispatch/index.js'
 import type { ContextApis, OneBotContext, FeatureChecker } from './dispatch/index.js'
 import {
@@ -140,7 +140,7 @@ async function _startup(
   app.log.info('Aemeath 正在启动...')
 
   // 1. 初始化 Prisma 客户端
-  const mainDb = createMainDb(config.DATABASE_URL, config.DB_POOL_SIZE)
+  const aemeathDb = createAemeathDb(config.DATABASE_URL, config.DB_POOL_SIZE)
   const irisDb = createIrisDb(config.IRIS_DATABASE_URL, config.IRIS_DB_POOL_SIZE)
 
   // 2. 初始化 Redis 客户端
@@ -177,7 +177,7 @@ async function _startup(
   // 8. 构建服务注册表，注入基础设施服务
   const appLogger = getLogger('lifecycle')
   const registry = new ServiceRegistry<AemeathServiceMap>()
-  registry.set('db', mainDb)
+  registry.set('db', aemeathDb)
   registry.set('iris_db', irisDb)
   registry.set('cache', cacheStore)
   registry.set('persistent', persistentStore)
@@ -275,7 +275,7 @@ async function _startup(
   app.decorate(
     'infra',
     Object.freeze({
-      mainDb,
+      aemeathDb,
       irisDb,
       cacheRedis,
       persistentRedis,
@@ -295,7 +295,7 @@ async function _startup(
 async function _shutdown(app: FastifyInstance): Promise<void> {
   app.log.info('Aemeath 正在关闭...')
 
-  const { taskExecutor, mainDb, irisDb, cacheRedis, persistentRedis, queue } = app.infra
+  const { taskExecutor, aemeathDb, irisDb, cacheRedis, persistentRedis, queue } = app.infra
 
   // 停止 TaskExecutor（无主账号时为 null）
   await taskExecutor?.close()
@@ -308,7 +308,7 @@ async function _shutdown(app: FastifyInstance): Promise<void> {
   }
 
   // 关闭数据库连接
-  await mainDb.$disconnect()
+  await aemeathDb.$disconnect()
   await irisDb.$disconnect()
 
   // 关闭 Redis 连接

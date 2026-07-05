@@ -3,7 +3,7 @@
 import { buildAncestorScopes } from './path.js'
 import type { Path } from './path.js'
 
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 
 export interface MinimalSettingSchema {
   key: string
@@ -12,7 +12,7 @@ export interface MinimalSettingSchema {
 }
 
 export interface SettingsQueryContext {
-  db: MainPrismaClient
+  db: AemeathPrismaClient
   schemaMap: ReadonlyMap<string, MinimalSettingSchema>
   path?: Path
 }

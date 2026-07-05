@@ -2,7 +2,7 @@
 import type { Job } from 'bullmq'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 import { dailyLikeProcessor, JOB_NAME } from '@/tasks/daily-like.js'
 
 function createMockDb(tasks: { qq: bigint }[] = []) {
@@ -10,7 +10,7 @@ function createMockDb(tasks: { qq: bigint }[] = []) {
     likeTask: {
       findMany: vi.fn().mockResolvedValue(tasks),
     },
-  } as unknown as MainPrismaClient
+  } as unknown as AemeathPrismaClient
 }
 
 describe('dailyLikeProcessor', () => {

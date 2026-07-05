@@ -4,10 +4,10 @@
 
 import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/lifecycle'
 
-import type { DriftBottleItem, DriftBottlePool, DriftBottleGroupPool } from '#prisma/main'
-import { Prisma } from '#prisma/main'
+import type { DriftBottleItem, DriftBottlePool, DriftBottleGroupPool } from '#prisma/aemeath'
+import { Prisma } from '#prisma/aemeath'
 
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 import { isPrismaKnownError } from '@/core/db/index.js'
 import { NotFoundError, ValidationError } from '@/core/errors.js'
 
@@ -53,7 +53,7 @@ export interface PaginationParams {
  * 通过 Startup 生命周期注册，由 LifecycleOrchestrator 管理。
  */
 export class DriftBottleService {
-  constructor(private readonly db: MainPrismaClient) {}
+  constructor(private readonly db: AemeathPrismaClient) {}
 
   // 工具方法
 
@@ -303,7 +303,7 @@ export class DriftBottleService {
 export class DriftBottleBootstrap {
   /** 注入主数据库 */
   @Inject('db')
-  db!: MainPrismaClient
+  db!: AemeathPrismaClient
 
   /** 对外暴露漂流瓶服务实例 */
   @Provide('drift_bottle_service')

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 import type { RedisStore } from '@/core/redis/index.js'
 import { CheckinService } from '@/services/checkin.js'
 
@@ -48,7 +48,7 @@ describe('CheckinService', () => {
     mockDb = createMockDb()
     mockCache = createMockCache()
     service = new CheckinService(
-      mockDb as unknown as MainPrismaClient,
+      mockDb as unknown as AemeathPrismaClient,
       mockCache as unknown as RedisStore,
     )
     vi.clearAllMocks()

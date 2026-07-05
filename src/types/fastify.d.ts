@@ -6,7 +6,7 @@ import type { ServiceRegistry } from '@aemeath-projects/exostrider/lifecycle'
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 import type { Redis } from 'ioredis'
 
-import type { createMainDb, createIrisDb } from '@/core/db/index.js'
+import type { createAemeathDb, createIrisDb } from '@/core/db/index.js'
 import type { ContextApis } from '@/core/dispatch/index.js'
 import type { AemeathServiceMap } from '@/core/lifecycle.js'
 import type { RedisStore } from '@/core/redis/index.js'
@@ -14,7 +14,7 @@ import type { TaskExecutor } from '@/core/tasks/index.js'
 
 /** 基础设施依赖（由 _startup 闭包产出，通过 decorate 暴露给路由层）。 */
 export interface InfraState {
-  readonly mainDb: ReturnType<typeof createMainDb>
+  readonly aemeathDb: ReturnType<typeof createAemeathDb>
   readonly irisDb: ReturnType<typeof createIrisDb>
   readonly cacheRedis: Redis
   readonly persistentRedis: Redis

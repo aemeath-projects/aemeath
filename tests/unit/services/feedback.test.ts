@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { MessageRouter } from '@/core/accounts/index.js'
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 import type { MailboxService } from '@/core/mailbox/index.js'
 import { FeedbackService } from '@/services/feedback.js'
 
@@ -49,7 +49,7 @@ describe('FeedbackService', () => {
     mockRouter = createMockRouter()
     mockMailbox = createMockMailbox()
     service = new FeedbackService(
-      mockDb as unknown as MainPrismaClient,
+      mockDb as unknown as AemeathPrismaClient,
       mockRouter as unknown as MessageRouter,
       mockMailbox as unknown as MailboxService,
     )

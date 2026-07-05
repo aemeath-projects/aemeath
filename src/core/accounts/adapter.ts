@@ -5,7 +5,7 @@ import type { ClientAdapter, ClientState, PoolEmitter } from '@aemeath-projects/
 import { NapCatClient, WebSocketTransport, SseTransport, SystemApi } from '@aemeath-projects/napcat'
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 
-import type { Account } from '#prisma/main'
+import type { Account } from '#prisma/aemeath'
 
 export class NapCatClientAdapter implements ClientAdapter<NapCatClient> {
   readonly id: string

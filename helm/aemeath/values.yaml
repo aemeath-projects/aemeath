@@ -97,50 +97,29 @@ autoscaling:
 config:
   NODE_ENV: production
   NODE_OPTIONS: '--max-old-space-size=512'
-  LOG_LEVEL: INFO
+  LOG_LEVEL: info
   LOG_FORMAT: json
   HOST: '0.0.0.0'
   PORT: '8000'
   METRICS_ENABLED: 'true'
 
-  # NapCat
-  NAPCAT_MESSAGE_POST_FORMAT: array
-  NAPCAT_REPORT_SELF_MESSAGE: 'false'
-  NAPCAT_HEART_INTERVAL: '30000'
-  NAPCAT_RECONNECT_INTERVAL: '5000'
+  # NapCat 资源
   IMAGE_URL_TTL: '7200'
   ENABLE_RKEY_REFRESH: 'true'
 
   # PostgreSQL (如果使用内置子 chart，会自动覆盖)
   DB_POOL_SIZE: '10'
-  DB_MAX_OVERFLOW: '20'
+  IRIS_DB_POOL_SIZE: '5'
 
   # Redis / BullMQ
   # BULLMQ_REDIS_URL, CACHE_REDIS_URL 通过 secret 注入
-
-  # 用户管理
-  PERSONNEL_SYNC_INTERVAL: '300'
-  PERSONNEL_SYNC_INITIAL_DELAY: '3'
-  PERSONNEL_SYNC_BATCH_SIZE: '500'
-  PERSONNEL_SYNC_API_DELAY: '0.5'
-  PERSONNEL_SYNC_LOCK_TTL: '600'
-
-  # 聊天数据库
-  CHAT_DB_POOL_SIZE: '5'
-  CHAT_DB_MAX_OVERFLOW: '10'
-
-  # 归档策略
-  CHAT_ARCHIVE_RETENTION_MONTHS: '12'
-  CHAT_ARCHIVE_BATCH_SIZE: '5000'
-  CHAT_ARCHIVE_COMPRESSION: zstd
 
 # 敏感配置 (写入 Secret)
 # 警告：以下默认值仅供本地开发使用，生产环境必须通过 existingSecret 引用外部 Secret，
 # 或在 helm install/upgrade 时通过 --set secret.XXX=... 覆盖，切勿将明文密码提交到版本库。
 secret:
-  NAPCAT_ACCESS_TOKEN: ''
-  DATABASE_URL: 'postgresql+asyncpg://aemeath:aemeath@aemeath-postgresql:5432/aemeath'
-  CHAT_DATABASE_URL: 'postgresql+asyncpg://aemeath:aemeath@aemeath-postgresql:5432/chat_history'
+  DATABASE_URL: 'postgresql://aemeath:aemeath@aemeath-postgresql:5432/aemeath'
+  IRIS_DATABASE_URL: 'postgresql://aemeath:aemeath@aemeath-postgresql:5432/iris'
   BULLMQ_REDIS_URL: 'redis://aemeath-redis-master:6379'
   CACHE_REDIS_URL: 'redis://aemeath-redis-cache-master:6379'
   PERSISTENT_REDIS_URL: 'redis://aemeath-redis-master:6379'

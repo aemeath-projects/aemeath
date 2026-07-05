@@ -1,7 +1,7 @@
 import { handlerRegistry, Handler } from '@aemeath-projects/exostrider/dispatch'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 import { SettingNode } from '@/core/settings/decorators.js'
 import type { SettingNodeOptions } from '@/core/settings/decorators.js'
 import { buildSchemaMap, cleanOrphanKeys } from '@/core/settings/index.js'
@@ -152,7 +152,7 @@ describe('cleanOrphanKeys', () => {
     return {
       $queryRaw: vi.fn().mockResolvedValue(existingKeys.map((key) => ({ key }))),
       $executeRaw: vi.fn().mockResolvedValue(affectedRows),
-    } as unknown as MainPrismaClient
+    } as unknown as AemeathPrismaClient
   }
 
   it('DB 中不存在废弃 key 时不执行 DELETE，且查询表名为 setting_values', async () => {

@@ -4,9 +4,9 @@
 
 import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/lifecycle'
 
-import type { WifeRecord, Prisma } from '#prisma/main'
+import type { WifeRecord, Prisma } from '#prisma/aemeath'
 
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 import { isPrismaKnownError } from '@/core/db/index.js'
 import { AppError, ValidationError } from '@/core/errors.js'
 
@@ -38,7 +38,7 @@ export interface ListRecordsParams {
  * 通过 Startup 生命周期注册，由 LifecycleOrchestrator 管理。
  */
 export class JrlpService {
-  constructor(private readonly db: MainPrismaClient) {}
+  constructor(private readonly db: AemeathPrismaClient) {}
 
   // 核心抽取
 
@@ -244,7 +244,7 @@ export class JrlpService {
 export class JrlpBootstrap {
   /** 注入主数据库 */
   @Inject('db')
-  db!: MainPrismaClient
+  db!: AemeathPrismaClient
 
   /** 对外暴露今日老婆服务实例 */
   @Provide('jrlp_service')

@@ -7,13 +7,13 @@ import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/
 import { MailboxService } from './service.js'
 
 import type { MessageRouter } from '@/core/accounts/index.js'
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 
 @Service({ name: 'mailbox_bootstrap' })
 export class MailboxBootstrap {
   /** 注入主数据库 */
   @Inject('db')
-  db!: MainPrismaClient
+  db!: AemeathPrismaClient
 
   /** 注入消息路由器 */
   @Inject('message_router')

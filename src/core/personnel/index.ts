@@ -14,7 +14,7 @@ import { SyncCoordinator } from './sync.js'
 import type { ConnectionStatus } from './sync.js'
 
 import type { MasterApis, AccountPool } from '@/core/accounts/index.js'
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 import type { RedisStore } from '@/core/redis/index.js'
 import { cacheKeyRegistry } from '@/core/registries.js'
 
@@ -73,7 +73,7 @@ export function computeRelation(
  */
 export class PersonnelService {
   constructor(
-    private readonly db: MainPrismaClient,
+    private readonly db: AemeathPrismaClient,
     private readonly cache: RedisStore,
   ) {}
 
@@ -500,7 +500,7 @@ export class PersonnelService {
 @Service({ name: 'personnel_query_bootstrap' })
 export class PersonnelQueryBootstrap {
   @Inject('db')
-  db!: MainPrismaClient
+  db!: AemeathPrismaClient
 
   @Provide('personnelQueryService')
   personnelQueryService!: PersonnelQueryService
@@ -515,7 +515,7 @@ export class PersonnelQueryBootstrap {
 export class PersonnelBootstrap {
   /** 注入主数据库 */
   @Inject('db')
-  db!: MainPrismaClient
+  db!: AemeathPrismaClient
 
   /** 注入缓存存储 */
   @Inject('cache')

@@ -6,7 +6,7 @@ import { handlerRegistry } from '@aemeath-projects/exostrider/dispatch'
 import { collectSettingNodes } from './decorators.js'
 import type { SettingNodeOptions } from './decorators.js'
 
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 import { ValidationError } from '@/core/errors.js'
 
 export interface SettingNodeSchema {
@@ -94,7 +94,7 @@ export function buildSchemaMap(): ReadonlyMap<string, SettingNodeSchema> {
 }
 
 export async function cleanOrphanKeys(
-  db: MainPrismaClient,
+  db: AemeathPrismaClient,
   schemaMap: ReadonlyMap<string, SettingNodeSchema>,
   logger?: { info: (msg: string) => void },
 ): Promise<void> {

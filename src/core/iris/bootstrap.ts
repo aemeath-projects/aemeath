@@ -12,7 +12,7 @@ import { IrisSearchService } from './search.js'
 import { IrisService } from './service.js'
 
 import { loadConfig } from '@/core/config.js'
-import type { MainPrismaClient, IrisPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient, IrisPrismaClient } from '@/core/db/index.js'
 import type { OssBundle, OssBuckets } from '@/core/oss/index.js'
 
 /* 生命周期注册 */
@@ -21,7 +21,7 @@ import type { OssBundle, OssBuckets } from '@/core/oss/index.js'
 export class IrisBootstrap {
   /** 注入主数据库 */
   @Inject('db')
-  db!: MainPrismaClient
+  db!: AemeathPrismaClient
 
   /** 注入聊天数据库 */
   @Inject('iris_db')

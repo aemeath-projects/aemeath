@@ -30,9 +30,9 @@
     "test:frontend": "vitest run --project frontend",
     "test:frontend:watch": "vitest --project frontend",
     "test:frontend:coverage": "vitest run --project frontend --coverage",
-    "db:generate": "prisma generate --config prisma/main/prisma.config.ts && prisma generate --config prisma/iris/prisma.config.ts",
-    "db:migrate": "prisma migrate deploy --config prisma/main/prisma.config.ts && prisma migrate deploy --config prisma/iris/prisma.config.ts",
-    "db:migrate:dev:main": "prisma migrate dev --config prisma/main/prisma.config.ts",
+    "db:generate": "prisma generate --config prisma/aemeath/prisma.config.ts && prisma generate --config prisma/iris/prisma.config.ts",
+    "db:migrate": "prisma migrate deploy --config prisma/aemeath/prisma.config.ts && prisma migrate deploy --config prisma/iris/prisma.config.ts",
+    "db:migrate:dev:aemeath": "prisma migrate dev --config prisma/aemeath/prisma.config.ts",
     "db:migrate:dev:iris": "prisma migrate dev --config prisma/iris/prisma.config.ts",
     "bump": "commit-and-tag-version",
     "bump:patch": "commit-and-tag-version --release-as patch",
@@ -119,12 +119,12 @@
     ]
   },
   "imports": {
-    "#prisma/main": {
+    "#prisma/aemeath": {
       "import": {
-        "types": "./prisma/main/generated/index.d.ts",
-        "default": "./prisma/main/generated/index.js"
+        "types": "./prisma/aemeath/generated/index.d.ts",
+        "default": "./prisma/aemeath/generated/index.js"
       },
-      "default": "./prisma/main/generated/index.js"
+      "default": "./prisma/aemeath/generated/index.js"
     },
     "#prisma/iris": {
       "import": {

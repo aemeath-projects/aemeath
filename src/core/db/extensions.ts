@@ -1,7 +1,7 @@
 /**
  * Prisma 客户端扩展 —— 慢查询日志。
  */
-import { Prisma as MainPrisma } from '#prisma/main'
+import { Prisma as AemeathPrisma } from '#prisma/aemeath'
 
 /** 默认慢查询阈值（毫秒）。 */
 const DEFAULT_THRESHOLD_MS = 200
@@ -24,7 +24,7 @@ export function withSlowQueryLogging<T extends { $extends: (extension: unknown) 
   logger: SlowQueryLogger = console,
   thresholdMs: number = DEFAULT_THRESHOLD_MS,
 ): T {
-  const extension = MainPrisma.defineExtension({
+  const extension = AemeathPrisma.defineExtension({
     query: {
       $allOperations: async ({ model, operation, args, query }) => {
         const start = performance.now()

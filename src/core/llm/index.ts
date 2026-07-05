@@ -6,9 +6,9 @@ import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/
 import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 
-import type { LlmModel, LlmProvider } from '#prisma/main'
+import type { LlmModel, LlmProvider } from '#prisma/aemeath'
 
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 import { NotFoundError } from '@/core/errors.js'
 import {
   maskApiKey,
@@ -57,13 +57,13 @@ export interface ModelDto {
 export class LLMService {
   private readonly _log: PinoLogger = getLogger('llm') as unknown as PinoLogger
 
-  constructor(private readonly mainDb: MainPrismaClient) {}
+  constructor(private readonly aemeathDb: AemeathPrismaClient) {}
 
   // 提供商 CRUD
 
   /** 列出所有提供商（含模型数量）。 */
   async listProviders(limit = 200): Promise<ProviderDto[]> {
-    const providers = await this.mainDb.llmProvider.findMany({
+    const providers = await this.aemeathDb.llmProvider.findMany({
       include: { models: true },
       orderBy: { name: 'asc' },
       take: limit,
@@ -73,7 +73,7 @@ export class LLMService {
 
   /** 获取单个提供商详情（含旗下模型列表）。 */
   async getProvider(providerId: string): Promise<ProviderDto> {
-    const provider = await this.mainDb.llmProvider.findUnique({
+    const provider = await this.aemeathDb.llmProvider.findUnique({
       where: { id: providerId },
       include: { models: true },
     })
@@ -85,7 +85,7 @@ export class LLMService {
 
   /** 创建提供商。 */
   async createProvider(data: CreateProviderData): Promise<ProviderDto> {
-    const provider = await this.mainDb.llmProvider.create({
+    const provider = await this.aemeathDb.llmProvider.create({
       data: {
         name: data.name,
         type: data.type,
@@ -102,12 +102,12 @@ export class LLMService {
 
   /** 更新提供商（字段级部分更新）。 */
   async updateProvider(providerId: string, data: UpdateProviderData): Promise<ProviderDto> {
-    const existing = await this.mainDb.llmProvider.findUnique({
+    const existing = await this.aemeathDb.llmProvider.findUnique({
       where: { id: providerId },
     })
     if (!existing) throw new NotFoundError(`提供商不存在: ${providerId}`)
 
-    const provider = await this.mainDb.llmProvider.update({
+    const provider = await this.aemeathDb.llmProvider.update({
       where: { id: providerId },
       data: {
         ...(data.name !== undefined ? { name: data.name } : {}),
@@ -127,12 +127,12 @@ export class LLMService {
 
   /** 删除提供商（级联删除旗下模型）。 */
   async deleteProvider(providerId: string): Promise<void> {
-    const existing = await this.mainDb.llmProvider.findUnique({
+    const existing = await this.aemeathDb.llmProvider.findUnique({
       where: { id: providerId },
     })
     if (!existing) throw new NotFoundError(`提供商不存在: ${providerId}`)
 
-    await this.mainDb.llmProvider.delete({ where: { id: providerId } })
+    await this.aemeathDb.llmProvider.delete({ where: { id: providerId } })
     this._log.info({ providerId }, 'LLM 提供商已删除')
   }
 
@@ -140,7 +140,7 @@ export class LLMService {
 
   /** 列出模型（可按提供商筛选）。 */
   async listModels(providerId?: string, limit = 500): Promise<ModelDto[]> {
-    const models = await this.mainDb.llmModel.findMany({
+    const models = await this.aemeathDb.llmModel.findMany({
       where: providerId != null ? { providerId } : undefined,
       include: { provider: true },
       orderBy: { modelName: 'asc' },
@@ -151,7 +151,7 @@ export class LLMService {
 
   /** 获取单个模型详情。 */
   async getModel(modelId: string): Promise<ModelDto> {
-    const model = await this.mainDb.llmModel.findUnique({
+    const model = await this.aemeathDb.llmModel.findUnique({
       where: { id: modelId },
       include: { provider: true },
     })
@@ -161,12 +161,12 @@ export class LLMService {
 
   /** 创建模型。 */
   async createModel(data: CreateModelData): Promise<ModelDto> {
-    const provider = await this.mainDb.llmProvider.findUnique({
+    const provider = await this.aemeathDb.llmProvider.findUnique({
       where: { id: data.providerId },
     })
     if (!provider) throw new NotFoundError(`提供商不存在: ${data.providerId}`)
 
-    const model = await this.mainDb.llmModel.create({
+    const model = await this.aemeathDb.llmModel.create({
       data: {
         providerId: data.providerId,
         modelName: data.modelName,
@@ -186,12 +186,12 @@ export class LLMService {
 
   /** 更新模型（字段级部分更新）。 */
   async updateModel(modelId: string, data: UpdateModelData): Promise<ModelDto> {
-    const existing = await this.mainDb.llmModel.findUnique({
+    const existing = await this.aemeathDb.llmModel.findUnique({
       where: { id: modelId },
     })
     if (!existing) throw new NotFoundError(`模型不存在: ${modelId}`)
 
-    const model = await this.mainDb.llmModel.update({
+    const model = await this.aemeathDb.llmModel.update({
       where: { id: modelId },
       data: {
         ...(data.displayName !== undefined ? { displayName: data.displayName } : {}),
@@ -210,12 +210,12 @@ export class LLMService {
 
   /** 删除模型。 */
   async deleteModel(modelId: string): Promise<void> {
-    const existing = await this.mainDb.llmModel.findUnique({
+    const existing = await this.aemeathDb.llmModel.findUnique({
       where: { id: modelId },
     })
     if (!existing) throw new NotFoundError(`模型不存在: ${modelId}`)
 
-    await this.mainDb.llmModel.delete({ where: { id: modelId } })
+    await this.aemeathDb.llmModel.delete({ where: { id: modelId } })
     this._log.info({ modelId }, 'LLM 模型已删除')
   }
 
@@ -258,7 +258,7 @@ export class LLMService {
 export class LlmBootstrap {
   /** 注入主数据库 */
   @Inject('db')
-  db!: MainPrismaClient
+  db!: AemeathPrismaClient
 
   /** 对外暴露 LLM 服务实例 */
   @Provide('llm_service')

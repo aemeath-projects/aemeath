@@ -6,10 +6,10 @@ import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import { seg } from '@aemeath-projects/napcat'
 
-import type { MailboxMessage } from '#prisma/main'
+import type { MailboxMessage } from '#prisma/aemeath'
 
 import type { MessageRouter } from '@/core/accounts/index.js'
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 
 export type { MailboxMessage }
 
@@ -40,7 +40,7 @@ export class MailboxService {
   private readonly _log: PinoLogger = getLogger('mailbox:service') as unknown as PinoLogger
 
   constructor(
-    private readonly db: MainPrismaClient,
+    private readonly db: AemeathPrismaClient,
     private readonly router: MessageRouter,
   ) {}
 

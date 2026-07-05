@@ -32,7 +32,7 @@ import { getRolesForMode } from './roles.js'
 import type { AccountRole } from './roles.js'
 import { MessageRouter } from './router.js'
 
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 
 const log: PinoLogger = getLogger('accounts') as unknown as PinoLogger
 
@@ -48,7 +48,7 @@ export interface MasterApis {
 @Service({ name: 'multi_account_bootstrap' })
 export class MultiAccountBootstrap {
   @Inject('db')
-  db!: MainPrismaClient
+  db!: AemeathPrismaClient
 
   @Provide('account_pool')
   pool!: AccountPool

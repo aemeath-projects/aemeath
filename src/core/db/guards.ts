@@ -1,7 +1,7 @@
 /**
  * Prisma 错误识别工具。
  */
-import { Prisma as MainPrisma } from '#prisma/main'
+import { Prisma as AemeathPrisma } from '#prisma/aemeath'
 
 interface PrismaKnownError {
   code: string
@@ -16,5 +16,5 @@ interface PrismaKnownError {
  * 故封装为类型谓词函数。
  */
 export function isPrismaKnownError(err: unknown): err is PrismaKnownError {
-  return err instanceof MainPrisma.PrismaClientKnownRequestError
+  return err instanceof AemeathPrisma.PrismaClientKnownRequestError
 }

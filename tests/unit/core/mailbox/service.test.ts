@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { MessageRouter } from '@/core/accounts/index.js'
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 import { MailboxService } from '@/core/mailbox/service.js'
 
 /* Mock 工厂 */
@@ -53,7 +53,7 @@ describe('MailboxService', () => {
     mockDb = createMockDb()
     mockRouter = createMockRouter()
     service = new MailboxService(
-      mockDb as unknown as MainPrismaClient,
+      mockDb as unknown as AemeathPrismaClient,
       mockRouter as unknown as MessageRouter,
     )
     vi.clearAllMocks()

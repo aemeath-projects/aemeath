@@ -2,7 +2,7 @@
 
 import type { Job } from 'bullmq'
 
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 import type { BotActionJobResult, TaskDefinition } from '@/core/tasks/index.js'
 
 export const JOB_NAME = 'daily-like' as const
@@ -10,7 +10,7 @@ export const JOB_NAME = 'daily-like' as const
 const DEFAULT_LIKE_TIMES = 10
 
 export interface LikeWorkerDeps {
-  db: MainPrismaClient
+  db: AemeathPrismaClient
 }
 
 export async function dailyLikeProcessor(

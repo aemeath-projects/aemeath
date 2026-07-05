@@ -2,7 +2,7 @@
 
 import type { Job } from 'bullmq'
 
-import type { MainPrismaClient } from '@/core/db/index.js'
+import type { AemeathPrismaClient } from '@/core/db/index.js'
 import type { RedisStore } from '@/core/redis/index.js'
 import { cacheKeyRegistry } from '@/core/registries.js'
 import type { MinimalSettingSchema } from '@/core/settings/index.js'
@@ -15,7 +15,7 @@ export const JOB_NAME = 'daily-checkin' as const
 const CHECKIN_TTL = 90_000
 
 export interface CheckinWorkerDeps {
-  db: MainPrismaClient
+  db: AemeathPrismaClient
   cache: RedisStore
   schemaMap: ReadonlyMap<string, MinimalSettingSchema>
 }

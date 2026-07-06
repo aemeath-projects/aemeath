@@ -43,7 +43,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@aemeath-projects/exostrider": "^1.1.4",
+    "@aemeath-projects/exostrider": "^1.1.5",
     "@aemeath-projects/napcat": "^1.2.1",
     "@fastify/cors": "^11.2.0",
     "@fastify/static": "^9.1.3",

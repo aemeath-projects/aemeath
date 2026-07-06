@@ -13,8 +13,9 @@ vi.mock('@/apis/user', () => ({
   fetchSyncStatus: vi.fn(),
   triggerSync: vi.fn(),
   fetchAdmins: vi.fn(),
-  addAdmin: vi.fn(),
+  setAdmin: vi.fn(),
   removeAdmin: vi.fn(),
+  fetchAdminCandidates: vi.fn(),
 }))
 
 import * as api from '@/apis/user'
@@ -246,7 +247,7 @@ describe('useUserStore', () => {
 
   /* loadAdmins() / setAdmin() / unsetAdmin() */
 
-  describe('管理员操作', () => {
+  describe('御者操作', () => {
     const mockAdmins = [{ qq: 1, nickname: 'Alice', relation: 'friend', groupCount: 0, lastSynced: null }]
 
     it('loadAdmins() 成功时更新 admins', async () => {
@@ -258,14 +259,14 @@ describe('useUserStore', () => {
       expect(store.admins).toEqual(mockAdmins)
     })
 
-    it('setAdmin() 调用 addAdmin 后刷新 admins', async () => {
-      vi.mocked(api.addAdmin).mockResolvedValue(undefined)
+    it('setAdmin() 调用 api.setAdmin 后刷新 admins', async () => {
+      vi.mocked(api.setAdmin).mockResolvedValue(undefined)
       vi.mocked(api.fetchAdmins).mockResolvedValue(mockAdmins)
       const store = useUserStore()
 
       await store.setAdmin(1)
 
-      expect(api.addAdmin).toHaveBeenCalledWith(1)
+      expect(api.setAdmin).toHaveBeenCalledWith(1)
       expect(store.admins).toEqual(mockAdmins)
     })
 
@@ -274,10 +275,20 @@ describe('useUserStore', () => {
       vi.mocked(api.fetchAdmins).mockResolvedValue([])
       const store = useUserStore()
 
-      await store.unsetAdmin(1)
+      await store.unsetAdmin()
 
-      expect(api.removeAdmin).toHaveBeenCalledWith(1)
+      expect(api.removeAdmin).toHaveBeenCalledWith()
       expect(store.admins).toEqual([])
+    })
+
+    it('loadAdminCandidates() 成功时更新 adminCandidates', async () => {
+      const mockCandidates = [{ qq: 111, nickname: '好友甲' }]
+      vi.mocked(api.fetchAdminCandidates).mockResolvedValue(mockCandidates)
+      const store = useUserStore()
+
+      await store.loadAdminCandidates()
+
+      expect(store.adminCandidates).toEqual(mockCandidates)
     })
   })
 

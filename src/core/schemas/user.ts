@@ -134,6 +134,13 @@ export const PaginatedMembersDataSchema = Type.Object({
   pages: Type.Number(),
 })
 
+/* 御者管理 Schema */
+
+/** 设置御者请求体 —— PUT /api/user/admins */
+export const SetAdminBodySchema = Type.Object({
+  userId: Type.String({ pattern: '^\\d+$', description: 'QQ 号 / 用户 ID' }),
+})
+
 /** 管理员信息 Schema。 */
 export const AdminInfoSchema = Type.Object({
   qq: Type.Number({ description: 'QQ 号' }),
@@ -144,6 +151,16 @@ export const AdminInfoSchema = Type.Object({
 
 /** 管理员列表响应数据 Schema —— GET /api/user/admins */
 export const AdminListDataSchema = Type.Array(AdminInfoSchema)
+
+/** 御者候选人 Schema（master 账号好友）。 */
+export const AdminCandidateSchema = Type.Object({
+  qq: Type.Number({ description: 'QQ 号' }),
+  nickname: Type.String({ description: '昵称' }),
+  remark: Type.Optional(Type.String({ description: '备注' })),
+})
+
+/** 御者候选人列表响应数据 Schema —— GET /api/user/admin-candidates */
+export const AdminCandidateListDataSchema = Type.Array(AdminCandidateSchema)
 
 /** 同步状态 Schema —— GET /api/user/sync/status */
 export const SyncStatusDataSchema = Type.Object({

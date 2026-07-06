@@ -5,6 +5,7 @@
 import { Type } from '@sinclair/typebox'
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 
+import type { AdminService } from './admin.js'
 import type { UserQueryService } from './query.js'
 import type { SyncCoordinator } from './sync.js'
 
@@ -22,6 +23,8 @@ import {
   GroupListQuerySchema,
   MemberListQuerySchema,
   AdminListDataSchema,
+  AdminCandidateListDataSchema,
+  SetAdminBodySchema,
   SyncStatusDataSchema,
   PaginatedUsersDataSchema,
   UserDetailSchema,
@@ -47,6 +50,20 @@ function getUserQueryService(app: FastifyInstance): UserQueryService {
 
 function getSyncCoordinator(app: FastifyInstance): SyncCoordinator {
   return app.services.get('syncCoordinator') as SyncCoordinator
+}
+
+function getAdminService(app: FastifyInstance): AdminService {
+  return app.services.get('adminService') as AdminService
+}
+
+/** 统一错误映射：ValidationError → 422，其余 → 500（参考 mailbox/api.ts 的错误映射约定；本模块暂无 NotFoundError 场景，故未引入该分支）。 */
+async function handleError(reply: FastifyReply, err: unknown): Promise<void> {
+  if (err instanceof ValidationError) {
+    await reply.status(422).send(fail(err.message))
+    return
+  }
+  const message = err instanceof Error ? err.message : '内部服务器错误'
+  await reply.status(500).send(fail(message))
 }
 
 /**
@@ -235,74 +252,100 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
     },
   )
 
-  /* 超级管理员管理 API */
+  /* 御者管理 API */
 
-  /** 获取所有超级管理员列表。 */
+  /** 获取当前御者列表（0 或 1 项）。 */
   app.get(
     '/api/user/admins',
     {
       schema: {
         response: {
           200: OkResponse(AdminListDataSchema),
-          400: FailResponse(),
           500: FailResponse(),
         },
       },
     },
     async (_req: FastifyRequest, reply: FastifyReply) => {
-      const svc = getUserService(app)
+      const svc = getAdminService(app)
       const admins = await svc.getAdmins()
       await reply.send(ok(admins))
     },
   )
 
-  /** 添加超级管理员。 */
-  app.post(
-    '/api/user/admins/:userId',
+  /** 设置/更换御者，仅允许 master 账号好友列表内的 QQ。 */
+  app.put(
+    '/api/user/admins',
     {
       schema: {
-        params: UserIdParamSchema,
+        body: SetAdminBodySchema,
         response: {
           200: OkResponse(Type.Null()),
-          400: FailResponse(),
-          404: FailResponse(),
+          422: FailResponse(),
           500: FailResponse(),
         },
       },
     },
-    async (req: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
-      const svc = getUserService(app)
-      const success = await svc.setAdmin(parseBigIntParam(req.params.userId, 'userId'))
-      if (!success) {
-        await reply.status(404).send(fail('User not found'))
-        return
+    async (req: FastifyRequest<{ Body: { userId: string } }>, reply: FastifyReply) => {
+      try {
+        const svc = getAdminService(app)
+        await svc.setAdmin(parseBigIntParam(req.body.userId, 'userId'))
+        await reply.send(ok(null, '御者已设置'))
+      } catch (err) {
+        await handleError(reply, err)
       }
-      await reply.send(ok(null, 'Admin set successfully'))
     },
   )
 
-  /** 移除超级管理员。 */
+  /** 移除当前御者。 */
   app.delete(
-    '/api/user/admins/:userId',
+    '/api/user/admins',
     {
       schema: {
-        params: UserIdParamSchema,
         response: {
           200: OkResponse(Type.Null()),
-          400: FailResponse(),
           404: FailResponse(),
+          422: FailResponse(),
           500: FailResponse(),
         },
       },
     },
-    async (req: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
-      const svc = getUserService(app)
-      const success = await svc.removeAdmin(parseBigIntParam(req.params.userId, 'userId'))
-      if (!success) {
-        await reply.status(404).send(fail('User not found or not an admin'))
-        return
+    async (_req: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const svc = getAdminService(app)
+        const success = await svc.removeAdmin()
+        if (!success) {
+          await reply.status(404).send(fail('当前未设置御者'))
+          return
+        }
+        await reply.send(ok(null, '御者已移除'))
+      } catch (err) {
+        await handleError(reply, err)
       }
-      await reply.send(ok(null, 'Admin removed successfully'))
+    },
+  )
+
+  /** 获取候选人列表（master 账号好友列表），供前端选择框使用。 */
+  app.get(
+    '/api/user/admin-candidates',
+    {
+      schema: {
+        response: {
+          200: OkResponse(AdminCandidateListDataSchema),
+          422: FailResponse(),
+          500: FailResponse(),
+        },
+      },
+    },
+    async (_req: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const svc = getAdminService(app)
+        const candidates = await svc.listCandidates()
+        await reply.send(
+          ok(candidates.map((f) => ({ qq: f.userId, nickname: f.nickname, remark: f.remark }))),
+        )
+      } catch (err) {
+        await handleError(reply, err)
+      }
     },
   )
 

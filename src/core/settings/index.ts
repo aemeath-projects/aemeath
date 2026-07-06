@@ -27,7 +27,7 @@ import { buildSchemaMap, cleanOrphanKeys } from './schema.js'
 import { SettingsService } from './service.js'
 
 import type { AemeathPrismaClient } from '@/core/db/index.js'
-import type { UserService } from '@/core/user/index.js'
+import type { AdminService } from '@/core/user/admin.js'
 
 @Service({ name: 'settings_bootstrap' })
 export class SettingsBootstrap {
@@ -39,9 +39,9 @@ export class SettingsBootstrap {
   @Inject('cache_redis')
   redis!: Redis
 
-  /** 注入用户服务 */
-  @Inject('userService')
-  userService!: UserService
+  /** 注入御者管理服务 */
+  @Inject('adminService')
+  adminService!: AdminService
 
   /** 对外暴露 settings 服务实例 */
   @Provide('settings')
@@ -57,6 +57,10 @@ export class SettingsBootstrap {
     await cleanOrphanKeys(this.db, schemaMap)
 
     this.settings = new SettingsService(this.db, this.redis, schemaMap)
-    this.settingsChecker = new SettingsPermissionChecker(this.settings, this.userService, schemaMap)
+    this.settingsChecker = new SettingsPermissionChecker(
+      this.settings,
+      this.adminService,
+      schemaMap,
+    )
   }
 }

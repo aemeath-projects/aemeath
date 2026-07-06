@@ -138,9 +138,9 @@ const router = createRouter({
       name: 'user-admins',
       component: () => import('@/views/user/AdminView.vue'),
       meta: {
-        title: '超级管理员',
+        title: '御者',
         icon: 'mdi-shield-crown',
-        subtitle: '管理机器人超级管理员权限',
+        subtitle: '管理机器人御者权限',
         panel: '用户与聊天',
         section: '用户管理',
       },

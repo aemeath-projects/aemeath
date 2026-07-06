@@ -8,6 +8,7 @@ import { MailboxService } from './service.js'
 
 import type { MessageRouter } from '@/core/accounts/index.js'
 import type { AemeathPrismaClient } from '@/core/db/index.js'
+import type { AdminService } from '@/core/user/admin.js'
 
 @Service({ name: 'mailbox_bootstrap' })
 export class MailboxBootstrap {
@@ -19,12 +20,16 @@ export class MailboxBootstrap {
   @Inject('message_router')
   router!: MessageRouter
 
+  /** 注入御者管理服务 */
+  @Inject('adminService')
+  adminService!: AdminService
+
   /** 对外暴露站内信服务实例，供其他服务（如 FeedbackService）通过 @Inject('mailbox') 复用 */
   @Provide('mailbox')
   mailboxService!: MailboxService
 
   @Startup
   start(): void {
-    this.mailboxService = new MailboxService(this.db, this.router)
+    this.mailboxService = new MailboxService(this.db, this.router, this.adminService)
   }
 }

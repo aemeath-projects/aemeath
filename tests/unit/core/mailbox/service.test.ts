@@ -3,14 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { MessageRouter } from '@/core/accounts/index.js'
 import type { AemeathPrismaClient } from '@/core/db/index.js'
 import { MailboxService } from '@/core/mailbox/service.js'
+import type { AdminService } from '@/core/user/admin.js'
 
 /* Mock 工厂 */
 
 function createMockDb() {
   return {
-    user: {
-      findMany: vi.fn(),
-    },
     mailboxMessage: {
       create: vi.fn(),
       findMany: vi.fn(),
@@ -28,11 +26,20 @@ function createMockRouter() {
   }
 }
 
+function createMockAdminService(
+  admins: { qq: bigint; nickname: string; relation: string; lastSynced: string | null }[] = [],
+) {
+  return {
+    getAdmins: vi.fn().mockResolvedValue(admins),
+  }
+}
+
 type MockDb = ReturnType<typeof createMockDb>
 type MockRouter = ReturnType<typeof createMockRouter>
+type MockAdminService = ReturnType<typeof createMockAdminService>
 
-const admin1 = { qq: 111n, nickname: '管理员甲', relation: 'admin' as const }
-const admin2 = { qq: 222n, nickname: '管理员乙', relation: 'admin' as const }
+const admin1 = { qq: 111n, nickname: '管理员甲', relation: 'admin' as const, lastSynced: null }
+const admin2 = { qq: 222n, nickname: '管理员乙', relation: 'admin' as const, lastSynced: null }
 
 const baseMessage = {
   id: 'msg-1',
@@ -47,14 +54,17 @@ const baseMessage = {
 describe('MailboxService', () => {
   let mockDb: MockDb
   let mockRouter: MockRouter
+  let mockAdminService: MockAdminService
   let service: MailboxService
 
   beforeEach(() => {
     mockDb = createMockDb()
     mockRouter = createMockRouter()
+    mockAdminService = createMockAdminService()
     service = new MailboxService(
       mockDb as unknown as AemeathPrismaClient,
       mockRouter as unknown as MessageRouter,
+      mockAdminService as unknown as AdminService,
     )
     vi.clearAllMocks()
   })
@@ -63,7 +73,7 @@ describe('MailboxService', () => {
 
   describe('notifyAdmins()', () => {
     it('无管理员时应当返回空数组，不写库', async () => {
-      mockDb.user.findMany.mockResolvedValue([])
+      mockAdminService.getAdmins.mockResolvedValue([])
 
       const result = await service.notifyAdmins({
         title: '标题',
@@ -76,7 +86,7 @@ describe('MailboxService', () => {
     })
 
     it('应当为每个管理员创建一条站内信并返回创建的记录', async () => {
-      mockDb.user.findMany.mockResolvedValue([admin1, admin2])
+      mockAdminService.getAdmins.mockResolvedValue([admin1, admin2])
       const created1 = { ...baseMessage, id: 'msg-1', recipientId: 111n }
       const created2 = { ...baseMessage, id: 'msg-2', recipientId: 222n }
       mockDb.$transaction.mockResolvedValue([created1, created2])
@@ -87,13 +97,13 @@ describe('MailboxService', () => {
         notifyText: '纯文本通知',
       })
 
-      expect(mockDb.user.findMany).toHaveBeenCalledWith({ where: { relation: 'admin' } })
+      expect(mockAdminService.getAdmins).toHaveBeenCalledOnce()
       expect(mockDb.$transaction).toHaveBeenCalledOnce()
       expect(result).toEqual([created1, created2])
     })
 
     it('私聊提醒发送失败时不应影响返回结果（不阻塞、不抛出）', async () => {
-      mockDb.user.findMany.mockResolvedValue([admin1])
+      mockAdminService.getAdmins.mockResolvedValue([admin1])
       const created = { ...baseMessage }
       mockDb.$transaction.mockResolvedValue([created])
       mockRouter.sendAdminMsg.mockRejectedValue(new Error('主账号离线'))
@@ -104,7 +114,7 @@ describe('MailboxService', () => {
     })
 
     it('应当异步同步私聊提醒给每个管理员', async () => {
-      mockDb.user.findMany.mockResolvedValue([admin1, admin2])
+      mockAdminService.getAdmins.mockResolvedValue([admin1, admin2])
       mockDb.$transaction.mockResolvedValue([
         { ...baseMessage, id: 'msg-1', recipientId: 111n },
         { ...baseMessage, id: 'msg-2', recipientId: 222n },

@@ -1,106 +1,108 @@
 <template>
   <PageLayout>
-    <template #actions>
-      <v-btn color="red" variant="elevated" prepend-icon="mdi-plus" @click="addDialog = true">
-        添加超级管理员
-      </v-btn>
-    </template>
     <v-card flat>
       <div v-if="store.adminsLoading" class="d-flex flex-wrap ga-4 pa-4">
-        <v-skeleton-loader
-          v-for="n in 4"
-          :key="n"
-          type="list-item-avatar"
-          width="280"
-          elevation="3"
-          rounded="lg"
-        />
+        <v-skeleton-loader type="list-item-avatar" width="280" elevation="3" rounded="lg" />
       </div>
 
       <template v-else>
-        <div
-          v-if="store.admins.length === 0"
-          class="d-flex flex-column align-center justify-center py-16 text-medium-emphasis"
-        >
-          <v-icon icon="mdi-shield-off-outline" size="48" class="mb-4" />
-          <div class="text-body-1">暂无超级管理员</div>
-          <div class="text-body-2 mt-1">点击右上角「添加超级管理员」来设置</div>
-        </div>
-
-        <div v-else class="d-flex flex-wrap ga-4 pa-4">
-          <v-card
-            v-for="admin in store.admins"
-            :key="admin.qq"
-            elevation="3"
-            rounded="lg"
-            width="280"
-            class="admin-card"
+        <div class="d-flex flex-wrap ga-4 pa-4">
+          <div
+            v-if="currentAdmin === null"
+            class="d-flex flex-column align-center justify-center py-16 text-medium-emphasis"
+            style="width: 100%"
           >
+            <v-icon icon="mdi-shield-off-outline" size="48" class="mb-4" />
+            <div class="text-body-1">暂未设置御者</div>
+            <div class="text-body-2 mt-1">点击下方「设置御者」来指定</div>
+          </div>
+
+          <v-card v-else elevation="3" rounded="lg" width="280" class="admin-card">
             <div class="d-flex align-center pa-4">
-              <v-avatar size="48" class="mr-4 cursor-pointer" @click="openAdminDetail(admin.qq)">
-                <v-img :src="`https://q1.qlogo.cn/g?b=qq&nk=${admin.qq}&s=100`" />
+              <v-avatar
+                size="48"
+                class="mr-4 cursor-pointer"
+                @click="openAdminDetail(currentAdmin.qq)"
+              >
+                <v-img :src="`https://q1.qlogo.cn/g?b=qq&nk=${currentAdmin.qq}&s=100`" />
               </v-avatar>
               <div
                 class="flex-grow-1 overflow-hidden cursor-pointer"
-                @click="openAdminDetail(admin.qq)"
+                @click="openAdminDetail(currentAdmin.qq)"
               >
                 <div class="text-subtitle-1 font-weight-bold text-truncate">
-                  {{ admin.nickname || '未知用户' }}
+                  {{ currentAdmin.nickname || '未知用户' }}
                 </div>
-                <div class="text-caption text-medium-emphasis">{{ admin.qq }}</div>
+                <div class="text-caption text-medium-emphasis">{{ currentAdmin.qq }}</div>
               </div>
-              <v-btn
-                icon
-                size="small"
-                variant="elevated"
-                color="error"
-                @click="confirmRemove(admin)"
-              >
-                <v-icon>mdi-shield-off</v-icon>
-                <v-tooltip activator="parent" location="top">移除超级管理员</v-tooltip>
-              </v-btn>
             </div>
           </v-card>
         </div>
+
+        <div class="d-flex ga-2 pa-4 pt-0">
+          <v-btn
+            color="red"
+            variant="elevated"
+            prepend-icon="mdi-shield-sync"
+            @click="openSetDialog"
+          >
+            {{ currentAdmin === null ? '设置御者' : '更换御者' }}
+          </v-btn>
+          <v-btn
+            v-if="currentAdmin !== null"
+            color="error"
+            variant="elevated"
+            prepend-icon="mdi-shield-off"
+            @click="removeDialog = true"
+          >
+            移除御者
+          </v-btn>
+        </div>
       </template>
 
-      <!-- 添加超级管理员对话框 -->
-      <v-dialog v-model="addDialog" max-width="400">
+      <!-- 设置/更换御者对话框 -->
+      <v-dialog v-model="setDialog" max-width="480">
         <v-card>
-          <v-card-title>添加超级管理员</v-card-title>
+          <v-card-title>{{ currentAdmin === null ? '设置御者' : '更换御者' }}</v-card-title>
           <v-card-text>
-            <v-text-field
-              v-model="addQQ"
-              label="QQ 号"
+            <v-alert
+              v-if="candidateError"
+              type="error"
+              variant="tonal"
+              density="compact"
+              class="mb-4"
+            >
+              {{ candidateError }}
+            </v-alert>
+            <v-autocomplete
+              v-model="selectedQQ"
+              :items="store.adminCandidates"
+              :loading="store.adminCandidatesLoading"
+              item-value="qq"
+              :item-title="
+                (item: AdminCandidate) =>
+                  `${item.nickname}${item.remark ? '（' + item.remark + '）' : ''} · ${item.qq}`
+              "
+              label="从 master 账号好友列表中选择"
               variant="solo-filled"
               hide-details="auto"
-              prepend-inner-icon="mdi-identifier"
-              :error-messages="addError"
-              @input="sanitizeDigits"
+              clearable
             />
+            <v-alert type="warning" variant="tonal" density="compact" class="mt-4">
+              御者将绕过所有功能级权限检查，拥有系统的完全控制权，请谨慎选择。
+            </v-alert>
           </v-card-text>
           <v-card-actions>
             <v-spacer />
-            <v-btn variant="elevated" @click="addDialog = false">取消</v-btn>
-            <v-btn color="red" variant="elevated" :disabled="!addQQ" @click="confirmAdd">
-              确认添加
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
-
-      <!-- 添加超级管理员二次确认对话框 -->
-      <v-dialog v-model="addConfirmDialog" max-width="400">
-        <v-card>
-          <v-card-title>二次确认</v-card-title>
-          <v-card-text>
-            确定要将 <strong>{{ addQQ }}</strong> 设为超级管理员吗？该用户将绕过所有功能级权限检查。
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer />
-            <v-btn variant="elevated" @click="addConfirmDialog = false">取消</v-btn>
-            <v-btn color="red" variant="elevated" :loading="addLoading" @click="doAdd">
-              确认
+            <v-btn variant="elevated" @click="setDialog = false">取消</v-btn>
+            <v-btn
+              color="red"
+              variant="elevated"
+              :loading="setLoading"
+              :disabled="!selectedQQ"
+              @click="doSet"
+            >
+              确认设置
             </v-btn>
           </v-card-actions>
         </v-card>
@@ -109,10 +111,10 @@
       <!-- 移除确认对话框 -->
       <v-dialog v-model="removeDialog" max-width="400">
         <v-card>
-          <v-card-title>确认移除超级管理员</v-card-title>
+          <v-card-title>确认移除御者</v-card-title>
           <v-card-text>
-            确定要移除
-            <strong>{{ removeTarget?.nickname || removeTarget?.qq }}</strong> 的超级管理员权限吗？
+            确定要移除当前御者
+            <strong>{{ currentAdmin?.nickname || currentAdmin?.qq }}</strong> 的权限吗？
             移除后，系统将根据其当前状态自动降级为好友、群友或陌生人。
           </v-card-text>
           <v-card-actions>
@@ -131,33 +133,74 @@
       </v-snackbar>
     </v-card>
 
-    <!-- 管理员用户详情弹窗 -->
+    <!-- 御者用户详情弹窗 -->
     <UserInfoCard v-model="adminDetailDialog" :qq="adminDetailQQ" />
   </PageLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
-import type { UserItem } from '@/apis/user'
+import type { AdminCandidate } from '@/apis/user'
 import PageLayout from '@/layouts/PageLayout.vue'
 import UserInfoCard from '@/components/UserInfoCard.vue'
 
 const store = useUserStore()
 
-// 添加超级管理员
-const addDialog = ref(false)
-const addConfirmDialog = ref(false)
-const addQQ = ref<string>('')
-const addLoading = ref(false)
-const addError = ref('')
+const currentAdmin = computed(() => store.admins[0] ?? null)
 
-// 移除超级管理员
+// 设置/更换御者
+const setDialog = ref(false)
+const selectedQQ = ref<number | null>(null)
+const setLoading = ref(false)
+const candidateError = ref('')
+
+async function openSetDialog() {
+  candidateError.value = ''
+  selectedQQ.value = null
+  setDialog.value = true
+  try {
+    await store.loadAdminCandidates()
+  } catch (e: unknown) {
+    const err = e as { message?: string }
+    candidateError.value = err?.message || '获取好友列表失败，请先确保 master 账号在线'
+  }
+}
+
+async function doSet() {
+  if (selectedQQ.value === null) return
+  setLoading.value = true
+  try {
+    await store.setAdmin(selectedQQ.value)
+    setDialog.value = false
+    showSnack(`已将 ${selectedQQ.value} 设为御者`)
+  } catch (e: unknown) {
+    const err = e as { message?: string }
+    showSnack(err?.message || '操作失败', 'error')
+  } finally {
+    setLoading.value = false
+  }
+}
+
+// 移除御者
 const removeDialog = ref(false)
-const removeTarget = ref<UserItem | null>(null)
 const removeLoading = ref(false)
 
-// 管理员详情弹窗
+async function doRemove() {
+  removeLoading.value = true
+  try {
+    await store.unsetAdmin()
+    removeDialog.value = false
+    showSnack('已移除御者权限')
+  } catch (e: unknown) {
+    const err = e as { message?: string }
+    showSnack(err?.message || '操作失败', 'error')
+  } finally {
+    removeLoading.value = false
+  }
+}
+
+// 御者详情弹窗
 const adminDetailDialog = ref(false)
 const adminDetailQQ = ref<number | null>(null)
 
@@ -175,71 +218,6 @@ function showSnack(text: string, color = 'success') {
   snackText.value = text
   snackColor.value = color
   snackbar.value = true
-}
-
-function sanitizeDigits() {
-  addQQ.value = addQQ.value.replace(/\D/g, '')
-}
-
-function confirmAdd() {
-  addError.value = ''
-  const raw = addQQ.value.trim()
-  if (!raw) {
-    addError.value = '请输入 QQ 号'
-    return
-  }
-  if (!/^\d+$/.test(raw)) {
-    addError.value = '请输入纯数字的 QQ 号'
-    return
-  }
-  const qq = Number(raw)
-  if (!qq || !Number.isSafeInteger(qq)) {
-    addError.value = '请输入有效的 QQ 号'
-    return
-  }
-  addConfirmDialog.value = true
-}
-
-async function doAdd() {
-  addError.value = ''
-  const qq = Number(addQQ.value.trim())
-  addLoading.value = true
-  try {
-    await store.setAdmin(qq)
-    addConfirmDialog.value = false
-    addDialog.value = false
-    addQQ.value = ''
-    showSnack(`已将 ${qq} 设为超级管理员`)
-  } catch (e: unknown) {
-    const err = e as { response?: { data?: { detail?: string } } }
-    const msg = err?.response?.data?.detail || '操作失败'
-    addError.value = msg
-    addConfirmDialog.value = false
-    showSnack(msg, 'error')
-  } finally {
-    addLoading.value = false
-  }
-}
-
-function confirmRemove(admin: UserItem) {
-  removeTarget.value = admin
-  removeDialog.value = true
-}
-
-async function doRemove() {
-  if (!removeTarget.value) return
-  removeLoading.value = true
-  try {
-    await store.unsetAdmin(removeTarget.value.qq)
-    removeDialog.value = false
-    showSnack(`已移除 ${removeTarget.value.nickname || removeTarget.value.qq} 的超级管理员权限`)
-  } catch (e: unknown) {
-    const err = e as { response?: { data?: { detail?: string } } }
-    const msg = err?.response?.data?.detail || '操作失败'
-    showSnack(msg, 'error')
-  } finally {
-    removeLoading.value = false
-  }
 }
 
 onMounted(() => store.loadAdmins())

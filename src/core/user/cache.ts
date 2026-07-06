@@ -19,10 +19,18 @@ cacheKeyRegistry.register({
   build: (qq) => `aemeath:user:relation:${qq}`,
 })
 
+/** 当前御者 QQ 缓存（0 或 1 个，空字符串表示"查过但没有御者"哨兵）。 */
 cacheKeyRegistry.register({
   namespace: 'user',
-  name: 'admins',
-  build: () => 'aemeath:user:admins',
+  name: 'admin',
+  build: () => 'aemeath:user:admin',
+})
+
+/** 御者设置/移除临界区分布式锁，setAdmin 与 removeAdmin 共用。 */
+cacheKeyRegistry.register({
+  namespace: 'user',
+  name: 'admin_lock',
+  build: () => 'aemeath:lock:admin',
 })
 
 /** 用户关系缓存 glob 模式。 */

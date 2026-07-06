@@ -6,7 +6,7 @@ import { SettingNode } from '@/core/settings/decorators.js'
 import type { SettingNodeOptions } from '@/core/settings/decorators.js'
 import { SettingsPermissionChecker, buildSchemaMap } from '@/core/settings/index.js'
 import type { SettingsService } from '@/core/settings/index.js'
-import type { UserService } from '@/core/user/index.js'
+import type { AdminService } from '@/core/user/admin.js'
 
 /* Mock 工厂 */
 
@@ -19,10 +19,10 @@ function createMockSettings(overrides: Record<string, unknown> = {}) {
   } as unknown as SettingsService
 }
 
-function createMockUserService(adminQqs: bigint[] = []) {
+function createMockAdminService(adminQq: bigint | null = null) {
   return {
-    getAdminQqSet: vi.fn().mockResolvedValue(new Set(adminQqs)),
-  } as unknown as UserService
+    getAdminQq: vi.fn().mockResolvedValue(adminQq),
+  } as unknown as AdminService
 }
 
 function createGroupContext(
@@ -101,15 +101,15 @@ function registerTestHandler(): void {
   Handler({ name: 'test_feature', displayName: 'Test Feature' })(TestHandler, ctxBase)
 }
 
-function buildChecker(settingsValues: Record<string, unknown> = {}, adminQqs: bigint[] = []) {
+function buildChecker(settingsValues: Record<string, unknown> = {}, adminQq: bigint | null = null) {
   registerTestHandler()
   const schemaMap = buildSchemaMap()
   const settings = createMockSettings(settingsValues)
-  const userService = createMockUserService(adminQqs)
+  const adminService = createMockAdminService(adminQq)
   return {
-    checker: new SettingsPermissionChecker(settings, userService, schemaMap),
+    checker: new SettingsPermissionChecker(settings, adminService, schemaMap),
     settings,
-    userService,
+    adminService,
   }
 }
 
@@ -128,20 +128,26 @@ describe('system 功能直通', () => {
 
     const schemaMap = buildSchemaMap()
     const settings = createMockSettings()
-    const userService = createMockUserService()
-    const checker = new SettingsPermissionChecker(settings, userService, schemaMap)
+    const adminService = createMockAdminService()
+    const checker = new SettingsPermissionChecker(settings, adminService, schemaMap)
 
     const ctx = createGroupContext({ componentName: 'sys_feature' })
     expect(await checker.check(ctx as Context)).toBe(true)
-    expect(userService.getAdminQqSet).not.toHaveBeenCalled()
+    expect(adminService.getAdminQq).not.toHaveBeenCalled()
   })
 })
 
-describe('超级管理员绕过', () => {
-  it('超级管理员无视所有功能开关', async () => {
-    const { checker } = buildChecker({ 'bot.enabled': false }, [100n])
+describe('御者绕过', () => {
+  it('御者无视所有功能开关', async () => {
+    const { checker } = buildChecker({ 'bot.enabled': false }, 100n)
     const ctx = createGroupContext({ userId: 100 })
     expect(await checker.check(ctx as Context)).toBe(true)
+  })
+
+  it('存在御者但与当前发起者不匹配时不绕过，继续走后续检查', async () => {
+    const { checker } = buildChecker({ 'bot.enabled': false }, 999n)
+    const ctx = createGroupContext({ userId: 100 })
+    expect(await checker.check(ctx as Context)).toBe(false)
   })
 })
 

@@ -84,6 +84,7 @@ model User {
   jrlp_as_wife    WifeRecord[]      @relation("JrlpWife")
   mailboxMessages MailboxMessage[]  @relation("MailboxRecipient")
 
+  @@index([relation])
   @@map("users")
 }
 

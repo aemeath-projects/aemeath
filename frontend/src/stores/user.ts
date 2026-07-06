@@ -12,6 +12,7 @@ import type {
   GroupMemberItem,
   SyncStatus,
   PaginatedResult,
+  AdminCandidate,
 } from '@/apis/user'
 
 interface ResolvedUser {
@@ -253,9 +254,11 @@ export const useUserStore = defineStore('user', () => {
     triggerRef(groupCache)
   }
 
-  /* 超级管理员 */
+  /* 御者 */
   const admins = ref<UserItem[]>([])
   const adminsLoading = ref(false)
+  const adminCandidates = ref<AdminCandidate[]>([])
+  const adminCandidatesLoading = ref(false)
 
   async function loadAdmins() {
     adminsLoading.value = true
@@ -266,13 +269,22 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  async function setAdmin(qq: number) {
-    await api.addAdmin(qq)
+  async function loadAdminCandidates() {
+    adminCandidatesLoading.value = true
+    try {
+      adminCandidates.value = await api.fetchAdminCandidates()
+    } finally {
+      adminCandidatesLoading.value = false
+    }
+  }
+
+  async function setAdmin(userId: number) {
+    await api.setAdmin(userId)
     await loadAdmins()
   }
 
-  async function unsetAdmin(qq: number) {
-    await api.removeAdmin(qq)
+  async function unsetAdmin() {
+    await api.removeAdmin()
     await loadAdmins()
   }
 
@@ -306,10 +318,13 @@ export const useUserStore = defineStore('user', () => {
     syncLoading,
     loadSyncStatus,
     doSync,
-    // 超级管理员
+    // 御者
     admins,
     adminsLoading,
+    adminCandidates,
+    adminCandidatesLoading,
     loadAdmins,
+    loadAdminCandidates,
     setAdmin,
     unsetAdmin,
     // ID 解析缓存

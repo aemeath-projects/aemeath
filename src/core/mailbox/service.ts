@@ -10,6 +10,7 @@ import type { MailboxMessage } from '#prisma/aemeath'
 
 import type { MessageRouter } from '@/core/accounts/index.js'
 import type { AemeathPrismaClient } from '@/core/db/index.js'
+import type { AdminService } from '@/core/user/admin.js'
 
 export type { MailboxMessage }
 
@@ -42,16 +43,17 @@ export class MailboxService {
   constructor(
     private readonly db: AemeathPrismaClient,
     private readonly router: MessageRouter,
+    private readonly adminService: AdminService,
   ) {}
 
   /**
    * 广播站内信给所有管理员，并异步同步私聊通知（尽力而为，不阻塞方法返回）。
    */
   async notifyAdmins(input: NotifyAdminsInput): Promise<MailboxMessage[]> {
-    const admins = await this.db.user.findMany({ where: { relation: 'admin' } })
+    const admins = await this.adminService.getAdmins()
 
     if (admins.length === 0) {
-      this._log.warn('无管理员可通知，跳过站内信广播')
+      this._log.warn('当前未设置御者，跳过站内信广播')
       return []
     }
 

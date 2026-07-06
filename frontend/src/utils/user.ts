@@ -15,7 +15,7 @@ const RELATION_LABEL: Record<string, string> = {
   stranger: '陌生人',
   group_member: '群友',
   friend: '好友',
-  admin: '管理员',
+  admin: '御者',
 }
 
 const RELATION_ICON: Record<string, string> = {

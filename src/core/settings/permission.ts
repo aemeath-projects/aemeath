@@ -9,7 +9,7 @@ import type { SettingNodeSchema } from './schema.js'
 import type { SettingsService } from './service.js'
 
 import type { OneBotContext as Context, FeatureChecker } from '@/core/dispatch/index.js'
-import type { UserService } from '@/core/user/index.js'
+import type { AdminService } from '@/core/user/admin.js'
 
 /** dispatcher 注入到 Context 的 handler 方法元数据。 */
 interface HandlerMethodMeta {
@@ -23,7 +23,7 @@ interface HandlerMethodMeta {
  *
  * 检查链路：
  * 1. system 功能 → 直通
- * 2. 超级管理员 → 绕过
+ * 2. 御者 → 绕过
  * 3. ADMIN 权限 → 非管理员拒绝
  * 4. 群聊: bot.enabled → <feature>.enabled → <feature>.permission → 角色比对
  * 5. 私聊: <feature>.enabled（user scope）
@@ -31,7 +31,7 @@ interface HandlerMethodMeta {
 export class SettingsPermissionChecker implements FeatureChecker {
   constructor(
     private readonly settings: SettingsService,
-    private readonly userService: UserService,
+    private readonly adminService: AdminService,
     private readonly schemaMap: ReadonlyMap<string, SettingNodeSchema>,
   ) {}
 
@@ -45,9 +45,9 @@ export class SettingsPermissionChecker implements FeatureChecker {
     // system 功能零 IO 直通（纯内存判断）
     if (this._isSystem(featureName)) return true
 
-    // 超级管理员绕过
-    const adminSet = await this.userService.getAdminQqSet()
-    if (adminSet.has(BigInt(ctx.userId))) return true
+    // 御者绕过
+    const adminQq = await this.adminService.getAdminQq()
+    if (adminQq === BigInt(ctx.userId)) return true
 
     // ADMIN 权限硬编码，非管理员直接拒绝
     if (required === Permission.ADMIN) return false

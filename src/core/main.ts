@@ -67,6 +67,8 @@ import type { InfraState } from '@/types/fastify.js'
  */
 // 触发 UserService 的 Startup 注册（EchoLoader 不扫描 src/core/，需手动引入）
 import '@/core/user/index.js'
+// 触发 AdminBootstrap 的 Startup 注册
+import '@/core/user/admin.js'
 // 触发 OSS 模块的 Startup 注册
 import '@/core/oss/bootstrap.js'
 // 触发 MediaStorageService 的 Startup 注册

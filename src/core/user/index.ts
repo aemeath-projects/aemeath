@@ -1,8 +1,9 @@
 /**
- * 用户管理写操作服务 —— upsert、同步持久化、管理员管理。
+ * 用户管理写操作服务 —— upsert、同步持久化。
  *
  * 只读查询已迁移至 UserQueryService（query.ts）。
  * 增量事件处理已迁移至 UserEventService（events.ts）。
+ * 御者（超级管理员）管理已迁移至 AdminService（admin.ts）。
  */
 
 import { Service, Inject, Provide, Startup, Shutdown } from '@aemeath-projects/exostrider/lifecycle'
@@ -324,66 +325,6 @@ export class UserService {
     return { usersSynced, groupsSynced, membershipsSynced }
   }
 
-  /* 超级管理员管理 */
-
-  /** 设置超级管理员。返回是否成功。 */
-  async setAdmin(qq: bigint): Promise<boolean> {
-    const user = await this.db.user.findUnique({ where: { qq } })
-    if (!user) return false
-
-    await this.db.user.update({ where: { qq }, data: { relation: 'admin' } })
-    await this.cache.del(cacheKeyRegistry.buildKey('user', 'relation', String(qq)))
-    await this.cache.del(cacheKeyRegistry.buildKey('user', 'admins'))
-    return true
-  }
-
-  /** 移除超级管理员，根据当前状态自动降级。返回是否成功。 */
-  async removeAdmin(qq: bigint): Promise<boolean> {
-    const user = await this.db.user.findUnique({ where: { qq } })
-    if (user?.relation !== 'admin') return false
-
-    const hasMembership = await this.db.groupMembership.findFirst({
-      where: { userId: qq, isActive: true },
-      select: { id: true },
-    })
-
-    const newRelation: UserRelation = hasMembership ? 'group_member' : 'stranger'
-    await this.db.user.update({ where: { qq }, data: { relation: newRelation } })
-    await this.cache.del(cacheKeyRegistry.buildKey('user', 'relation', String(qq)))
-    await this.cache.del(cacheKeyRegistry.buildKey('user', 'admins'))
-    return true
-  }
-
-  /** 获取所有超级管理员列表。 */
-  async getAdmins(): Promise<
-    { qq: bigint; nickname: string; relation: string; lastSynced: string | null }[]
-  > {
-    const admins = await this.db.user.findMany({ where: { relation: 'admin' } })
-    return admins.map((r) => ({
-      qq: r.qq,
-      nickname: r.nickname,
-      relation: r.relation,
-      lastSynced: r.lastSynced.toISOString(),
-    }))
-  }
-
-  /** 获取所有超级管理员的 QQ 号集合（带 Redis 缓存）。 */
-  async getAdminQqSet(): Promise<Set<bigint>> {
-    const key = cacheKeyRegistry.buildKey('user', 'admins')
-    const cached = await this.cache.get<number[]>(key)
-    if (cached !== null && Array.isArray(cached)) {
-      return new Set(cached.map((q) => BigInt(q)))
-    }
-
-    const rows = await this.db.user.findMany({
-      where: { relation: 'admin' },
-      select: { qq: true },
-    })
-    const qqList = rows.map((r) => Number(r.qq))
-    await this.cache.set(key, qqList, 300)
-    return new Set(rows.map((r) => r.qq))
-  }
-
   /** 获取最近一次同步状态。 */
   async getSyncStatus(): Promise<SyncStatus> {
     const data = await this.cache.get<SyncStatus>(cacheKeyRegistry.buildKey('user', 'sync_status'))
@@ -486,7 +427,7 @@ export class UserService {
   private async _invalidateAllRelationCache(): Promise<void> {
     try {
       await this.cache.deleteByPattern(USER_RELATION_GLOB)
-      await this.cache.del(cacheKeyRegistry.buildKey('user', 'admins'))
+      await this.cache.del(cacheKeyRegistry.buildKey('user', 'admin'))
     } catch {
       // 缓存清除失败不影响主流程
     }

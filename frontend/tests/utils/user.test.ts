@@ -31,7 +31,7 @@ describe('relationLabel', () => {
     ['stranger', '陌生人'],
     ['group_member', '群友'],
     ['friend', '好友'],
-    ['admin', '管理员'],
+    ['admin', '御者'],
   ])('%s 返回 %s', (input, expected) => {
     expect(relationLabel(input)).toBe(expected)
   })

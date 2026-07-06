@@ -2,7 +2,7 @@
  * 用户管理 API 接口层 —— 封装 /api/user 所有后端接口调用。
  */
 
-import { get, post, del } from './http'
+import { get, post, put, del } from './http'
 import type { PaginatedResult } from './types'
 
 export type { PaginatedResult } from './types'
@@ -55,6 +55,12 @@ export interface SyncStatus {
   usersSynced: number
   groupsSynced: number
   membershipsSynced: number
+}
+
+export interface AdminCandidate {
+  qq: number
+  nickname: string
+  remark?: string
 }
 
 const BASE = '/api/user'
@@ -132,10 +138,14 @@ export async function fetchAdmins(): Promise<UserItem[]> {
   return get<UserItem[]>(`${BASE}/admins`)
 }
 
-export async function addAdmin(qq: number): Promise<void> {
-  await post<null>(`${BASE}/admins/${qq}`)
+export async function setAdmin(userId: number): Promise<void> {
+  await put<null>(`${BASE}/admins`, { userId: String(userId) })
 }
 
-export async function removeAdmin(qq: number): Promise<void> {
-  await del<null>(`${BASE}/admins/${qq}`)
+export async function removeAdmin(): Promise<void> {
+  await del<null>(`${BASE}/admins`)
+}
+
+export async function fetchAdminCandidates(): Promise<AdminCandidate[]> {
+  return get<AdminCandidate[]>(`${BASE}/admin-candidates`)
 }

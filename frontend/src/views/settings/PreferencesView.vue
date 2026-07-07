@@ -1,5 +1,20 @@
+<script setup lang="ts">
+import { useTheme } from 'vuetify'
+import PageLayout from '@/layouts/PageLayout.vue'
+import { useSettingsStore } from '@/stores/settings'
+import { useThemeStore } from '@/stores/theme'
+
+const vuetifyTheme = useTheme()
+const themeStore = useThemeStore()
+const settingsStore = useSettingsStore()
+
+function onThemeChange() {
+  themeStore.setPreference(themeStore.preference, vuetifyTheme)
+}
+</script>
+
 <template>
-  <div>
+  <PageLayout>
     <!-- 外观设置 -->
     <v-card rounded="lg" class="mb-4">
       <v-card-title class="pa-4 pb-2 text-body-1 font-weight-bold">
@@ -98,19 +113,5 @@
         </v-list-item>
       </v-list>
     </v-card>
-  </div>
+  </PageLayout>
 </template>
-
-<script setup lang="ts">
-import { useTheme } from 'vuetify'
-import { useSettingsStore } from '@/stores/settings'
-import { useThemeStore } from '@/stores/theme'
-
-const vuetifyTheme = useTheme()
-const themeStore = useThemeStore()
-const settingsStore = useSettingsStore()
-
-function onThemeChange() {
-  themeStore.setPreference(themeStore.preference, vuetifyTheme)
-}
-</script>

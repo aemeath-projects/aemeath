@@ -262,9 +262,21 @@ const router = createRouter({
       name: 'settings',
       component: () => import('@/views/settings/SettingsView.vue'),
       meta: {
-        title: '设置',
+        title: '系统设置',
         icon: 'mdi-cog',
-        subtitle: 'Aemeath 机器人管理面板设置',
+        subtitle: '配置各功能模块的 Bot 行为参数',
+        panel: '系统',
+        section: '设置',
+      },
+    },
+    {
+      path: '/settings/preferences',
+      name: 'settings-preferences',
+      component: () => import('@/views/settings/PreferencesView.vue'),
+      meta: {
+        title: '用户偏好',
+        icon: 'mdi-tune',
+        subtitle: '管理面板外观、刷新与显示偏好',
         panel: '系统',
         section: '设置',
       },

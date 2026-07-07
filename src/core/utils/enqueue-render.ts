@@ -2,6 +2,8 @@
 
 import type { Queue } from 'bullmq'
 
+import { AppError } from '@/core/errors.js'
+
 export type RenderTarget = { groupId: number; userId?: never } | { userId: number; groupId?: never }
 
 export interface EnqueueRenderOptions {
@@ -22,6 +24,6 @@ export interface EnqueueRenderOptions {
  */
 export async function enqueueRender(queue: Queue, opts: EnqueueRenderOptions): Promise<string> {
   const job = await queue.add('render', opts)
-  if (job.id == null) throw new Error('BullMQ 未返回 job id')
+  if (job.id == null) throw new AppError(-1, 'BullMQ 未返回 job id', 500)
   return job.id
 }

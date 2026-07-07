@@ -5,6 +5,8 @@ import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { ConnectionOptions } from 'bullmq'
 import { Redis, type RedisOptions } from 'ioredis'
 
+import { AppError } from '@/core/errors.js'
+
 const logger: PinoLogger = getLogger('redis-factory') as unknown as PinoLogger
 
 /** 创建一个新的 ioredis Redis 实例，并将 error 事件路由到 Pino。 */
@@ -27,7 +29,7 @@ export async function checkRedisReachable(url: string, name: string): Promise<vo
   try {
     await redis.connect()
   } catch (err) {
-    throw new Error(`${name} 连接失败: ${String(err)}`, { cause: err })
+    throw new AppError(-1, `${name} 连接失败: ${String(err)}`, 503)
   } finally {
     redis.disconnect()
   }

@@ -7,6 +7,7 @@ import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { Client } from 'minio'
 
+import { AppError } from '@/core/errors.js'
 import { uploadBuffer, objectExists } from '@/core/oss/index.js'
 import type { OssBundle, OssBuckets } from '@/core/oss/index.js'
 
@@ -54,7 +55,7 @@ export class MediaStorageService {
     // 1. 下载
     const response = await fetch(url)
     if (!response.ok) {
-      throw new Error(`下载失败: ${url} (${String(response.status)})`)
+      throw new AppError(-1, `下载失败: ${url} (${String(response.status)})`, 502)
     }
     const buf = Buffer.from(await response.arrayBuffer())
 

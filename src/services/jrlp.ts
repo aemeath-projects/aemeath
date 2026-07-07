@@ -61,10 +61,7 @@ export class JrlpService {
     if (existing !== null) {
       if (existing.drawnAt !== null) {
         // 已抽取 → 直接返回
-        const wifeUser = await this.db.user.findUnique({
-          where: { qq: existing.wifeQq },
-        })
-        const name = wifeUser?.nickname ?? String(existing.wifeQq)
+        const name = await this._resolveWifeName(existing.wifeQq)
         return { record: existing, isNew: false, wifeDisplayName: name }
       }
 
@@ -73,10 +70,7 @@ export class JrlpService {
         where: { id: existing.id },
         data: { drawnAt: new Date() },
       })
-      const wifeUser = await this.db.user.findUnique({
-        where: { qq: existing.wifeQq },
-      })
-      const name = wifeUser?.nickname ?? String(existing.wifeQq)
+      const name = await this._resolveWifeName(existing.wifeQq)
       return { record: updated, isNew: true, wifeDisplayName: name }
     }
 
@@ -119,10 +113,7 @@ export class JrlpService {
         if (refound === null) {
           throw new AppError(-1, '并发写入后仍未找到记录，请重试', 409)
         }
-        const wifeUser = await this.db.user.findUnique({
-          where: { qq: refound.wifeQq },
-        })
-        const name = wifeUser?.nickname ?? String(refound.wifeQq)
+        const name = await this._resolveWifeName(refound.wifeQq)
         return { record: refound, isNew: false, wifeDisplayName: name }
       }
       throw err
@@ -235,6 +226,15 @@ export class JrlpService {
     return this.db.wifeRecord.findFirst({
       where: { groupId, userId, date: recordDate },
     })
+  }
+
+  /** 根据 wifeQq 解析显示名称。 */
+  private async _resolveWifeName(wifeQq: bigint): Promise<string> {
+    const user = await this.db.user.findUnique({
+      where: { qq: wifeQq },
+      select: { nickname: true },
+    })
+    return user?.nickname ?? String(wifeQq)
   }
 }
 

@@ -425,7 +425,7 @@ const queueRoutes: FastifyPluginAsync = async (app) => {
       }
 
       timer = setInterval(() => {
-        void (async () => {
+        const sendUpdate = async (): Promise<void> => {
           // 连接已关闭时跳过并清理
           if (reply.raw.writableEnded) {
             cleanup()
@@ -447,7 +447,10 @@ const queueRoutes: FastifyPluginAsync = async (app) => {
           } catch (err) {
             log.warn({ err }, '队列流数据收集失败')
           }
-        })()
+        }
+        sendUpdate().catch((err: unknown) => {
+          log.warn({ err }, '队列流执行失败')
+        })
       }, intervalSecs * 1000)
 
       req.raw.on('close', cleanup)

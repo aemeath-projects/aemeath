@@ -8,6 +8,8 @@ import type { BotActionJobResult, TaskDefinition } from '@/core/tasks/index.js'
 export const JOB_NAME = 'daily-like' as const
 
 const DEFAULT_LIKE_TIMES = 10
+/** 单次最多处理的任务数，防止全量加载内存压力过大。 */
+const TASK_BATCH_SIZE = 1000
 
 export interface LikeWorkerDeps {
   db: AemeathPrismaClient
@@ -17,7 +19,7 @@ export async function dailyLikeProcessor(
   _job: Job,
   deps: LikeWorkerDeps,
 ): Promise<BotActionJobResult> {
-  const tasks = await deps.db.likeTask.findMany({ select: { qq: true } })
+  const tasks = await deps.db.likeTask.findMany({ select: { qq: true }, take: TASK_BATCH_SIZE })
 
   const calls = tasks.map((t) => ({
     method: 'sendLike',

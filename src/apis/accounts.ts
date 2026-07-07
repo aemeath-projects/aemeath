@@ -15,6 +15,7 @@ import {
 import { SetPriorityModeBodySchema } from './schemas/routing.js'
 
 import type { NapCatClientAdapter, AccountRole } from '@/core/accounts/index.js'
+import { AccountService } from '@/core/accounts/index.js'
 import { ok, fail } from '@/core/schemas/index.js'
 
 type IdParams = Static<typeof AccountIdParamsSchema>
@@ -25,8 +26,8 @@ type PriorityModeBody = Static<typeof SetPriorityModeBodySchema>
 const plugin: FastifyPluginAsync = async (app) => {
   // GET /api/accounts
   app.get('/accounts', async (req, reply) => {
-    const db = req.server.services.get('db')
-    const accounts = await db.account.findMany({ orderBy: { id: 'asc' } })
+    const svc = new AccountService(req.server.services.get('db'))
+    const accounts = await svc.listAccounts()
     // BigInt 字段序列化为 string
     const result = accounts.map((a) => ({ ...a, qq: String(a.qq) }))
     return reply.send(ok(result))
@@ -37,8 +38,8 @@ const plugin: FastifyPluginAsync = async (app) => {
     '/accounts/:id/status',
     { schema: { params: AccountIdParamsSchema } },
     async (req, reply) => {
-      const db = req.server.services.get('db')
-      const account = await db.account.findUnique({ where: { id: Number(req.params.id) } })
+      const svc = new AccountService(req.server.services.get('db'))
+      const account = await svc.getAccount(Number(req.params.id))
       if (!account) return reply.send(fail('账号不存在'))
 
       const pool = req.server.services.get('account_pool') as
@@ -62,22 +63,20 @@ const plugin: FastifyPluginAsync = async (app) => {
     '/accounts',
     { schema: { body: CreateAccountBodySchema } },
     async (req, reply) => {
-      const db = req.server.services.get('db')
+      const svc = new AccountService(req.server.services.get('db'))
       const body = req.body
       if (body.role === 'master') {
-        const existing = await db.account.findFirst({ where: { role: 'master' } })
-        if (existing) return reply.send(fail('主账号已存在，请先移除现有主账号'))
+        const alreadyHasMaster = await svc.hasMaster()
+        if (alreadyHasMaster) return reply.send(fail('主账号已存在，请先移除现有主账号'))
       }
-      const account = await db.account.create({
-        data: {
-          qq: BigInt(body.qq),
-          nickname: body.nickname,
-          role: body.role,
-          transport: body.transport,
-          endpoint: body.endpoint,
-          token: body.token,
-          isEnabled: body.isEnabled ?? true,
-        },
+      const account = await svc.createAccount({
+        qq: BigInt(body.qq),
+        nickname: body.nickname,
+        role: body.role,
+        transport: body.transport,
+        endpoint: body.endpoint,
+        token: body.token,
+        isEnabled: body.isEnabled ?? true,
       })
       return reply.send(ok({ ...account, qq: String(account.qq) }))
     },
@@ -88,11 +87,8 @@ const plugin: FastifyPluginAsync = async (app) => {
     '/accounts/:id',
     { schema: { params: AccountIdParamsSchema, body: UpdateAccountBodySchema } },
     async (req, reply) => {
-      const db = req.server.services.get('db')
-      const account = await db.account.update({
-        where: { id: Number(req.params.id) },
-        data: req.body,
-      })
+      const svc = new AccountService(req.server.services.get('db'))
+      const account = await svc.updateAccount(Number(req.params.id), req.body)
       return reply.send(ok({ ...account, qq: String(account.qq) }))
     },
   )
@@ -102,8 +98,8 @@ const plugin: FastifyPluginAsync = async (app) => {
     '/accounts/:id',
     { schema: { params: AccountIdParamsSchema } },
     async (req, reply) => {
-      const db = req.server.services.get('db')
-      const account = await db.account.findUnique({ where: { id: Number(req.params.id) } })
+      const svc = new AccountService(req.server.services.get('db'))
+      const account = await svc.getAccount(Number(req.params.id))
       if (!account) return reply.send(fail('账号不存在'))
 
       const pool = req.server.services.get('account_pool') as
@@ -112,7 +108,7 @@ const plugin: FastifyPluginAsync = async (app) => {
       const adapter = pool?.getClient(clientId)
       if (adapter) await adapter.disconnect()
 
-      await db.account.delete({ where: { id: Number(req.params.id) } })
+      await svc.deleteAccount(Number(req.params.id))
       return reply.send(ok({ message: '已删除' }))
     },
   )
@@ -122,8 +118,8 @@ const plugin: FastifyPluginAsync = async (app) => {
     '/accounts/:id/connect',
     { schema: { params: AccountIdParamsSchema } },
     async (req, reply) => {
-      const db = req.server.services.get('db')
-      const account = await db.account.findUnique({ where: { id: Number(req.params.id) } })
+      const svc = new AccountService(req.server.services.get('db'))
+      const account = await svc.getAccount(Number(req.params.id))
       if (!account) return reply.send(fail('账号不存在'))
 
       const pool = req.server.services.get('account_pool') as
@@ -141,8 +137,8 @@ const plugin: FastifyPluginAsync = async (app) => {
     '/accounts/:id/disconnect',
     { schema: { params: AccountIdParamsSchema } },
     async (req, reply) => {
-      const db = req.server.services.get('db')
-      const account = await db.account.findUnique({ where: { id: Number(req.params.id) } })
+      const svc = new AccountService(req.server.services.get('db'))
+      const account = await svc.getAccount(Number(req.params.id))
       if (!account) return reply.send(fail('账号不存在'))
 
       const pool = req.server.services.get('account_pool') as

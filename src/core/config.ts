@@ -9,6 +9,8 @@ import { Type } from '@sinclair/typebox'
 import { type ValueError, TypeCompiler } from '@sinclair/typebox/compiler'
 import { Default } from '@sinclair/typebox/value'
 
+import { AppError, ValidationError } from '@/core/errors.js'
+
 /* Schema 定义 */
 
 /** 所有环境变量的 TypeBox Schema。 */
@@ -193,13 +195,15 @@ function validateBusinessRules(config: Record<string, unknown>): void {
   // DATABASE_URL 必须以 postgresql:// 开头
   const dbUrl = config[ENV_KEY.DB_URL]
   if (typeof dbUrl === 'string' && !dbUrl.startsWith('postgresql://')) {
-    throw new Error(`DATABASE_URL 必须以 'postgresql://' 开头，当前值: "${dbUrl}"`)
+    throw new ValidationError(`DATABASE_URL 必须以 'postgresql://' 开头，当前值: "${dbUrl}"`)
   }
 
   // IRIS_DATABASE_URL 必须以 postgresql:// 开头
   const chatDbUrl = config[ENV_KEY.IRIS_DB_URL]
   if (typeof chatDbUrl === 'string' && !chatDbUrl.startsWith('postgresql://')) {
-    throw new Error(`IRIS_DATABASE_URL 必须以 'postgresql://' 开头，当前值: "${chatDbUrl}"`)
+    throw new ValidationError(
+      `IRIS_DATABASE_URL 必须以 'postgresql://' 开头，当前值: "${chatDbUrl}"`,
+    )
   }
 
   // Redis URL 格式校验
@@ -220,7 +224,7 @@ function validateBusinessRules(config: Record<string, unknown>): void {
 /** 断言 URL 以 redis:// 或 rediss:// 开头。 */
 function assertRedisUrl(url: string, name: string): void {
   if (!url.startsWith('redis://') && !url.startsWith('rediss://')) {
-    throw new Error(`${name} 必须以 'redis://' 或 'rediss://' 开头，当前值: "${url}"`)
+    throw new ValidationError(`${name} 必须以 'redis://' 或 'rediss://' 开头，当前值: "${url}"`)
   }
 }
 
@@ -245,7 +249,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   if (!compiledValidator.Check(withDefaults)) {
     const errors: ValueError[] = [...compiledValidator.Errors(withDefaults)]
     const messages = errors.map((e) => `  - ${e.path}: ${e.message}`)
-    throw new Error(`配置校验失败:\n${messages.join('\n')}`)
+    throw new AppError(-1, `配置校验失败:\n${messages.join('\n')}`, 400)
   }
 
   // Redis URL 规范化（在类型安全的对象上操作）

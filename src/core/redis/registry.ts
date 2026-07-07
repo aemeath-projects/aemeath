@@ -1,5 +1,7 @@
 /** Redis cache key 注册表。 */
 
+import { AppError } from '@/core/errors.js'
+
 export interface CacheKeyDefinition {
   readonly namespace: string
   readonly name: string
@@ -18,7 +20,7 @@ export class CacheKeyRegistry {
   register(definition: CacheKeyDefinition): void {
     const key = this._key(definition.namespace, definition.name)
     if (this._entries.has(key)) {
-      throw new Error(`CacheKey "${key}" 已注册`)
+      throw new AppError(-1, `CacheKey "${key}" 已注册`, 500)
     }
     this._entries.set(key, definition)
   }
@@ -29,7 +31,7 @@ export class CacheKeyRegistry {
 
   buildKey(namespace: string, name: string, ...args: string[]): string {
     const def = this.get(namespace, name)
-    if (!def) throw new Error(`CacheKey "${namespace}:${name}" 未注册`)
+    if (!def) throw new AppError(-1, `CacheKey "${namespace}:${name}" 未注册`, 500)
     return def.build(...args)
   }
 

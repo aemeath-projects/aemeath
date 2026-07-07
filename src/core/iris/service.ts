@@ -127,18 +127,24 @@ export class IrisService {
 
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
 
+    // 合并所有时间条件，防止多次展开互相覆盖，且确保始终有下界避免全表扫描
+    const createdAtFilter: { lt?: Date; gte?: Date; lte?: Date; gt?: Date } = {}
+    if (before) {
+      createdAtFilter.lt = before
+      createdAtFilter.gte = startDate ?? thirtyDaysAgo
+    } else if (startDate) {
+      createdAtFilter.gte = startDate
+    } else {
+      createdAtFilter.gt = thirtyDaysAgo
+    }
+    if (endDate) createdAtFilter.lte = endDate
+
     return this.chatDb.chatMessage.findMany({
       where: {
         groupId,
-        ...(before
-          ? { createdAt: { lt: before } }
-          : !startDate
-            ? { createdAt: { gt: thirtyDaysAgo } }
-            : {}),
+        createdAt: createdAtFilter,
         ...(keyword ? { rawMessage: { contains: keyword, mode: 'insensitive' as const } } : {}),
         ...(userId != null ? { userId } : {}),
-        ...(startDate != null ? { createdAt: { gte: startDate } } : {}),
-        ...(endDate != null ? { createdAt: { lte: endDate } } : {}),
       },
       orderBy: { createdAt: 'desc' },
       take: limit,

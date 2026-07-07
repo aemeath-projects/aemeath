@@ -15,6 +15,7 @@ import { Worker } from 'bullmq'
 
 import { loadConfig } from './config.js'
 import { createAemeathDb, createIrisDb } from './db/index.js'
+import { AppError } from './errors.js'
 import { createOssClient } from './oss/client.js'
 import type { OssBuckets } from './oss/client.js'
 import { createRedis, createBullMQConnection } from './redis/factory.js'
@@ -120,7 +121,7 @@ async function main(): Promise<void> {
     queueName,
     async (job) => {
       const def = processorMap.get(job.name)
-      if (!def) throw new Error(`未知的 job name: ${job.name}`)
+      if (!def) throw new AppError(-1, `未知的 job name: ${job.name}`, 400)
 
       const deps: Record<string, unknown> = Object.fromEntries(
         (def.requires ?? []).map((key) => [key, infraDeps[key]]),
@@ -137,12 +138,16 @@ async function main(): Promise<void> {
 
   worker.on('completed', (job) => {
     log.info(`任务完成: job=${job.id ?? ''} name=${job.name}`)
-    void heartbeat.recordHeartbeat(queueName)
+    heartbeat.recordHeartbeat(queueName).catch((err: unknown) => {
+      log.warn({ err }, '心跳记录失败')
+    })
   })
 
   worker.on('failed', (job, err) => {
     log.error(`任务失败: job=${job?.id ?? ''} name=${job?.name ?? ''} err=${String(err)}`)
-    void heartbeat.recordHeartbeat(queueName)
+    heartbeat.recordHeartbeat(queueName).catch((heartbeatErr: unknown) => {
+      log.warn({ err: heartbeatErr }, '心跳记录失败')
+    })
   })
 
   worker.on('error', (err) => {

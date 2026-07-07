@@ -23,6 +23,8 @@ export const LIKE_SOURCE_VALUES: readonly string[] = ['manual', 'scheduled']
 const DEFAULT_LIKE_TIMES = 10
 /** 批量点赞时各用户间的延迟（毫秒）。 */
 const SEND_DELAY_MS = 1000
+/** 批量点赞单次最多处理的任务数，防止全量加载内存压力过大。 */
+const BATCH_SIZE = 1000
 
 /* 返回值类型 */
 
@@ -255,7 +257,7 @@ export class LikeService {
   // 内部实现
 
   private async _runScheduledLikes(): Promise<void> {
-    const tasks = await this.db.likeTask.findMany({ select: { qq: true } })
+    const tasks = await this.db.likeTask.findMany({ select: { qq: true }, take: BATCH_SIZE })
     const total = tasks.length
     let successCount = 0
     let failedCount = 0

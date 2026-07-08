@@ -32,3 +32,8 @@ export const UpdateAccountBodySchema = Type.Object({
 export const AccountIdParamsSchema = Type.Object({
   id: Type.String(),
 })
+
+/** 多账号路由优先级模式：prefer_master 优先走主账号，prefer_normal 优先走普通账号。 */
+export const SetPriorityModeBodySchema = Type.Object({
+  mode: Type.Union([Type.Literal('prefer_master'), Type.Literal('prefer_normal')]),
+})

@@ -62,6 +62,19 @@ function createMockPool() {
   }
 }
 
+function createMockSettings() {
+  return {
+    get: vi.fn(),
+    set: vi.fn().mockResolvedValue(undefined),
+  }
+}
+
+function createMockRouter() {
+  return {
+    setPriorityMode: vi.fn(),
+  }
+}
+
 type MockDb = ReturnType<typeof createMockDb>
 type MockPool = ReturnType<typeof createMockPool>
 
@@ -90,7 +103,7 @@ describe('AccountService', () => {
   })
 
   describe('createAccount()', () => {
-    it('isEnabled=true 且注入了 pool 时，用新账号数据构造 adapter 并 addClient', async () => {
+    it('isEnabled=true 且注入了 pool 时，用新账号数据构造 adapter 并 addClient，且自动尝试连接', async () => {
       mockDb.account.create.mockResolvedValue(baseAccount)
       const svc = new AccountService(mockDb as unknown as AemeathPrismaClient, mockPool as never)
 
@@ -106,6 +119,7 @@ describe('AccountService', () => {
       expect(mockPool.addClient).toHaveBeenCalledTimes(1)
       expect(mockAdapterInstances).toHaveLength(1)
       expect(mockPool.addClient).toHaveBeenCalledWith(mockAdapterInstances[0], 'master')
+      expect(mockAdapterInstances[0]!.connect).toHaveBeenCalledTimes(1)
     })
 
     it('isEnabled=false 时不加入 pool', async () => {
@@ -195,7 +209,7 @@ describe('AccountService', () => {
       expect(mockPool.addClient).not.toHaveBeenCalled()
     })
 
-    it('isEnabled: false -> true 时用最新字段构造新 adapter 加入 pool，不自动连接', async () => {
+    it('isEnabled: false -> true 时用最新字段构造新 adapter 加入 pool，并自动尝试连接', async () => {
       const disabledAccount = { ...baseAccount, isEnabled: false }
       mockPool.getClient.mockReturnValue(undefined)
       mockDb.account.findUnique.mockResolvedValue(disabledAccount)
@@ -207,7 +221,7 @@ describe('AccountService', () => {
 
       expect(mockPool.addClient).toHaveBeenCalledTimes(1)
       const [newAdapterArg] = mockPool.addClient.mock.calls[0] as [{ connect: () => unknown }]
-      expect(newAdapterArg.connect).not.toHaveBeenCalled()
+      expect(newAdapterArg.connect).toHaveBeenCalledTimes(1)
     })
 
     it('重连失败时仍然 resolve（不向上抛出），返回更新后的账号', async () => {
@@ -249,6 +263,95 @@ describe('AccountService', () => {
       await expect(svc.updateAccount(1, { endpoint: 'ws://127.0.0.1:9999' })).resolves.toEqual(
         updated,
       )
+    })
+  })
+
+  describe('listAccountsWithStatus()', () => {
+    it('组合 DB 账号信息与 pool 中的实时状态', async () => {
+      mockDb.account.findMany.mockResolvedValue([baseAccount])
+      mockPool.getClient.mockReturnValue({ state: 'connected' })
+      const svc = new AccountService(mockDb as unknown as AemeathPrismaClient, mockPool as never)
+
+      const result = await svc.listAccountsWithStatus()
+
+      expect(mockPool.getClient).toHaveBeenCalledWith('bot-1739280698')
+      expect(result).toEqual([{ ...baseAccount, state: 'connected' }])
+    })
+
+    it('未注入 pool 时 state 一律为 unknown', async () => {
+      mockDb.account.findMany.mockResolvedValue([baseAccount])
+      const svc = new AccountService(mockDb as unknown as AemeathPrismaClient)
+
+      const result = await svc.listAccountsWithStatus()
+
+      expect(result).toEqual([{ ...baseAccount, state: 'unknown' }])
+    })
+
+    it('pool 中找不到对应客户端时 state 为 unknown', async () => {
+      mockDb.account.findMany.mockResolvedValue([baseAccount])
+      mockPool.getClient.mockReturnValue(undefined)
+      const svc = new AccountService(mockDb as unknown as AemeathPrismaClient, mockPool as never)
+
+      const result = await svc.listAccountsWithStatus()
+
+      expect(result).toEqual([{ ...baseAccount, state: 'unknown' }])
+    })
+  })
+
+  describe('getPriorityMode() / setPriorityMode()', () => {
+    it('getPriorityMode 从 settings 读取 accounts.priority_mode（系统级 scope）', async () => {
+      const mockSettings = createMockSettings()
+      mockSettings.get.mockResolvedValue('prefer_normal')
+      const svc = new AccountService(
+        mockDb as unknown as AemeathPrismaClient,
+        undefined,
+        undefined,
+        mockSettings as never,
+      )
+
+      const mode = await svc.getPriorityMode()
+
+      expect(mode).toBe('prefer_normal')
+      expect(mockSettings.get).toHaveBeenCalledWith('accounts.priority_mode', [])
+    })
+
+    it('未注入 settings 时 getPriorityMode 抛出异常', async () => {
+      const svc = new AccountService(mockDb as unknown as AemeathPrismaClient)
+      await expect(svc.getPriorityMode()).rejects.toThrow()
+    })
+
+    it('setPriorityMode 写入 settings 并驱动 router 立即生效', async () => {
+      const mockSettings = createMockSettings()
+      const mockRouter = createMockRouter()
+      const svc = new AccountService(
+        mockDb as unknown as AemeathPrismaClient,
+        undefined,
+        mockRouter as never,
+        mockSettings as never,
+      )
+
+      await svc.setPriorityMode('prefer_normal')
+
+      expect(mockSettings.set).toHaveBeenCalledWith(
+        'accounts.priority_mode',
+        'prefer_normal',
+        [],
+        '__system__',
+        { bypassOwnership: true },
+      )
+      expect(mockRouter.setPriorityMode).toHaveBeenCalledWith('prefer_normal')
+    })
+
+    it('未注入 settings 时 setPriorityMode 抛出异常，不调用 router', async () => {
+      const mockRouter = createMockRouter()
+      const svc = new AccountService(
+        mockDb as unknown as AemeathPrismaClient,
+        undefined,
+        mockRouter as never,
+      )
+
+      await expect(svc.setPriorityMode('prefer_normal')).rejects.toThrow()
+      expect(mockRouter.setPriorityMode).not.toHaveBeenCalled()
     })
   })
 })

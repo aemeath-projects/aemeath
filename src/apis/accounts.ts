@@ -1,5 +1,5 @@
 /**
- * 账号管理和多账号路由 REST API —— /api/accounts, /api/routing。
+ * 账号管理 REST API —— /api/accounts。
  */
 import type { Static } from '@sinclair/typebox'
 import type { FastifyPluginAsync } from 'fastify'
@@ -8,11 +8,12 @@ import {
   CreateAccountBodySchema,
   UpdateAccountBodySchema,
   AccountIdParamsSchema,
+  SetPriorityModeBodySchema,
 } from './schemas/accounts.js'
-import { SetPriorityModeBodySchema } from './schemas/routing.js'
 
 import { AccountService } from '@/core/accounts/index.js'
 import { ok, fail } from '@/core/schemas/index.js'
+import type { SettingsService } from '@/core/settings/index.js'
 
 type IdParams = Static<typeof AccountIdParamsSchema>
 type CreateBody = Static<typeof CreateAccountBodySchema>
@@ -24,7 +25,22 @@ const plugin: FastifyPluginAsync = async (app) => {
   app.get('/api/accounts', async (req, reply) => {
     const svc = new AccountService(req.server.services.get('db'))
     const accounts = await svc.listAccounts()
-    // BigInt 字段序列化为 string
+    const result = accounts.map((a) => ({ ...a, qq: String(a.qq) }))
+    return reply.send(ok(result))
+  })
+
+  // GET /api/accounts/status —— 批量返回账号信息 + 实时连接状态
+  app.get('/api/accounts/status', async (req, reply) => {
+    const pool = req.server.services.getOptional('account_pool')
+    const registry = req.server.services.getOptional('group_bot_registry')
+    const svc = new AccountService(
+      req.server.services.get('db'),
+      pool,
+      undefined,
+      undefined,
+      registry,
+    )
+    const accounts = await svc.listAccountsWithStatus()
     const result = accounts.map((a) => ({ ...a, qq: String(a.qq) }))
     return reply.send(ok(result))
   })
@@ -59,7 +75,14 @@ const plugin: FastifyPluginAsync = async (app) => {
     { schema: { body: CreateAccountBodySchema } },
     async (req, reply) => {
       const pool = req.server.services.getOptional('account_pool')
-      const svc = new AccountService(req.server.services.get('db'), pool)
+      const registry = req.server.services.getOptional('group_bot_registry')
+      const svc = new AccountService(
+        req.server.services.get('db'),
+        pool,
+        undefined,
+        undefined,
+        registry,
+      )
       const body = req.body
       if (body.role === 'master') {
         const alreadyHasMaster = await svc.hasMaster()
@@ -84,7 +107,14 @@ const plugin: FastifyPluginAsync = async (app) => {
     { schema: { params: AccountIdParamsSchema, body: UpdateAccountBodySchema } },
     async (req, reply) => {
       const pool = req.server.services.getOptional('account_pool')
-      const svc = new AccountService(req.server.services.get('db'), pool)
+      const registry = req.server.services.getOptional('group_bot_registry')
+      const svc = new AccountService(
+        req.server.services.get('db'),
+        pool,
+        undefined,
+        undefined,
+        registry,
+      )
       const existing = await svc.getAccount(Number(req.params.id))
       if (!existing) return reply.send(fail('账号不存在'))
 
@@ -111,54 +141,24 @@ const plugin: FastifyPluginAsync = async (app) => {
     },
   )
 
-  // POST /api/accounts/:id/connect
-  app.post<{ Params: IdParams }>(
-    '/api/accounts/:id/connect',
-    { schema: { params: AccountIdParamsSchema } },
-    async (req, reply) => {
-      const svc = new AccountService(req.server.services.get('db'))
-      const account = await svc.getAccount(Number(req.params.id))
-      if (!account) return reply.send(fail('账号不存在'))
-
-      const pool = req.server.services.getOptional('account_pool')
-      const clientId = `bot-${String(account.qq)}`
-      const adapter = pool?.getClient(clientId)
-      if (!adapter) return reply.send(fail('账号未在连接池中'))
-      await adapter.connect()
-      return reply.send(ok({ message: '已连接' }))
-    },
-  )
-
-  // POST /api/accounts/:id/disconnect
-  app.post<{ Params: IdParams }>(
-    '/api/accounts/:id/disconnect',
-    { schema: { params: AccountIdParamsSchema } },
-    async (req, reply) => {
-      const svc = new AccountService(req.server.services.get('db'))
-      const account = await svc.getAccount(Number(req.params.id))
-      if (!account) return reply.send(fail('账号不存在'))
-
-      const pool = req.server.services.getOptional('account_pool')
-      const clientId = `bot-${String(account.qq)}`
-      const adapter = pool?.getClient(clientId)
-      if (adapter) await adapter.disconnect()
-      return reply.send(ok({ message: '已断开' }))
-    },
-  )
-
-  // GET /api/routing/table
-  app.get('/api/routing/table', async (req, reply) => {
-    const pool = req.server.services.getOptional('account_pool')
-    const available = pool?.getAvailableClients() ?? []
-    return reply.send(ok(available.map((c) => ({ clientId: c.id, state: c.state }))))
+  // GET /api/accounts/priority-mode
+  app.get('/api/accounts/priority-mode', async (req, reply) => {
+    const settings = req.server.services.get('settings') as SettingsService
+    const svc = new AccountService(req.server.services.get('db'), undefined, undefined, settings)
+    const mode = await svc.getPriorityMode()
+    return reply.send(ok({ mode }))
   })
 
-  // POST /api/routing/priority-mode
+  // POST /api/accounts/priority-mode
   app.post<{ Body: PriorityModeBody }>(
-    '/api/routing/priority-mode',
+    '/api/accounts/priority-mode',
     { schema: { body: SetPriorityModeBodySchema } },
     async (req, reply) => {
-      return reply.send(ok({ message: '优先级模式已更新（重启生效）', mode: req.body.mode }))
+      const settings = req.server.services.get('settings') as SettingsService
+      const router = req.server.services.getOptional('message_router')
+      const svc = new AccountService(req.server.services.get('db'), undefined, router, settings)
+      await svc.setPriorityMode(req.body.mode)
+      return reply.send(ok({ message: '优先级模式已更新', mode: req.body.mode }))
     },
   )
 }

@@ -7,21 +7,9 @@ export type AccountRole = 'master' | 'normal' | 'readonly'
 export type PriorityMode = 'prefer_master' | 'prefer_normal'
 
 export const ACCOUNT_ROLES: RoleDefinition<AccountRole>[] = [
-  {
-    name: 'master',
-    priority: 0,
-    capabilities: { canSend: true, canReceive: true, canRoute: true },
-  },
-  {
-    name: 'normal',
-    priority: 10,
-    capabilities: { canSend: true, canReceive: true, canRoute: true },
-  },
-  {
-    name: 'readonly',
-    priority: 100,
-    capabilities: { canSend: false, canReceive: true, canRoute: false },
-  },
+  { name: 'master', priority: 0 },
+  { name: 'normal', priority: 10 },
+  { name: 'readonly', priority: 100 },
 ]
 
 /**

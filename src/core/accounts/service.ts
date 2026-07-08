@@ -6,11 +6,21 @@ import type { Account } from '#prisma/aemeath'
 
 import { NapCatClientAdapter } from './adapter.js'
 import type { AccountPool } from './bootstrap.js'
-import type { AccountRole } from './roles.js'
+import type { GroupBotRegistry, GroupBotRole } from './group-bot-registry.js'
+import type { AccountRole, PriorityMode } from './roles.js'
+import type { MessageRouter } from './router.js'
 
 import type { AemeathPrismaClient } from '@/core/db/index.js'
+import { AppError } from '@/core/errors.js'
+import { Path } from '@/core/settings/index.js'
+import type { SettingsService } from '@/core/settings/index.js'
 
 export type { Account }
+
+/** 账号 + 实时连接状态组合视图，供批量状态查询使用。 */
+export interface AccountWithStatus extends Account {
+  state: 'connected' | 'disconnected' | 'connecting' | 'unknown'
+}
 
 const log: PinoLogger = getLogger('accounts') as unknown as PinoLogger
 
@@ -40,10 +50,24 @@ export class AccountService {
   constructor(
     private readonly db: AemeathPrismaClient,
     private readonly pool?: AccountPool,
+    private readonly router?: MessageRouter,
+    private readonly settings?: SettingsService,
+    private readonly groupBotRegistry?: GroupBotRegistry,
   ) {}
 
   async listAccounts(): Promise<Account[]> {
     return this.db.account.findMany({ orderBy: { id: 'asc' } })
+  }
+
+  /** 批量查询账号信息 + 实时连接状态，替代"先列表再逐个查状态"的 N+1 模式。 */
+  async listAccountsWithStatus(): Promise<AccountWithStatus[]> {
+    const accounts = await this.listAccounts()
+    return accounts.map((account) => {
+      const clientId = `bot-${String(account.qq)}`
+      const adapter = this.pool?.getClient(clientId)
+      const state = adapter?.state
+      return { ...account, state: state === 'error' ? 'unknown' : (state ?? 'unknown') }
+    })
   }
 
   async getAccount(id: number): Promise<Account | null> {
@@ -76,13 +100,36 @@ export class AccountService {
     await this.db.account.delete({ where: { id } })
   }
 
-  /** 若 pool 已注入且账号已启用，构造 adapter 并加入连接池（不自动 connect，交由用户显式触发）。 */
+  /** 读取当前多账号路由优先级模式，未设置时回退 Schema 默认值（prefer_master）。 */
+  async getPriorityMode(): Promise<PriorityMode> {
+    if (!this.settings) {
+      throw new AppError(-1, 'AccountService 未注入 settings，无法读取优先级模式', 500)
+    }
+    return this.settings.get<PriorityMode>('accounts.priority_mode', Path.system())
+  }
+
+  /** 切换路由优先级模式：写入 Settings 并驱动 MessageRouter 立即生效。 */
+  async setPriorityMode(mode: PriorityMode): Promise<void> {
+    if (!this.settings) {
+      throw new AppError(-1, 'AccountService 未注入 settings，无法设置优先级模式', 500)
+    }
+    await this.settings.set('accounts.priority_mode', mode, Path.system(), '__system__', {
+      bypassOwnership: true,
+    })
+    this.router?.setPriorityMode(mode)
+  }
+
+  /** 若 pool 已注入且账号已启用，构造 adapter 并加入连接池，随后 fire-and-forget 尝试连接。 */
   private _addToPoolIfEnabled(account: Account): void {
     if (!this.pool || !account.isEnabled) return
     const clientId = `bot-${String(account.qq)}`
     if (this.pool.getClient(clientId)) return
     const adapter = new NapCatClientAdapter(account)
     this.pool.addClient(adapter, account.role as AccountRole)
+    this._registerGroupNotices(adapter)
+    void adapter.connect().catch((err: unknown) => {
+      log.error({ err, accountId: account.id }, '账号创建后自动连接失败，将由重连策略自动重试')
+    })
   }
 
   /** 账号更新后，将 endpoint/token/transport/isEnabled 的变化同步到运行中的连接池。 */
@@ -94,15 +141,21 @@ export class AccountService {
 
     // enabled -> disabled：整体移出池子
     if (wasEnabled && !isEnabled) {
+      this._cleanupAdapterNotices(clientId)
       if (this.pool.getClient(clientId)) await this.pool.removeClient(clientId)
       return
     }
 
-    // disabled -> enabled：（重新）构建 adapter 加入池子，不自动连接
+    // disabled -> enabled：（重新）构建 adapter 加入池子，自动尝试连接
     if (!wasEnabled && isEnabled) {
+      this._cleanupAdapterNotices(clientId)
       if (this.pool.getClient(clientId)) await this.pool.removeClient(clientId)
       const adapter = new NapCatClientAdapter(after)
       this.pool.addClient(adapter, after.role as AccountRole)
+      this._registerGroupNotices(adapter)
+      void adapter.connect().catch((err: unknown) => {
+        log.error({ err, accountId: after.id }, '账号启用后自动连接失败，将由重连策略自动重试')
+      })
       return
     }
 
@@ -117,10 +170,12 @@ export class AccountService {
     // 仍启用，且连接相关字段变化：重建 adapter，按旧状态决定是否自动重连
     const existing = this.pool.getClient(clientId)
     const wasConnected = existing?.state === 'connected'
+    this._cleanupAdapterNotices(clientId)
     if (existing) await this.pool.removeClient(clientId)
 
     const adapter = new NapCatClientAdapter(after)
     this.pool.addClient(adapter, after.role as AccountRole)
+    this._registerGroupNotices(adapter)
 
     if (wasConnected) {
       try {
@@ -129,5 +184,51 @@ export class AccountService {
         log.error({ err, accountId: after.id, clientId }, '账号更新后自动重连失败，请手动重新连接')
       }
     }
+  }
+
+  /** 移除旧 adapter 上的 notice 监听器，避免内存泄漏。 */
+  private _cleanupAdapterNotices(clientId: string): void {
+    const adapter = this.pool?.getClient(clientId) as NapCatClientAdapter | undefined
+    if (adapter) {
+      adapter.client.removeAllListeners('notice')
+    }
+  }
+
+  /** 为新创建的 adapter 注册 GroupBotRegistry 的增量 notice 监听器，使其群成员角色能动态更新。 */
+  private _registerGroupNotices(adapter: NapCatClientAdapter): void {
+    const registry = this.groupBotRegistry
+    if (!registry) return
+    const botQq = adapter.qq
+
+    adapter.client.on('notice', (raw) => {
+      try {
+        const event = raw as {
+          noticeType?: string
+          subType?: string
+          groupId?: bigint | number
+          userId?: number
+        }
+        const { noticeType, subType, groupId, userId } = event
+
+        if (noticeType === 'group_admin' && groupId != null && userId != null) {
+          if (userId !== Number(botQq)) return
+          const role: GroupBotRole = subType === 'set' ? 'admin' : 'member'
+          registry.setRole(BigInt(groupId), adapter.id, role)
+        }
+
+        if (noticeType === 'group_decrease' && groupId != null) {
+          if (subType === 'kick_me' || subType === 'leave') {
+            registry.removeClient(BigInt(groupId), adapter.id)
+          }
+        }
+
+        if (noticeType === 'group_increase' && groupId != null && userId != null) {
+          if (userId !== Number(botQq)) return
+          registry.setRole(BigInt(groupId), adapter.id, 'member')
+        }
+      } catch (err: unknown) {
+        log.error({ err, adapterId: adapter.id }, 'GroupBotRegistry notice 处理失败')
+      }
+    })
   }
 }

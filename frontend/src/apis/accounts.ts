@@ -1,5 +1,5 @@
 /**
- * 账号管理 API 接口层 —— 封装 /api/accounts 和 /api/routing 所有后端接口调用。
+ * 账号管理 API 接口层 —— 封装 /api/accounts 所有后端接口调用。
  */
 
 import { get, post, put, del } from './http'
@@ -9,6 +9,7 @@ import { get, post, put, del } from './http'
 export type AccountRole = 'master' | 'normal' | 'readonly'
 export type AccountTransport = 'ws' | 'sse'
 export type AccountState = 'connected' | 'disconnected' | 'connecting' | 'unknown'
+export type PriorityMode = 'prefer_master' | 'prefer_normal'
 
 export interface Account {
   id: number
@@ -19,6 +20,11 @@ export interface Account {
   endpoint: string
   token: string | null
   isEnabled: boolean
+}
+
+/** 账号 + 实时连接状态组合视图，供批量状态端点使用。 */
+export interface AccountWithStatus extends Account {
+  state: AccountState
 }
 
 export interface AccountStatus {
@@ -52,6 +58,11 @@ export async function listAccounts(): Promise<Account[]> {
   return get<Account[]>('/api/accounts')
 }
 
+/** 批量获取账号信息 + 实时连接状态，一次请求替代"列表 + 逐个查状态"的 N+1 模式。 */
+export async function listAccountsWithStatus(): Promise<AccountWithStatus[]> {
+  return get<AccountWithStatus[]>('/api/accounts/status')
+}
+
 export async function createAccount(data: CreateAccountDto): Promise<Account> {
   return post<Account>('/api/accounts', data)
 }
@@ -68,14 +79,10 @@ export async function getAccountStatus(id: number): Promise<AccountStatus> {
   return get<AccountStatus>(`/api/accounts/${id}/status`)
 }
 
-export async function connectAccount(id: number): Promise<void> {
-  await post<null>(`/api/accounts/${id}/connect`)
+export async function getPriorityMode(): Promise<{ mode: PriorityMode }> {
+  return get<{ mode: PriorityMode }>('/api/accounts/priority-mode')
 }
 
-export async function disconnectAccount(id: number): Promise<void> {
-  await post<null>(`/api/accounts/${id}/disconnect`)
-}
-
-export async function setRoutingPriorityMode(mode: string): Promise<void> {
-  await post<null>('/api/routing/priority-mode', { mode })
+export async function setPriorityMode(mode: PriorityMode): Promise<void> {
+  await post<null>('/api/accounts/priority-mode', { mode })
 }

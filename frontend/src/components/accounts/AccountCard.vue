@@ -1,17 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Account, AccountStatus } from '@/apis/accounts'
+import type { AccountWithStatus } from '@/apis/accounts'
 
 const props = defineProps<{
-  account: Account
-  status?: AccountStatus
-  loading?: boolean
+  account: AccountWithStatus
+  toggling?: boolean
 }>()
 
 const emit = defineEmits<{
-  connect: [id: number]
-  disconnect: [id: number]
-  edit: [account: Account]
+  'toggle-enabled': [id: number, value: boolean]
+  edit: [account: AccountWithStatus]
   delete: [id: number]
 }>()
 
@@ -41,9 +39,11 @@ const roleColor: Record<string, string> = {
   readonly: '#fbc02d',
 }
 
-const currentState = computed(() => props.status?.state ?? 'unknown')
+const cardBgColor = computed(() => stateBgColor[props.account.state] || '')
 
-const cardBgColor = computed(() => stateBgColor[currentState.value] || '')
+function onToggle(value: boolean | null) {
+  emit('toggle-enabled', props.account.id, value ?? false)
+}
 </script>
 
 <template>
@@ -55,7 +55,7 @@ const cardBgColor = computed(() => stateBgColor[currentState.value] || '')
       </v-chip>
       <v-spacer />
       <span class="text-medium-emphasis" style="font-size: 0.7rem">{{
-        stateLabel[currentState]
+        stateLabel[account.state]
       }}</span>
     </v-card-title>
 
@@ -69,24 +69,24 @@ const cardBgColor = computed(() => stateBgColor[currentState.value] || '')
 
     <v-card-actions>
       <v-btn
-        v-if="currentState !== 'connected'"
-        color="success"
+        v-if="account.isEnabled"
         variant="tonal"
-        :loading="loading"
-        prepend-icon="mdi-connection"
-        @click="emit('connect', account.id)"
+        color="error"
+        size="small"
+        :loading="toggling"
+        @click="onToggle(false)"
       >
-        连接
+        停用
       </v-btn>
       <v-btn
         v-else
-        color="warning"
         variant="tonal"
-        :loading="loading"
-        prepend-icon="mdi-lan-disconnect"
-        @click="emit('disconnect', account.id)"
+        color="success"
+        size="small"
+        :loading="toggling"
+        @click="onToggle(true)"
       >
-        断开
+        启用
       </v-btn>
       <v-spacer />
       <v-btn icon="mdi-pencil" variant="text" @click="emit('edit', account)" />

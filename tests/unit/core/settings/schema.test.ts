@@ -63,6 +63,20 @@ describe('buildSchemaMap', () => {
     })
   })
 
+  it('内置 accounts.priority_mode 始终包含在 schemaMap 中', () => {
+    const map = buildSchemaMap()
+    expect(map.get('accounts.priority_mode')).toEqual({
+      key: 'accounts.priority_mode',
+      type: 'enum',
+      default: 'prefer_master',
+      description: '多账号消息路由优先级模式',
+      enumOptions: { prefer_master: 0, prefer_normal: 1 },
+      owner: '__system__',
+      ownerDisplayName: '系统',
+      category: 'config',
+    })
+  })
+
   it('从 handlerRegistry 收集用户定义的配置项，字段值与声明完全一致', () => {
     registerHandlerWithNode('myfeature', 'enabled', {
       type: 'boolean',
@@ -86,10 +100,14 @@ describe('buildSchemaMap', () => {
     })
   })
 
-  it('没有额外 handler 注册时 map 只含内置的两个 key', () => {
+  it('没有额外 handler 注册时 map 只含内置的三个 key', () => {
     const map = buildSchemaMap()
     expect(map.has('orphan.enabled')).toBe(false)
-    expect(Array.from(map.keys()).sort()).toEqual(['bot.enabled', 'iris.archive_cycle_days'])
+    expect(Array.from(map.keys()).sort()).toEqual([
+      'accounts.priority_mode',
+      'bot.enabled',
+      'iris.archive_cycle_days',
+    ])
   })
 
   it('category 默认按 key 后缀推断为 permission', () => {

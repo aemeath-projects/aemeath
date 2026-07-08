@@ -52,7 +52,10 @@ import {
 import type { TaskDefinition } from './tasks/index.js'
 
 import { buildContextApis } from '@/core/accounts/index.js'
+import type { PriorityMode } from '@/core/accounts/index.js'
 import { ok, OkResponse, FailResponse, HealthDataSchema } from '@/core/schemas/index.js'
+import { Path } from '@/core/settings/index.js'
+import type { SettingsService } from '@/core/settings/index.js'
 import type { InfraState } from '@/types/fastify.js'
 
 /**
@@ -249,6 +252,18 @@ async function _startup(
 
   // 14. 从 registry 获取多账号服务实例，接入事件管道
   const router = registry.get('message_router')
+
+  // 14.5 同步持久化的多账号路由优先级模式（延迟绑定，避免 MultiAccountBootstrap 与
+  // SettingsBootstrap 之间产生启动期循环依赖，详见 accounts/bootstrap.ts 顶部说明）
+  const settingsForRouting = registry.getOptional('settings') as SettingsService | undefined
+  if (settingsForRouting !== undefined) {
+    const persistedMode = await settingsForRouting.get<PriorityMode>(
+      'accounts.priority_mode',
+      Path.system(),
+    )
+    router.setPriorityMode(persistedMode)
+  }
+
   pool.on('event', (aggregated) => {
     void dispatcher.dispatch(aggregated.event, buildContextApis(aggregated, router, pool))
   })

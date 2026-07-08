@@ -11,6 +11,9 @@ import type { Account } from '#prisma/aemeath'
 
 const log: PinoLogger = getLogger('accounts') as unknown as PinoLogger
 
+/** 重连最大尝试次数：配合默认指数退避参数（1s → 30s），约 5-6 分钟后放弃并触发 giveUp。 */
+const MAX_RECONNECT_RETRIES = 10
+
 export class NapCatClientAdapter implements ClientAdapter<NapCatClient> {
   readonly id: string
   readonly client: NapCatClient
@@ -27,12 +30,12 @@ export class NapCatClientAdapter implements ClientAdapter<NapCatClient> {
         ? new WebSocketTransport({
             url: account.endpoint,
             token: account.token ?? undefined,
-            reconnect: { maxRetries: -1 },
+            reconnect: { maxRetries: MAX_RECONNECT_RETRIES },
           })
         : new SseTransport({
             baseUrl: account.endpoint,
             token: account.token ?? undefined,
-            reconnect: { maxRetries: -1 },
+            reconnect: { maxRetries: MAX_RECONNECT_RETRIES },
           })
 
     this.client = new NapCatClient(this.transport)
@@ -80,6 +83,11 @@ export class NapCatClientAdapter implements ClientAdapter<NapCatClient> {
     // WebSocket 断连时立即通知连接池，无需等待健康检测轮询
     this.client.on('close', () => {
       pool.notifyStateChange(this.id, 'connected', 'disconnected')
+    })
+
+    // 指数退避重连彻底放弃后，通知连接池进入 error 状态，触发上层自动禁用账号
+    this.client.on('giveUp', () => {
+      pool.notifyStateChange(this.id, 'connecting', 'error')
     })
 
     // 必须监听 error：NapCatClient/WebSocketTransport 在连接失败（如 ECONNREFUSED）时，

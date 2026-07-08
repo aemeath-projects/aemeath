@@ -18,6 +18,7 @@ import { Service, Inject, Provide, Startup, Shutdown } from '@aemeath-projects/e
 import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import { ClientPool, RoutingTable, PriorityStickyStrategy } from '@aemeath-projects/exostrider/pool'
+import type { ClientState } from '@aemeath-projects/exostrider/pool'
 import type { NapCatClient } from '@aemeath-projects/napcat'
 import { MessageApi, GroupApi, FriendApi } from '@aemeath-projects/napcat'
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
@@ -28,13 +29,22 @@ import { NapCatClientAdapter } from './adapter.js'
 import { OneBotDedupKeyExtractor } from './dedup.js'
 import { GroupBotRegistry } from './group-bot-registry.js'
 import type { GroupBotRole } from './group-bot-registry.js'
-import { getRolesForMode } from './roles.js'
 import type { AccountRole } from './roles.js'
 import { MessageRouter } from './router.js'
 
 import type { AemeathPrismaClient } from '@/core/db/index.js'
 
 const log: PinoLogger = getLogger('accounts') as unknown as PinoLogger
+
+/**
+ * 路由优先级模式启动期默认值（与 settings/schema.ts 中 accounts.priority_mode 的 default 保持一致）。
+ *
+ * 注意：此处不通过 @Inject('settings') 在启动时读取持久化值——SettingsBootstrap 依赖
+ * adminService（来自 AdminBootstrap），而 AdminBootstrap 又依赖本模块提供的 master_apis，
+ * 若此处再反向注入 settings 会闭合三者的循环依赖。持久化的优先级模式改为在 main.ts 中，
+ * 所有服务启动完成后统一同步覆盖（与 settings_checker/session_manager 的延迟绑定模式一致）。
+ */
+const DEFAULT_PRIORITY_MODE = 'prefer_master'
 
 export type AccountPool = ClientPool<NapCatClient, AccountRole, AnyOneBotEvent>
 
@@ -68,7 +78,8 @@ export class MultiAccountBootstrap {
   @Startup
   async start(): Promise<void> {
     const appConfig = (await import('@/../aemeath.config.js')).default
-    const mode = appConfig.routing?.defaultPriorityMode ?? 'prefer_master'
+    // 启动期使用 Schema 默认值，持久化配置由 main.ts 在全部服务启动完成后同步覆盖
+    const mode = DEFAULT_PRIORITY_MODE
 
     // 1. 从数据库加载账号
     const accounts = await this.db.account.findMany({ where: { isEnabled: true } })
@@ -76,7 +87,6 @@ export class MultiAccountBootstrap {
 
     // 2. 创建 ClientPool
     this.pool = new ClientPool<NapCatClient, AccountRole, AnyOneBotEvent>({
-      roles: getRolesForMode(mode),
       dedup: {
         keyExtractor: new OneBotDedupKeyExtractor(),
         windowMs: appConfig.routing?.dedupWindowMs ?? 5_000,
@@ -115,26 +125,30 @@ export class MultiAccountBootstrap {
 
     for (const adapter of adaptersList) {
       adapter.client.on('notice', (event) => {
-        const noticeType = (event as { noticeType?: string }).noticeType
-        const subType = (event as { subType?: string }).subType
-        const groupId = (event as { groupId?: number | bigint }).groupId
-        const userId = (event as { userId?: number }).userId
+        try {
+          const noticeType = (event as { noticeType?: string }).noticeType
+          const subType = (event as { subType?: string }).subType
+          const groupId = (event as { groupId?: number | bigint }).groupId
+          const userId = (event as { userId?: number }).userId
 
-        if (noticeType === 'group_admin' && groupId != null && userId != null) {
-          if (!botQqs.has(userId)) return
-          const role: GroupBotRole = subType === 'set' ? 'admin' : 'member'
-          this.registry.setRole(BigInt(groupId), adapter.id, role)
-        }
-
-        if (noticeType === 'group_decrease' && groupId != null) {
-          if (subType === 'kick_me' || subType === 'leave') {
-            this.registry.removeClient(BigInt(groupId), adapter.id)
+          if (noticeType === 'group_admin' && groupId != null && userId != null) {
+            if (!botQqs.has(userId)) return
+            const role: GroupBotRole = subType === 'set' ? 'admin' : 'member'
+            this.registry.setRole(BigInt(groupId), adapter.id, role)
           }
-        }
 
-        if (noticeType === 'group_increase' && groupId != null && userId != null) {
-          if (!botQqs.has(userId)) return
-          this.registry.setRole(BigInt(groupId), adapter.id, 'member')
+          if (noticeType === 'group_decrease' && groupId != null) {
+            if (subType === 'kick_me' || subType === 'leave') {
+              this.registry.removeClient(BigInt(groupId), adapter.id)
+            }
+          }
+
+          if (noticeType === 'group_increase' && groupId != null && userId != null) {
+            if (!botQqs.has(userId)) return
+            this.registry.setRole(BigInt(groupId), adapter.id, 'member')
+          }
+        } catch (err: unknown) {
+          log.error({ err, adapterId: adapter.id }, 'GroupBotRegistry notice 处理失败')
         }
       })
     }
@@ -144,7 +158,7 @@ export class MultiAccountBootstrap {
       strategy: new PriorityStickyStrategy(),
       keySerializer: (groupId) => String(groupId),
     })
-    this.router = new MessageRouter(this.pool, this._routingTable, this.registry)
+    this.router = new MessageRouter(this.pool, this._routingTable, this.registry, mode)
 
     // 7. 构建主账号 API bundle
     const masterAdapters = this.pool.getClientsByRole('master')
@@ -165,27 +179,45 @@ export class MultiAccountBootstrap {
     }
 
     // 8. 监听连接状态变化
-    this.pool.on('clientStateChange', (clientId, _from, to) => {
-      if (to === 'disconnected' || to === 'error') {
-        this._routingTable.invalidate(clientId)
-        log.warn(`账号 ${clientId} 下线，已清除路由映射`)
-      }
-      if (to === 'connected') {
-        void (async () => {
-          const adapter = this.pool.getClient(clientId) as NapCatClientAdapter | undefined
-          if (adapter) {
-            const limit2 = pLimit(10)
-            await this._syncClientGroupRoles(adapter, limit2)
-          }
-        })().catch((err: unknown) => {
-          log.error({ err }, `账号 ${clientId} 重连后同步群角色失败`)
-        })
-      }
+    this.pool.on('clientStateChange', (clientId, from, to) => {
+      this._handleClientStateChange(clientId, from, to)
     })
 
     // 9. 启动健康检测
     this.pool.startHealthCheck(appConfig.routing?.healthCheckIntervalMs ?? 30_000)
     log.info('MultiAccountBootstrap: 多账号系统启动完成')
+  }
+
+  /** 处理连接池状态变化：清除失效路由映射、放弃重连后自动禁用、重连后同步群角色。 */
+  private _handleClientStateChange(clientId: string, _from: ClientState, to: ClientState): void {
+    if (to === 'disconnected' || to === 'error') {
+      this._routingTable.invalidate(clientId)
+      log.warn(`账号 ${clientId} 下线，已清除路由映射`)
+    }
+    if (to === 'error') {
+      void this._autoDisableAfterGiveUp(clientId).catch((err: unknown) => {
+        log.error({ err, clientId }, '重连放弃后自动禁用账号失败')
+      })
+    }
+    if (to === 'connected') {
+      void (async () => {
+        const adapter = this.pool.getClient(clientId) as NapCatClientAdapter | undefined
+        if (adapter) {
+          const limit2 = pLimit(10)
+          await this._syncClientGroupRoles(adapter, limit2)
+        }
+      })().catch((err: unknown) => {
+        log.error({ err }, `账号 ${clientId} 重连后同步群角色失败`)
+      })
+    }
+  }
+
+  /** 重连彻底放弃（error 状态）后，自动禁用对应账号并从连接池移除。 */
+  private async _autoDisableAfterGiveUp(clientId: string): Promise<void> {
+    const qq = BigInt(clientId.replace('bot-', ''))
+    await this.db.account.update({ where: { qq }, data: { isEnabled: false } })
+    if (this.pool.getClient(clientId)) await this.pool.removeClient(clientId)
+    log.warn(`账号 ${clientId} 重连尝试次数已达上限，已自动禁用`)
   }
 
   /** 同步指定 bot 账号在各群内的角色至 GroupBotRegistry。 */

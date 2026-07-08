@@ -53,3 +53,15 @@ describe('NapCatClientAdapter.wireToPool', () => {
     expect(() => adapter.client.emit('error', new Error('连接被拒绝'))).toThrow()
   })
 })
+
+describe('NapCatClientAdapter.wireToPool — giveUp 转发', () => {
+  it('client 上 emit giveUp 时通知连接池状态变为 error', () => {
+    const adapter = new NapCatClientAdapter(account)
+    const pool = createMockPool()
+
+    adapter.wireToPool(pool, 'master')
+    adapter.client.emit('giveUp')
+
+    expect(pool.notifyStateChange).toHaveBeenCalledWith(adapter.id, 'connecting', 'error')
+  })
+})

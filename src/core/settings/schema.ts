@@ -42,6 +42,17 @@ const BUILTIN_NODES: SettingNodeSchema[] = [
     ownerDisplayName: '系统',
     category: 'config',
   },
+  {
+    key: 'accounts.priority_mode',
+    type: 'enum',
+    default: 'prefer_master',
+    description: '多账号消息路由优先级模式',
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    enumOptions: { prefer_master: 0, prefer_normal: 1 },
+    owner: '__system__',
+    ownerDisplayName: '系统',
+    category: 'config',
+  },
 ]
 
 function toSchema(

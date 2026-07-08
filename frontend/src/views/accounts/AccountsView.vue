@@ -5,32 +5,30 @@ import PageLayout from '@/layouts/PageLayout.vue'
 import { requiredRule, endpointRule, qqRule } from '@/utils/validators'
 import AccountCard from '@/components/accounts/AccountCard.vue'
 import {
-  listAccounts,
+  listAccountsWithStatus,
   createAccount,
   updateAccount,
   deleteAccount,
-  getAccountStatus,
-  connectAccount,
-  disconnectAccount,
-  type Account,
-  type AccountStatus,
+  getPriorityMode,
+  setPriorityMode,
+  type AccountWithStatus,
   type CreateAccountDto,
   type UpdateAccountDto,
+  type PriorityMode,
 } from '@/apis/accounts'
 
-const accounts = ref<Account[]>([])
+const accounts = ref<AccountWithStatus[]>([])
 const sortedAccounts = computed(() =>
   [...accounts.value].sort((a, b) => (a.role === 'master' ? -1 : b.role === 'master' ? 1 : 0)),
 )
-const statuses = ref<Record<number, AccountStatus>>({})
-const loadingAccountId = ref<number | null>(null)
+const togglingAccountId = ref<number | null>(null)
 const loading = ref(false)
 
 /* 对话框状态 */
 const createDialog = ref(false)
 const editDialog = ref(false)
 const deleteDialog = ref(false)
-const editTarget = ref<Account | null>(null)
+const editTarget = ref<AccountWithStatus | null>(null)
 const deleteTargetId = ref<number | null>(null)
 
 /* 表单 Ref */
@@ -56,45 +54,51 @@ const transportOptions = [
   { title: 'HTTP SSE', value: 'sse' },
 ]
 
+/* 路由优先级模式 Dialog */
+const priorityModeDialog = ref(false)
+const priorityMode = ref<PriorityMode>('prefer_master')
+const priorityModeSaving = ref(false)
+const priorityModeOptions = [
+  { title: '优先主账号（prefer_master）', value: 'prefer_master' },
+  { title: '优先普通账号（prefer_normal）', value: 'prefer_normal' },
+]
+
+async function openPriorityModeDialog() {
+  priorityModeDialog.value = true
+  const { mode } = await getPriorityMode()
+  priorityMode.value = mode
+}
+
+async function onSavePriorityMode() {
+  priorityModeSaving.value = true
+  try {
+    await setPriorityMode(priorityMode.value)
+    priorityModeDialog.value = false
+  } finally {
+    priorityModeSaving.value = false
+  }
+}
+
 async function load() {
   loading.value = true
   try {
-    accounts.value = await listAccounts()
-    const entries = await Promise.allSettled(
-      accounts.value.map((a) => getAccountStatus(a.id).then((s) => [a.id, s] as const)),
-    )
-    entries.forEach((r) => {
-      if (r.status === 'fulfilled') {
-        const [id, status] = r.value
-        statuses.value[id] = status
-      }
-    })
+    accounts.value = await listAccountsWithStatus()
   } finally {
     loading.value = false
   }
 }
 
-async function onConnect(id: number) {
-  loadingAccountId.value = id
+async function onToggleEnabled(id: number, value: boolean) {
+  togglingAccountId.value = id
   try {
-    await connectAccount(id)
-    statuses.value[id] = await getAccountStatus(id)
+    await updateAccount(id, { isEnabled: value })
+    await load()
   } finally {
-    loadingAccountId.value = null
+    togglingAccountId.value = null
   }
 }
 
-async function onDisconnect(id: number) {
-  loadingAccountId.value = id
-  try {
-    await disconnectAccount(id)
-    statuses.value[id] = await getAccountStatus(id)
-  } finally {
-    loadingAccountId.value = null
-  }
-}
-
-function onEdit(account: Account) {
+function onEdit(account: AccountWithStatus) {
   editTarget.value = account
   form.value = {
     qq: account.qq,
@@ -153,16 +157,20 @@ onMounted(load)
 
 <template>
   <PageLayout>
+    <template #actions>
+      <v-btn variant="elevated" prepend-icon="mdi-swap-vertical" @click="openPriorityModeDialog">
+        路由优先级
+      </v-btn>
+    </template>
+
     <!-- 账号卡片网格 -->
     <v-skeleton-loader v-if="loading && !accounts.length" type="card" class="mb-4" />
     <v-row v-else>
       <v-col v-for="account in sortedAccounts" :key="account.id" cols="12" sm="6" md="3">
         <AccountCard
           :account="account"
-          :status="statuses[account.id]"
-          :loading="loadingAccountId === account.id"
-          @connect="onConnect"
-          @disconnect="onDisconnect"
+          :toggling="togglingAccountId === account.id"
+          @toggle-enabled="onToggleEnabled"
           @edit="onEdit"
           @delete="onDeleteConfirm"
         />
@@ -254,7 +262,6 @@ onMounted(load)
               v-model="form.transport"
               :items="transportOptions"
               label="传输协议"
-              placeholder="请选择传输协议"
               variant="underlined"
             />
             <v-text-field
@@ -289,6 +296,29 @@ onMounted(load)
           <v-spacer />
           <v-btn @click="deleteDialog = false">取消</v-btn>
           <v-btn color="error" @click="onDeleteExecute">删除</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- 路由优先级 Dialog -->
+    <v-dialog v-model="priorityModeDialog" max-width="420">
+      <v-card title="路由优先级">
+        <v-card-text>
+          <v-radio-group v-model="priorityMode">
+            <v-radio
+              v-for="option in priorityModeOptions"
+              :key="option.value"
+              :label="option.title"
+              :value="option.value"
+            />
+          </v-radio-group>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn @click="priorityModeDialog = false">取消</v-btn>
+          <v-btn color="primary" :loading="priorityModeSaving" @click="onSavePriorityMode">
+            保存
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

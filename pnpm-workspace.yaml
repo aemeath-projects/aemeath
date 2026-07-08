@@ -14,3 +14,6 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - '@aemeath-projects/napcat@1.0.0'
   - '@aemeath-projects/napcat@1.1.0'
+overrides:
+  '@aemeath-projects/exostrider': link:../exostrider
+  '@aemeath-projects/napcat': link:../napcat

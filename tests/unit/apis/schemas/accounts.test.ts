@@ -1,7 +1,11 @@
 import { Value } from '@sinclair/typebox/value'
 import { describe, expect, it } from 'vitest'
 
-import { CreateAccountBodySchema, UpdateAccountBodySchema } from '@/apis/schemas/accounts.js'
+import {
+  CreateAccountBodySchema,
+  UpdateAccountBodySchema,
+  SetPriorityModeBodySchema,
+} from '@/apis/schemas/accounts.js'
 
 function baseCreateBody(endpoint: string) {
   return {
@@ -42,5 +46,16 @@ describe('UpdateAccountBodySchema.endpoint 协议前缀校验', () => {
 
   it('省略 endpoint 字段时仍然合法（可选字段，不影响其他字段更新）', () => {
     expect(Value.Check(UpdateAccountBodySchema, { nickname: '新昵称' })).toBe(true)
+  })
+})
+
+describe('SetPriorityModeBodySchema', () => {
+  it('接受合法的 mode 值', () => {
+    expect(Value.Check(SetPriorityModeBodySchema, { mode: 'prefer_master' })).toBe(true)
+    expect(Value.Check(SetPriorityModeBodySchema, { mode: 'prefer_normal' })).toBe(true)
+  })
+
+  it('拒绝非法的 mode 值', () => {
+    expect(Value.Check(SetPriorityModeBodySchema, { mode: 'invalid' })).toBe(false)
   })
 })

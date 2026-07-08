@@ -1,7 +1,7 @@
 /**
  * MessageRouter —— 多账号消息发送路由器。
  *
- * 常规消息：通过 RoutingTable（PriorityStickyStrategy）选择账号。
+ * 常规消息：通过 RoutingTable（PriorityStickyStrategy）选择账号，优先级由 priorityMode 驱动。
  * 管理员通知：强制走主账号。
  */
 import type { ClientPool, RoutingTable } from '@aemeath-projects/exostrider/pool'
@@ -10,7 +10,8 @@ import type { NapCatClient, Result } from '@aemeath-projects/napcat'
 import type { MessageSegment, AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 
 import type { GroupBotRegistry } from './group-bot-registry.js'
-import type { AccountRole } from './roles.js'
+import { getRolesForMode } from './roles.js'
+import type { AccountRole, PriorityMode } from './roles.js'
 
 import { AppError } from '@/core/errors.js'
 
@@ -19,7 +20,14 @@ export class MessageRouter {
     private readonly pool: ClientPool<NapCatClient, AccountRole, AnyOneBotEvent>,
     private readonly routingTable: RoutingTable<bigint>,
     private readonly membershipTracker: GroupBotRegistry,
+    private priorityMode: PriorityMode,
   ) {}
+
+  /** 切换优先级模式：更新内存态并清空粘性路由表，下一次发送即按新优先级重新选号。 */
+  setPriorityMode(mode: PriorityMode): void {
+    this.priorityMode = mode
+    this.routingTable.clear()
+  }
 
   /** 常规群消息发送 —— 走路由策略（sticky + 优先级）。 */
   async sendGroupMsg(
@@ -27,18 +35,21 @@ export class MessageRouter {
     message: MessageSegment[],
   ): Promise<Result<{ messageId: number }>> {
     const masterAndNormalRoles: AccountRole[] = ['master', 'normal']
+    const roleDefs = getRolesForMode(this.priorityMode)
 
     const availableIds = this.membershipTracker.getClientsInGroup(groupId)
     const candidates = availableIds
       .map((id) => this.pool.getClient(id))
       .filter((c): c is NonNullable<typeof c> => c?.state === 'connected')
-      .map((c) => {
-        const roleDef = this.pool.getClientsByRole('master').some((m) => m.id === c.id)
-          ? { role: 'master' as AccountRole, priority: 0 }
-          : { role: 'normal' as AccountRole, priority: 10 }
-        return { clientId: c.id, ...roleDef }
-      })
-      .filter((c) => masterAndNormalRoles.includes(c.role))
+      .map((c) => ({ clientId: c.id, role: this.pool.getClientRole(c.id) }))
+      .filter(
+        (c): c is { clientId: string; role: AccountRole } =>
+          c.role !== undefined && masterAndNormalRoles.includes(c.role),
+      )
+      .map((c) => ({
+        ...c,
+        priority: roleDefs.find((r) => r.name === c.role)?.priority ?? Number.MAX_SAFE_INTEGER,
+      }))
 
     if (candidates.length === 0) {
       throw new AppError(-1, '当前群无可用账号发送消息', 503)

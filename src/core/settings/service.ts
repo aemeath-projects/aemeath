@@ -3,6 +3,7 @@
  */
 
 import type { Redis } from 'ioredis'
+import { v4 as uuidv4 } from 'uuid'
 
 import { Prisma } from '#prisma/aemeath'
 
@@ -138,8 +139,8 @@ export class SettingsService {
     const serialized = this._validate(key, value, schema)
 
     await this.db.$executeRaw`
-      INSERT INTO setting_values (key, scope, value, value_type)
-      VALUES (${key}, ${scope}, ${serialized}, ${schema.type}::settings_value_type)
+      INSERT INTO setting_values (id, key, scope, value, value_type)
+      VALUES (${uuidv4()}, ${key}, ${scope}, ${serialized}, ${schema.type}::settings_value_type)
       ON CONFLICT (key, scope) DO UPDATE SET value = ${serialized}
     `
 
@@ -170,11 +171,12 @@ export class SettingsService {
     })
 
     const valueRows = validated.map(
-      (e) => Prisma.sql`(${e.key}, ${scope}, ${e.serialized}, ${e.valueType}::settings_value_type)`,
+      (e) =>
+        Prisma.sql`(${uuidv4()}, ${e.key}, ${scope}, ${e.serialized}, ${e.valueType}::settings_value_type)`,
     )
     await this.db.$executeRaw(
       Prisma.sql`
-        INSERT INTO setting_values (key, scope, value, value_type)
+        INSERT INTO setting_values (id, key, scope, value, value_type)
         VALUES ${Prisma.join(valueRows)}
         ON CONFLICT (key, scope) DO UPDATE SET value = EXCLUDED.value
       `,

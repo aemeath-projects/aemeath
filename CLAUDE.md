@@ -396,7 +396,7 @@ BullMQ（任务队列）取代原有的 Dramatiq。Worker 进程运行在 `src/c
 
 `ctx.apis`（由 `buildContextApis()` 构建）中的 `msgApi` 是一个 Proxy，`sendGroupMsg` 等方法被委托给 `MessageRouter`，由其在多个在线账号间按优先级/粘性策略选路，实现消息发送的负载均衡与故障转移；`groupApi`/`friendApi` 直接绑定事件来源账号的客户端。需要固定使用主账号 API 的场景（如部分定时任务）可注入 `master_apis`（`MasterApis`：`msgApi`/`groupApi`/`friendApi`，无主账号时为 `null`）。
 
-路由行为可通过 `aemeath.config.ts` 的 `routing` 配置块调整：`defaultPriorityMode`（`prefer_master` | `prefer_normal`）、`healthCheckIntervalMs`、`dedupWindowMs`。账号管理与路由状态的 REST API 见 `src/apis/accounts.ts`（`/api/accounts`、`/api/routing`）。
+路由行为可通过 `aemeath.config.ts` 的 `routing` 配置块调整：`healthCheckIntervalMs`、`dedupWindowMs`；多账号路由优先级模式（`prefer_master` | `prefer_normal`）存储在 Settings 的 `accounts.priority_mode`，可通过 `GET`/`POST /api/accounts/priority-mode` 运行时读写，无需重启。账号管理与路由状态的 REST API 见 `src/apis/accounts.ts`（`/api/accounts`）。
 
 > ⚠️ 业务代码（`src/handlers`、`src/services`、`src/tasks`）已全量迁移，不再存在 `@Inject('bot_client' | 'msg_api' | 'group_api' | 'friend_api' | 'file_api' | 'system_api' | 'extension_api')` 这类旧的单账号注入点。
 
@@ -457,7 +457,6 @@ BullMQ（任务队列）取代原有的 Dramatiq。Worker 进程运行在 `src/c
 | `app.cacheKeyPrefix` | `aemeath:` | Redis cache key 命名空间前缀 |
 | `app.queueName` | `aemeath-tasks` | BullMQ 主任务队列名称 |
 | `app.heartbeatKeyPrefix` | `aemeath:worker:heartbeat` | Worker 心跳 Redis key 前缀 |
-| `routing.defaultPriorityMode` | `prefer_master` | 多账号路由优先级模式：`prefer_master` \| `prefer_normal` |
 | `routing.healthCheckIntervalMs` | `30000` | `ClientPool` 健康检查间隔（毫秒） |
 | `routing.dedupWindowMs` | `5000` | 多账号事件去重窗口（毫秒） |
 | `echoes.*` | 见文件 | EchoLoader 扫描目录（handler/service/task/route） |

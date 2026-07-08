@@ -17,8 +17,6 @@ export interface AemeathConfig extends EchoConfig {
     readonly textSnippetLength?: number
   }
   readonly routing?: {
-    /** 多账号路由默认优先级模式 */
-    readonly defaultPriorityMode?: 'prefer_master' | 'prefer_normal'
     /** ClientPool 健康检查间隔（毫秒） */
     readonly healthCheckIntervalMs?: number
     /** 去重窗口时长（毫秒） */
@@ -48,8 +46,6 @@ const config: AemeathConfig = {
     textSnippetLength: 200,
   },
   routing: {
-    /** 多账号路由策略：优先使用主账号 */
-    defaultPriorityMode: 'prefer_master',
     /** ClientPool 健康检查间隔（毫秒） */
     healthCheckIntervalMs: 30_000,
     /** 事件去重窗口（毫秒） */

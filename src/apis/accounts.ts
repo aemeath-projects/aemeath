@@ -25,7 +25,7 @@ type PriorityModeBody = Static<typeof SetPriorityModeBodySchema>
 
 const plugin: FastifyPluginAsync = async (app) => {
   // GET /api/accounts
-  app.get('/accounts', async (req, reply) => {
+  app.get('/api/accounts', async (req, reply) => {
     const svc = new AccountService(req.server.services.get('db'))
     const accounts = await svc.listAccounts()
     // BigInt 字段序列化为 string
@@ -35,7 +35,7 @@ const plugin: FastifyPluginAsync = async (app) => {
 
   // GET /api/accounts/:id/status
   app.get<{ Params: IdParams }>(
-    '/accounts/:id/status',
+    '/api/accounts/:id/status',
     { schema: { params: AccountIdParamsSchema } },
     async (req, reply) => {
       const svc = new AccountService(req.server.services.get('db'))
@@ -60,7 +60,7 @@ const plugin: FastifyPluginAsync = async (app) => {
 
   // POST /api/accounts
   app.post<{ Body: CreateBody }>(
-    '/accounts',
+    '/api/accounts',
     { schema: { body: CreateAccountBodySchema } },
     async (req, reply) => {
       const svc = new AccountService(req.server.services.get('db'))
@@ -84,7 +84,7 @@ const plugin: FastifyPluginAsync = async (app) => {
 
   // PUT /api/accounts/:id
   app.put<{ Params: IdParams; Body: UpdateBody }>(
-    '/accounts/:id',
+    '/api/accounts/:id',
     { schema: { params: AccountIdParamsSchema, body: UpdateAccountBodySchema } },
     async (req, reply) => {
       const svc = new AccountService(req.server.services.get('db'))
@@ -95,7 +95,7 @@ const plugin: FastifyPluginAsync = async (app) => {
 
   // DELETE /api/accounts/:id
   app.delete<{ Params: IdParams }>(
-    '/accounts/:id',
+    '/api/accounts/:id',
     { schema: { params: AccountIdParamsSchema } },
     async (req, reply) => {
       const svc = new AccountService(req.server.services.get('db'))
@@ -115,7 +115,7 @@ const plugin: FastifyPluginAsync = async (app) => {
 
   // POST /api/accounts/:id/connect
   app.post<{ Params: IdParams }>(
-    '/accounts/:id/connect',
+    '/api/accounts/:id/connect',
     { schema: { params: AccountIdParamsSchema } },
     async (req, reply) => {
       const svc = new AccountService(req.server.services.get('db'))
@@ -134,7 +134,7 @@ const plugin: FastifyPluginAsync = async (app) => {
 
   // POST /api/accounts/:id/disconnect
   app.post<{ Params: IdParams }>(
-    '/accounts/:id/disconnect',
+    '/api/accounts/:id/disconnect',
     { schema: { params: AccountIdParamsSchema } },
     async (req, reply) => {
       const svc = new AccountService(req.server.services.get('db'))
@@ -151,7 +151,7 @@ const plugin: FastifyPluginAsync = async (app) => {
   )
 
   // GET /api/routing/table
-  app.get('/routing/table', async (req, reply) => {
+  app.get('/api/routing/table', async (req, reply) => {
     const pool = req.server.services.get('account_pool') as
       ClientPool<NapCatClient, AccountRole, AnyOneBotEvent> | undefined
     const available = pool?.getAvailableClients() ?? []
@@ -160,7 +160,7 @@ const plugin: FastifyPluginAsync = async (app) => {
 
   // POST /api/routing/priority-mode
   app.post<{ Body: PriorityModeBody }>(
-    '/routing/priority-mode',
+    '/api/routing/priority-mode',
     { schema: { body: SetPriorityModeBodySchema } },
     async (req, reply) => {
       return reply.send(ok({ message: '优先级模式已更新（重启生效）', mode: req.body.mode }))

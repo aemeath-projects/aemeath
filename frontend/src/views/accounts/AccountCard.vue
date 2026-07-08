@@ -33,7 +33,7 @@ const currentState = computed(() => props.status?.state ?? 'unknown')
 </script>
 
 <template>
-  <v-card rounded="lg" elevation="1">
+  <v-card elevation="1">
     <v-card-title class="d-flex align-center ga-2">
       <span class="text-body-1 font-weight-medium">{{ account.nickname ?? '未命名' }}</span>
       <v-chip :color="account.role === 'master' ? 'primary' : 'secondary'" size="x-small" label>

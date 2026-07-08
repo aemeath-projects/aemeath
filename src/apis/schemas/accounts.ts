@@ -12,6 +12,7 @@ export const CreateAccountBodySchema = Type.Object({
 
 export const UpdateAccountBodySchema = Type.Object({
   nickname: Type.Optional(Type.String()),
+  transport: Type.Optional(Type.Union([Type.Literal('ws'), Type.Literal('sse')])),
   endpoint: Type.Optional(Type.String()),
   token: Type.Optional(Type.String()),
   isEnabled: Type.Optional(Type.Boolean()),

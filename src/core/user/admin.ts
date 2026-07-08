@@ -149,14 +149,14 @@ export class AdminService {
     return admin?.qq ?? null
   }
 
-  /** 获取候选人列表（master 好友列表），供前端选择框使用，不缓存。 */
+  /** 获取候选人列表（master 好友列表），供前端选择框使用，不缓存。无主账号时返回空列表。 */
   async listCandidates(): Promise<FriendInfo[]> {
     if (!this.masterApis.friendApi) {
-      throw new ValidationError('master 账号未在线，无法获取候选人列表')
+      return []
     }
     const result = await this.masterApis.friendApi.getFriendList()
     if (!result.ok) {
-      throw new ValidationError('获取好友列表失败')
+      return []
     }
     return result.data
   }
@@ -188,9 +188,9 @@ export class AdminBootstrap {
   @Inject('cache')
   cache!: RedisStore
 
-  /** 注入主账号 API bundle */
+  /** 注入主账号 API bundle（MultiAccountBootstrap 可能在 AdminBootstrap 之后初始化，因此可能未定义） */
   @Inject('master_apis')
-  masterApis!: MasterApis
+  masterApis?: MasterApis
 
   /** 对外暴露御者管理服务实例 */
   @Provide('adminService')
@@ -198,6 +198,10 @@ export class AdminBootstrap {
 
   @Startup
   start(): void {
-    this.adminService = new AdminService(this.db, this.cache, this.masterApis)
+    this.adminService = new AdminService(
+      this.db,
+      this.cache,
+      this.masterApis ?? { msgApi: null, groupApi: null, friendApi: null },
+    )
   }
 }

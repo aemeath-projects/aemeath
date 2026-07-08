@@ -40,6 +40,7 @@ export interface CreateAccountDto {
 
 export interface UpdateAccountDto {
   nickname?: string
+  transport?: AccountTransport
   endpoint?: string
   token?: string
   isEnabled?: boolean

@@ -142,6 +142,7 @@ const router = createRouter({
         icon: 'mdi-shield-crown',
         subtitle: '管理机器人御者权限',
         panel: '系统',
+        section: '设置',
       },
     },
     {

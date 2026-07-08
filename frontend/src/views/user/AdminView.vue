@@ -1,5 +1,11 @@
 <template>
   <PageLayout>
+    <template #actions>
+      <v-btn color="red" variant="elevated" prepend-icon="mdi-shield-sync" @click="openSetDialog">
+        {{ currentAdmin === null ? '设置御者' : '更换御者' }}
+      </v-btn>
+    </template>
+
     <v-card flat>
       <div v-if="store.adminsLoading" class="d-flex flex-wrap ga-4 pa-4">
         <v-skeleton-loader type="list-item-avatar" width="280" elevation="3" rounded="lg" />
@@ -14,7 +20,7 @@
           >
             <v-icon icon="mdi-shield-off-outline" size="48" class="mb-4" />
             <div class="text-body-1">暂未设置御者</div>
-            <div class="text-body-2 mt-1">点击下方「设置御者」来指定</div>
+            <div class="text-body-2 mt-1">点击右上角「设置御者」来指定</div>
           </div>
 
           <v-card v-else elevation="3" rounded="lg" width="280" class="admin-card">
@@ -39,17 +45,8 @@
           </v-card>
         </div>
 
-        <div class="d-flex ga-2 pa-4 pt-0">
+        <div v-if="currentAdmin !== null" class="d-flex ga-2 pa-4 pt-0">
           <v-btn
-            color="red"
-            variant="elevated"
-            prepend-icon="mdi-shield-sync"
-            @click="openSetDialog"
-          >
-            {{ currentAdmin === null ? '设置御者' : '更换御者' }}
-          </v-btn>
-          <v-btn
-            v-if="currentAdmin !== null"
             color="error"
             variant="elevated"
             prepend-icon="mdi-shield-off"

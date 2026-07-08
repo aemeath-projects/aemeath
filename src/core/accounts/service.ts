@@ -20,6 +20,7 @@ export interface CreateAccountInput {
 /** 更新账号可修改字段。 */
 export interface UpdateAccountInput {
   nickname?: string
+  transport?: 'ws' | 'sse'
   endpoint?: string
   token?: string
   isEnabled?: boolean

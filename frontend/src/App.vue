@@ -19,20 +19,6 @@
           ></v-btn>
         </template>
       </v-tooltip>
-      <v-tooltip :text="botStore.online ? 'Bot 已连接' : 'Bot 未连接'" location="bottom">
-        <template #activator="{ props }">
-          <v-btn icon class="ml-1" v-bind="props" :ripple="false" style="cursor: default">
-            <v-badge
-              class="status-badge"
-              :color="botStore.online ? 'success' : 'grey-darken-1'"
-              dot
-              location="bottom end"
-            >
-              <v-icon icon="mdi-robot"></v-icon>
-            </v-badge>
-          </v-btn>
-        </template>
-      </v-tooltip>
     </v-app-bar>
 
     <Menu :open="menuOpen" @close="menuOpen = false" />
@@ -62,17 +48,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useTheme } from 'vuetify'
 import { useThemeStore } from './stores/theme'
-import { useBotStore } from './stores/bot'
 import { useUserStore } from './stores/user'
 import type { ThemePreference } from './stores/theme'
 import Menu from './layouts/Menu.vue'
 
 const vuetifyTheme = useTheme()
 const themeStore = useThemeStore()
-const botStore = useBotStore()
 const userStore = useUserStore()
 
 const dialogDark = ref(false)
@@ -89,13 +73,8 @@ const themePreference = computed({
 
 onMounted(() => {
   themeStore.initTheme(vuetifyTheme)
-  botStore.startPolling()
   // 全局预加载会话数据，供全站 GroupAutocomplete/UserAutocomplete 本地搜索使用
   userStore.loadSessionData()
-})
-
-onUnmounted(() => {
-  botStore.stopPolling()
 })
 </script>
 
@@ -103,16 +82,5 @@ onUnmounted(() => {
 /* 全局光标工具类 */
 .cursor-pointer {
   cursor: pointer;
-}
-</style>
-
-<style scoped>
-/* 放大在线状态 dot，去除白色描边 */
-:deep(.status-badge .v-badge__badge) {
-  width: 10px;
-  height: 10px;
-  min-width: 10px;
-  border: none !important;
-  box-shadow: none !important;
 }
 </style>

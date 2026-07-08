@@ -12,7 +12,7 @@ import {
   Permission,
 } from '@/core/dispatch/index.js'
 import type { OneBotContext as Context } from '@/core/dispatch/index.js'
-import { SettingNode } from '@/core/settings/decorators.js'
+import { SettingNode } from '@/core/settings/index.js'
 import type { LikeService } from '@/services/like.js'
 
 const DEFAULT_LIKE_TIMES = 10

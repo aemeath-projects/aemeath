@@ -15,7 +15,7 @@ import {
   PermissionDecorator,
   Permission,
 } from '@/core/dispatch/index.js'
-import { SettingNode } from '@/core/settings/decorators.js'
+import { SettingNode } from '@/core/settings/index.js'
 import { MessageBuilder } from '@/core/utils/index.js'
 import type { CheckinService } from '@/services/checkin.js'
 

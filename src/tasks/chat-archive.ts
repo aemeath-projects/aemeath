@@ -4,8 +4,7 @@ import type { Job } from 'bullmq'
 
 import { loadConfig } from '@/core/config.js'
 import type { IrisPrismaClient, AemeathPrismaClient } from '@/core/db/index.js'
-import { IrisArchiveService } from '@/core/iris/archive.js'
-import { IrisS3 } from '@/core/iris/s3.js'
+import { IrisArchiveService, IrisS3 } from '@/core/iris/index.js'
 import type { OssBundle } from '@/core/oss/index.js'
 import type { SelfContainedJobResult, TaskDefinition } from '@/core/tasks/index.js'
 

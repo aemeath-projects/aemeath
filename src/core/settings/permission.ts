@@ -9,7 +9,7 @@ import type { SettingNodeSchema } from './schema.js'
 import type { SettingsService } from './service.js'
 
 import type { OneBotContext as Context, FeatureChecker } from '@/core/dispatch/index.js'
-import type { AdminService } from '@/core/user/admin.js'
+import type { AdminService } from '@/core/user/index.js'
 
 /** dispatcher 注入到 Context 的 handler 方法元数据。 */
 interface HandlerMethodMeta {

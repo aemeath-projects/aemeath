@@ -29,6 +29,8 @@ export type {
   UserGroupView,
   ResolveResult,
 } from './query.js'
+export { AdminService } from './admin.js'
+export type { AdminView } from './admin.js'
 
 /** 用户关系等级。 */
 export type UserRelation = 'stranger' | 'group_member' | 'friend' | 'admin'

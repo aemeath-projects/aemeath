@@ -10,7 +10,8 @@ import type {
 } from '@aemeath-projects/exostrider/dispatch'
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 
-import type { ContextApis } from '@/core/dispatch/adapter.js'
+import type { ContextApis } from '../adapter.js'
+
 import type { IrisService } from '@/core/iris/index.js'
 
 /** 将 OneBot 消息类型字符串映射为数字（与 Prisma schema 中的 SmallInt 对应）。 */

@@ -9,7 +9,7 @@ import type {
 } from '@aemeath-projects/exostrider/dispatch'
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 
-import type { ContextApis } from '@/core/dispatch/adapter.js'
+import type { ContextApis } from '../adapter.js'
 
 const CTX_KEY_START_TIME = '_metrics_start_time'
 

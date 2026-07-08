@@ -93,7 +93,8 @@ import { logger } from '../../../core/logging/index.js'
 import { aemeathDb } from '../../../prisma/aemeath/generated/index.js'
 ```
 
-- 同一文件内的相对导入（同目录或相邻目录）仍允许使用相对路径
+- **domain 内部**（`src/core/<domain>/` 目录下任意深度的文件之间）引用**必须**使用相对路径（`./sibling.js`、`../parent-file.js`），不得使用 `@/core/<domain>/...` 别名深度导入
+- **跨 domain** 引用（包括业务层 `src/handlers`、`src/services`、`src/tasks`、`src/apis` 对 `src/core/<domain>/` 的引用）**必须**通过该 domain 的 `@/core/<domain>/index.js` 导入，禁止直接导入内部文件。ESLint `import-x/no-internal-modules` 规则强制执行此约定
 - 别名配置维护在 `tsconfig.json` 的 `paths` 字段中，确保与实际目录结构一致
 
 ## 导入规范

@@ -8,7 +8,7 @@ import { MailboxService } from './service.js'
 
 import type { MessageRouter } from '@/core/accounts/index.js'
 import type { AemeathPrismaClient } from '@/core/db/index.js'
-import type { AdminService } from '@/core/user/admin.js'
+import type { AdminService } from '@/core/user/index.js'
 
 @Service({ name: 'mailbox_bootstrap' })
 export class MailboxBootstrap {

@@ -46,6 +46,23 @@ export default tseslint.config(
         },
       ],
       'import-x/no-duplicates': 'error',
+      // 跨 domain 必须走 index.ts；domain 内部（相对路径引用）不受限制
+      'import-x/no-internal-modules': [
+        'error',
+        {
+          allow: [
+            '**/index.js',
+            '@aemeath-projects/**',
+            '#prisma/**',
+            // 以下均为第三方包官方文档要求的子路径导入，非内部 domain 深度导入，与本规则治理目标无关
+            'prisma/config',
+            'vitest/config',
+            'parquet-wasm/esm',
+          ],
+        },
+      ],
+      // 检测循环依赖；规则默认跳过纯 type-only 引用边，无需额外配置
+      'import-x/no-cycle': 'error',
     },
   },
   {

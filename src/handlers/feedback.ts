@@ -10,7 +10,7 @@ import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 
 import type { OneBotContext as Context } from '@/core/dispatch/index.js'
 import { Handler, OnCommand, PermissionDecorator, Permission } from '@/core/dispatch/index.js'
-import { SettingNode } from '@/core/settings/decorators.js'
+import { SettingNode } from '@/core/settings/index.js'
 import type { FeedbackService } from '@/services/feedback.js'
 
 type FeedbackType = 'bug' | 'suggestion' | 'complaint'

@@ -8,7 +8,7 @@ import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 
 import type { OneBotContext as Context } from '@/core/dispatch/index.js'
 import { Handler, OnRegex, Scope, Permission } from '@/core/dispatch/index.js'
-import { SettingNode } from '@/core/settings/decorators.js'
+import { SettingNode } from '@/core/settings/index.js'
 import { MessageBuilder } from '@/core/utils/index.js'
 import type { JrlpService } from '@/services/jrlp.js'
 

@@ -8,10 +8,11 @@ import type { ClientState } from '@aemeath-projects/exostrider/pool'
 import type { NapCatClient } from '@aemeath-projects/napcat'
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 
-import type { GroupBotRegistry } from '@/core/accounts/group-bot-registry.js'
-import { buildGroupApi } from '@/core/dispatch/adapter.js'
-import type { ContextApis } from '@/core/dispatch/adapter.js'
-import type { OneBotContext } from '@/core/dispatch/context.js'
+import { buildGroupApi } from '../adapter.js'
+import type { ContextApis } from '../adapter.js'
+import type { OneBotContext } from '../context.js'
+
+import type { GroupBotRegistry } from '@/core/accounts/index.js'
 
 interface Pool {
   getClient(id: string): { state: ClientState; client: NapCatClient } | undefined

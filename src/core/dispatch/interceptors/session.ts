@@ -19,8 +19,8 @@ import type { SessionManager } from '@aemeath-projects/exostrider/session'
 import { DEFAULT_CANCEL_COMMANDS } from '@aemeath-projects/exostrider/session'
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 
-import type { ContextApis } from '@/core/dispatch/adapter.js'
-import type { OneBotContext } from '@/core/dispatch/context.js'
+import type { ContextApis } from '../adapter.js'
+import type { OneBotContext } from '../context.js'
 
 const log: PinoLogger = getLogger('session-interceptor') as unknown as PinoLogger
 

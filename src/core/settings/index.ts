@@ -27,7 +27,7 @@ import { buildSchemaMap, cleanOrphanKeys } from './schema.js'
 import { SettingsService } from './service.js'
 
 import type { AemeathPrismaClient } from '@/core/db/index.js'
-import type { AdminService } from '@/core/user/admin.js'
+import type { AdminService } from '@/core/user/index.js'
 
 @Service({ name: 'settings_bootstrap' })
 export class SettingsBootstrap {

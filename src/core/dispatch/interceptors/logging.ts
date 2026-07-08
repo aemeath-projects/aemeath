@@ -11,8 +11,8 @@ import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 
-import type { ContextApis } from '@/core/dispatch/adapter.js'
-import type { OneBotContext } from '@/core/dispatch/context.js'
+import type { ContextApis } from '../adapter.js'
+import type { OneBotContext } from '../context.js'
 
 const log: PinoLogger = getLogger('dispatcher') as unknown as PinoLogger
 

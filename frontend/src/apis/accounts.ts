@@ -12,7 +12,6 @@ export type AccountState = 'connected' | 'disconnected' | 'connecting' | 'unknow
 export type PriorityMode = 'prefer_master' | 'prefer_normal'
 
 export interface Account {
-  id: number
   qq: string
   nickname: string | null
   role: AccountRole
@@ -28,7 +27,6 @@ export interface AccountWithStatus extends Account {
 }
 
 export interface AccountStatus {
-  id: number
   qq: string
   role: AccountRole
   state: AccountState
@@ -67,16 +65,16 @@ export async function createAccount(data: CreateAccountDto): Promise<Account> {
   return post<Account>('/api/accounts', data)
 }
 
-export async function updateAccount(id: number, data: UpdateAccountDto): Promise<Account> {
-  return put<Account>(`/api/accounts/${id}`, data)
+export async function updateAccount(qq: string, data: UpdateAccountDto): Promise<Account> {
+  return put<Account>(`/api/accounts/${qq}`, data)
 }
 
-export async function deleteAccount(id: number): Promise<void> {
-  await del<null>(`/api/accounts/${id}`)
+export async function deleteAccount(qq: string): Promise<void> {
+  await del<null>(`/api/accounts/${qq}`)
 }
 
-export async function getAccountStatus(id: number): Promise<AccountStatus> {
-  return get<AccountStatus>(`/api/accounts/${id}/status`)
+export async function getAccountStatus(qq: string): Promise<AccountStatus> {
+  return get<AccountStatus>(`/api/accounts/${qq}/status`)
 }
 
 export async function getPriorityMode(): Promise<{ mode: PriorityMode }> {

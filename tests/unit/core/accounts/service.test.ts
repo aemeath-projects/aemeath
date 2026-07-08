@@ -79,7 +79,6 @@ type MockDb = ReturnType<typeof createMockDb>
 type MockPool = ReturnType<typeof createMockPool>
 
 const baseAccount = {
-  id: 1,
   qq: 1739280698n,
   nickname: '测试1',
   role: 'master',
@@ -159,7 +158,7 @@ describe('AccountService', () => {
       mockDb.account.update.mockResolvedValue({ ...baseAccount, nickname: '新昵称' })
       const svc = new AccountService(mockDb as unknown as AemeathPrismaClient, mockPool as never)
 
-      await svc.updateAccount(1, { nickname: '新昵称' })
+      await svc.updateAccount(1739280698n, { nickname: '新昵称' })
 
       expect(mockPool.removeClient).not.toHaveBeenCalled()
       expect(mockPool.addClient).not.toHaveBeenCalled()
@@ -172,7 +171,7 @@ describe('AccountService', () => {
       mockDb.account.update.mockResolvedValue(updated)
       const svc = new AccountService(mockDb as unknown as AemeathPrismaClient, mockPool as never)
 
-      await svc.updateAccount(1, { endpoint: 'ws://127.0.0.1:9999' })
+      await svc.updateAccount(1739280698n, { endpoint: 'ws://127.0.0.1:9999' })
 
       expect(mockPool.removeClient).toHaveBeenCalledWith('bot-1739280698')
       expect(mockPool.addClient).toHaveBeenCalledTimes(1)
@@ -188,7 +187,7 @@ describe('AccountService', () => {
       mockDb.account.update.mockResolvedValue(updated)
       const svc = new AccountService(mockDb as unknown as AemeathPrismaClient, mockPool as never)
 
-      await svc.updateAccount(1, { endpoint: 'ws://127.0.0.1:9999' })
+      await svc.updateAccount(1739280698n, { endpoint: 'ws://127.0.0.1:9999' })
 
       expect(mockPool.removeClient).toHaveBeenCalledWith('bot-1739280698')
       expect(mockPool.addClient).toHaveBeenCalledTimes(1)
@@ -203,7 +202,7 @@ describe('AccountService', () => {
       mockDb.account.update.mockResolvedValue(updated)
       const svc = new AccountService(mockDb as unknown as AemeathPrismaClient, mockPool as never)
 
-      await svc.updateAccount(1, { isEnabled: false })
+      await svc.updateAccount(1739280698n, { isEnabled: false })
 
       expect(mockPool.removeClient).toHaveBeenCalledWith('bot-1739280698')
       expect(mockPool.addClient).not.toHaveBeenCalled()
@@ -217,7 +216,7 @@ describe('AccountService', () => {
       mockDb.account.update.mockResolvedValue(updated)
       const svc = new AccountService(mockDb as unknown as AemeathPrismaClient, mockPool as never)
 
-      await svc.updateAccount(1, { isEnabled: true })
+      await svc.updateAccount(1739280698n, { isEnabled: true })
 
       expect(mockPool.addClient).toHaveBeenCalledTimes(1)
       const [newAdapterArg] = mockPool.addClient.mock.calls[0] as [{ connect: () => unknown }]
@@ -249,9 +248,9 @@ describe('AccountService', () => {
         },
       )
 
-      await expect(svc.updateAccount(1, { endpoint: 'ws://127.0.0.1:9999' })).resolves.toEqual(
-        updated,
-      )
+      await expect(
+        svc.updateAccount(1739280698n, { endpoint: 'ws://127.0.0.1:9999' }),
+      ).resolves.toEqual(updated)
     })
 
     it('未注入 pool 时正常更新，不抛出异常，也不访问 pool', async () => {
@@ -260,9 +259,9 @@ describe('AccountService', () => {
       mockDb.account.update.mockResolvedValue(updated)
       const svc = new AccountService(mockDb as unknown as AemeathPrismaClient)
 
-      await expect(svc.updateAccount(1, { endpoint: 'ws://127.0.0.1:9999' })).resolves.toEqual(
-        updated,
-      )
+      await expect(
+        svc.updateAccount(1739280698n, { endpoint: 'ws://127.0.0.1:9999' }),
+      ).resolves.toEqual(updated)
     })
   })
 

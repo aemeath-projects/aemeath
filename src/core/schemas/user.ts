@@ -136,7 +136,7 @@ export const PaginatedMembersDataSchema = Type.Object({
 
 /* 御者管理 Schema */
 
-/** 设置御者请求体 —— PUT /api/user/admins */
+/** 设置御者请求体 —— PUT /api/user/admin */
 export const SetAdminBodySchema = Type.Object({
   userId: Type.String({ pattern: '^\\d+$', description: 'QQ 号 / 用户 ID' }),
 })
@@ -149,7 +149,7 @@ export const AdminInfoSchema = Type.Object({
   lastSynced: Type.Union([Type.String(), Type.Null()]),
 })
 
-/** 管理员列表响应数据 Schema —— GET /api/user/admins */
+/** 管理员列表响应数据 Schema —— GET /api/user/admin */
 export const AdminListDataSchema = Type.Array(AdminInfoSchema)
 
 /** 御者候选人 Schema（master 账号好友）。 */

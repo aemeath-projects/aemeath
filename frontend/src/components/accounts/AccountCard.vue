@@ -8,9 +8,9 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'toggle-enabled': [id: number, value: boolean]
+  'toggle-enabled': [qq: string, value: boolean]
   edit: [account: AccountWithStatus]
-  delete: [id: number]
+  delete: [qq: string]
 }>()
 
 const stateBgColor: Record<string, string> = {
@@ -42,7 +42,7 @@ const roleColor: Record<string, string> = {
 const cardBgColor = computed(() => stateBgColor[props.account.state] || '')
 
 function onToggle(value: boolean | null) {
-  emit('toggle-enabled', props.account.id, value ?? false)
+  emit('toggle-enabled', props.account.qq, value ?? false)
 }
 </script>
 
@@ -73,6 +73,7 @@ function onToggle(value: boolean | null) {
         variant="tonal"
         color="error"
         size="small"
+        class="ml-2"
         :loading="toggling"
         @click="onToggle(false)"
       >
@@ -83,6 +84,7 @@ function onToggle(value: boolean | null) {
         variant="tonal"
         color="success"
         size="small"
+        class="ml-2"
         :loading="toggling"
         @click="onToggle(true)"
       >
@@ -90,7 +92,7 @@ function onToggle(value: boolean | null) {
       </v-btn>
       <v-spacer />
       <v-btn icon="mdi-pencil" variant="text" @click="emit('edit', account)" />
-      <v-btn icon="mdi-delete" variant="text" color="error" @click="emit('delete', account.id)" />
+      <v-btn icon="mdi-delete" variant="text" color="error" @click="emit('delete', account.qq)" />
     </v-card-actions>
   </v-card>
 </template>

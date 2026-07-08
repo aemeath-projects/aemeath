@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { useTheme } from 'vuetify'
 import PageLayout from '@/layouts/PageLayout.vue'
-import { useSettingsStore } from '@/stores/settings'
 import { useThemeStore } from '@/stores/theme'
 import { themes } from '@/themes'
 
 const vuetifyTheme = useTheme()
 const themeStore = useThemeStore()
-const settingsStore = useSettingsStore()
 
 function onThemeChange() {
   themeStore.setPreference(themeStore.preference, vuetifyTheme)
@@ -89,22 +87,6 @@ function onThemeChange() {
           <v-radio value="light" label="浅色" />
           <v-radio value="dark" label="深色" />
           <v-radio value="followOS" label="跟随系统" />
-        </v-radio-group>
-      </v-card-text>
-    </v-card>
-
-    <!-- 列表显示设置 -->
-    <v-card class="mb-4">
-      <v-card-title class="pa-4 pb-2 text-body-1 font-weight-bold">
-        <v-icon start size="20">mdi-format-list-bulleted</v-icon>
-        列表显示
-      </v-card-title>
-      <v-card-text class="pa-4 pt-0">
-        <div class="text-body-2 text-medium-emphasis mb-3">每页默认条数</div>
-        <v-radio-group v-model="settingsStore.defaultPageSize" inline hide-details>
-          <v-radio :value="20" label="20 条" />
-          <v-radio :value="50" label="50 条" />
-          <v-radio :value="100" label="100 条" />
         </v-radio-group>
       </v-card-text>
     </v-card>

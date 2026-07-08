@@ -43,7 +43,7 @@ export const UnreadCountQuerySchema = Type.Object({
  * recipientId 为 BigInt 字段，序列化为字符串返回（比照 src/apis/feedback.ts 的
  * feedbackToDict() 对 userId 的处理惯例），故此处声明为 Type.String()。
  */
-export const MailboxMessageSchema = Type.Object({
+export const MailboxSchema = Type.Object({
   id: Type.String({ description: '站内信 ID' }),
   recipientId: Type.String({ description: '收件人 QQ 号（字符串形式）' }),
   title: Type.String({ description: '标题' }),
@@ -55,7 +55,7 @@ export const MailboxMessageSchema = Type.Object({
 
 /** 分页站内信列表响应数据 Schema —— GET /api/mailbox */
 export const PaginatedMailboxDataSchema = Type.Object({
-  items: Type.Array(MailboxMessageSchema),
+  items: Type.Array(MailboxSchema),
   total: Type.Number(),
   page: Type.Number(),
   pageSize: Type.Number(),

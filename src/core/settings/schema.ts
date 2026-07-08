@@ -109,13 +109,13 @@ export async function cleanOrphanKeys(
   schemaMap: ReadonlyMap<string, SettingNodeSchema>,
   logger?: { info: (msg: string) => void },
 ): Promise<void> {
-  const rows: { key: string }[] = await db.$queryRaw`SELECT DISTINCT key FROM setting_values`
+  const rows: { key: string }[] = await db.$queryRaw`SELECT DISTINCT key FROM settings`
   const dbKeys = rows.map((r) => r.key)
   const schemaKeys = new Set(schemaMap.keys())
   const orphans = dbKeys.filter((k) => !schemaKeys.has(k))
   if (orphans.length > 0) {
     const affectedRows =
-      await db.$executeRaw`DELETE FROM setting_values WHERE key = ANY(${orphans}::text[])`
+      await db.$executeRaw`DELETE FROM settings WHERE key = ANY(${orphans}::text[])`
     logger?.info(`[settings] 清理废弃配置项 ${String(affectedRows)} 行: ${orphans.join(', ')}`)
   }
 }

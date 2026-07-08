@@ -91,7 +91,7 @@ export class SettingsService {
 
     const candidates = buildAncestorScopes(path) // 索引 0 最具体（叶子），最后一项恒为 ""
     const rows: PrefixRow[] = await this.db.$queryRaw`
-      SELECT key, scope, value FROM setting_values
+      SELECT key, scope, value FROM settings
       WHERE key LIKE ${prefix + '%'} AND scope = ANY(${candidates})
     `
 
@@ -129,7 +129,7 @@ export class SettingsService {
     const scope = toScope(path)
 
     if (value === null) {
-      await this.db.$executeRaw`DELETE FROM setting_values WHERE key = ${key} AND scope = ${scope}`
+      await this.db.$executeRaw`DELETE FROM settings WHERE key = ${key} AND scope = ${scope}`
       await this._invalidateCache(key, scope)
       return
     }
@@ -139,8 +139,8 @@ export class SettingsService {
     const serialized = this._validate(key, value, schema)
 
     await this.db.$executeRaw`
-      INSERT INTO setting_values (id, key, scope, value, value_type)
-      VALUES (${uuidv4()}, ${key}, ${scope}, ${serialized}, ${schema.type}::settings_value_type)
+      INSERT INTO settings (id, key, scope, value, value_type)
+      VALUES (${uuidv4()}, ${key}, ${scope}, ${serialized}, ${schema.type}::setting_type)
       ON CONFLICT (key, scope) DO UPDATE SET value = ${serialized}
     `
 
@@ -172,11 +172,11 @@ export class SettingsService {
 
     const valueRows = validated.map(
       (e) =>
-        Prisma.sql`(${uuidv4()}, ${e.key}, ${scope}, ${e.serialized}, ${e.valueType}::settings_value_type)`,
+        Prisma.sql`(${uuidv4()}, ${e.key}, ${scope}, ${e.serialized}, ${e.valueType}::setting_type)`,
     )
     await this.db.$executeRaw(
       Prisma.sql`
-        INSERT INTO setting_values (id, key, scope, value, value_type)
+        INSERT INTO settings (id, key, scope, value, value_type)
         VALUES ${Prisma.join(valueRows)}
         ON CONFLICT (key, scope) DO UPDATE SET value = EXCLUDED.value
       `,
@@ -240,7 +240,7 @@ export class SettingsService {
     let dbRows: CandidateRow[] = []
     if (missingScopes.length > 0) {
       dbRows = await this.db.$queryRaw`
-        SELECT scope, value FROM setting_values
+        SELECT scope, value FROM settings
         WHERE key = ${key} AND scope = ANY(${missingScopes})
       `
     }

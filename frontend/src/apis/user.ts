@@ -135,15 +135,15 @@ export async function fetchSyncStatus(): Promise<SyncStatus> {
 }
 
 export async function fetchAdmins(): Promise<UserItem[]> {
-  return get<UserItem[]>(`${BASE}/admins`)
+  return get<UserItem[]>(`${BASE}/admin`)
 }
 
 export async function setAdmin(userId: number): Promise<void> {
-  await put<null>(`${BASE}/admins`, { userId: String(userId) })
+  await put<null>(`${BASE}/admin`, { userId: String(userId) })
 }
 
 export async function removeAdmin(): Promise<void> {
-  await del<null>(`${BASE}/admins`)
+  await del<null>(`${BASE}/admin`)
 }
 
 export async function fetchAdminCandidates(): Promise<AdminCandidate[]> {

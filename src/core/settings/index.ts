@@ -7,7 +7,7 @@ export type {
   SettingNodeMeta,
   SettingNodeOptions,
   SettingNodeEntry,
-  SettingValueType,
+  SettingType,
 } from './decorators.js'
 export { Path, toScope, parseScope, buildAncestorScopes } from './path.js'
 export type { PathSegment } from './path.js'

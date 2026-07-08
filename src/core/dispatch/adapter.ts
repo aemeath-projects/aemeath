@@ -29,6 +29,13 @@ function extractPlaintext(event: AnyOneBotEvent): string {
   return parts.join('').trim()
 }
 
+/** 从 OneBot 事件提取消息作用域（group/private），供 @Scope 声明式过滤使用。非消息事件返回 undefined（不受 scope 限制）。 */
+function extractScope(event: AnyOneBotEvent): string | undefined {
+  if (event.postType !== 'message' && event.postType !== 'message_sent') return undefined
+  const messageType = (event as { messageType?: string }).messageType
+  return messageType === 'group' || messageType === 'private' ? messageType : undefined
+}
+
 /** OneBot ContextConfig：向 exostrider Context 注入文本提取逻辑。 */
 export const oneBotContextConfig: ContextConfig<AnyOneBotEvent, ContextApis> = {
   textExtractor: (event) => extractPlaintext(event),
@@ -37,6 +44,7 @@ export const oneBotContextConfig: ContextConfig<AnyOneBotEvent, ContextApis> = {
     const parts = text.split(/\s+/u)
     return parts.slice(1).filter((s) => s.length > 0)
   },
+  scopeExtractor: (event) => extractScope(event),
 }
 
 /** 根据 NapCatClient 实例构建 GroupApi，供 CapabilityInterceptor 在替换账号时使用。 */

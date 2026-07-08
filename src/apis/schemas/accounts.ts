@@ -29,8 +29,8 @@ export const UpdateAccountBodySchema = Type.Object({
   isEnabled: Type.Optional(Type.Boolean()),
 })
 
-export const AccountIdParamsSchema = Type.Object({
-  id: Type.String(),
+export const AccountQqParamsSchema = Type.Object({
+  qq: Type.String(),
 })
 
 /** 多账号路由优先级模式：prefer_master 优先走主账号，prefer_normal 优先走普通账号。 */

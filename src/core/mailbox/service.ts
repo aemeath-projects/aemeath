@@ -6,13 +6,13 @@ import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import { seg } from '@aemeath-projects/napcat'
 
-import type { MailboxMessage } from '#prisma/aemeath'
+import type { Mailbox } from '#prisma/aemeath'
 
 import type { MessageRouter } from '@/core/accounts/index.js'
 import type { AemeathPrismaClient } from '@/core/db/index.js'
 import type { AdminService } from '@/core/user/index.js'
 
-export type { MailboxMessage }
+export type { Mailbox }
 
 /** 广播站内信的入参。 */
 export interface NotifyAdminsInput {
@@ -49,7 +49,7 @@ export class MailboxService {
   /**
    * 广播站内信给所有管理员，并异步同步私聊通知（尽力而为，不阻塞方法返回）。
    */
-  async notifyAdmins(input: NotifyAdminsInput): Promise<MailboxMessage[]> {
+  async notifyAdmins(input: NotifyAdminsInput): Promise<Mailbox[]> {
     const admins = await this.adminService.getAdmins()
 
     if (admins.length === 0) {
@@ -59,7 +59,7 @@ export class MailboxService {
 
     const messages = await this.db.$transaction(
       admins.map((admin) =>
-        this.db.mailboxMessage.create({
+        this.db.mailbox.create({
           data: {
             recipientId: admin.qq,
             title: input.title,
@@ -85,7 +85,7 @@ export class MailboxService {
   /**
    * 分页查询指定收件人的站内信列表，支持按已读/未读筛选。
    */
-  async listMessages(params: ListMailboxParams): Promise<[MailboxMessage[], number]> {
+  async listMessages(params: ListMailboxParams): Promise<[Mailbox[], number]> {
     const { recipientId, page = 1, pageSize = 20, isRead } = params
 
     const where = {
@@ -94,13 +94,13 @@ export class MailboxService {
     }
 
     const [items, total] = await Promise.all([
-      this.db.mailboxMessage.findMany({
+      this.db.mailbox.findMany({
         where,
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),
-      this.db.mailboxMessage.count({ where }),
+      this.db.mailbox.count({ where }),
     ])
 
     return [items, total]
@@ -110,17 +110,17 @@ export class MailboxService {
    * 查询指定收件人的未读数量。
    */
   async getUnreadCount(recipientId: bigint): Promise<number> {
-    return this.db.mailboxMessage.count({ where: { recipientId, isRead: false } })
+    return this.db.mailbox.count({ where: { recipientId, isRead: false } })
   }
 
   /**
    * 标记单条站内信为已读（幂等）。不存在时返回 null。
    */
-  async markRead(id: string): Promise<MailboxMessage | null> {
-    const existing = await this.db.mailboxMessage.findUnique({ where: { id } })
+  async markRead(id: string): Promise<Mailbox | null> {
+    const existing = await this.db.mailbox.findUnique({ where: { id } })
     if (existing === null) return null
 
-    return this.db.mailboxMessage.update({
+    return this.db.mailbox.update({
       where: { id },
       data: { isRead: true, readAt: new Date() },
     })

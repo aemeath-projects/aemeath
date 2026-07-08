@@ -256,7 +256,7 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
 
   /** 获取当前御者列表（0 或 1 项）。 */
   app.get(
-    '/api/user/admins',
+    '/api/user/admin',
     {
       schema: {
         response: {
@@ -274,7 +274,7 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
 
   /** 设置/更换御者，仅允许 master 账号好友列表内的 QQ。 */
   app.put(
-    '/api/user/admins',
+    '/api/user/admin',
     {
       schema: {
         body: SetAdminBodySchema,
@@ -298,7 +298,7 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
 
   /** 移除当前御者。 */
   app.delete(
-    '/api/user/admins',
+    '/api/user/admin',
     {
       schema: {
         response: {

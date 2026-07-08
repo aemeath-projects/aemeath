@@ -56,7 +56,7 @@ export class AccountService {
   ) {}
 
   async listAccounts(): Promise<Account[]> {
-    return this.db.account.findMany({ orderBy: { id: 'asc' } })
+    return this.db.account.findMany({ orderBy: { qq: 'asc' } })
   }
 
   /** 批量查询账号信息 + 实时连接状态，替代"先列表再逐个查状态"的 N+1 模式。 */
@@ -70,8 +70,8 @@ export class AccountService {
     })
   }
 
-  async getAccount(id: number): Promise<Account | null> {
-    return this.db.account.findUnique({ where: { id } })
+  async getAccount(qq: bigint): Promise<Account | null> {
+    return this.db.account.findUnique({ where: { qq } })
   }
 
   async hasMaster(): Promise<boolean> {
@@ -85,19 +85,19 @@ export class AccountService {
     return account
   }
 
-  async updateAccount(id: number, data: UpdateAccountInput): Promise<Account> {
-    const before = await this.db.account.findUnique({ where: { id } })
-    const after = await this.db.account.update({ where: { id }, data })
+  async updateAccount(qq: bigint, data: UpdateAccountInput): Promise<Account> {
+    const before = await this.db.account.findUnique({ where: { qq } })
+    const after = await this.db.account.update({ where: { qq }, data })
     if (before) {
       await this._syncPoolAfterUpdate(before, after)
     } else {
-      log.warn({ accountId: id }, '更新账号时未找到更新前的记录，跳过连接池同步')
+      log.warn({ qq: String(qq) }, '更新账号时未找到更新前的记录，跳过连接池同步')
     }
     return after
   }
 
-  async deleteAccount(id: number): Promise<void> {
-    await this.db.account.delete({ where: { id } })
+  async deleteAccount(qq: bigint): Promise<void> {
+    await this.db.account.delete({ where: { qq } })
   }
 
   /** 读取当前多账号路由优先级模式，未设置时回退 Schema 默认值（prefer_master）。 */
@@ -128,7 +128,7 @@ export class AccountService {
     this.pool.addClient(adapter, account.role as AccountRole)
     this._registerGroupNotices(adapter)
     void adapter.connect().catch((err: unknown) => {
-      log.error({ err, accountId: account.id }, '账号创建后自动连接失败，将由重连策略自动重试')
+      log.error({ err, qq: String(account.qq) }, '账号创建后自动连接失败，将由重连策略自动重试')
     })
   }
 
@@ -154,7 +154,7 @@ export class AccountService {
       this.pool.addClient(adapter, after.role as AccountRole)
       this._registerGroupNotices(adapter)
       void adapter.connect().catch((err: unknown) => {
-        log.error({ err, accountId: after.id }, '账号启用后自动连接失败，将由重连策略自动重试')
+        log.error({ err, qq: String(after.qq) }, '账号启用后自动连接失败，将由重连策略自动重试')
       })
       return
     }
@@ -181,7 +181,7 @@ export class AccountService {
       try {
         await adapter.connect()
       } catch (err) {
-        log.error({ err, accountId: after.id, clientId }, '账号更新后自动重连失败，请手动重新连接')
+        log.error({ err, qq: String(after.qq), clientId }, '账号更新后自动重连失败，请手动重新连接')
       }
     }
   }

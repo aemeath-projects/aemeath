@@ -10,10 +10,10 @@ import {
   UnreadCountQuerySchema,
   PaginatedMailboxDataSchema,
   UnreadCountDataSchema,
-  MailboxMessageSchema,
+  MailboxSchema,
 } from './schemas.js'
 
-import type { MailboxMessage, MailboxService } from './index.js'
+import type { Mailbox, MailboxService } from './index.js'
 
 import { NotFoundError, ValidationError } from '@/core/errors.js'
 import { ok, fail, OkResponse, FailResponse } from '@/core/schemas/index.js'
@@ -42,7 +42,7 @@ async function handleError(reply: FastifyReply, err: unknown): Promise<void> {
   await reply.status(500).send(fail(message))
 }
 
-function mailboxMessageToDict(m: MailboxMessage): Record<string, unknown> {
+function mailboxToDict(m: Mailbox): Record<string, unknown> {
   return {
     id: m.id,
     recipientId: String(m.recipientId),
@@ -84,7 +84,7 @@ export async function mailboxRoutes(fastify: FastifyInstance): Promise<void> {
 
         await reply.send(
           ok({
-            items: items.map((item) => mailboxMessageToDict(item)),
+            items: items.map((item) => mailboxToDict(item)),
             total,
             page: pageNum,
             pageSize: pageSizeNum,
@@ -127,7 +127,7 @@ export async function mailboxRoutes(fastify: FastifyInstance): Promise<void> {
       schema: {
         params: MailboxIdParamSchema,
         response: {
-          200: OkResponse(MailboxMessageSchema),
+          200: OkResponse(MailboxSchema),
           404: FailResponse(),
           500: FailResponse(),
         },
@@ -139,7 +139,7 @@ export async function mailboxRoutes(fastify: FastifyInstance): Promise<void> {
         if (updated === null) {
           throw new NotFoundError(`站内信不存在：${request.params.id}`)
         }
-        await reply.send(ok(mailboxMessageToDict(updated)))
+        await reply.send(ok(mailboxToDict(updated)))
       } catch (err) {
         await handleError(reply, err)
       }

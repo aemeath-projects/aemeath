@@ -7,7 +7,7 @@ import type { FastifyPluginAsync } from 'fastify'
 import {
   CreateAccountBodySchema,
   UpdateAccountBodySchema,
-  AccountIdParamsSchema,
+  AccountQqParamsSchema,
   SetPriorityModeBodySchema,
 } from './schemas/accounts.js'
 
@@ -15,7 +15,7 @@ import { AccountService } from '@/core/accounts/index.js'
 import { ok, fail } from '@/core/schemas/index.js'
 import type { SettingsService } from '@/core/settings/index.js'
 
-type IdParams = Static<typeof AccountIdParamsSchema>
+type QqParams = Static<typeof AccountQqParamsSchema>
 type CreateBody = Static<typeof CreateAccountBodySchema>
 type UpdateBody = Static<typeof UpdateAccountBodySchema>
 type PriorityModeBody = Static<typeof SetPriorityModeBodySchema>
@@ -45,13 +45,13 @@ const plugin: FastifyPluginAsync = async (app) => {
     return reply.send(ok(result))
   })
 
-  // GET /api/accounts/:id/status
-  app.get<{ Params: IdParams }>(
-    '/api/accounts/:id/status',
-    { schema: { params: AccountIdParamsSchema } },
+  // GET /api/accounts/:qq/status
+  app.get<{ Params: QqParams }>(
+    '/api/accounts/:qq/status',
+    { schema: { params: AccountQqParamsSchema } },
     async (req, reply) => {
       const svc = new AccountService(req.server.services.get('db'))
-      const account = await svc.getAccount(Number(req.params.id))
+      const account = await svc.getAccount(BigInt(req.params.qq))
       if (!account) return reply.send(fail('账号不存在'))
 
       const pool = req.server.services.getOptional('account_pool')
@@ -60,7 +60,6 @@ const plugin: FastifyPluginAsync = async (app) => {
 
       return reply.send(
         ok({
-          id: account.id,
           qq: String(account.qq),
           role: account.role,
           state: adapter?.state ?? 'unknown',
@@ -101,10 +100,10 @@ const plugin: FastifyPluginAsync = async (app) => {
     },
   )
 
-  // PUT /api/accounts/:id
-  app.put<{ Params: IdParams; Body: UpdateBody }>(
-    '/api/accounts/:id',
-    { schema: { params: AccountIdParamsSchema, body: UpdateAccountBodySchema } },
+  // PUT /api/accounts/:qq
+  app.put<{ Params: QqParams; Body: UpdateBody }>(
+    '/api/accounts/:qq',
+    { schema: { params: AccountQqParamsSchema, body: UpdateAccountBodySchema } },
     async (req, reply) => {
       const pool = req.server.services.getOptional('account_pool')
       const registry = req.server.services.getOptional('group_bot_registry')
@@ -115,28 +114,28 @@ const plugin: FastifyPluginAsync = async (app) => {
         undefined,
         registry,
       )
-      const existing = await svc.getAccount(Number(req.params.id))
+      const existing = await svc.getAccount(BigInt(req.params.qq))
       if (!existing) return reply.send(fail('账号不存在'))
 
-      const account = await svc.updateAccount(Number(req.params.id), req.body)
+      const account = await svc.updateAccount(BigInt(req.params.qq), req.body)
       return reply.send(ok({ ...account, qq: String(account.qq) }))
     },
   )
 
-  // DELETE /api/accounts/:id
-  app.delete<{ Params: IdParams }>(
-    '/api/accounts/:id',
-    { schema: { params: AccountIdParamsSchema } },
+  // DELETE /api/accounts/:qq
+  app.delete<{ Params: QqParams }>(
+    '/api/accounts/:qq',
+    { schema: { params: AccountQqParamsSchema } },
     async (req, reply) => {
       const svc = new AccountService(req.server.services.get('db'))
-      const account = await svc.getAccount(Number(req.params.id))
+      const account = await svc.getAccount(BigInt(req.params.qq))
       if (!account) return reply.send(fail('账号不存在'))
 
       const pool = req.server.services.getOptional('account_pool')
       const clientId = `bot-${String(account.qq)}`
       if (pool?.getClient(clientId)) await pool.removeClient(clientId)
 
-      await svc.deleteAccount(Number(req.params.id))
+      await svc.deleteAccount(BigInt(req.params.qq))
       return reply.send(ok({ message: '已删除' }))
     },
   )

@@ -134,8 +134,8 @@ const router = createRouter({
       },
     },
     {
-      path: '/user/admins',
-      name: 'user-admins',
+      path: '/user/admin',
+      name: 'user-admin',
       component: () => import('@/views/user/AdminView.vue'),
       meta: {
         title: '御者',

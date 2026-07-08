@@ -21,7 +21,7 @@ const accounts = ref<AccountWithStatus[]>([])
 const sortedAccounts = computed(() =>
   [...accounts.value].sort((a, b) => (a.role === 'master' ? -1 : b.role === 'master' ? 1 : 0)),
 )
-const togglingAccountId = ref<number | null>(null)
+const togglingAccountQq = ref<string | null>(null)
 const loading = ref(false)
 
 /* 对话框状态 */
@@ -29,7 +29,7 @@ const createDialog = ref(false)
 const editDialog = ref(false)
 const deleteDialog = ref(false)
 const editTarget = ref<AccountWithStatus | null>(null)
-const deleteTargetId = ref<number | null>(null)
+const deleteTargetQq = ref<string | null>(null)
 
 /* 表单 Ref */
 const createFormRef = ref<VForm | null>(null)
@@ -88,13 +88,13 @@ async function load() {
   }
 }
 
-async function onToggleEnabled(id: number, value: boolean) {
-  togglingAccountId.value = id
+async function onToggleEnabled(qq: string, value: boolean) {
+  togglingAccountQq.value = qq
   try {
-    await updateAccount(id, { isEnabled: value })
+    await updateAccount(qq, { isEnabled: value })
     await load()
   } finally {
-    togglingAccountId.value = null
+    togglingAccountQq.value = null
   }
 }
 
@@ -117,7 +117,7 @@ async function onSaveEdit() {
   const { valid } = (await editFormRef.value?.validate()) ?? { valid: false }
   if (!valid) return
   const { qq: _qq, role: _role, ...updateFields } = form.value
-  await updateAccount(editTarget.value.id, updateFields as UpdateAccountDto)
+  await updateAccount(editTarget.value.qq, updateFields as UpdateAccountDto)
   editDialog.value = false
   await load()
 }
@@ -130,14 +130,14 @@ async function onSaveCreate() {
   await load()
 }
 
-function onDeleteConfirm(id: number) {
-  deleteTargetId.value = id
+function onDeleteConfirm(qq: string) {
+  deleteTargetQq.value = qq
   deleteDialog.value = true
 }
 
 async function onDeleteExecute() {
-  if (!deleteTargetId.value) return
-  await deleteAccount(deleteTargetId.value)
+  if (!deleteTargetQq.value) return
+  await deleteAccount(deleteTargetQq.value)
   deleteDialog.value = false
   await load()
 }
@@ -158,7 +158,12 @@ onMounted(load)
 <template>
   <PageLayout>
     <template #actions>
-      <v-btn variant="elevated" prepend-icon="mdi-swap-vertical" @click="openPriorityModeDialog">
+      <v-btn
+        variant="elevated"
+        color="primary"
+        prepend-icon="mdi-swap-vertical"
+        @click="openPriorityModeDialog"
+      >
         路由优先级
       </v-btn>
     </template>
@@ -166,10 +171,10 @@ onMounted(load)
     <!-- 账号卡片网格 -->
     <v-skeleton-loader v-if="loading && !accounts.length" type="card" class="mb-4" />
     <v-row v-else>
-      <v-col v-for="account in sortedAccounts" :key="account.id" cols="12" sm="6" md="3">
+      <v-col v-for="account in sortedAccounts" :key="account.qq" cols="12" sm="6" md="3">
         <AccountCard
           :account="account"
-          :toggling="togglingAccountId === account.id"
+          :toggling="togglingAccountQq === account.qq"
           @toggle-enabled="onToggleEnabled"
           @edit="onEdit"
           @delete="onDeleteConfirm"
@@ -236,7 +241,7 @@ onMounted(load)
               placeholder="请输入 Token（可选）"
               variant="underlined"
             />
-            <v-switch v-model="form.isEnabled" label="启用" />
+            <v-switch v-model="form.isEnabled" label="启用" color="primary" />
           </v-form>
         </v-card-text>
         <v-card-actions>
@@ -277,7 +282,7 @@ onMounted(load)
               placeholder="请输入 Token"
               variant="underlined"
             />
-            <v-switch v-model="form.isEnabled" label="启用" />
+            <v-switch v-model="form.isEnabled" label="启用" color="primary" />
           </v-form>
         </v-card-text>
         <v-card-actions>

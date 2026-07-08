@@ -24,7 +24,6 @@ function createMockPool() {
 }
 
 const account: Account = {
-  id: 1,
   qq: 1739280698n,
   nickname: '测试1',
   role: 'master',

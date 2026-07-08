@@ -34,7 +34,7 @@ export async function getSettingValue<T = unknown>(
   const candidates = buildAncestorScopes(ctx.path ?? [])
 
   const rows: CandidateRow[] = await ctx.db.$queryRaw`
-    SELECT scope, value FROM setting_values
+    SELECT scope, value FROM settings
     WHERE key = ${key} AND scope = ANY(${candidates})
   `
   const byScope = new Map(rows.map((r) => [r.scope, r.value]))

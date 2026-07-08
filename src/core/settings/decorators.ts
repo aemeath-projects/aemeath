@@ -6,10 +6,10 @@ import type { HandlerRegistryData } from '@aemeath-projects/exostrider/dispatch'
 
 const SETTING_NODES = Symbol('aemeath:setting-nodes')
 
-export type SettingValueType = 'boolean' | 'number' | 'string' | 'enum'
+export type SettingType = 'boolean' | 'number' | 'string' | 'enum'
 
 export interface SettingNodeOptions {
-  readonly type: SettingValueType
+  readonly type: SettingType
   readonly default: unknown
   readonly description?: string
   readonly enumOptions?: Record<string, unknown>
@@ -25,7 +25,7 @@ export interface SettingNodeEntry {
 
 export interface SettingNodeMeta {
   key: string
-  type: SettingValueType
+  type: SettingType
   default: unknown
   description: string
   enumOptions?: Record<string, number>

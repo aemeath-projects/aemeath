@@ -41,7 +41,7 @@ import {
 import type { IrisService } from './iris/index.js'
 import type { AemeathServiceMap } from './lifecycle.js'
 import { metricsRegistry } from './monitoring/index.js'
-import { authPlugin, corsPlugin, swaggerPlugin } from './plugins/index.js'
+import { corsPlugin, swaggerPlugin } from './plugins/index.js'
 import { createRedis, checkRedisReachable, RedisStore } from './redis/index.js'
 import {
   createBullMQConnection,
@@ -353,9 +353,6 @@ async function bootstrap(): Promise<void> {
   if (!config.isProduction) {
     await swaggerPlugin(app)
   }
-
-  // Bearer token 认证
-  await authPlugin(app, config.ADMIN_TOKEN)
 
   /* 注册 API 路由（须在 onReady 之前，Fastify 封闭路由前） */
 

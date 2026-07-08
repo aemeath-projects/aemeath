@@ -70,8 +70,6 @@ export const ConfigSchema = Type.Object({
     default: 'json',
   }),
 
-  // 认证与安全
-  ADMIN_TOKEN: Type.String({ default: '', description: '管理后台 Bearer token，为空时跳过认证' }),
   CORS_ORIGINS: Type.String({
     default: 'http://localhost:5173',
     description: 'CORS 允许来源（逗号分隔）',

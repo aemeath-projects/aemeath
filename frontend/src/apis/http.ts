@@ -1,5 +1,5 @@
 /**
- * HTTP 客户端 —— 统一封装 axios，自动解包后端信封 {code, data, message}，注入 Auth token。
+ * HTTP 客户端 —— 统一封装 axios，自动解包后端信封 {code, data, message}。
  */
 
 import axios from 'axios'
@@ -26,26 +26,6 @@ export class ApiError extends Error {
 const http: AxiosInstance = axios.create({
   timeout: 30000,
 })
-
-/** 请求拦截器：注入 Bearer token */
-http.interceptors.request.use((config) => {
-  const token = localStorage.getItem('admin_token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
-
-/** 响应拦截器：HTTP 错误日志 */
-http.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    const status = error?.response?.status
-    if (status === 401) console.error('[HTTP 401] 未授权', error.config?.url)
-    else if (status === 403) console.error('[HTTP 403] 无权限', error.config?.url)
-    return Promise.reject(error)
-  },
-)
 
 /** 解包信封，code !== 0 时抛出 ApiError */
 function unwrap<T>(envelope: ApiEnvelope<T>): T {

@@ -433,7 +433,7 @@ BullMQ（任务队列）取代原有的 Dramatiq。Worker 进程运行在 `src/c
 | `LOG_LEVEL`            | `info`               | `debug` \| `info` \| `warn` \| `error` |
 | `LOG_FORMAT`           | `json`               | `json` \| `console`                    |
 | `FRONTEND_DIST_DIR`    | `frontend/dist`      | 前端静态文件目录                       |
-| `ADMIN_TOKEN`          | `''`（空）           | 管理后台 Bearer token，**为空则跳过认证**（仅开发环境使用） |
+
 | `S3_ENDPOINT_URL`      | `''`（空）           | MinIO/S3 endpoint，**为空则禁用 OSS/归档/媒体存储功能** |
 | `S3_ACCESS_KEY_ID`     | `''`（空）           | S3 访问密钥 ID                         |
 | `S3_SECRET_ACCESS_KEY` | `''`（空）           | S3 访问密钥                            |

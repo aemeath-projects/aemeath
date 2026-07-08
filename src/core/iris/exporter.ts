@@ -35,26 +35,26 @@ export interface ArchiveExporterSettings {
 /** 数据库原始行类型。 */
 interface RawRow {
   id: bigint
-  // eslint-disable-next-line @typescript-eslint/naming-convention
+
   created_at: Date
-  // eslint-disable-next-line @typescript-eslint/naming-convention
+
   message_id: bigint
-  // eslint-disable-next-line @typescript-eslint/naming-convention
+
   message_type: number
-  // eslint-disable-next-line @typescript-eslint/naming-convention
+
   group_id: bigint | null
-  // eslint-disable-next-line @typescript-eslint/naming-convention
+
   user_id: bigint
-  // eslint-disable-next-line @typescript-eslint/naming-convention
+
   raw_message: string
   segments: unknown
-  // eslint-disable-next-line @typescript-eslint/naming-convention
+
   sender_nickname: string
-  // eslint-disable-next-line @typescript-eslint/naming-convention
+
   sender_card: string | null
-  // eslint-disable-next-line @typescript-eslint/naming-convention
+
   sender_role: string | null
-  // eslint-disable-next-line @typescript-eslint/naming-convention
+
   stored_at: Date
 }
 
@@ -165,7 +165,6 @@ export class IrisExporter {
       colStoredAt[i] = BigInt(row.stored_at.getTime())
     }
 
-    /* eslint-disable @typescript-eslint/naming-convention */
     const arrowTable = tableFromArrays({
       id: colId,
       created_at: colCreatedAt,
@@ -180,7 +179,6 @@ export class IrisExporter {
       sender_role: colSenderRole,
       stored_at: colStoredAt,
     })
-    /* eslint-enable @typescript-eslint/naming-convention */
 
     // 4. Arrow → IPC Stream → WASM Table → Parquet bytes
     const ipcBytes = tableToIPC(arrowTable, 'stream')

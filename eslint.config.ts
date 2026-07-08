@@ -46,6 +46,12 @@ export default tseslint.config(
         },
       ],
       'import-x/no-duplicates': 'error',
+    },
+  },
+  {
+    files: ['src/**/*.ts'],
+    plugins: { 'import-x': importPlugin },
+    rules: {
       // 跨 domain 必须走 index.ts；domain 内部（相对路径引用）不受限制
       'import-x/no-internal-modules': [
         'error',
@@ -54,9 +60,7 @@ export default tseslint.config(
             '**/index.js',
             '@aemeath-projects/**',
             '#prisma/**',
-            // 以下均为第三方包官方文档要求的子路径导入，非内部 domain 深度导入，与本规则治理目标无关
-            'prisma/config',
-            'vitest/config',
+            // parquet-wasm 官方文档要求的子路径导入（src/core/iris/exporter.ts 使用），非内部 domain 深度导入
             'parquet-wasm/esm',
           ],
         },
@@ -140,8 +144,8 @@ export default tseslint.config(
   {
     // SQL/DB 边界：$queryRaw 行类型与 Parquet 归档列名为 snake_case 数据契约，放行 property 命名
     files: [
-      'src/core/chat/exporter.ts',
-      'src/core/chat/archive.ts',
+      'src/core/iris/exporter.ts',
+      'src/core/iris/archive.ts',
       'src/services/checkin.ts',
       'src/services/drift-bottle.ts',
     ],
@@ -162,7 +166,7 @@ export default tseslint.config(
     //   持久化到 Redis 的 topic 名，变更会导致已入队任务丢失（apis/queue.ts、tasks/daily-checkin.ts）
     //
     // HTTP 协议头 / MIME 类型常量（如 'Content-Type', 'image/png'）：
-    //   HTTP 协议约定格式，含 '-' 和 '/'，不属于 JS 标识符命名（core/chat/media.ts）
+    //   HTTP 协议约定格式，含 '-' 和 '/'，不属于 JS 标识符命名（core/iris/media.ts）
     //
     // Prisma $queryRaw 返回行类型（如 value_type, group_id）：
     //   $queryRaw 直接映射数据库列名（snake_case），类型声明须与列名一致（core/settings/query.ts）
@@ -174,7 +178,7 @@ export default tseslint.config(
       'src/core/main.ts',
       'src/core/worker.ts',
       'src/apis/queue.ts',
-      'src/core/chat/media.ts',
+      'src/core/iris/media.ts',
       'src/core/user/events.ts',
       'src/core/user/index.ts',
       'src/core/settings/query.ts',

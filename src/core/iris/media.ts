@@ -15,15 +15,14 @@ const log: PinoLogger = getLogger('iris:media') as unknown as PinoLogger
 
 /** Content-Type 到文件扩展名映射。 */
 const MIME_EXT_MAP: Record<string, string> = {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   'image/png': 'png',
-  // eslint-disable-next-line @typescript-eslint/naming-convention
+
   'image/jpeg': 'jpg',
-  // eslint-disable-next-line @typescript-eslint/naming-convention
+
   'image/gif': 'gif',
-  // eslint-disable-next-line @typescript-eslint/naming-convention
+
   'image/webp': 'webp',
-  // eslint-disable-next-line @typescript-eslint/naming-convention
+
   'image/bmp': 'bmp',
 }
 
@@ -79,7 +78,6 @@ export class MediaStorageService {
 
     // 6. 上传
     await uploadBuffer(this.client, this.bucket, key, buf, {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       'Content-Type': contentType || `image/${ext}`,
     })
     log.debug({ key, size: buf.byteLength }, '媒体上传完成')

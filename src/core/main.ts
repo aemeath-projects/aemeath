@@ -20,7 +20,7 @@ import { createLogger, setLogger, getLogger } from '@aemeath-projects/exostrider
 import type { SessionManager } from '@aemeath-projects/exostrider/session'
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 import fastifyStatic from '@fastify/static'
-import Fastify, { type FastifyInstance, type FastifyPluginAsync } from 'fastify'
+import Fastify, { type FastifyInstance, type FastifyPluginAsync, LogController } from 'fastify'
 
 import type { AemeathConfig } from '../../aemeath.config.js'
 import pkg from '../../package.json' with { type: 'json' }
@@ -339,7 +339,9 @@ async function bootstrap(): Promise<void> {
   // pino.Logger 与 FastifyBaseLogger 运行时兼容但 TypeScript 泛型逆变不一致，用类型断言统一
   const app = Fastify({
     loggerInstance: appLogger,
-    disableRequestLogging: false,
+    logController: new LogController({
+      disableRequestLogging: false,
+    }),
   }) as unknown as FastifyInstance
 
   /* 注册插件 */

@@ -2,7 +2,8 @@
 import { ref, computed, onMounted } from 'vue'
 import type { VForm } from 'vuetify/components'
 import PageLayout from '@/layouts/PageLayout.vue'
-import AccountCard from './AccountCard.vue'
+import { requiredRule, endpointRule, qqRule } from '@/utils/validators'
+import AccountCard from '@/components/accounts/AccountCard.vue'
 import {
   listAccounts,
   createAccount,
@@ -11,12 +12,10 @@ import {
   getAccountStatus,
   connectAccount,
   disconnectAccount,
-  getRoutingTable,
   type Account,
   type AccountStatus,
   type CreateAccountDto,
   type UpdateAccountDto,
-  type RoutingTableEntry,
 } from '@/apis/accounts'
 
 const accounts = ref<Account[]>([])
@@ -24,7 +23,6 @@ const sortedAccounts = computed(() =>
   [...accounts.value].sort((a, b) => (a.role === 'master' ? -1 : b.role === 'master' ? 1 : 0)),
 )
 const statuses = ref<Record<number, AccountStatus>>({})
-const routingTable = ref<RoutingTableEntry[]>([])
 const loadingAccountId = ref<number | null>(null)
 const loading = ref(false)
 
@@ -32,12 +30,12 @@ const loading = ref(false)
 const createDialog = ref(false)
 const editDialog = ref(false)
 const deleteDialog = ref(false)
-const routingDialog = ref(false)
 const editTarget = ref<Account | null>(null)
 const deleteTargetId = ref<number | null>(null)
 
 /* 表单 Ref */
 const createFormRef = ref<VForm | null>(null)
+const editFormRef = ref<VForm | null>(null)
 
 /* 表单 */
 const form = ref<CreateAccountDto>({
@@ -48,17 +46,20 @@ const form = ref<CreateAccountDto>({
   isEnabled: true,
 })
 
-/* 验证规则 */
-const requiredRule = (v: unknown) => (v != null && String(v).trim() !== '' ? true : '必填')
-
-const roleOptions = ['master', 'normal', 'readonly']
-const transportOptions = ['ws', 'sse']
+const roleOptions = [
+  { title: '主账号', value: 'master' },
+  { title: '普通', value: 'normal' },
+  { title: '只读', value: 'readonly' },
+]
+const transportOptions = [
+  { title: 'WebSocket', value: 'ws' },
+  { title: 'HTTP SSE', value: 'sse' },
+]
 
 async function load() {
   loading.value = true
   try {
     accounts.value = await listAccounts()
-    routingTable.value = await getRoutingTable()
     const entries = await Promise.allSettled(
       accounts.value.map((a) => getAccountStatus(a.id).then((s) => [a.id, s] as const)),
     )
@@ -109,6 +110,8 @@ function onEdit(account: Account) {
 
 async function onSaveEdit() {
   if (!editTarget.value) return
+  const { valid } = (await editFormRef.value?.validate()) ?? { valid: false }
+  if (!valid) return
   const { qq: _qq, role: _role, ...updateFields } = form.value
   await updateAccount(editTarget.value.id, updateFields as UpdateAccountDto)
   editDialog.value = false
@@ -150,16 +153,10 @@ onMounted(load)
 
 <template>
   <PageLayout>
-    <template #actions>
-      <v-btn color="primary" prepend-icon="mdi-routes" @click="routingDialog = true">
-        路由表
-      </v-btn>
-    </template>
-
     <!-- 账号卡片网格 -->
     <v-skeleton-loader v-if="loading && !accounts.length" type="card" class="mb-4" />
     <v-row v-else>
-      <v-col v-for="account in sortedAccounts" :key="account.id" cols="12" sm="6" md="4">
+      <v-col v-for="account in sortedAccounts" :key="account.id" cols="12" sm="6" md="3">
         <AccountCard
           :account="account"
           :status="statuses[account.id]"
@@ -170,7 +167,7 @@ onMounted(load)
           @delete="onDeleteConfirm"
         />
       </v-col>
-      <v-col cols="12" sm="6" md="4">
+      <v-col cols="12" sm="6" md="3">
         <v-card
           elevation="1"
           class="add-account-card cursor-pointer h-100 d-flex align-center"
@@ -178,67 +175,59 @@ onMounted(load)
         >
           <div class="text-center w-100">
             <v-icon size="48" color="medium-emphasis" class="mb-2">mdi-plus</v-icon>
-            <div class="text-body-2 text-medium-emphasis">新增账户</div>
+            <div class="text-body-2 text-medium-emphasis">新增账号</div>
           </div>
         </v-card>
       </v-col>
     </v-row>
 
-    <!-- 路由表 Dialog -->
-    <v-dialog v-model="routingDialog" max-width="640">
-      <v-card title="路由表">
-        <v-card-text>
-          <v-table density="compact">
-            <thead>
-              <tr>
-                <th>Client ID</th>
-                <th>状态</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="entry in routingTable" :key="entry.clientId">
-                <td class="text-caption">{{ entry.clientId }}</td>
-                <td>
-                  <v-chip
-                    :color="entry.state === 'connected' ? 'success' : 'error'"
-                    size="x-small"
-                    label
-                  >
-                    {{ entry.state }}
-                  </v-chip>
-                </td>
-              </tr>
-            </tbody>
-          </v-table>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn @click="routingDialog = false">关闭</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <!-- 新增账户 Dialog -->
+    <!-- 新增账号 Dialog -->
     <v-dialog v-model="createDialog" max-width="480">
-      <v-card title="新增账户">
+      <v-card title="新增账号">
         <v-card-text>
           <v-form ref="createFormRef">
-            <v-text-field v-model="form.qq" label="QQ 号" :rules="[requiredRule]" />
-            <v-text-field v-model="form.nickname" label="昵称（可选）" />
+            <v-text-field
+              v-model="form.qq"
+              label="QQ 号"
+              placeholder="请输入 QQ 号"
+              :rules="[requiredRule, qqRule]"
+              variant="underlined"
+            />
+            <v-text-field
+              v-model="form.nickname"
+              label="昵称"
+              placeholder="请输入昵称（可选）"
+              variant="underlined"
+            />
             <v-select
               v-model="form.role"
               :items="roleOptions"
               label="角色"
+              placeholder="请选择角色"
               :rules="[requiredRule]"
+              variant="underlined"
             />
             <v-select
               v-model="form.transport"
               :items="transportOptions"
               label="传输协议"
+              placeholder="请选择传输协议"
               :rules="[requiredRule]"
+              variant="underlined"
             />
-            <v-text-field v-model="form.endpoint" label="Endpoint 地址" :rules="[requiredRule]" />
-            <v-text-field v-model="form.token" label="Token（可选）" />
+            <v-text-field
+              v-model="form.endpoint"
+              label="Endpoint 地址"
+              placeholder="请输入 Endpoint 地址"
+              :rules="[requiredRule, endpointRule]"
+              variant="underlined"
+            />
+            <v-text-field
+              v-model="form.token"
+              label="Token"
+              placeholder="请输入 Token（可选）"
+              variant="underlined"
+            />
             <v-switch v-model="form.isEnabled" label="启用" />
           </v-form>
         </v-card-text>
@@ -250,15 +239,39 @@ onMounted(load)
       </v-card>
     </v-dialog>
 
-    <!-- 编辑账户 Dialog -->
+    <!-- 编辑账号 Dialog -->
     <v-dialog v-model="editDialog" max-width="480">
-      <v-card title="编辑账户">
+      <v-card title="编辑账号">
         <v-card-text>
-          <v-text-field v-model="form.nickname" label="昵称" />
-          <v-select v-model="form.transport" :items="transportOptions" label="传输协议" />
-          <v-text-field v-model="form.endpoint" label="Endpoint 地址" />
-          <v-text-field v-model="form.token" label="Token" />
-          <v-switch v-model="form.isEnabled" label="启用" />
+          <v-form ref="editFormRef">
+            <v-text-field
+              v-model="form.nickname"
+              label="昵称"
+              placeholder="请输入昵称"
+              variant="underlined"
+            />
+            <v-select
+              v-model="form.transport"
+              :items="transportOptions"
+              label="传输协议"
+              placeholder="请选择传输协议"
+              variant="underlined"
+            />
+            <v-text-field
+              v-model="form.endpoint"
+              label="Endpoint 地址"
+              placeholder="请输入 Endpoint 地址"
+              :rules="[requiredRule, endpointRule]"
+              variant="underlined"
+            />
+            <v-text-field
+              v-model="form.token"
+              label="Token"
+              placeholder="请输入 Token"
+              variant="underlined"
+            />
+            <v-switch v-model="form.isEnabled" label="启用" />
+          </v-form>
         </v-card-text>
         <v-card-actions>
           <v-spacer />
@@ -284,6 +297,7 @@ onMounted(load)
 
 <style scoped>
 .add-account-card {
+  min-height: 200px;
   transition: background-color 0.2s;
 }
 .add-account-card:hover {

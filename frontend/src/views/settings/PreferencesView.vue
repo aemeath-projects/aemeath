@@ -3,6 +3,7 @@ import { useTheme } from 'vuetify'
 import PageLayout from '@/layouts/PageLayout.vue'
 import { useSettingsStore } from '@/stores/settings'
 import { useThemeStore } from '@/stores/theme'
+import { themes } from '@/themes'
 
 const vuetifyTheme = useTheme()
 const themeStore = useThemeStore()
@@ -16,102 +17,157 @@ function onThemeChange() {
 <template>
   <PageLayout>
     <!-- 外观设置 -->
-    <v-card rounded="lg" class="mb-4">
+    <v-card class="mb-4">
       <v-card-title class="pa-4 pb-2 text-body-1 font-weight-bold">
         <v-icon start size="20">mdi-palette</v-icon>
         外观
       </v-card-title>
-      <v-divider />
-      <v-card-text class="pa-4">
+      <v-card-text class="pa-4 pt-0">
+        <div class="text-body-2 text-medium-emphasis mb-3">配色主题</div>
+        <div class="theme-grid">
+          <div
+            v-for="t in themes"
+            :key="t.id"
+            class="theme-card"
+            :class="{ 'theme-card--active': themeStore.theme === t.id }"
+            @click="themeStore.setTheme(t.id, vuetifyTheme)"
+          >
+            <div class="theme-card__swatches">
+              <span
+                v-for="c in [
+                  t.light.primary,
+                  t.light.secondary,
+                  t.light.accent,
+                  t.light.background,
+                  t.light.surface,
+                ]"
+                :key="c"
+                class="theme-card__swatch"
+                :style="{ background: c }"
+              />
+            </div>
+            <div class="theme-card__swatches theme-card__swatches--dark">
+              <span
+                v-for="c in [
+                  t.dark.primary,
+                  t.dark.secondary,
+                  t.dark.accent,
+                  t.dark.background,
+                  t.dark.surface,
+                ]"
+                :key="c"
+                class="theme-card__swatch"
+                :style="{ background: c }"
+              />
+            </div>
+            <div class="theme-card__body d-flex align-center justify-space-between">
+              <div>
+                <div class="theme-card__name">{{ t.name }}</div>
+                <div class="theme-card__desc">{{ t.description }}</div>
+              </div>
+              <v-icon
+                v-if="themeStore.theme === t.id"
+                size="18"
+                color="primary"
+                class="flex-shrink-0"
+              >
+                mdi-check-circle
+              </v-icon>
+            </div>
+          </div>
+        </div>
+
+        <v-divider class="my-4" />
+
         <div class="text-body-2 text-medium-emphasis mb-3">主题模式</div>
-        <v-btn-toggle
+        <v-radio-group
           v-model="themeStore.preference"
-          density="compact"
-          variant="elevated"
-          divided
-          mandatory
+          inline
+          hide-details
           @update:model-value="onThemeChange"
         >
-          <v-btn value="light" prepend-icon="mdi-white-balance-sunny" size="small">浅色</v-btn>
-          <v-btn value="dark" prepend-icon="mdi-weather-night" size="small">深色</v-btn>
-          <v-btn value="followOS" prepend-icon="mdi-monitor" size="small">跟随系统</v-btn>
-        </v-btn-toggle>
-      </v-card-text>
-    </v-card>
-
-    <!-- 队列监控设置 -->
-    <v-card rounded="lg" class="mb-4">
-      <v-card-title class="pa-4 pb-2 text-body-1 font-weight-bold">
-        <v-icon start size="20">mdi-tray-full</v-icon>
-        队列监控
-      </v-card-title>
-      <v-divider />
-      <v-card-text class="pa-4">
-        <div class="text-body-2 text-medium-emphasis mb-3">数据刷新间隔</div>
-        <v-btn-toggle
-          v-model="settingsStore.queueRefreshInterval"
-          density="compact"
-          variant="elevated"
-          divided
-          mandatory
-        >
-          <v-btn :value="5" size="small">5 秒</v-btn>
-          <v-btn :value="10" size="small">10 秒</v-btn>
-          <v-btn :value="30" size="small">30 秒</v-btn>
-        </v-btn-toggle>
+          <v-radio value="light" label="浅色" />
+          <v-radio value="dark" label="深色" />
+          <v-radio value="followOS" label="跟随系统" />
+        </v-radio-group>
       </v-card-text>
     </v-card>
 
     <!-- 列表显示设置 -->
-    <v-card rounded="lg" class="mb-4">
+    <v-card class="mb-4">
       <v-card-title class="pa-4 pb-2 text-body-1 font-weight-bold">
         <v-icon start size="20">mdi-format-list-bulleted</v-icon>
         列表显示
       </v-card-title>
-      <v-divider />
-      <v-card-text class="pa-4">
+      <v-card-text class="pa-4 pt-0">
         <div class="text-body-2 text-medium-emphasis mb-3">每页默认条数</div>
-        <v-btn-toggle
-          v-model="settingsStore.defaultPageSize"
-          density="compact"
-          variant="elevated"
-          divided
-          mandatory
-        >
-          <v-btn :value="20" size="small">20 条</v-btn>
-          <v-btn :value="50" size="small">50 条</v-btn>
-          <v-btn :value="100" size="small">100 条</v-btn>
-        </v-btn-toggle>
+        <v-radio-group v-model="settingsStore.defaultPageSize" inline hide-details>
+          <v-radio :value="20" label="20 条" />
+          <v-radio :value="50" label="50 条" />
+          <v-radio :value="100" label="100 条" />
+        </v-radio-group>
       </v-card-text>
-    </v-card>
-
-    <!-- 关于 -->
-    <v-card rounded="lg">
-      <v-card-title class="pa-4 pb-2 text-body-1 font-weight-bold">
-        <v-icon start size="20">mdi-information-outline</v-icon>
-        关于
-      </v-card-title>
-      <v-divider />
-      <v-list density="compact" class="pa-2">
-        <v-list-item>
-          <v-list-item-title class="text-caption text-medium-emphasis">项目名称</v-list-item-title>
-          <v-list-item-subtitle class="text-body-2 font-weight-medium mt-0.5">
-            Aemeath QQ Bot Framework
-          </v-list-item-subtitle>
-        </v-list-item>
-        <v-list-item>
-          <v-list-item-title class="text-caption text-medium-emphasis">协议支持</v-list-item-title>
-          <v-list-item-subtitle class="text-body-2 font-weight-medium mt-0.5">
-            NapCat / OneBot 11
-          </v-list-item-subtitle>
-        </v-list-item>
-        <v-list-item>
-          <v-list-item-title class="text-caption text-medium-emphasis">技术栈</v-list-item-title>
-          <v-list-item-subtitle class="text-body-2 font-weight-medium mt-0.5">
-            Node.js + Fastify 5 + Vue 3 + Vuetify 4
-          </v-list-item-subtitle>
-        </v-list-item>
-      </v-list>
     </v-card>
   </PageLayout>
 </template>
+
+<style scoped>
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.theme-card {
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.1);
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.theme-card:hover {
+  background: rgba(var(--v-theme-primary), 0.04);
+  border-color: rgba(var(--v-theme-primary), 0.25);
+}
+
+.theme-card--active {
+  border-color: rgb(var(--v-theme-primary));
+  background: rgba(var(--v-theme-primary), 0.06);
+}
+
+.theme-card__swatches {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 4px;
+}
+
+.theme-card__swatches--dark {
+  margin-bottom: 10px;
+}
+
+.theme-card__swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.theme-card__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.theme-card--active .theme-card__name {
+  color: rgb(var(--v-theme-primary));
+}
+
+.theme-card__desc {
+  font-size: 11px;
+  color: rgba(var(--v-theme-on-surface), 0.45);
+  margin-top: 2px;
+}
+</style>

@@ -1,13 +1,22 @@
-/** Theme Store 单元测试：主题偏好切换与持久化逻辑。 */
+/** Theme Store 单元测试：主题偏好切换、配色主题选择与持久化逻辑。 */
 import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { ref } from 'vue'
 import { setActivePinia, createPinia } from 'pinia'
 import { useThemeStore } from '@/stores/theme'
 
-// mock vuetify useTheme，避免依赖真实 Vuetify 实例
+// mock vuetify useTheme，返回 themes.light/dark.colors + change 方法
 vi.mock('vuetify', () => ({
-  useTheme: vi.fn(() => ({
-    change: vi.fn(),
-  })),
+  useTheme: vi.fn(() => {
+    const lightColors = ref<Record<string, string>>({})
+    const darkColors = ref<Record<string, string>>({})
+    return {
+      themes: ref({
+        light: { colors: lightColors.value },
+        dark: { colors: darkColors.value },
+      }),
+      change: vi.fn(),
+    }
+  }),
 }))
 
 import { useTheme } from 'vuetify'
@@ -24,7 +33,13 @@ Object.defineProperty(window, 'matchMedia', {
 })
 
 function makeMockTheme() {
-  return { change: vi.fn() } as unknown as ReturnType<typeof useTheme>
+  return {
+    themes: ref<Record<string, { colors: Record<string, string> }>>({
+      light: { colors: {} },
+      dark: { colors: {} },
+    }),
+    change: vi.fn(),
+  } as unknown as ReturnType<typeof useTheme>
 }
 
 describe('useThemeStore', () => {
@@ -40,6 +55,11 @@ describe('useThemeStore', () => {
     it('preference 初始为 "light"', () => {
       const store = useThemeStore()
       expect(store.preference).toBe('light')
+    })
+
+    it('theme 初始为 "aemeath"', () => {
+      const store = useThemeStore()
+      expect(store.theme).toBe('aemeath')
     })
   })
 
@@ -94,16 +114,51 @@ describe('useThemeStore', () => {
     })
   })
 
+  /* setTheme() */
+
+  describe('setTheme()', () => {
+    it('设置为 "aemeath" 后 theme 更新', () => {
+      const store = useThemeStore()
+      const mockTheme = makeMockTheme()
+      store.theme = 'unknown'
+
+      store.setTheme('aemeath', mockTheme)
+
+      expect(store.theme).toBe('aemeath')
+    })
+
+    it('切换主题后写入 light/dark colors', () => {
+      const store = useThemeStore()
+      const mockTheme = makeMockTheme()
+
+      store.setTheme('aemeath', mockTheme)
+
+      expect(mockTheme.themes.value.light!.colors.primary).toBe('#22DFF2')
+      expect(mockTheme.themes.value.dark!.colors.primary).toBe('#3FFEFB')
+    })
+
+    it('切换主题后重新应用亮度模式', () => {
+      const store = useThemeStore()
+      const mockTheme = makeMockTheme()
+      store.preference = 'dark'
+
+      store.setTheme('aemeath', mockTheme)
+
+      expect(mockTheme.change).toHaveBeenCalledWith('dark')
+    })
+  })
+
   /* initTheme() */
 
   describe('initTheme()', () => {
-    it('调用时立即应用当前 preference', () => {
+    it('调用时立即应用当前 theme 的配色与偏好', () => {
       const store = useThemeStore()
       const mockTheme = makeMockTheme()
       store.preference = 'dark'
 
       store.initTheme(mockTheme)
 
+      expect(mockTheme.themes.value.light!.colors.primary).toBe('#22DFF2')
       expect(mockTheme.change).toHaveBeenCalledWith('dark')
     })
 

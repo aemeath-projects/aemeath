@@ -11,3 +11,9 @@ export const endpointRule = (v: unknown): true | string => {
   if (value === '') return true
   return ENDPOINT_PATTERN.test(value) ? true : 'Endpoint 必须以 ws:// wss:// http:// https:// 开头'
 }
+
+export const qqRule = (v: unknown): true | string => {
+  const value = String(v ?? '').trim()
+  if (value === '') return true
+  return /^\d+$/.test(value) ? true : '请输入 QQ 号'
+}

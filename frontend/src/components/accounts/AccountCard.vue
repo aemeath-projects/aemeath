@@ -15,11 +15,11 @@ const emit = defineEmits<{
   delete: [id: number]
 }>()
 
-const stateColor: Record<string, string> = {
-  connected: 'success',
-  connecting: 'warning',
-  disconnected: 'error',
-  unknown: 'default',
+const stateBgColor: Record<string, string> = {
+  connected: '#e8f5e9',
+  connecting: '#fff8e1',
+  disconnected: '#ffebee',
+  unknown: '',
 }
 
 const stateLabel: Record<string, string> = {
@@ -29,32 +29,47 @@ const stateLabel: Record<string, string> = {
   unknown: '未知',
 }
 
+const roleLabel: Record<string, string> = {
+  master: '主账号',
+  normal: '普通账号',
+  readonly: '只读账号',
+}
+
+const roleColor: Record<string, string> = {
+  master: '#d32f2f',
+  normal: '#1976d2',
+  readonly: '#fbc02d',
+}
+
 const currentState = computed(() => props.status?.state ?? 'unknown')
+
+const cardBgColor = computed(() => stateBgColor[currentState.value] || '')
 </script>
 
 <template>
-  <v-card elevation="1" class="h-100">
+  <v-card elevation="1" class="h-100" :color="cardBgColor || undefined">
     <v-card-title class="d-flex align-center ga-2">
       <span class="text-body-1 font-weight-medium">{{ account.nickname ?? '未命名' }}</span>
-      <v-chip :color="account.role === 'master' ? 'primary' : 'secondary'" size="x-small" label>
-        {{ account.role }}
+      <v-chip :color="roleColor[account.role]" variant="flat" label size="small">
+        {{ roleLabel[account.role] ?? account.role }}
       </v-chip>
       <v-spacer />
-      <v-badge :color="stateColor[currentState]" :content="stateLabel[currentState]" inline />
+      <span class="text-medium-emphasis" style="font-size: 0.7rem">{{
+        stateLabel[currentState]
+      }}</span>
     </v-card-title>
 
-    <v-card-subtitle class="text-caption">QQ: {{ account.qq }}</v-card-subtitle>
+    <v-card-subtitle class="text-caption">{{ account.qq }}</v-card-subtitle>
 
     <v-card-text>
       <div class="text-caption text-medium-emphasis text-truncate" :title="account.endpoint">
-        {{ account.transport.toUpperCase() }} · {{ account.endpoint }}
+        {{ account.transport.toUpperCase() }} | {{ account.endpoint }}
       </div>
     </v-card-text>
 
     <v-card-actions>
       <v-btn
         v-if="currentState !== 'connected'"
-        size="small"
         color="success"
         variant="tonal"
         :loading="loading"
@@ -65,7 +80,6 @@ const currentState = computed(() => props.status?.state ?? 'unknown')
       </v-btn>
       <v-btn
         v-else
-        size="small"
         color="warning"
         variant="tonal"
         :loading="loading"
@@ -75,14 +89,8 @@ const currentState = computed(() => props.status?.state ?? 'unknown')
         断开
       </v-btn>
       <v-spacer />
-      <v-btn size="small" icon="mdi-pencil" variant="text" @click="emit('edit', account)" />
-      <v-btn
-        size="small"
-        icon="mdi-delete"
-        variant="text"
-        color="error"
-        @click="emit('delete', account.id)"
-      />
+      <v-btn icon="mdi-pencil" variant="text" @click="emit('edit', account)" />
+      <v-btn icon="mdi-delete" variant="text" color="error" @click="emit('delete', account.id)" />
     </v-card-actions>
   </v-card>
 </template>

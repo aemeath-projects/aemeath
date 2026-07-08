@@ -64,7 +64,7 @@
     "@sinclair/typebox": "^0.34.49",
     "@twemoji/svg": "^15.0.0",
     "apache-arrow": "^21.1.0",
-    "bullmq": "^5.79.2",
+    "bullmq": "^5.79.3",
     "dotenv": "^17.4.2",
     "fastify": "^5.10.0",
     "ioredis": "^5.11.1",
@@ -105,7 +105,7 @@
     "tsup": "^8.5.1",
     "tsx": "^4.23.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.62.1",
+    "typescript-eslint": "^8.63.0",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.10"
   },

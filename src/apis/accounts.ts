@@ -1,9 +1,6 @@
 /**
  * 账号管理和多账号路由 REST API —— /api/accounts, /api/routing。
  */
-import type { ClientPool } from '@aemeath-projects/exostrider/pool'
-import type { NapCatClient } from '@aemeath-projects/napcat'
-import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 import type { Static } from '@sinclair/typebox'
 import type { FastifyPluginAsync } from 'fastify'
 
@@ -14,7 +11,6 @@ import {
 } from './schemas/accounts.js'
 import { SetPriorityModeBodySchema } from './schemas/routing.js'
 
-import type { NapCatClientAdapter, AccountRole } from '@/core/accounts/index.js'
 import { AccountService } from '@/core/accounts/index.js'
 import { ok, fail } from '@/core/schemas/index.js'
 
@@ -42,10 +38,9 @@ const plugin: FastifyPluginAsync = async (app) => {
       const account = await svc.getAccount(Number(req.params.id))
       if (!account) return reply.send(fail('账号不存在'))
 
-      const pool = req.server.services.get('account_pool') as
-        ClientPool<NapCatClient, AccountRole, AnyOneBotEvent> | undefined
+      const pool = req.server.services.getOptional('account_pool')
       const clientId = `bot-${String(account.qq)}`
-      const adapter = pool?.getClient(clientId) as NapCatClientAdapter | undefined
+      const adapter = pool?.getClient(clientId)
 
       return reply.send(
         ok({
@@ -63,7 +58,8 @@ const plugin: FastifyPluginAsync = async (app) => {
     '/api/accounts',
     { schema: { body: CreateAccountBodySchema } },
     async (req, reply) => {
-      const svc = new AccountService(req.server.services.get('db'))
+      const pool = req.server.services.getOptional('account_pool')
+      const svc = new AccountService(req.server.services.get('db'), pool)
       const body = req.body
       if (body.role === 'master') {
         const alreadyHasMaster = await svc.hasMaster()
@@ -87,7 +83,11 @@ const plugin: FastifyPluginAsync = async (app) => {
     '/api/accounts/:id',
     { schema: { params: AccountIdParamsSchema, body: UpdateAccountBodySchema } },
     async (req, reply) => {
-      const svc = new AccountService(req.server.services.get('db'))
+      const pool = req.server.services.getOptional('account_pool')
+      const svc = new AccountService(req.server.services.get('db'), pool)
+      const existing = await svc.getAccount(Number(req.params.id))
+      if (!existing) return reply.send(fail('账号不存在'))
+
       const account = await svc.updateAccount(Number(req.params.id), req.body)
       return reply.send(ok({ ...account, qq: String(account.qq) }))
     },
@@ -102,11 +102,9 @@ const plugin: FastifyPluginAsync = async (app) => {
       const account = await svc.getAccount(Number(req.params.id))
       if (!account) return reply.send(fail('账号不存在'))
 
-      const pool = req.server.services.get('account_pool') as
-        ClientPool<NapCatClient, AccountRole, AnyOneBotEvent> | undefined
+      const pool = req.server.services.getOptional('account_pool')
       const clientId = `bot-${String(account.qq)}`
-      const adapter = pool?.getClient(clientId)
-      if (adapter) await adapter.disconnect()
+      if (pool?.getClient(clientId)) await pool.removeClient(clientId)
 
       await svc.deleteAccount(Number(req.params.id))
       return reply.send(ok({ message: '已删除' }))
@@ -122,8 +120,7 @@ const plugin: FastifyPluginAsync = async (app) => {
       const account = await svc.getAccount(Number(req.params.id))
       if (!account) return reply.send(fail('账号不存在'))
 
-      const pool = req.server.services.get('account_pool') as
-        ClientPool<NapCatClient, AccountRole, AnyOneBotEvent> | undefined
+      const pool = req.server.services.getOptional('account_pool')
       const clientId = `bot-${String(account.qq)}`
       const adapter = pool?.getClient(clientId)
       if (!adapter) return reply.send(fail('账号未在连接池中'))
@@ -141,8 +138,7 @@ const plugin: FastifyPluginAsync = async (app) => {
       const account = await svc.getAccount(Number(req.params.id))
       if (!account) return reply.send(fail('账号不存在'))
 
-      const pool = req.server.services.get('account_pool') as
-        ClientPool<NapCatClient, AccountRole, AnyOneBotEvent> | undefined
+      const pool = req.server.services.getOptional('account_pool')
       const clientId = `bot-${String(account.qq)}`
       const adapter = pool?.getClient(clientId)
       if (adapter) await adapter.disconnect()
@@ -152,8 +148,7 @@ const plugin: FastifyPluginAsync = async (app) => {
 
   // GET /api/routing/table
   app.get('/api/routing/table', async (req, reply) => {
-    const pool = req.server.services.get('account_pool') as
-      ClientPool<NapCatClient, AccountRole, AnyOneBotEvent> | undefined
+    const pool = req.server.services.getOptional('account_pool')
     const available = pool?.getAvailableClients() ?? []
     return reply.send(ok(available.map((c) => ({ clientId: c.id, state: c.state }))))
   })

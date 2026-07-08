@@ -41,14 +41,11 @@ export class AdminService {
 
   /** 设置/更换御者，仅允许 master 账号好友列表内的 QQ。 */
   async setAdmin(qq: bigint): Promise<void> {
-    if (!this.masterApis.friendApi) {
-      throw new ValidationError('master 账号未在线，无法设置御者')
+    const friends = await this._safeGetFriendList()
+    if (!friends) {
+      throw new ValidationError('master 账号未在线或获取好友列表失败，无法设置御者')
     }
-    const friends = await this.masterApis.friendApi.getFriendList()
-    if (!friends.ok) {
-      throw new ValidationError('获取好友列表失败')
-    }
-    if (!friends.data.some((f) => BigInt(f.userId) === qq)) {
+    if (!friends.some((f) => BigInt(f.userId) === qq)) {
       throw new ValidationError('目标 QQ 不在 master 账号好友列表中，无法设置为御者')
     }
 
@@ -56,7 +53,7 @@ export class AdminService {
       const previousQq = await this.db.$transaction(async (tx) => {
         const current = await tx.user.findFirst({ where: { relation: 'admin' } })
         if (current && current.qq !== qq) {
-          const isFriend = friends.data.some((f) => BigInt(f.userId) === current.qq)
+          const isFriend = friends.some((f) => BigInt(f.userId) === current.qq)
           let newRelation: UserRelation
           if (isFriend) {
             newRelation = 'friend'
@@ -72,7 +69,7 @@ export class AdminService {
           where: { qq },
           create: {
             qq,
-            nickname: friends.data.find((f) => BigInt(f.userId) === qq)?.nickname ?? '',
+            nickname: friends.find((f) => BigInt(f.userId) === qq)?.nickname ?? '',
             relation: 'admin',
           },
           update: { relation: 'admin' },
@@ -149,16 +146,29 @@ export class AdminService {
     return admin?.qq ?? null
   }
 
-  /** 获取候选人列表（master 好友列表），供前端选择框使用，不缓存。无主账号时返回空列表。 */
+  /** 获取候选人列表（master 好友列表），供前端选择框使用，不缓存。无主账号/master 掉线时返回空列表。 */
   async listCandidates(): Promise<FriendInfo[]> {
+    return (await this._safeGetFriendList()) ?? []
+  }
+
+  /**
+   * 安全获取 master 好友列表。以下情况均返回 null（而不是抛出/裸露异常）：
+   * - 无 friendApi（未配置 master 账号）
+   * - API 返回 {ok:false}（如超时）
+   * - transport 抛出异常（如 master 账号已掉线——napcat SDK 的 BaseApi.invoke()
+   *   文档明确声明"Transport 层异常直接向上抛"，不会包装成 {ok:false}）
+   */
+  private async _safeGetFriendList(): Promise<FriendInfo[] | null> {
     if (!this.masterApis.friendApi) {
-      return []
+      return null
     }
-    const result = await this.masterApis.friendApi.getFriendList()
-    if (!result.ok) {
-      return []
+    try {
+      const result = await this.masterApis.friendApi.getFriendList()
+      return result.ok ? result.data : null
+    } catch (err) {
+      this._log.warn({ err }, 'master 账号获取好友列表失败（可能已掉线），已降级处理')
+      return null
     }
-    return result.data
   }
 
   /** 清除御者 QQ 缓存。 */

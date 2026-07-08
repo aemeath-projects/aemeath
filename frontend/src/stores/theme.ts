@@ -1,7 +1,8 @@
-/** 主题偏好（亮色/暗色/跟随系统）状态管理的 Pinia Store。 */
+/** 主题偏好（亮色/暗色/跟随系统）与配色主题选择的状态管理的 Pinia Store。 */
 import { ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { useTheme } from 'vuetify'
+import { getThemeById } from '@/themes'
 
 export type ThemePreference = 'light' | 'dark' | 'followOS'
 
@@ -19,7 +20,19 @@ function resolveTheme(preference: ThemePreference): string {
 export const useThemeStore = defineStore(
   'theme',
   () => {
+    const theme = ref('aemeath')
     const preference = ref<ThemePreference>('light')
+
+    function applyThemeColors(vuetifyTheme: ReturnType<typeof useTheme>) {
+      const def = getThemeById(theme.value)
+      const { light, dark } = vuetifyTheme.themes.value
+      if (light) {
+        light.colors = def.light as typeof light.colors
+      }
+      if (dark) {
+        dark.colors = def.dark as typeof dark.colors
+      }
+    }
 
     function applyTheme(vuetifyTheme: ReturnType<typeof useTheme>) {
       vuetifyTheme.change(resolveTheme(preference.value))
@@ -30,10 +43,16 @@ export const useThemeStore = defineStore(
       applyTheme(vuetifyTheme)
     }
 
+    function setTheme(themeId: string, vuetifyTheme: ReturnType<typeof useTheme>) {
+      theme.value = themeId
+      applyThemeColors(vuetifyTheme)
+      applyTheme(vuetifyTheme)
+    }
+
     function initTheme(vuetifyTheme: ReturnType<typeof useTheme>) {
+      applyThemeColors(vuetifyTheme)
       applyTheme(vuetifyTheme)
 
-      // 监听操作系统主题变化
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
       mediaQuery.addEventListener('change', () => {
         if (preference.value === 'followOS') {
@@ -41,18 +60,17 @@ export const useThemeStore = defineStore(
         }
       })
 
-      // 监听偏好设置变化
       watch(preference, () => {
         applyTheme(vuetifyTheme)
       })
     }
 
-    return { preference, setPreference, initTheme }
+    return { theme, preference, setPreference, setTheme, initTheme }
   },
   {
     persist: {
       key: 'aemeath-theme-preference',
-      pick: ['preference'],
+      pick: ['theme', 'preference'],
     },
   },
 )

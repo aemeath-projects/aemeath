@@ -46,11 +46,6 @@ export interface UpdateAccountDto {
   isEnabled?: boolean
 }
 
-export interface RoutingTableEntry {
-  clientId: string
-  state: AccountState
-}
-
 /* API 调用 */
 
 export async function listAccounts(): Promise<Account[]> {
@@ -79,10 +74,6 @@ export async function connectAccount(id: number): Promise<void> {
 
 export async function disconnectAccount(id: number): Promise<void> {
   await post<null>(`/api/accounts/${id}/disconnect`)
-}
-
-export async function getRoutingTable(): Promise<RoutingTableEntry[]> {
-  return get<RoutingTableEntry[]>('/api/routing/table')
 }
 
 export async function setRoutingPriorityMode(mode: string): Promise<void> {

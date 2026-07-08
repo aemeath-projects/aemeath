@@ -1,13 +1,33 @@
 <template>
   <PageLayout>
     <template #actions>
-      <v-chip
-        :color="store.connected ? 'success' : 'grey'"
-        variant="elevated"
-        :prepend-icon="store.connected ? 'mdi-access-point' : 'mdi-access-point-off'"
-      >
-        {{ store.connected ? '实时推送中' : '未连接' }}
-      </v-chip>
+      <div class="d-flex align-center ga-2">
+        <v-chip
+          :color="store.connected ? 'success' : 'grey'"
+          variant="elevated"
+          :prepend-icon="store.connected ? 'mdi-access-point' : 'mdi-access-point-off'"
+        >
+          {{ store.connected ? '实时推送中' : '未连接' }}
+        </v-chip>
+        <v-btn icon="mdi-cog" variant="text" size="small" @click="showSettingsDialog = true" />
+      </div>
+
+      <v-dialog v-model="showSettingsDialog" max-width="400">
+        <v-card title="队列监控设置">
+          <v-card-text>
+            <v-radio-group v-model="settingsStore.queueRefreshInterval" label="数据刷新间隔">
+              <v-radio :value="5" label="5 秒" />
+              <v-radio :value="10" label="10 秒" />
+              <v-radio :value="30" label="30 秒" />
+            </v-radio-group>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer />
+            <v-btn variant="text" @click="showSettingsDialog = false">取消</v-btn>
+            <v-btn color="primary" variant="elevated" @click="saveSettings">保存</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </template>
 
     <!-- 概览卡片 -->
@@ -146,11 +166,15 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, computed } from 'vue'
 import { useQueueStore } from '@/stores/queue'
+import { useSettingsStore } from '@/stores/settings'
 import type { TaskCategory, UnifiedTask } from '@/apis/queue'
 import PageLayout from '@/layouts/PageLayout.vue'
 import { formatTimestamp } from '@/utils/format'
 
 const store = useQueueStore()
+const settingsStore = useSettingsStore()
+
+const showSettingsDialog = ref(false)
 
 const taskFilter = ref<'all' | TaskCategory>('all')
 
@@ -184,8 +208,13 @@ function categoryColor(cat: TaskCategory): string {
   return CATEGORY_META[cat]?.color ?? 'grey'
 }
 
+function saveSettings() {
+  showSettingsDialog.value = false
+  store.connect(settingsStore.queueRefreshInterval)
+}
+
 onMounted(() => {
-  store.connect()
+  store.connect(settingsStore.queueRefreshInterval)
 })
 
 onUnmounted(() => {

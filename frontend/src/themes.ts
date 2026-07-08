@@ -15,7 +15,7 @@ export const themes: ThemeDefinition[] = [
   {
     id: 'aemeath',
     name: '爱弥斯',
-    description: '青粉主色调，温暖柔和',
+    description: '远航星',
     light: {
       primary: '#22DFF2',
       secondary: '#E66A9F',

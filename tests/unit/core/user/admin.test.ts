@@ -83,6 +83,25 @@ describe('AdminService', () => {
       await expect(svc.setAdmin(999n)).rejects.toThrow(ValidationError)
     })
 
+    it('master 掉线（transport 抛异常而非 resolve {ok:false}）时应当抛 ValidationError，而不是让异常裸露给路由层（500）', async () => {
+      const masterApis: MasterApis = {
+        msgApi: null,
+        groupApi: null,
+        friendApi: {
+          getFriendList: vi
+            .fn()
+            .mockRejectedValue(new Error('无法调用 "get_friend_list"：当前状态为 disconnected')),
+        } as unknown as MasterApis['friendApi'],
+      }
+      const svc = new AdminService(
+        mockDb as unknown as AemeathPrismaClient,
+        mockCache as unknown as RedisStore,
+        masterApis,
+      )
+      await expect(svc.setAdmin(999n)).rejects.toThrow(ValidationError)
+      expect(mockCache.setNx).not.toHaveBeenCalled()
+    })
+
     it('锁被占用时应当抛 ValidationError，不进入事务', async () => {
       mockCache.setNx.mockResolvedValue(false)
       const { svc } = buildService()
@@ -283,16 +302,14 @@ describe('AdminService', () => {
   describe('getAdmins()', () => {
     it('应当查询 relation=admin 并映射为视图对象', async () => {
       mockDb.user.findFirst.mockResolvedValue(undefined) // 不影响 findMany 路径
-      const findManyMock = vi
-        .fn()
-        .mockResolvedValue([
-          {
-            qq: 111n,
-            nickname: '御者',
-            relation: 'admin',
-            lastSynced: new Date('2024-01-01T00:00:00Z'),
-          },
-        ])
+      const findManyMock = vi.fn().mockResolvedValue([
+        {
+          qq: 111n,
+          nickname: '御者',
+          relation: 'admin',
+          lastSynced: new Date('2024-01-01T00:00:00Z'),
+        },
+      ])
       ;(mockDb as unknown as { user: { findMany: typeof findManyMock } }).user.findMany =
         findManyMock
 
@@ -355,12 +372,12 @@ describe('AdminService', () => {
   /* listCandidates() */
 
   describe('listCandidates()', () => {
-    it('master 未在线时应当抛 ValidationError', async () => {
+    it('master 未在线（无 friendApi）时应当降级返回空列表，而不是抛错', async () => {
       const { svc } = buildService(null)
-      await expect(svc.listCandidates()).rejects.toThrow(ValidationError)
+      await expect(svc.listCandidates()).resolves.toEqual([])
     })
 
-    it('好友列表获取失败时应当抛 ValidationError', async () => {
+    it('好友列表获取失败（resolve {ok:false}）时应当降级返回空列表，而不是抛错', async () => {
       const masterApis: MasterApis = {
         msgApi: null,
         groupApi: null,
@@ -373,7 +390,7 @@ describe('AdminService', () => {
         mockCache as unknown as RedisStore,
         masterApis,
       )
-      await expect(svc.listCandidates()).rejects.toThrow(ValidationError)
+      await expect(svc.listCandidates()).resolves.toEqual([])
     })
 
     it('成功时应当返回好友列表原始数据', async () => {
@@ -381,6 +398,24 @@ describe('AdminService', () => {
       const { svc } = buildService(friends)
       const result = await svc.listCandidates()
       expect(result).toEqual(friends)
+    })
+
+    it('master 掉线（transport 抛异常而非 resolve {ok:false}）时应当优雅降级为空列表，而不是让异常裸露给路由层', async () => {
+      const masterApis: MasterApis = {
+        msgApi: null,
+        groupApi: null,
+        friendApi: {
+          getFriendList: vi
+            .fn()
+            .mockRejectedValue(new Error('无法调用 "get_friend_list"：当前状态为 disconnected')),
+        } as unknown as MasterApis['friendApi'],
+      }
+      const svc = new AdminService(
+        mockDb as unknown as AemeathPrismaClient,
+        mockCache as unknown as RedisStore,
+        masterApis,
+      )
+      await expect(svc.listCandidates()).resolves.toEqual([])
     })
   })
 })

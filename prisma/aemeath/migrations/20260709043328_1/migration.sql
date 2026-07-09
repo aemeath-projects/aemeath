@@ -20,11 +20,11 @@ CREATE TYPE "like_source" AS ENUM ('manual', 'scheduled');
 CREATE TYPE "llm_provider_type_enum" AS ENUM ('openai', 'anthropic', 'gemini');
 
 -- CreateEnum
-CREATE TYPE "settings_value_type" AS ENUM ('boolean', 'number', 'string', 'enum');
+CREATE TYPE "setting_type" AS ENUM ('boolean', 'number', 'string', 'enum');
 
 -- CreateTable
 CREATE TABLE "users" (
-    "qq" BIGINT NOT NULL,
+    "qq" TEXT NOT NULL,
     "nickname" TEXT NOT NULL DEFAULT '',
     "relation" "user_relation_enum" NOT NULL DEFAULT 'stranger',
     "last_synced" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -34,7 +34,7 @@ CREATE TABLE "users" (
 
 -- CreateTable
 CREATE TABLE "groups" (
-    "group_id" BIGINT NOT NULL,
+    "group_id" TEXT NOT NULL,
     "group_name" TEXT NOT NULL DEFAULT '',
     "member_count" INTEGER NOT NULL DEFAULT 0,
     "max_member_count" INTEGER NOT NULL DEFAULT 0,
@@ -47,8 +47,8 @@ CREATE TABLE "groups" (
 -- CreateTable
 CREATE TABLE "group_memberships" (
     "id" UUID NOT NULL,
-    "user_id" BIGINT NOT NULL,
-    "group_id" BIGINT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "group_id" TEXT NOT NULL,
     "card" TEXT NOT NULL DEFAULT '',
     "role" "group_role_enum" NOT NULL DEFAULT 'member',
     "join_time" BIGINT NOT NULL DEFAULT 0,
@@ -95,13 +95,13 @@ CREATE TABLE "llm_models" (
 -- CreateTable
 CREATE TABLE "feedbacks" (
     "id" UUID NOT NULL,
-    "user_id" BIGINT NOT NULL,
+    "user_id" TEXT NOT NULL,
     "feedback_type" "feedback_type_enum",
     "content" TEXT NOT NULL,
     "status" "feedback_status_enum" NOT NULL DEFAULT 'pending',
     "admin_reply" TEXT,
     "source" "feedback_source_enum" NOT NULL,
-    "group_id" BIGINT,
+    "group_id" TEXT,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "processed_at" TIMESTAMPTZ,
@@ -110,23 +110,23 @@ CREATE TABLE "feedbacks" (
 );
 
 -- CreateTable
-CREATE TABLE "mailbox_messages" (
+CREATE TABLE "mailbox" (
     "id" UUID NOT NULL,
-    "recipient_id" BIGINT NOT NULL,
+    "recipient_id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "content" TEXT NOT NULL,
     "is_read" BOOLEAN NOT NULL DEFAULT false,
     "read_at" TIMESTAMPTZ,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "mailbox_messages_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "mailbox_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "checkin" (
-    "id" SERIAL NOT NULL,
-    "group_id" BIGINT NOT NULL,
-    "user_id" BIGINT NOT NULL,
+    "id" UUID NOT NULL,
+    "group_id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
     "checkin_date" DATE NOT NULL,
     "checkin_at" TIMESTAMPTZ NOT NULL,
 
@@ -135,10 +135,10 @@ CREATE TABLE "checkin" (
 
 -- CreateTable
 CREATE TABLE "jrlp" (
-    "id" SERIAL NOT NULL,
-    "group_id" BIGINT NOT NULL,
-    "user_id" BIGINT NOT NULL,
-    "wife_qq" BIGINT NOT NULL,
+    "id" UUID NOT NULL,
+    "group_id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "wife_qq" TEXT NOT NULL,
     "date" DATE NOT NULL,
     "drawn_at" TIMESTAMPTZ,
 
@@ -147,18 +147,18 @@ CREATE TABLE "jrlp" (
 
 -- CreateTable
 CREATE TABLE "like_tasks" (
-    "id" SERIAL NOT NULL,
-    "qq" BIGINT NOT NULL,
+    "id" UUID NOT NULL,
+    "qq" TEXT NOT NULL,
     "registered_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "registered_group_id" BIGINT,
+    "registered_group_id" TEXT,
 
     CONSTRAINT "like_tasks_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "like_history" (
-    "id" SERIAL NOT NULL,
-    "qq" BIGINT NOT NULL,
+    "id" UUID NOT NULL,
+    "qq" TEXT NOT NULL,
     "times" SMALLINT NOT NULL,
     "triggered_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "source" "like_source" NOT NULL,
@@ -169,7 +169,7 @@ CREATE TABLE "like_history" (
 
 -- CreateTable
 CREATE TABLE "drift_bottle_pools" (
-    "id" INTEGER NOT NULL,
+    "id" UUID NOT NULL,
     "name" TEXT NOT NULL,
 
     CONSTRAINT "drift_bottle_pools_pkey" PRIMARY KEY ("id")
@@ -177,42 +177,41 @@ CREATE TABLE "drift_bottle_pools" (
 
 -- CreateTable
 CREATE TABLE "drift_bottle_group_pools" (
-    "group_id" BIGINT NOT NULL,
-    "pool_id" INTEGER NOT NULL,
+    "group_id" TEXT NOT NULL,
+    "pool_id" UUID NOT NULL,
 
     CONSTRAINT "drift_bottle_group_pools_pkey" PRIMARY KEY ("group_id")
 );
 
 -- CreateTable
-CREATE TABLE "drift_bottle_items" (
-    "id" SERIAL NOT NULL,
-    "pool_id" INTEGER NOT NULL,
-    "sender_id" BIGINT NOT NULL,
-    "sender_group_id" BIGINT NOT NULL,
+CREATE TABLE "drift_bottles" (
+    "id" UUID NOT NULL,
+    "pool_id" UUID NOT NULL,
+    "sender_id" TEXT NOT NULL,
+    "sender_group_id" TEXT NOT NULL,
     "content" JSONB NOT NULL,
     "is_picked" BOOLEAN NOT NULL DEFAULT false,
-    "picked_by" BIGINT,
+    "picked_by" TEXT,
     "picked_at" TIMESTAMPTZ,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "drift_bottle_items_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "drift_bottles_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "setting_values" (
+CREATE TABLE "settings" (
     "id" UUID NOT NULL,
     "key" TEXT NOT NULL,
     "scope" TEXT NOT NULL,
     "value" TEXT NOT NULL,
-    "value_type" "settings_value_type" NOT NULL,
+    "value_type" "setting_type" NOT NULL,
 
-    CONSTRAINT "setting_values_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "settings_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "accounts" (
-    "id" SERIAL NOT NULL,
-    "qq" BIGINT NOT NULL,
+    "qq" TEXT NOT NULL,
     "nickname" TEXT,
     "role" TEXT NOT NULL,
     "transport" TEXT NOT NULL,
@@ -222,7 +221,7 @@ CREATE TABLE "accounts" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "accounts_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "accounts_pkey" PRIMARY KEY ("qq")
 );
 
 -- CreateIndex
@@ -265,10 +264,10 @@ CREATE INDEX "feedbacks_status_idx" ON "feedbacks"("status");
 CREATE INDEX "feedbacks_group_id_idx" ON "feedbacks"("group_id");
 
 -- CreateIndex
-CREATE INDEX "mailbox_messages_recipient_id_is_read_idx" ON "mailbox_messages"("recipient_id", "is_read");
+CREATE INDEX "mailbox_recipient_id_is_read_idx" ON "mailbox"("recipient_id", "is_read");
 
 -- CreateIndex
-CREATE INDEX "mailbox_messages_recipient_id_created_at_idx" ON "mailbox_messages"("recipient_id", "created_at");
+CREATE INDEX "mailbox_recipient_id_created_at_idx" ON "mailbox"("recipient_id", "created_at");
 
 -- CreateIndex
 CREATE INDEX "checkin_group_id_idx" ON "checkin"("group_id");
@@ -307,19 +306,16 @@ CREATE INDEX "ix_like_history_source_triggered_at" ON "like_history"("source", "
 CREATE UNIQUE INDEX "drift_bottle_pools_name_key" ON "drift_bottle_pools"("name");
 
 -- CreateIndex
-CREATE INDEX "ix_drift_bottle_items_pool_is_picked" ON "drift_bottle_items"("pool_id", "is_picked");
+CREATE INDEX "ix_drift_bottles_pool_is_picked" ON "drift_bottles"("pool_id", "is_picked");
 
 -- CreateIndex
-CREATE INDEX "drift_bottle_items_sender_id_idx" ON "drift_bottle_items"("sender_id");
+CREATE INDEX "drift_bottles_sender_id_idx" ON "drift_bottles"("sender_id");
 
 -- CreateIndex
-CREATE INDEX "setting_values_scope_key_idx" ON "setting_values"("scope", "key");
+CREATE INDEX "settings_scope_key_idx" ON "settings"("scope", "key");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "setting_values_key_scope_key" ON "setting_values"("key", "scope");
-
--- CreateIndex
-CREATE UNIQUE INDEX "accounts_qq_key" ON "accounts"("qq");
+CREATE UNIQUE INDEX "settings_key_scope_key" ON "settings"("key", "scope");
 
 -- AddForeignKey
 ALTER TABLE "group_memberships" ADD CONSTRAINT "group_memberships_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("qq") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -337,7 +333,7 @@ ALTER TABLE "feedbacks" ADD CONSTRAINT "feedbacks_user_id_fkey" FOREIGN KEY ("us
 ALTER TABLE "feedbacks" ADD CONSTRAINT "feedbacks_group_id_fkey" FOREIGN KEY ("group_id") REFERENCES "groups"("group_id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "mailbox_messages" ADD CONSTRAINT "mailbox_messages_recipient_id_fkey" FOREIGN KEY ("recipient_id") REFERENCES "users"("qq") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "mailbox" ADD CONSTRAINT "mailbox_recipient_id_fkey" FOREIGN KEY ("recipient_id") REFERENCES "users"("qq") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "checkin" ADD CONSTRAINT "checkin_group_id_fkey" FOREIGN KEY ("group_id") REFERENCES "groups"("group_id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -358,4 +354,4 @@ ALTER TABLE "jrlp" ADD CONSTRAINT "jrlp_wife_qq_fkey" FOREIGN KEY ("wife_qq") RE
 ALTER TABLE "drift_bottle_group_pools" ADD CONSTRAINT "drift_bottle_group_pools_pool_id_fkey" FOREIGN KEY ("pool_id") REFERENCES "drift_bottle_pools"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "drift_bottle_items" ADD CONSTRAINT "drift_bottle_items_pool_id_fkey" FOREIGN KEY ("pool_id") REFERENCES "drift_bottle_pools"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "drift_bottles" ADD CONSTRAINT "drift_bottles_pool_id_fkey" FOREIGN KEY ("pool_id") REFERENCES "drift_bottle_pools"("id") ON DELETE CASCADE ON UPDATE CASCADE;

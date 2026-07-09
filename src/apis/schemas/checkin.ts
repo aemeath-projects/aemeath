@@ -64,7 +64,7 @@ export interface CheckinSummaryQuery {
 
 /** 单条签到记录响应 Schema。 */
 export const CheckinRecordResponseSchema = Type.Object({
-  id: Type.Number(),
+  id: Type.String({ format: 'uuid' }),
   groupId: Type.String(),
   userId: Type.String(),
   checkinDate: Type.String({ description: 'ISO date string' }),

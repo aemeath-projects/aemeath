@@ -10,7 +10,7 @@ export type { PaginatedResult } from './types'
 /* 类型定义 */
 
 export interface WifeRecord {
-  id: number
+  id: string
   groupId: string
   userId: string
   wifeQq: string
@@ -34,12 +34,12 @@ export interface SetWifeRequest {
 }
 
 export interface UpdateRecordRequest {
-  id: number
+  id: string
   wifeQq: string
 }
 
 export interface DeleteRecordRequest {
-  id: number
+  id: string
 }
 
 /* API 调用 */

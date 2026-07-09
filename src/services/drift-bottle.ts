@@ -4,25 +4,25 @@
 
 import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/lifecycle'
 
-import type { DriftBottleItem, DriftBottlePool, DriftBottleGroupPool } from '#prisma/aemeath'
+import type { DriftBottle, DriftBottlePool, DriftBottleGroupPool } from '#prisma/aemeath'
 import { Prisma } from '#prisma/aemeath'
 
 import type { AemeathPrismaClient } from '@/core/db/index.js'
 import { isPrismaKnownError } from '@/core/db/index.js'
 import { NotFoundError, ValidationError } from '@/core/errors.js'
 
-export type { DriftBottleItem, DriftBottlePool, DriftBottleGroupPool }
+export type { DriftBottle, DriftBottlePool, DriftBottleGroupPool }
 
 /* 常量 */
 
-/** 默认漂流瓶池 ID（pool_id=0 为系统默认池）。 */
-const DRIFT_BOTTLE_DEFAULT_POOL_ID = 0
+/** 默认漂流瓶池 ID（nil UUID 为系统默认池）。 */
+const DRIFT_BOTTLE_DEFAULT_POOL_ID = '00000000-0000-0000-0000-000000000000'
 
 /* 返回值类型 */
 
 /** 捞到的漂流瓶数据。 */
 export interface BottleItem {
-  id: number
+  id: string
   senderId: string
   senderGroupId: string
   content: unknown
@@ -30,7 +30,7 @@ export interface BottleItem {
 
 /** 漂流瓶池信息（含统计）。 */
 export interface PoolInfo {
-  id: number
+  id: string
   name: string
   availableCount: number
 }
@@ -60,7 +60,7 @@ export class DriftBottleService {
   /**
    * 查询群所属池 id，无记录返回默认池 id。
    */
-  async getPoolId(groupId: string): Promise<number> {
+  async getPoolId(groupId: string): Promise<string> {
     const gid = groupId
     const row = await this.db.driftBottleGroupPool.findUnique({
       where: { groupId: gid },
@@ -74,13 +74,13 @@ export class DriftBottleService {
    * 投入一个漂流瓶。
    */
   async throwBottle(params: {
-    poolId: number
+    poolId: string
     senderId: string
     senderGroupId: string
     content: unknown
-  }): Promise<DriftBottleItem> {
+  }): Promise<DriftBottle> {
     const { poolId, content, senderId, senderGroupId } = params
-    return this.db.driftBottleItem.create({
+    return this.db.driftBottle.create({
       data: {
         poolId,
         senderId,
@@ -95,23 +95,23 @@ export class DriftBottleService {
    *
    * 使用 $queryRaw 的 UPDATE ... RETURNING 实现原子捞取，防止并发重捞。
    */
-  async pickBottle(params: { poolId: number; userId: string }): Promise<BottleItem | null> {
+  async pickBottle(params: { poolId: string; userId: string }): Promise<BottleItem | null> {
     const poolId = params.poolId
     const userId = params.userId
     interface RawRow {
-      id: number
+      id: string
       sender_id: string
       sender_group_id: string
       content: unknown
     }
 
     const rows = await this.db.$queryRaw<RawRow[]>(Prisma.sql`
-      UPDATE drift_bottle_items
+      UPDATE drift_bottles
       SET is_picked = TRUE,
           picked_by = ${userId},
           picked_at = NOW()
       WHERE id = (
-        SELECT id FROM drift_bottle_items
+        SELECT id FROM drift_bottles
         WHERE pool_id = ${poolId}
           AND is_picked = FALSE
           AND sender_id != ${userId}
@@ -140,7 +140,7 @@ export class DriftBottleService {
    */
   async listPools(): Promise<PoolInfo[]> {
     interface RawRow {
-      id: number
+      id: string
       name: string
       available_count: bigint
     }
@@ -151,7 +151,7 @@ export class DriftBottleService {
         p.name,
         COUNT(i.id) AS available_count
       FROM drift_bottle_pools p
-      LEFT JOIN drift_bottle_items i
+      LEFT JOIN drift_bottles i
         ON i.pool_id = p.id AND i.is_picked = FALSE
       GROUP BY p.id, p.name
       ORDER BY p.id
@@ -170,12 +170,8 @@ export class DriftBottleService {
    * @throws Error 名称重复时抛出
    */
   async createPool(name: string): Promise<DriftBottlePool> {
-    // 计算下一个可用 id（max+1，至少为 1，0 是默认池预留）
-    const maxRow = await this.db.driftBottlePool.aggregate({ _max: { id: true } })
-    const nextId = Math.max((maxRow._max.id ?? 0) + 1, 1)
-
     try {
-      return await this.db.driftBottlePool.create({ data: { id: nextId, name } })
+      return await this.db.driftBottlePool.create({ data: { name } })
     } catch (err) {
       if (isPrismaKnownError(err) && err.code === 'P2002') {
         throw new ValidationError(`漂流瓶池名称已存在：${name}`)
@@ -190,7 +186,7 @@ export class DriftBottleService {
    * @throws Error 尝试删除默认池或池不存在时抛出
    * @throws Error 池下仍有群归属时抛出
    */
-  async deletePool(poolId: number): Promise<void> {
+  async deletePool(poolId: string): Promise<void> {
     if (poolId === DRIFT_BOTTLE_DEFAULT_POOL_ID) {
       throw new ValidationError('默认漂流瓶池不可删除')
     }
@@ -199,7 +195,7 @@ export class DriftBottleService {
       where: { id: poolId },
     })
     if (pool === null) {
-      throw new NotFoundError(`漂流瓶池不存在：${String(poolId)}`)
+      throw new NotFoundError(`漂流瓶池不存在：${poolId}`)
     }
 
     try {
@@ -215,7 +211,7 @@ export class DriftBottleService {
   /**
    * 列出某池下所有群号。
    */
-  async listPoolGroups(poolId: number): Promise<string[]> {
+  async listPoolGroups(poolId: string): Promise<string[]> {
     const rows = await this.db.driftBottleGroupPool.findMany({
       where: { poolId },
       select: { groupId: true },
@@ -228,14 +224,14 @@ export class DriftBottleService {
    *
    * @throws Error pool_id 不存在（非 0）时抛出
    */
-  async assignGroupPool(params: { groupId: string; poolId: number }): Promise<void> {
+  async assignGroupPool(params: { groupId: string; poolId: string }): Promise<void> {
     const { poolId, groupId } = params
     if (poolId !== DRIFT_BOTTLE_DEFAULT_POOL_ID) {
       const pool = await this.db.driftBottlePool.findUnique({
         where: { id: poolId },
       })
       if (pool === null) {
-        throw new NotFoundError(`漂流瓶池不存在：${String(poolId)}`)
+        throw new NotFoundError(`漂流瓶池不存在：${poolId}`)
       }
     }
 
@@ -266,23 +262,23 @@ export class DriftBottleService {
    * 分页查询漂流瓶列表。
    */
   async listBottles(
-    params: PaginationParams & { poolId?: number; isPicked?: boolean } = {},
-  ): Promise<PageResult<DriftBottleItem>> {
+    params: PaginationParams & { poolId?: string; isPicked?: boolean } = {},
+  ): Promise<PageResult<DriftBottle>> {
     const { page = 1, pageSize = 20, poolId, isPicked } = params
 
-    const where: Prisma.DriftBottleItemWhereInput = {
+    const where: Prisma.DriftBottleWhereInput = {
       ...(poolId != null ? { poolId } : {}),
       ...(isPicked != null ? { isPicked } : {}),
     }
 
     const [items, total] = await Promise.all([
-      this.db.driftBottleItem.findMany({
+      this.db.driftBottle.findMany({
         where,
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),
-      this.db.driftBottleItem.count({ where }),
+      this.db.driftBottle.count({ where }),
     ])
 
     return { items, total }

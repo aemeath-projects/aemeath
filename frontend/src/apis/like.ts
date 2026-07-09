@@ -10,14 +10,14 @@ import type { PaginatedResult } from './types'
 export type LikeSource = 'manual' | 'scheduled'
 
 export interface LikeTask {
-  id: number
+  id: string
   qq: string
   registeredAt: string
   registeredGroupId: string | null
 }
 
 export interface LikeHistory {
-  id: number
+  id: string
   qq: string
   times: number
   triggeredAt: string

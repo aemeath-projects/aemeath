@@ -6,7 +6,7 @@ import { Type } from '@sinclair/typebox'
 
 /** 单条记录响应 Schema。 */
 export const WifeRecordResponseSchema = Type.Object({
-  id: Type.Number(),
+  id: Type.String({ format: 'uuid' }),
   groupId: Type.String(),
   userId: Type.String(),
   wifeQq: Type.String(),
@@ -33,13 +33,13 @@ export const SetWifeRequestSchema = Type.Object({
 
 /** 修改记录请求 Schema。 */
 export const UpdateRecordRequestSchema = Type.Object({
-  id: Type.Number({ description: '记录 ID' }),
+  id: Type.String({ format: 'uuid', description: '记录 ID' }),
   wifeQq: Type.String({ description: '新老婆 QQ' }),
 })
 
 /** 删除记录请求 Schema。 */
 export const DeleteRecordRequestSchema = Type.Object({
-  id: Type.Number({ description: '记录 ID' }),
+  id: Type.String({ format: 'uuid', description: '记录 ID' }),
 })
 
 /** 老婆记录列表查询参数 Schema。 */
@@ -71,10 +71,10 @@ export interface SetWifeRequest {
 }
 
 export interface UpdateRecordRequest {
-  id: number
+  id: string
   wifeQq: string
 }
 
 export interface DeleteRecordRequest {
-  id: number
+  id: string
 }

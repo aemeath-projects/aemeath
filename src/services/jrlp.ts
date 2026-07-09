@@ -133,7 +133,7 @@ export class JrlpService {
     const [items, total] = await Promise.all([
       this.db.wifeRecord.findMany({
         where,
-        orderBy: [{ date: 'desc' }, { id: 'desc' }],
+        orderBy: [{ date: 'desc' }],
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),
@@ -180,7 +180,7 @@ export class JrlpService {
   /**
    * 修改记录的老婆（预设和已抽取均可修改）。
    */
-  async updateRecord(recordId: number, opts: { wifeQq: string }): Promise<WifeRecord | null> {
+  async updateRecord(recordId: string, opts: { wifeQq: string }): Promise<WifeRecord | null> {
     const existing = await this.db.wifeRecord.findUnique({
       where: { id: recordId },
     })
@@ -197,7 +197,7 @@ export class JrlpService {
    *
    * @returns true 删除成功；false 记录不存在
    */
-  async deleteRecord(recordId: number): Promise<boolean> {
+  async deleteRecord(recordId: string): Promise<boolean> {
     try {
       await this.db.wifeRecord.delete({ where: { id: recordId } })
       return true

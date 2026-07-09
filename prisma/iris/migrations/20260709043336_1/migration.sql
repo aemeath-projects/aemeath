@@ -7,8 +7,8 @@ CREATE TABLE "chat_history" (
     "created_at" TIMESTAMPTZ NOT NULL,
     "message_id" BIGINT NOT NULL,
     "message_type" SMALLINT NOT NULL,
-    "group_id" BIGINT,
-    "user_id" BIGINT NOT NULL,
+    "group_id" TEXT,
+    "user_id" TEXT NOT NULL,
     "raw_message" TEXT NOT NULL DEFAULT '',
     "segments" JSONB NOT NULL,
     "sender_nickname" TEXT NOT NULL DEFAULT '',
@@ -22,7 +22,7 @@ CREATE TABLE "chat_history" (
 -- CreateTable
 CREATE TABLE "archive_log" (
     "id" UUID NOT NULL,
-    "group_id" BIGINT,
+    "group_id" TEXT,
     "seq" INTEGER NOT NULL DEFAULT 0,
     "period_start" TIMESTAMPTZ NOT NULL,
     "period_end" TIMESTAMPTZ NOT NULL,

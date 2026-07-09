@@ -58,7 +58,7 @@ const driftBottleRoutes: FastifyPluginAsync = async (app) => {
       schema: {
         body: CreatePoolRequestSchema,
         response: {
-          201: OkResponse(Type.Object({ id: Type.Number(), name: Type.String() })),
+          201: OkResponse(Type.Object({ id: Type.String(), name: Type.String() })),
           400: FailResponse(),
           409: FailResponse(),
           500: FailResponse(),
@@ -98,7 +98,7 @@ const driftBottleRoutes: FastifyPluginAsync = async (app) => {
     async (req: FastifyRequest<{ Params: { poolId: string } }>, reply: FastifyReply) => {
       const svc = await getDriftSvc(app)
 
-      const poolId = parseInt(req.params.poolId, 10)
+      const poolId = req.params.poolId
       try {
         await svc.deletePool(poolId)
         await reply.send(ok(null))
@@ -129,7 +129,7 @@ const driftBottleRoutes: FastifyPluginAsync = async (app) => {
     async (req: FastifyRequest<{ Params: { poolId: string } }>, reply: FastifyReply) => {
       const svc = await getDriftSvc(app)
 
-      const poolId = parseInt(req.params.poolId, 10)
+      const poolId = req.params.poolId
       const groupIds = await svc.listPoolGroups(poolId)
       await reply.send(ok({ poolId, groupIds }))
     },
@@ -149,7 +149,7 @@ const driftBottleRoutes: FastifyPluginAsync = async (app) => {
       },
     },
     async (
-      req: FastifyRequest<{ Body: { groupId: string; poolId: number } }>,
+      req: FastifyRequest<{ Body: { groupId: string; poolId: string } }>,
       reply: FastifyReply,
     ) => {
       const svc = await getDriftSvc(app)

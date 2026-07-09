@@ -136,7 +136,7 @@ const jrlpRoutes: FastifyPluginAsync = async (app) => {
     async (req, reply) => {
       const svc = await getJrlpSvc(app)
 
-      const record = await svc.updateRecord(parseInt(req.params.id, 10), {
+      const record = await svc.updateRecord(req.params.id, {
         wifeQq: req.body.wifeQq,
       })
       if (record === null) {
@@ -164,7 +164,7 @@ const jrlpRoutes: FastifyPluginAsync = async (app) => {
     async (req, reply) => {
       const svc = await getJrlpSvc(app)
 
-      const success = await svc.deleteRecord(parseInt(req.params.id, 10))
+      const success = await svc.deleteRecord(req.params.id)
       if (!success) {
         await reply.status(404).send(fail('记录不存在'))
         return

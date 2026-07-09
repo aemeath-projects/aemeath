@@ -8,7 +8,7 @@ import type { PaginatedResult } from './types'
 /* 类型定义 */
 
 export interface CheckinRecord {
-  id: number
+  id: string
   groupId: string
   userId: string
   checkinDate: string

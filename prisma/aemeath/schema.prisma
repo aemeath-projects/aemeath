@@ -238,7 +238,7 @@ model Mailbox {
 
 /// 用户群签到记录表
 model CheckinRecord {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(uuid()) @db.Uuid
   groupId     String   @map("group_id") @db.Text
   userId      String   @map("user_id") @db.Text
   checkinDate DateTime @map("checkin_date") @db.Date
@@ -259,7 +259,7 @@ model CheckinRecord {
 
 /// 今日老婆抽取/预设记录表
 model WifeRecord {
-  id      Int       @id @default(autoincrement())
+  id      String    @id @default(uuid()) @db.Uuid
   groupId String    @map("group_id") @db.Text
   userId  String    @map("user_id") @db.Text
   wifeQq  String    @map("wife_qq") @db.Text
@@ -282,7 +282,7 @@ model WifeRecord {
 
 /// 定时点赞任务表
 model LikeTask {
-  id                Int      @id @default(autoincrement())
+  id                String   @id @default(uuid()) @db.Uuid
   qq                String   @unique @db.Text
   registeredAt      DateTime @default(now()) @map("registered_at") @db.Timestamptz
   registeredGroupId String?  @map("registered_group_id") @db.Text
@@ -292,7 +292,7 @@ model LikeTask {
 
 /// 点赞执行历史记录表
 model LikeHistory {
-  id          Int        @id @default(autoincrement())
+  id          String     @id @default(uuid()) @db.Uuid
   qq          String  @db.Text
   times       Int        @db.SmallInt
   triggeredAt DateTime   @default(now()) @map("triggered_at") @db.Timestamptz
@@ -306,14 +306,14 @@ model LikeHistory {
 
 /// 漂流瓶池表
 model DriftBottlePool {
-  id   Int    @id
+  id   String @id @default(uuid()) @db.Uuid
   name String @unique @db.Text
 
   /**
    * Relations
    */
   group_pools DriftBottleGroupPool[]
-  items       DriftBottleItem[]
+  items       DriftBottle[]
 
   @@map("drift_bottle_pools")
 }
@@ -321,7 +321,7 @@ model DriftBottlePool {
 /// 群池映射表
 model DriftBottleGroupPool {
   groupId String @id @map("group_id") @db.Text
-  poolId  Int    @map("pool_id")
+  poolId  String @map("pool_id") @db.Uuid
 
   /**
    * Relations
@@ -332,9 +332,9 @@ model DriftBottleGroupPool {
 }
 
 /// 漂流瓶本体表
-model DriftBottleItem {
-  id            Int       @id @default(autoincrement())
-  poolId        Int       @map("pool_id")
+model DriftBottle {
+  id            String    @id @default(uuid()) @db.Uuid
+  poolId        String    @map("pool_id") @db.Uuid
   senderId      String    @map("sender_id") @db.Text
   senderGroupId String    @map("sender_group_id") @db.Text
   content       Json      @db.JsonB
@@ -348,9 +348,9 @@ model DriftBottleItem {
    */
   pool DriftBottlePool @relation(fields: [poolId], references: [id], onDelete: Cascade)
 
-  @@index([poolId, isPicked], map: "ix_drift_bottle_items_pool_is_picked")
+  @@index([poolId, isPicked], map: "ix_drift_bottles_pool_is_picked")
   @@index([senderId])
-  @@map("drift_bottle_items")
+  @@map("drift_bottles")
 }
 
 /// 配置值类型

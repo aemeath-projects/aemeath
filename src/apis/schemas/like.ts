@@ -11,7 +11,7 @@ export const CreateLikeTaskRequestSchema = Type.Object({
 
 /** 定时点赞任务响应 Schema。 */
 export const LikeTaskResponseSchema = Type.Object({
-  id: Type.Number(),
+  id: Type.String({ format: 'uuid' }),
   qq: Type.String(),
   registeredAt: Type.String({ description: 'ISO datetime string' }),
   registeredGroupId: Type.Union([Type.String(), Type.Null()]),
@@ -19,7 +19,7 @@ export const LikeTaskResponseSchema = Type.Object({
 
 /** 点赞历史记录响应 Schema。 */
 export const LikeHistoryResponseSchema = Type.Object({
-  id: Type.Number(),
+  id: Type.String({ format: 'uuid' }),
   qq: Type.String(),
   times: Type.Number(),
   triggeredAt: Type.String({ description: 'ISO datetime string' }),

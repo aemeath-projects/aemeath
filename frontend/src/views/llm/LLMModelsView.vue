@@ -207,7 +207,7 @@
         </v-card>
       </v-dialog>
 
-      <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="3000">
+      <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="3000" location="top right">
         {{ snackbarText }}
       </v-snackbar>
     </v-card>

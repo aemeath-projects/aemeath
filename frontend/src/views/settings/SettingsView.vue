@@ -57,7 +57,6 @@ const path = computed<Path>(() => {
 const { values, loading, error, save, reset } = useSettingsEditor({
   prefix: '',
   path,
-  category: 'config',
 })
 
 /* 左侧导航 */
@@ -68,26 +67,17 @@ const selectedOwner = ref<string>('')
 watch(
   () => schemaStore.owners,
   (owners) => {
-    if (!selectedOwner.value) {
-      const first = owners.find((o) =>
-        (schemaStore.byOwner[o] ?? []).some((s) => s.category === 'config'),
-      )
-      if (first) selectedOwner.value = first
-    }
+    if (!selectedOwner.value && owners.length > 0) selectedOwner.value = owners[0]
   },
   { immediate: true },
 )
 
-/** 当前选中 owner 的配置项，仅展示 config 类。 */
-const currentSchemas = computed(() =>
-  (schemaStore.byOwner[selectedOwner.value] ?? []).filter((s) => s.category === 'config'),
-)
+/** 当前选中 owner 的全部配置项。 */
+const currentSchemas = computed(() => schemaStore.byOwner[selectedOwner.value] ?? [])
 
-/** 拥有 config 项的 owner 列表。 */
-const configOwners = computed(() =>
-  schemaStore.owners.filter((o) =>
-    (schemaStore.byOwner[o] ?? []).some((s) => s.category === 'config'),
-  ),
+/** 拥有配置项的 owner 列表。 */
+const allOwners = computed(() =>
+  schemaStore.owners.filter((o) => (schemaStore.byOwner[o] ?? []).length > 0),
 )
 
 onMounted(() => schemaStore.ensureLoaded())
@@ -137,7 +127,7 @@ onMounted(() => schemaStore.ensureLoaded())
       <v-card rounded="lg" style="width: 180px; flex-shrink: 0">
         <v-list density="compact" nav>
           <v-list-item
-            v-for="owner in configOwners"
+            v-for="owner in allOwners"
             :key="owner"
             :value="owner"
             :active="selectedOwner === owner"

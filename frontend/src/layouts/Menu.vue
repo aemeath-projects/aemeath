@@ -117,13 +117,32 @@ defineOptions({ name: 'AppMenu' })
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import type { RouteRecordNormalized } from 'vue-router'
-import { menuPanelTitles } from '@/router'
+import { menuPanelTitles, menuPanelOrder, menuTopOrder, menuOrder } from '@/router'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: [] }>()
 
 const router = useRouter()
 const route = useRoute()
+
+function sortByOrder<T>(items: T[], order: string[], keyFn: (item: T) => string): T[] {
+  const indexMap = new Map(order.map((k, i) => [k, i]))
+  const defaultIndex = order.length
+  return [...items].sort((a, b) => {
+    const ia = indexMap.get(keyFn(a)) ?? defaultIndex
+    const ib = indexMap.get(keyFn(b)) ?? defaultIndex
+    return ia - ib
+  })
+}
+
+function sortedMapByOrder<T>(map: Map<string, T>, order: string[]): Map<string, T> {
+  const sorted = new Map<string, T>()
+  const keys = sortByOrder(Array.from(map.keys()), order, (k) => k)
+  for (const k of keys) {
+    sorted.set(k, map.get(k)!)
+  }
+  return sorted
+}
 
 /** 所有可见路由：有 title、非 redirect、未设 hideInMenu */
 const navRoutes = computed(() =>
@@ -132,10 +151,16 @@ const navRoutes = computed(() =>
     .filter((r): r is RouteRecordNormalized => !!r.meta.title && !r.redirect && !r.meta.hideInMenu),
 )
 
-/** 无面板的顶层页面（仪表盘等），点击直接导航 */
-const unpanelRoutes = computed(() => navRoutes.value.filter((r) => !r.meta.panel))
+/** 无面板的顶层页面（仪表盘等），按 menuTopOrder 排序 */
+const unpanelRoutes = computed(() =>
+  sortByOrder(
+    navRoutes.value.filter((r) => !r.meta.panel),
+    menuTopOrder,
+    (r) => String(r.name),
+  ),
+)
 
-/** 按 panel 分组，保持路由定义顺序；L1 展示面板名 */
+/** 按 panel 分组，面板按键按 menuPanelOrder 排序 */
 const panelRoutes = computed(() => {
   const map = new Map<string, RouteRecordNormalized[]>()
   for (const r of navRoutes.value) {
@@ -144,7 +169,7 @@ const panelRoutes = computed(() => {
     if (!map.has(p)) map.set(p, [])
     map.get(p)!.push(r)
   }
-  return map
+  return sortedMapByOrder(map, menuPanelOrder)
 })
 
 /** 当前激活的 L1 面板名 */
@@ -160,14 +185,25 @@ const activePanelTitle = computed(() =>
   activePanel.value ? (menuPanelTitles[activePanel.value] ?? activePanel.value) : '',
 )
 
-/** 激活面板下无 section 的路由（直接展示，兼容扁平面板） */
-const unsectionedRoutes = computed(() => activePanelRoutes.value.filter((r) => !r.meta.section))
+/** 激活面板下无 section 的路由（按 menuOrder 排序） */
+const unsectionedRoutes = computed(() => {
+  const panelKey = activePanel.value
+  const order = panelKey && menuOrder[panelKey] ? (menuOrder[panelKey]._unsectioned ?? []) : []
+  return sortByOrder(
+    activePanelRoutes.value.filter((r) => !r.meta.section),
+    order,
+    (r) => String(r.name),
+  )
+})
 
 /**
  * 激活面板下按 section 聚合的路由映射。
- * 保持路由定义顺序（Map 插入顺序 = 迭代顺序）。
+ * section 顺序和 section 内路由顺序均按 menuOrder 排序。
  */
 const sectionedRoutes = computed(() => {
+  const panelKey = activePanel.value
+  const panelOrder = panelKey && menuOrder[panelKey] ? menuOrder[panelKey] : {}
+
   const map = new Map<string, RouteRecordNormalized[]>()
   for (const r of activePanelRoutes.value) {
     const s = r.meta.section
@@ -175,7 +211,19 @@ const sectionedRoutes = computed(() => {
     if (!map.has(s)) map.set(s, [])
     map.get(s)!.push(r)
   }
-  return map
+
+  // 每个 section 内的路由排序
+  for (const [section, routes] of map) {
+    const routeOrder = panelOrder[section] ?? []
+    map.set(
+      section,
+      sortByOrder(routes, routeOrder, (r) => String(r.name)),
+    )
+  }
+
+  // section 自身排序
+  const sectionOrder = Object.keys(panelOrder).filter((k) => k !== '_unsectioned')
+  return sortedMapByOrder(map, sectionOrder)
 })
 
 /** 菜单打开时自动定位到当前路由所属面板 */

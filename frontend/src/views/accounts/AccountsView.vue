@@ -169,7 +169,11 @@ onMounted(load)
     </template>
 
     <!-- 账号卡片网格 -->
-    <v-skeleton-loader v-if="loading && !accounts.length" type="card" class="mb-4" />
+    <v-row v-if="loading && !accounts.length">
+      <v-col v-for="n in 4" :key="n" cols="12" sm="6" md="3">
+        <v-skeleton-loader type="card" />
+      </v-col>
+    </v-row>
     <v-row v-else>
       <v-col v-for="account in sortedAccounts" :key="account.qq" cols="12" sm="6" md="3">
         <AccountCard

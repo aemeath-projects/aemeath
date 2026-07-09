@@ -97,7 +97,7 @@
       </v-dialog>
 
       <!-- 测试 / 操作结果 -->
-      <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="4000" location="bottom">
+      <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="4000" location="top right">
         {{ snackbarText }}
       </v-snackbar>
     </v-card>

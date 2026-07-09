@@ -1,5 +1,5 @@
 /**
- * 站内信服务 —— 广播通知给全体管理员，并同步私聊提醒。
+ * 站内信服务 —— 记录全局通知日志，并同步私聊提醒当前御者。
  */
 
 import { getLogger } from '@aemeath-projects/exostrider/logger'
@@ -26,14 +26,13 @@ export interface NotifyAdminsInput {
 
 /** 查询站内信列表的入参。 */
 export interface ListMailboxParams {
-  recipientId: string
   page?: number
   pageSize?: number
   isRead?: boolean
 }
 
 /**
- * 站内信核心服务 —— 面向管理员的广播通知与已读状态管理。
+ * 站内信核心服务 —— 面向御者的通知日志与已读状态管理。
  *
  * 通过 Startup 生命周期注册（见 bootstrap.ts），由 LifecycleOrchestrator 管理。
  */
@@ -47,49 +46,39 @@ export class MailboxService {
   ) {}
 
   /**
-   * 广播站内信给所有管理员，并异步同步私聊通知（尽力而为，不阻塞方法返回）。
+   * 写入一条全局站内信，若当前有御者则异步同步私聊通知（尽力而为，不阻塞方法返回）。
    */
-  async notifyAdmins(input: NotifyAdminsInput): Promise<Mailbox[]> {
-    const admins = await this.adminService.getAdmins()
+  async notifyAdmins(input: NotifyAdminsInput): Promise<Mailbox> {
+    const message = await this.db.mailbox.create({
+      data: {
+        title: input.title,
+        content: input.content,
+      },
+    })
 
-    if (admins.length === 0) {
-      this._log.warn('当前未设置御者，跳过站内信广播')
-      return []
+    const adminQq = await this.adminService.getAdminQq()
+    if (adminQq === null) {
+      this._log.warn('当前未设置御者，仅记录站内信，未推送私聊')
+      return message
     }
 
-    const messages = await this.db.$transaction(
-      admins.map((admin) =>
-        this.db.mailbox.create({
-          data: {
-            recipientId: admin.qq,
-            title: input.title,
-            content: input.content,
-          },
-        }),
-      ),
-    )
+    // 异步同步私聊提醒（尽力而为，不阻塞返回；失败仅记录日志）
+    this.router
+      .sendAdminMsg(adminQq, [seg.text(`${input.title}\n${input.notifyText}`)])
+      .catch((err: unknown) => {
+        this._log.warn({ adminQq, err }, '站内信私聊提醒发送失败')
+      })
 
-    // 异步同步私聊提醒（尽力而为，不阻塞返回；单个失败仅记录日志）
-    const notifyTasks = admins.map(async (admin) => {
-      try {
-        await this.router.sendAdminMsg(admin.qq, [seg.text(`${input.title}\n${input.notifyText}`)])
-      } catch (err: unknown) {
-        this._log.warn({ adminQq: admin.qq, err }, '站内信私聊提醒发送失败')
-      }
-    })
-    void Promise.allSettled(notifyTasks)
-
-    return messages
+    return message
   }
 
   /**
-   * 分页查询指定收件人的站内信列表，支持按已读/未读筛选。
+   * 分页查询站内信列表，支持按已读/未读筛选。
    */
-  async listMessages(params: ListMailboxParams): Promise<[Mailbox[], number]> {
-    const { recipientId, page = 1, pageSize = 20, isRead } = params
+  async listMessages(params: ListMailboxParams = {}): Promise<[Mailbox[], number]> {
+    const { page = 1, pageSize = 20, isRead } = params
 
     const where = {
-      recipientId,
       ...(isRead != null ? { isRead } : {}),
     }
 
@@ -107,10 +96,10 @@ export class MailboxService {
   }
 
   /**
-   * 查询指定收件人的未读数量。
+   * 查询未读数量。
    */
-  async getUnreadCount(recipientId: string): Promise<number> {
-    return this.db.mailbox.count({ where: { recipientId, isRead: false } })
+  async getUnreadCount(): Promise<number> {
+    return this.db.mailbox.count({ where: { isRead: false } })
   }
 
   /**

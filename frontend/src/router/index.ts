@@ -14,6 +14,35 @@ declare module 'vue-router' {
 /** L1 分组 → 右区面板自定义标题（未配置则回退到分组名本身） */
 export const menuPanelTitles: Record<string, string> = {}
 
+/** L1 面板从左到右的显示顺序，未列出的面板按路由定义顺序排在末尾 */
+export const menuPanelOrder: string[] = ['功能模块', 'IRIS', 'AI', '系统']
+
+/** 无面板顶层路由显示顺序，未列出的路由按定义顺序排在末尾 */
+export const menuTopOrder: string[] = ['dashboard']
+
+/**
+ * 面板 → 区块 → 路由名 三层排序配置。
+ * `_unsectioned` 键表示该面板下无 section 的直接路由。未列出的区块/路由按定义顺序排在末尾。
+ */
+export const menuOrder: Record<string, Record<string, string[]>> = {
+  功能模块: {
+    _unsectioned: ['feedback', 'jrlp', 'drift-bottle'],
+    群签到: ['checkin-records', 'checkin-stats'],
+    点赞: ['like-tasks', 'like-history'],
+  },
+  IRIS: {
+    用户管理: ['user-users', 'user-groups'],
+    聊天记录: ['chat-messages', 'chat-archive'],
+  },
+  AI: {
+    大模型: ['llm-providers', 'llm-models'],
+  },
+  系统: {
+    _unsectioned: ['queue', 'logs'],
+    设置: ['settings', 'settings-preferences', 'user-admin', 'accounts'],
+  },
+}
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [

@@ -18,7 +18,6 @@ export const MailboxIdParamSchema = Type.Object({
 
 /** 分页查询站内信列表 —— GET /api/mailbox */
 export const MailboxListQuerySchema = Type.Object({
-  recipientId: Type.String({ pattern: '^\\d+$', description: '收件人 QQ 号' }),
   page: Type.Optional(Type.String({ pattern: '^\\d+$', description: '页码（默认 1）' })),
   pageSize: Type.Optional(
     Type.String({ pattern: '^\\d+$', description: '每页条数（默认 20，最大 100）' }),
@@ -30,22 +29,13 @@ export const MailboxListQuerySchema = Type.Object({
   ),
 })
 
-/** 查询未读数量 —— GET /api/mailbox/unread-count */
-export const UnreadCountQuerySchema = Type.Object({
-  recipientId: Type.String({ pattern: '^\\d+$', description: '收件人 QQ 号' }),
-})
-
 /* 响应数据 Schema */
 
 /**
- * 站内信详情 Schema —— 对应 MailboxMessage 序列化后的 DTO。
- *
- * recipientId 为 BigInt 字段，序列化为字符串返回（比照 src/apis/feedback.ts 的
- * feedbackToDict() 对 userId 的处理惯例），故此处声明为 Type.String()。
+ * 站内信详情 Schema —— 对应 Mailbox 序列化后的 DTO。
  */
 export const MailboxSchema = Type.Object({
   id: Type.String({ description: '站内信 ID' }),
-  recipientId: Type.String({ description: '收件人 QQ 号（字符串形式）' }),
   title: Type.String({ description: '标题' }),
   content: Type.String({ description: '内容（Markdown）' }),
   isRead: Type.Boolean({ description: '是否已读' }),
@@ -70,4 +60,3 @@ export const UnreadCountDataSchema = Type.Object({
 /* 静态类型推导 */
 
 export type MailboxListQuery = Static<typeof MailboxListQuerySchema>
-export type UnreadCountQuery = Static<typeof UnreadCountQuerySchema>

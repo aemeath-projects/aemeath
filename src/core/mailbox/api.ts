@@ -7,7 +7,6 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import {
   MailboxIdParamSchema,
   MailboxListQuerySchema,
-  UnreadCountQuerySchema,
   PaginatedMailboxDataSchema,
   UnreadCountDataSchema,
   MailboxSchema,
@@ -20,13 +19,6 @@ import { ok, fail, OkResponse, FailResponse } from '@/core/schemas/index.js'
 
 function getMailboxService(request: FastifyRequest): MailboxService {
   return request.server.services.get('mailbox') as MailboxService
-}
-
-function parseQQParam(value: string, name: string): string {
-  if (!/^\d+$/.test(value)) {
-    throw new ValidationError(`参数 ${name} 必须为非负整数，收到：${value}`)
-  }
-  return value
 }
 
 async function handleError(reply: FastifyReply, err: unknown): Promise<void> {
@@ -45,7 +37,6 @@ async function handleError(reply: FastifyReply, err: unknown): Promise<void> {
 function mailboxToDict(m: Mailbox): Record<string, unknown> {
   return {
     id: m.id,
-    recipientId: m.recipientId,
     title: m.title,
     content: m.content,
     isRead: m.isRead,
@@ -56,7 +47,7 @@ function mailboxToDict(m: Mailbox): Record<string, unknown> {
 
 export async function mailboxRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.get<{
-    Querystring: { recipientId: string; page?: string; pageSize?: string; isRead?: string }
+    Querystring: { page?: string; pageSize?: string; isRead?: string }
   }>(
     '/',
     {
@@ -71,12 +62,11 @@ export async function mailboxRoutes(fastify: FastifyInstance): Promise<void> {
     },
     async (request, reply) => {
       try {
-        const { recipientId, page, pageSize, isRead } = request.query
+        const { page, pageSize, isRead } = request.query
         const pageNum = Math.max(1, Number(page ?? 1))
         const pageSizeNum = Math.min(100, Math.max(1, Number(pageSize ?? 20)))
 
         const [items, total] = await getMailboxService(request).listMessages({
-          recipientId: parseQQParam(recipientId, 'recipientId'),
           page: pageNum,
           pageSize: pageSizeNum,
           isRead: isRead != null ? isRead === 'true' : undefined,
@@ -97,23 +87,19 @@ export async function mailboxRoutes(fastify: FastifyInstance): Promise<void> {
     },
   )
 
-  fastify.get<{ Querystring: { recipientId: string } }>(
+  fastify.get(
     '/unread-count',
     {
       schema: {
-        querystring: UnreadCountQuerySchema,
         response: {
           200: OkResponse(UnreadCountDataSchema),
-          422: FailResponse(),
           500: FailResponse(),
         },
       },
     },
     async (request, reply) => {
       try {
-        const count = await getMailboxService(request).getUnreadCount(
-          parseQQParam(request.query.recipientId, 'recipientId'),
-        )
+        const count = await getMailboxService(request).getUnreadCount()
         await reply.send(ok({ count }))
       } catch (err) {
         await handleError(reply, err)

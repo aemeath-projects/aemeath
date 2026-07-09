@@ -110,7 +110,7 @@
   </v-dialog>
 
   <!-- 提示 snackbar -->
-  <v-snackbar v-model="snackbar" :color="snackColor" :timeout="3000" location="bottom">
+  <v-snackbar v-model="snackbar" :color="snackColor" :timeout="3000" location="top right">
     {{ snackText }}
   </v-snackbar>
 </template>

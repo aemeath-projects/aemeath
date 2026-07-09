@@ -82,7 +82,6 @@ model User {
   checkin_records CheckinRecord[]   @relation("CheckinUser")
   jrlp_as_user    WifeRecord[]      @relation("JrlpUser")
   jrlp_as_wife    WifeRecord[]      @relation("JrlpWife")
-  mailboxItems Mailbox[]  @relation("MailboxRecipient")
 
   @@index([relation])
   @@map("users")
@@ -216,23 +215,17 @@ model Feedback {
   @@map("feedbacks")
 }
 
-/// 站内信表 —— 每条记录对应一个收件人的一次通知
+/// 站内信表 —— 全局通知日志（全局仅一个御者，无需按收件人区分）
 model Mailbox {
-  id          String    @id @default(uuid()) @db.Uuid
-  recipientId String    @map("recipient_id") @db.Text
-  title       String    @db.Text
-  content     String    @db.Text // Markdown 格式，前端渲染
-  isRead      Boolean   @default(false) @map("is_read")
-  readAt      DateTime? @map("read_at") @db.Timestamptz
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  id        String    @id @default(uuid()) @db.Uuid
+  title     String    @db.Text
+  content   String    @db.Text // Markdown 格式，前端渲染
+  isRead    Boolean   @default(false) @map("is_read")
+  readAt    DateTime? @map("read_at") @db.Timestamptz
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
-  /**
-   * Relations
-   */
-  recipient User @relation("MailboxRecipient", fields: [recipientId], references: [qq], onDelete: Cascade)
-
-  @@index([recipientId, isRead])
-  @@index([recipientId, createdAt])
+  @@index([isRead])
+  @@index([createdAt])
   @@map("mailbox")
 }
 

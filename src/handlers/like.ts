@@ -50,7 +50,7 @@ class LikeHandler {
   @Scope('all')
   @PermissionDecorator(0)
   async handle(ctx: Context): Promise<void> {
-    const qq = BigInt(ctx.userId)
+    const qq = ctx.userId
     const args = ctx.getArgs()
     const sub = args?.[0]?.toLowerCase() ?? ''
 
@@ -69,7 +69,7 @@ class LikeHandler {
 }
 
 /** 执行立即点赞。 */
-async function handleSend(ctx: Context, svc: LikeService, qq: bigint, sub: string): Promise<void> {
+async function handleSend(ctx: Context, svc: LikeService, qq: string, sub: string): Promise<void> {
   let times = DEFAULT_LIKE_TIMES
   if (/^\d+$/u.test(sub)) {
     const n = parseInt(sub, 10)
@@ -89,8 +89,8 @@ async function handleSend(ctx: Context, svc: LikeService, qq: bigint, sub: strin
 }
 
 /** 注册定时点赞任务。 */
-async function handleSchedule(ctx: Context, svc: LikeService, qq: bigint): Promise<void> {
-  const groupId = ctx.groupId !== undefined ? BigInt(ctx.groupId) : null
+async function handleSchedule(ctx: Context, svc: LikeService, qq: string): Promise<void> {
+  const groupId = ctx.groupId ?? null
   const result = await svc.registerTask(qq, groupId)
   if (result.alreadyExists) {
     await ctx.reply('你已经注册过每日定时点赞了～')
@@ -100,7 +100,7 @@ async function handleSchedule(ctx: Context, svc: LikeService, qq: bigint): Promi
 }
 
 /** 取消定时点赞任务。 */
-async function handleCancel(ctx: Context, svc: LikeService, qq: bigint): Promise<void> {
+async function handleCancel(ctx: Context, svc: LikeService, qq: string): Promise<void> {
   const deleted = await svc.cancelTask(qq)
   if (deleted) {
     await ctx.reply('已取消每日定时点赞')
@@ -110,7 +110,7 @@ async function handleCancel(ctx: Context, svc: LikeService, qq: bigint): Promise
 }
 
 /** 查询点赞状态与统计。 */
-async function handleStatus(ctx: Context, svc: LikeService, qq: bigint): Promise<void> {
+async function handleStatus(ctx: Context, svc: LikeService, qq: string): Promise<void> {
   const status = await svc.getStatus(qq)
   const taskInfo = status.hasTask ? '✅ 已开启每日定时点赞' : '❌ 未开启定时点赞'
   const lastTime = status.lastTriggeredAt

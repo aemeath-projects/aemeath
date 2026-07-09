@@ -76,7 +76,7 @@ describe('CheckinService', () => {
       })
       mockCache.set.mockResolvedValue(undefined)
 
-      const result = await service.checkin({ groupId: 12345n, userId: 67890n, today: TODAY })
+      const result = await service.checkin({ groupId: '12345', userId: '67890', today: TODAY })
 
       expect(result.isDuplicate).toBe(false)
       expect(result.streak).toBe(1) // 首次签到 streak=1
@@ -105,7 +105,7 @@ describe('CheckinService', () => {
       })
       mockCache.set.mockResolvedValue(undefined)
 
-      const result = await service.checkin({ groupId: 12345n, userId: 67890n, today: TODAY })
+      const result = await service.checkin({ groupId: '12345', userId: '67890', today: TODAY })
 
       expect(result.isDuplicate).toBe(false)
       expect(result.streak).toBe(6) // 5+1
@@ -131,7 +131,7 @@ describe('CheckinService', () => {
       })
       mockCache.set.mockResolvedValue(undefined)
 
-      const result = await service.checkin({ groupId: 12345n, userId: 67890n, today: TODAY })
+      const result = await service.checkin({ groupId: '12345', userId: '67890', today: TODAY })
 
       expect(result.isDuplicate).toBe(false)
       expect(result.streak).toBe(1) // 断签 → 重置
@@ -148,7 +148,7 @@ describe('CheckinService', () => {
         total: 15,
       })
 
-      const result = await service.checkin({ groupId: 12345n, userId: 67890n, today: TODAY })
+      const result = await service.checkin({ groupId: '12345', userId: '67890', today: TODAY })
 
       expect(result.isDuplicate).toBe(true)
       expect(result.rank).toBe(0)
@@ -164,7 +164,7 @@ describe('CheckinService', () => {
         total: 7,
       })
 
-      await service.checkin({ groupId: 12345n, userId: 67890n, today: TODAY })
+      await service.checkin({ groupId: '12345', userId: '67890', today: TODAY })
 
       expect(mockDb.checkinRecord.create).not.toHaveBeenCalled()
       expect(mockDb.checkinRecord.count).not.toHaveBeenCalled()
@@ -178,7 +178,7 @@ describe('CheckinService', () => {
       mockDb.checkinRecord.count.mockResolvedValue(0)
       mockCache.set.mockResolvedValue(undefined)
 
-      const result = await service.rebuildCache(12345n, 67890n)
+      const result = await service.rebuildCache('12345', '67890')
 
       expect(result).toEqual({ lastDate: '', streak: 0, total: 0 })
       expect(mockCache.set).toHaveBeenCalledWith(
@@ -197,7 +197,7 @@ describe('CheckinService', () => {
       ])
       mockCache.set.mockResolvedValue(undefined)
 
-      const result = await service.rebuildCache(12345n, 67890n)
+      const result = await service.rebuildCache('12345', '67890')
 
       expect(result.streak).toBe(3)
       expect(result.total).toBe(3)
@@ -212,8 +212,8 @@ describe('CheckinService', () => {
       const fakeRecords = [
         {
           id: 1,
-          groupId: 1000n,
-          userId: 2000n,
+          groupId: '1000',
+          userId: '2000',
           checkinDate: new Date('2024-06-15'),
           checkinAt: new Date(),
         },
@@ -221,7 +221,7 @@ describe('CheckinService', () => {
       mockDb.checkinRecord.findMany.mockResolvedValue(fakeRecords)
       mockDb.checkinRecord.count.mockResolvedValue(1)
 
-      const [items, total] = await service.listRecords({ groupId: 1000n, page: 1, pageSize: 20 })
+      const [items, total] = await service.listRecords({ groupId: '1000', page: 1, pageSize: 20 })
 
       expect(items).toEqual(fakeRecords)
       expect(total).toBe(1)

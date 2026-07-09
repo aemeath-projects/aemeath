@@ -137,7 +137,7 @@ describe('TaskExecutor', () => {
       jobId: '2',
       returnvalue: JSON.stringify({
         type: 'bot-action',
-        calls: [{ method: 'sendGroupSign', args: [100] }],
+        calls: [{ method: 'sendGroupSign', args: ['100'] }],
       }),
     })
 
@@ -166,7 +166,7 @@ describe('TaskExecutor', () => {
       jobId: '3',
       returnvalue: JSON.stringify({
         type: 'bot-action',
-        calls: [{ method: 'sendLike', args: [111, 10] }],
+        calls: [{ method: 'sendLike', args: ['111', 10] }],
       }),
     })
 
@@ -195,7 +195,7 @@ describe('TaskExecutor', () => {
       jobId: '4',
       returnvalue: JSON.stringify({
         type: 'bot-action',
-        calls: [{ method: 'deleteMsg', args: [999] }],
+        calls: [{ method: 'deleteMsg', args: ['999'] }],
       }),
     })
 
@@ -226,7 +226,7 @@ describe('TaskExecutor', () => {
       jobId: '5',
       returnvalue: JSON.stringify({
         type: 'bot-action',
-        calls: [{ method: 'sendGroupSign', args: [300] }],
+        calls: [{ method: 'sendGroupSign', args: ['300'] }],
         postCacheOps: [
           { action: 'set', key: 'aemeath:checkin:300:2024-01-01', value: '1', ttl: 90_000 },
         ],
@@ -280,7 +280,7 @@ describe('render-send result', () => {
     const result: RenderSendJobResult = {
       type: 'render-send',
       tempKey: 'aemeath:render:temp:job-1',
-      sendTo: { groupId: 12345 },
+      sendTo: { groupId: '12345' },
     }
     mockEvents.emit('completed', { jobId: 'job-1', returnvalue: JSON.stringify(result) })
     await new Promise((r) => setTimeout(r, 30))
@@ -315,7 +315,7 @@ describe('render-send result', () => {
     const result: RenderSendJobResult = {
       type: 'render-send',
       tempKey: 'aemeath:render:temp:job-expired',
-      sendTo: { groupId: 12345 },
+      sendTo: { groupId: '12345' },
     }
     mockEvents.emit('completed', { jobId: 'job-2', returnvalue: JSON.stringify(result) })
     await new Promise((r) => setTimeout(r, 30))
@@ -346,7 +346,7 @@ describe('render-send result', () => {
     const result: RenderSendJobResult = {
       type: 'render-send',
       tempKey: 'aemeath:render:temp:job-pm',
-      sendTo: { userId: 9999 },
+      sendTo: { userId: '9999' },
     }
     mockEvents.emit('completed', { jobId: 'job-3', returnvalue: JSON.stringify(result) })
     await new Promise((r) => setTimeout(r, 30))

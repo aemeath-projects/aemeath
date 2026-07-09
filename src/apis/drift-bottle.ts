@@ -149,13 +149,13 @@ const driftBottleRoutes: FastifyPluginAsync = async (app) => {
       },
     },
     async (
-      req: FastifyRequest<{ Body: { groupId: number; poolId: number } }>,
+      req: FastifyRequest<{ Body: { groupId: string; poolId: number } }>,
       reply: FastifyReply,
     ) => {
       const svc = await getDriftSvc(app)
 
       try {
-        await svc.assignGroupPool({ groupId: BigInt(req.body.groupId), poolId: req.body.poolId })
+        await svc.assignGroupPool({ groupId: req.body.groupId, poolId: req.body.poolId })
         await reply.send(ok(null))
       } catch (err) {
         if (err instanceof Error) {

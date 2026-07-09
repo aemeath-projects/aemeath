@@ -21,7 +21,7 @@ export class UserEventService {
   ) {}
 
   /** 好友添加：若非 admin 则升级为 friend。 */
-  async onFriendAdd(userId: bigint): Promise<void> {
+  async onFriendAdd(userId: string): Promise<void> {
     const existing = await this.db.user.findUnique({
       where: { qq: userId },
       select: { relation: true },
@@ -38,11 +38,11 @@ export class UserEventService {
       })
     }
 
-    await this.cache.del(cacheKeyRegistry.buildKey('user', 'relation', String(userId)))
+    await this.cache.del(cacheKeyRegistry.buildKey('user', 'relation', userId))
   }
 
   /** 群成员增加：创建成员关系记录，若为 stranger 则升级为 group_member。 */
-  async onGroupIncrease(groupId: bigint, userId: bigint): Promise<void> {
+  async onGroupIncrease(groupId: string, userId: string): Promise<void> {
     const now = new Date()
 
     const existing = await this.db.user.findUnique({
@@ -79,11 +79,11 @@ export class UserEventService {
       update: { isActive: true },
     })
 
-    await this.cache.del(cacheKeyRegistry.buildKey('user', 'relation', String(userId)))
+    await this.cache.del(cacheKeyRegistry.buildKey('user', 'relation', userId))
   }
 
   /** 群成员减少：标记成员关系为非活跃，重算 relation。 */
-  async onGroupDecrease(groupId: bigint, userId: bigint, subType: string): Promise<void> {
+  async onGroupDecrease(groupId: string, userId: string, subType: string): Promise<void> {
     // 标记成员关系 is_active=false
     await this.db.groupMembership.updateMany({
       where: { userId, groupId },
@@ -117,11 +117,11 @@ export class UserEventService {
       }
     }
 
-    await this.cache.del(cacheKeyRegistry.buildKey('user', 'relation', String(userId)))
+    await this.cache.del(cacheKeyRegistry.buildKey('user', 'relation', userId))
   }
 
   /** 群管理员变动：更新成员关系的 role 字段。 */
-  async onGroupAdminChange(groupId: bigint, userId: bigint, subType: string): Promise<void> {
+  async onGroupAdminChange(groupId: string, userId: string, subType: string): Promise<void> {
     const newRole = subType === 'set' ? 'admin' : 'member'
     await this.db.groupMembership.updateMany({
       where: { userId, groupId },
@@ -130,7 +130,7 @@ export class UserEventService {
   }
 
   /** 群名片变更：更新成员关系的 card 字段。 */
-  async onGroupCardChange(groupId: bigint, userId: bigint, cardNew: string): Promise<void> {
+  async onGroupCardChange(groupId: string, userId: string, cardNew: string): Promise<void> {
     await this.db.groupMembership.updateMany({
       where: { userId, groupId },
       data: { card: cardNew },
@@ -139,8 +139,8 @@ export class UserEventService {
 
   /** 群成员信息更新（昵称等）。 */
   async onGroupMemberUpdate(
-    groupId: bigint,
-    userId: bigint,
+    groupId: string,
+    userId: string,
     data: { nickname?: string },
   ): Promise<void> {
     if (data.nickname !== undefined) {

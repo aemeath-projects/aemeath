@@ -75,8 +75,8 @@ class CheckinHandler {
     let result: Awaited<ReturnType<CheckinService['checkin']>>
     try {
       result = await this.checkinService.checkin({
-        groupId: BigInt(ctx.groupId),
-        userId: BigInt(ctx.userId),
+        groupId: ctx.groupId,
+        userId: ctx.userId,
         today,
       })
     } catch (err) {

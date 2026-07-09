@@ -73,7 +73,7 @@ class JrlpHandler {
     }
 
     const { record, isNew, wifeDisplayName } = drawResult
-    const wifeQq = String(record.wifeQq)
+    const wifeQq = record.wifeQq
     const avatarUrl = AVATAR_URL.replace('{qq}', wifeQq)
     const text = isNew
       ? `你今天的群老婆是：${wifeDisplayName}(${wifeQq})`

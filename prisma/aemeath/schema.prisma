@@ -68,7 +68,7 @@ enum LikeSource {
 
 /// 机器人已知用户表
 model User {
-  qq       BigInt       @id @map("qq")
+  qq       String       @id @map("qq") @db.Text
   nickname String       @default("") @db.Text
   relation UserRelation @default(stranger)
 
@@ -90,7 +90,7 @@ model User {
 
 /// 机器人群聊表
 model Group {
-  groupId        BigInt  @id @map("group_id")
+  groupId        String  @id @map("group_id") @db.Text
   groupName      String  @default("") @map("group_name") @db.Text
   memberCount    Int     @default(0) @map("member_count")
   maxMemberCount Int     @default(0) @map("max_member_count")
@@ -113,8 +113,8 @@ model Group {
 /// 群聊成员关系表
 model GroupMembership {
   id              String    @id @default(uuid()) @db.Uuid
-  userId          BigInt    @map("user_id")
-  groupId         BigInt    @map("group_id")
+  userId          String    @map("user_id") @db.Text
+  groupId         String    @map("group_id") @db.Text
   card            String    @default("") @db.Text
   role            GroupRole @default(member)
   joinTime        BigInt    @default(0) @map("join_time")
@@ -192,13 +192,13 @@ model LlmModel {
 /// 用户反馈表
 model Feedback {
   id           String         @id @default(uuid()) @db.Uuid
-  userId       BigInt         @map("user_id")
+  userId       String         @map("user_id") @db.Text
   feedbackType FeedbackType?  @map("feedback_type")
   content      String         @db.Text
   status       FeedbackStatus @default(pending)
   adminReply   String?        @map("admin_reply") @db.Text
   source       FeedbackSource
-  groupId      BigInt?        @map("group_id")
+  groupId      String?        @map("group_id") @db.Text
   createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz
   updatedAt    DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
   processedAt  DateTime?      @map("processed_at") @db.Timestamptz
@@ -219,7 +219,7 @@ model Feedback {
 /// 站内信表 —— 每条记录对应一个收件人的一次通知
 model Mailbox {
   id          String    @id @default(uuid()) @db.Uuid
-  recipientId BigInt    @map("recipient_id")
+  recipientId String    @map("recipient_id") @db.Text
   title       String    @db.Text
   content     String    @db.Text // Markdown 格式，前端渲染
   isRead      Boolean   @default(false) @map("is_read")
@@ -239,8 +239,8 @@ model Mailbox {
 /// 用户群签到记录表
 model CheckinRecord {
   id          Int      @id @default(autoincrement())
-  groupId     BigInt   @map("group_id")
-  userId      BigInt   @map("user_id")
+  groupId     String   @map("group_id") @db.Text
+  userId      String   @map("user_id") @db.Text
   checkinDate DateTime @map("checkin_date") @db.Date
   checkinAt   DateTime @map("checkin_at") @db.Timestamptz
 
@@ -260,9 +260,9 @@ model CheckinRecord {
 /// 今日老婆抽取/预设记录表
 model WifeRecord {
   id      Int       @id @default(autoincrement())
-  groupId BigInt    @map("group_id")
-  userId  BigInt    @map("user_id")
-  wifeQq  BigInt    @map("wife_qq")
+  groupId String    @map("group_id") @db.Text
+  userId  String    @map("user_id") @db.Text
+  wifeQq  String    @map("wife_qq") @db.Text
   date    DateTime  @db.Date
   drawnAt DateTime? @map("drawn_at") @db.Timestamptz
 
@@ -283,9 +283,9 @@ model WifeRecord {
 /// 定时点赞任务表
 model LikeTask {
   id                Int      @id @default(autoincrement())
-  qq                BigInt   @unique
+  qq                String   @unique @db.Text
   registeredAt      DateTime @default(now()) @map("registered_at") @db.Timestamptz
-  registeredGroupId BigInt?  @map("registered_group_id")
+  registeredGroupId String?  @map("registered_group_id") @db.Text
 
   @@map("like_tasks")
 }
@@ -293,7 +293,7 @@ model LikeTask {
 /// 点赞执行历史记录表
 model LikeHistory {
   id          Int        @id @default(autoincrement())
-  qq          BigInt
+  qq          String  @db.Text
   times       Int        @db.SmallInt
   triggeredAt DateTime   @default(now()) @map("triggered_at") @db.Timestamptz
   source      LikeSource
@@ -320,7 +320,7 @@ model DriftBottlePool {
 
 /// 群池映射表
 model DriftBottleGroupPool {
-  groupId BigInt @id @map("group_id")
+  groupId String @id @map("group_id") @db.Text
   poolId  Int    @map("pool_id")
 
   /**
@@ -335,11 +335,11 @@ model DriftBottleGroupPool {
 model DriftBottleItem {
   id            Int       @id @default(autoincrement())
   poolId        Int       @map("pool_id")
-  senderId      BigInt    @map("sender_id")
-  senderGroupId BigInt    @map("sender_group_id")
+  senderId      String    @map("sender_id") @db.Text
+  senderGroupId String    @map("sender_group_id") @db.Text
   content       Json      @db.JsonB
   isPicked      Boolean   @default(false) @map("is_picked")
-  pickedBy      BigInt?   @map("picked_by")
+  pickedBy      String?   @map("picked_by") @db.Text
   pickedAt      DateTime? @map("picked_at") @db.Timestamptz
   createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
@@ -378,7 +378,7 @@ model Setting {
 
 /// 机器人账号表 —— 存储多个 NapCat 实例的连接配置。
 model Account {
-  qq        BigInt  @id
+  qq        String  @id @db.Text
   nickname  String?
   role      String // 'master' | 'normal' | 'readonly'
   transport String // 'ws' | 'sse'

@@ -23,8 +23,8 @@ const DRIFT_BOTTLE_DEFAULT_POOL_ID = 0
 /** 捞到的漂流瓶数据。 */
 export interface BottleItem {
   id: number
-  senderId: bigint
-  senderGroupId: bigint
+  senderId: string
+  senderGroupId: string
   content: unknown
 }
 
@@ -60,8 +60,8 @@ export class DriftBottleService {
   /**
    * 查询群所属池 id，无记录返回默认池 id。
    */
-  async getPoolId(groupId: bigint | number): Promise<number> {
-    const gid = BigInt(groupId)
+  async getPoolId(groupId: string): Promise<number> {
+    const gid = groupId
     const row = await this.db.driftBottleGroupPool.findUnique({
       where: { groupId: gid },
     })
@@ -75,13 +75,11 @@ export class DriftBottleService {
    */
   async throwBottle(params: {
     poolId: number
-    senderId: bigint | number
-    senderGroupId: bigint | number
+    senderId: string
+    senderGroupId: string
     content: unknown
   }): Promise<DriftBottleItem> {
-    const { poolId, content } = params
-    const senderId = BigInt(params.senderId)
-    const senderGroupId = BigInt(params.senderGroupId)
+    const { poolId, content, senderId, senderGroupId } = params
     return this.db.driftBottleItem.create({
       data: {
         poolId,
@@ -97,20 +95,16 @@ export class DriftBottleService {
    *
    * 使用 $queryRaw 的 UPDATE ... RETURNING 实现原子捞取，防止并发重捞。
    */
-  async pickBottle(params: {
-    poolId: number
-    userId: bigint | number
-  }): Promise<BottleItem | null> {
+  async pickBottle(params: { poolId: number; userId: string }): Promise<BottleItem | null> {
     const poolId = params.poolId
-    const userId = BigInt(params.userId)
+    const userId = params.userId
     interface RawRow {
       id: number
-      sender_id: bigint
-      sender_group_id: bigint
+      sender_id: string
+      sender_group_id: string
       content: unknown
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     const rows = await this.db.$queryRaw<RawRow[]>(Prisma.sql`
       UPDATE drift_bottle_items
       SET is_picked = TRUE,
@@ -151,7 +145,6 @@ export class DriftBottleService {
       available_count: bigint
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     const rows = await this.db.$queryRaw<RawRow[]>(Prisma.sql`
       SELECT
         p.id,
@@ -222,7 +215,7 @@ export class DriftBottleService {
   /**
    * 列出某池下所有群号。
    */
-  async listPoolGroups(poolId: number): Promise<bigint[]> {
+  async listPoolGroups(poolId: number): Promise<string[]> {
     const rows = await this.db.driftBottleGroupPool.findMany({
       where: { poolId },
       select: { groupId: true },
@@ -235,9 +228,8 @@ export class DriftBottleService {
    *
    * @throws Error pool_id 不存在（非 0）时抛出
    */
-  async assignGroupPool(params: { groupId: bigint | number; poolId: number }): Promise<void> {
-    const { poolId } = params
-    const groupId = BigInt(params.groupId)
+  async assignGroupPool(params: { groupId: string; poolId: number }): Promise<void> {
+    const { poolId, groupId } = params
     if (poolId !== DRIFT_BOTTLE_DEFAULT_POOL_ID) {
       const pool = await this.db.driftBottlePool.findUnique({
         where: { id: poolId },

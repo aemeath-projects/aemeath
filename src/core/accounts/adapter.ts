@@ -17,13 +17,13 @@ const MAX_RECONNECT_RETRIES = 10
 export class NapCatClientAdapter implements ClientAdapter<NapCatClient> {
   readonly id: string
   readonly client: NapCatClient
-  readonly qq: bigint
+  readonly qq: string
 
   private readonly transport: WebSocketTransport | SseTransport
 
   constructor(account: Account) {
     this.qq = account.qq
-    this.id = `bot-${String(account.qq)}`
+    this.id = `bot-${account.qq}`
 
     this.transport =
       account.transport === 'ws'

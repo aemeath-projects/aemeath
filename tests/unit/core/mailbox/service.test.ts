@@ -27,7 +27,7 @@ function createMockRouter() {
 }
 
 function createMockAdminService(
-  admins: { qq: bigint; nickname: string; relation: string; lastSynced: string | null }[] = [],
+  admins: { qq: string; nickname: string; relation: string; lastSynced: string | null }[] = [],
 ) {
   return {
     getAdmins: vi.fn().mockResolvedValue(admins),
@@ -38,12 +38,12 @@ type MockDb = ReturnType<typeof createMockDb>
 type MockRouter = ReturnType<typeof createMockRouter>
 type MockAdminService = ReturnType<typeof createMockAdminService>
 
-const admin1 = { qq: 111n, nickname: '管理员甲', relation: 'admin' as const, lastSynced: null }
-const admin2 = { qq: 222n, nickname: '管理员乙', relation: 'admin' as const, lastSynced: null }
+const admin1 = { qq: '111', nickname: '管理员甲', relation: 'admin' as const, lastSynced: null }
+const admin2 = { qq: '222', nickname: '管理员乙', relation: 'admin' as const, lastSynced: null }
 
 const baseMessage = {
   id: 'msg-1',
-  recipientId: 111n,
+  recipientId: '111',
   title: '新反馈通知',
   content: '内容',
   isRead: false,
@@ -87,8 +87,8 @@ describe('MailboxService', () => {
 
     it('应当为每个管理员创建一条站内信并返回创建的记录', async () => {
       mockAdminService.getAdmins.mockResolvedValue([admin1, admin2])
-      const created1 = { ...baseMessage, id: 'msg-1', recipientId: 111n }
-      const created2 = { ...baseMessage, id: 'msg-2', recipientId: 222n }
+      const created1 = { ...baseMessage, id: 'msg-1', recipientId: '111' }
+      const created2 = { ...baseMessage, id: 'msg-2', recipientId: '222' }
       mockDb.$transaction.mockResolvedValue([created1, created2])
 
       const result = await service.notifyAdmins({
@@ -116,8 +116,8 @@ describe('MailboxService', () => {
     it('应当异步同步私聊提醒给每个管理员', async () => {
       mockAdminService.getAdmins.mockResolvedValue([admin1, admin2])
       mockDb.$transaction.mockResolvedValue([
-        { ...baseMessage, id: 'msg-1', recipientId: 111n },
-        { ...baseMessage, id: 'msg-2', recipientId: 222n },
+        { ...baseMessage, id: 'msg-1', recipientId: '111' },
+        { ...baseMessage, id: 'msg-2', recipientId: '222' },
       ])
 
       await service.notifyAdmins({ title: '标题', content: '内容', notifyText: '通知文本' })
@@ -127,7 +127,7 @@ describe('MailboxService', () => {
 
       expect(mockRouter.sendAdminMsg).toHaveBeenCalledTimes(2)
       expect(mockRouter.sendAdminMsg).toHaveBeenCalledWith(
-        111n,
+        '111',
         expect.arrayContaining([
           expect.objectContaining({
             type: 'text',
@@ -146,7 +146,7 @@ describe('MailboxService', () => {
       mockDb.mailboxMessage.count.mockResolvedValue(1)
 
       const [items, total] = await service.listMessages({
-        recipientId: 111n,
+        recipientId: '111',
         page: 1,
         pageSize: 20,
       })
@@ -155,7 +155,7 @@ describe('MailboxService', () => {
       expect(total).toBe(1)
       expect(mockDb.mailboxMessage.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { recipientId: 111n },
+          where: { recipientId: '111' },
           orderBy: { createdAt: 'desc' },
           skip: 0,
           take: 20,
@@ -167,10 +167,10 @@ describe('MailboxService', () => {
       mockDb.mailboxMessage.findMany.mockResolvedValue([])
       mockDb.mailboxMessage.count.mockResolvedValue(0)
 
-      await service.listMessages({ recipientId: 111n, isRead: false })
+      await service.listMessages({ recipientId: '111', isRead: false })
 
       expect(mockDb.mailboxMessage.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { recipientId: 111n, isRead: false } }),
+        expect.objectContaining({ where: { recipientId: '111', isRead: false } }),
       )
     })
   })
@@ -181,11 +181,11 @@ describe('MailboxService', () => {
     it('应当按 recipientId + isRead=false 统计', async () => {
       mockDb.mailboxMessage.count.mockResolvedValue(3)
 
-      const count = await service.getUnreadCount(111n)
+      const count = await service.getUnreadCount('111')
 
       expect(count).toBe(3)
       expect(mockDb.mailboxMessage.count).toHaveBeenCalledWith({
-        where: { recipientId: 111n, isRead: false },
+        where: { recipientId: '111', isRead: false },
       })
     })
   })

@@ -62,7 +62,7 @@ describe('MultiAccountBootstrap', () => {
       await testable._autoDisableAfterGiveUp('bot-1739280698')
 
       expect(testable.db.account.update).toHaveBeenCalledWith({
-        where: { qq: 1739280698n },
+        where: { qq: '1739280698' },
         data: { isEnabled: false },
       })
       expect(testable.pool.removeClient).toHaveBeenCalledWith('bot-1739280698')

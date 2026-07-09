@@ -61,10 +61,10 @@ describe('FeedbackService', () => {
   describe('createFeedback()', () => {
     const baseFeedback = {
       id: 'test-uuid-1',
-      userId: 123456n,
+      userId: '123456',
       content: '这是一个 bug',
       source: 'group' as const,
-      groupId: 987654n,
+      groupId: '987654',
       feedbackType: 'bug' as const,
       status: 'pending' as const,
       adminReply: null,
@@ -77,17 +77,17 @@ describe('FeedbackService', () => {
       mockDb.feedback.create.mockResolvedValue(baseFeedback)
 
       const result = await service.createFeedback({
-        userId: 123456n,
+        userId: '123456',
         content: '这是一个 bug',
         source: 'group',
-        groupId: 987654n,
+        groupId: '987654',
         feedbackType: 'bug',
       })
 
       expect(mockDb.feedback.create).toHaveBeenCalledOnce()
       expect(mockDb.feedback.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          userId: 123456n,
+          userId: '123456',
           content: '这是一个 bug',
           source: 'group',
           status: 'pending',
@@ -101,10 +101,10 @@ describe('FeedbackService', () => {
       mockMailbox.notifyAdmins.mockResolvedValue([])
 
       await service.createFeedback({
-        userId: 123456n,
+        userId: '123456',
         content: '这是一个 bug',
         source: 'group',
-        groupId: 987654n,
+        groupId: '987654',
         feedbackType: 'bug',
       })
 
@@ -129,7 +129,7 @@ describe('FeedbackService', () => {
       // 不应抛出
       await expect(
         service.createFeedback({
-          userId: 123456n,
+          userId: '123456',
           content: '测试',
           source: 'private',
         }),
@@ -143,7 +143,7 @@ describe('FeedbackService', () => {
       })
 
       await service.createFeedback({
-        userId: 123456n,
+        userId: '123456',
         content: '无类型反馈',
         source: 'private',
       })
@@ -159,7 +159,7 @@ describe('FeedbackService', () => {
   describe('updateStatus()', () => {
     const pendingFeedback = {
       id: 'test-uuid-2',
-      userId: 111111n,
+      userId: '111111',
       content: '反馈内容',
       source: 'private' as const,
       groupId: null,
@@ -244,7 +244,7 @@ describe('FeedbackService', () => {
 
       expect(mockRouter.sendAdminMsg).toHaveBeenCalledOnce()
       expect(mockRouter.sendAdminMsg).toHaveBeenCalledWith(
-        expect.any(BigInt),
+        expect.any(String),
         expect.arrayContaining([
           expect.objectContaining({
             type: 'text',
@@ -262,7 +262,7 @@ describe('FeedbackService', () => {
       const fakeFeedbacks = [
         {
           id: 'f1',
-          userId: 100n,
+          userId: '100',
           content: '测试',
           source: 'group' as const,
           status: 'pending' as const,
@@ -295,11 +295,11 @@ describe('FeedbackService', () => {
     it('应当按 userId 查询最近 N 条反馈', async () => {
       mockDb.feedback.findMany.mockResolvedValue([])
 
-      await service.getUserFeedbacks(12345n, 5)
+      await service.getUserFeedbacks('12345', 5)
 
       expect(mockDb.feedback.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { userId: 12345n },
+          where: { userId: '12345' },
           take: 5,
           orderBy: { createdAt: 'desc' },
         }),

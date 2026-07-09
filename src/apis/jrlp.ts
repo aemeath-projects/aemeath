@@ -31,9 +31,9 @@ function ceilDiv(a: number, b: number): number {
 function recordToDict(r: WifeRecord): Record<string, unknown> {
   return {
     id: r.id,
-    groupId: String(r.groupId),
-    userId: String(r.userId),
-    wifeQq: String(r.wifeQq),
+    groupId: r.groupId,
+    userId: r.userId,
+    wifeQq: r.wifeQq,
     date: r.date instanceof Date ? r.date.toISOString().slice(0, 10) : r.date,
     drawnAt: r.drawnAt instanceof Date ? r.drawnAt.toISOString() : r.drawnAt,
   }
@@ -59,8 +59,8 @@ const jrlpRoutes: FastifyPluginAsync = async (app) => {
     async (req: FastifyRequest<{ Querystring: JrlpRecordsQuery }>, reply: FastifyReply) => {
       const svc = await getJrlpSvc(app)
 
-      const groupId = req.query.groupId ? BigInt(req.query.groupId) : undefined
-      const userId = req.query.userId ? BigInt(req.query.userId) : undefined
+      const groupId = req.query.groupId ?? undefined
+      const userId = req.query.userId ?? undefined
       const recordDate = req.query.date ? new Date(req.query.date) : undefined
       const page = req.query.page ? parseInt(req.query.page, 10) : 1
       const pageSize = req.query.pageSize ? parseInt(req.query.pageSize, 10) : 20
@@ -119,12 +119,12 @@ const jrlpRoutes: FastifyPluginAsync = async (app) => {
   )
 
   /** PUT /api/jrlp/records/:id — 修改记录的老婆信息。 */
-  app.put<{ Params: { id: string }; Body: { wifeQq: number } }>(
+  app.put<{ Params: { id: string }; Body: { wifeQq: string } }>(
     '/api/jrlp/records/:id',
     {
       schema: {
         params: Type.Object({ id: Type.String() }),
-        body: Type.Object({ wifeQq: Type.Number() }),
+        body: Type.Object({ wifeQq: Type.String() }),
         response: {
           200: OkResponse(WifeRecordResponseSchema),
           400: FailResponse(),

@@ -38,7 +38,7 @@ export interface CheckinResult {
 
 /** 排行榜条目。 */
 export interface LeaderEntry {
-  userId: bigint
+  userId: string
   value: number
 }
 
@@ -58,8 +58,8 @@ export interface SummaryData {
 
 /** 列表查询参数。 */
 export interface ListRecordsParams {
-  groupId?: bigint | number
-  userId?: bigint | number
+  groupId?: string
+  userId?: string
   recordDate?: Date
   page?: number
   pageSize?: number
@@ -67,20 +67,20 @@ export interface ListRecordsParams {
 
 /** 排行榜查询参数。 */
 export interface GetLeaderboardParams {
-  groupId?: bigint | number
+  groupId?: string
   by?: 'total' | 'streak'
   limit?: number
 }
 
 /** 趋势查询参数。 */
 export interface GetDailyTrendParams {
-  groupId?: bigint | number
+  groupId?: string
   days?: number
 }
 
 /** 汇总查询参数。 */
 export interface GetSummaryParams {
-  groupId?: bigint | number
+  groupId?: string
 }
 
 /** 用户签到缓存结构。 */
@@ -108,16 +108,12 @@ export class CheckinService {
   /**
    * 执行签到，返回 rank / streak / total / isDuplicate。
    */
-  async checkin(params: {
-    groupId: bigint | number
-    userId: bigint | number
-    today: Date
-  }): Promise<CheckinResult> {
-    const groupId = BigInt(params.groupId)
-    const userId = BigInt(params.userId)
+  async checkin(params: { groupId: string; userId: string; today: Date }): Promise<CheckinResult> {
+    const groupId = params.groupId
+    const userId = params.userId
     const today = params.today
     const todayStr = this._dateToIso(today)
-    const key = cacheKeyRegistry.buildKey('checkin', 'stats', String(groupId), String(userId))
+    const key = cacheKeyRegistry.buildKey('checkin', 'stats', groupId, userId)
 
     // 1. 读缓存
     const cached =
@@ -182,8 +178,8 @@ export class CheckinService {
   /**
    * 从 DB 重建用户在某群的签到缓存。
    */
-  async rebuildCache(groupId: bigint | number, userId: bigint | number): Promise<CheckinCache> {
-    return this._rebuildCache(BigInt(groupId), BigInt(userId))
+  async rebuildCache(groupId: string, userId: string): Promise<CheckinCache> {
+    return this._rebuildCache(groupId, userId)
   }
 
   // 管理 / 统计接口
@@ -195,8 +191,8 @@ export class CheckinService {
     const { groupId, userId, recordDate, page = 1, pageSize = 20 } = params
 
     const where: Prisma.CheckinRecordWhereInput = {
-      ...(groupId != null ? { groupId: BigInt(groupId) } : {}),
-      ...(userId != null ? { userId: BigInt(userId) } : {}),
+      ...(groupId != null ? { groupId } : {}),
+      ...(userId != null ? { userId } : {}),
       ...(recordDate != null ? { checkinDate: recordDate } : {}),
     }
 
@@ -219,7 +215,7 @@ export class CheckinService {
   async getLeaderboard(params: GetLeaderboardParams): Promise<LeaderEntry[]> {
     const { groupId, by = 'total', limit = 20 } = params
     const effectiveLimit = Math.min(limit, 50)
-    const gid = groupId != null ? BigInt(groupId) : undefined
+    const gid = groupId ?? undefined
 
     if (by === 'total') {
       const where: Prisma.CheckinRecordWhereInput = gid != null ? { groupId: gid } : {}
@@ -234,7 +230,7 @@ export class CheckinService {
     }
 
     // by === 'streak'：使用原生 SQL 计算当前连续天数
-    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
+
     const sql =
       gid != null
         ? Prisma.sql`
@@ -294,10 +290,9 @@ export class CheckinService {
             )
             SELECT user_id, streak FROM current_streaks ORDER BY streak DESC LIMIT ${effectiveLimit}
           `
-    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
 
     interface RawRow {
-      user_id: bigint
+      user_id: string
       streak: bigint
     }
     const rows = await this.db.$queryRaw<RawRow[]>(sql)
@@ -310,7 +305,7 @@ export class CheckinService {
   async getDailyTrend(params: GetDailyTrendParams): Promise<DayCount[]> {
     const { groupId, days = 30 } = params
     const effectiveDays = Math.min(days, 90)
-    const gid = groupId != null ? BigInt(groupId) : undefined
+    const gid = groupId ?? undefined
 
     const cutoff = new Date(
       new Intl.DateTimeFormat('sv-SE', { timeZone: SHANGHAI_TZ }).format(
@@ -341,7 +336,7 @@ export class CheckinService {
    */
   async getSummary(params: GetSummaryParams): Promise<SummaryData> {
     const { groupId } = params
-    const gid = groupId != null ? BigInt(groupId) : undefined
+    const gid = groupId ?? undefined
 
     const now = new Date()
     const todayStr = new Intl.DateTimeFormat('sv-SE', { timeZone: SHANGHAI_TZ }).format(now)
@@ -367,7 +362,7 @@ export class CheckinService {
 
   // 内部辅助
 
-  private async _rebuildCache(groupId: bigint, userId: bigint): Promise<CheckinCache> {
+  private async _rebuildCache(groupId: string, userId: string): Promise<CheckinCache> {
     const total = await this.db.checkinRecord.count({
       where: { groupId, userId },
     })
@@ -375,7 +370,7 @@ export class CheckinService {
     if (total === 0) {
       const empty: CheckinCache = { lastDate: '', streak: 0, total: 0 }
       await this.cache.set(
-        cacheKeyRegistry.buildKey('checkin', 'stats', String(groupId), String(userId)),
+        cacheKeyRegistry.buildKey('checkin', 'stats', groupId, userId),
         empty,
         CACHE_TTL,
       )
@@ -419,7 +414,7 @@ export class CheckinService {
     }
 
     await this.cache.set(
-      cacheKeyRegistry.buildKey('checkin', 'stats', String(groupId), String(userId)),
+      cacheKeyRegistry.buildKey('checkin', 'stats', groupId, userId),
       cacheData,
       CACHE_TTL,
     )

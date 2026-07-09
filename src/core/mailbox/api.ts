@@ -22,11 +22,11 @@ function getMailboxService(request: FastifyRequest): MailboxService {
   return request.server.services.get('mailbox') as MailboxService
 }
 
-function parseBigIntParam(value: string, name: string): bigint {
+function parseQQParam(value: string, name: string): string {
   if (!/^\d+$/.test(value)) {
     throw new ValidationError(`参数 ${name} 必须为非负整数，收到：${value}`)
   }
-  return BigInt(value)
+  return value
 }
 
 async function handleError(reply: FastifyReply, err: unknown): Promise<void> {
@@ -45,7 +45,7 @@ async function handleError(reply: FastifyReply, err: unknown): Promise<void> {
 function mailboxToDict(m: Mailbox): Record<string, unknown> {
   return {
     id: m.id,
-    recipientId: String(m.recipientId),
+    recipientId: m.recipientId,
     title: m.title,
     content: m.content,
     isRead: m.isRead,
@@ -76,7 +76,7 @@ export async function mailboxRoutes(fastify: FastifyInstance): Promise<void> {
         const pageSizeNum = Math.min(100, Math.max(1, Number(pageSize ?? 20)))
 
         const [items, total] = await getMailboxService(request).listMessages({
-          recipientId: parseBigIntParam(recipientId, 'recipientId'),
+          recipientId: parseQQParam(recipientId, 'recipientId'),
           page: pageNum,
           pageSize: pageSizeNum,
           isRead: isRead != null ? isRead === 'true' : undefined,
@@ -112,7 +112,7 @@ export async function mailboxRoutes(fastify: FastifyInstance): Promise<void> {
     async (request, reply) => {
       try {
         const count = await getMailboxService(request).getUnreadCount(
-          parseBigIntParam(request.query.recipientId, 'recipientId'),
+          parseQQParam(request.query.recipientId, 'recipientId'),
         )
         await reply.send(ok({ count }))
       } catch (err) {

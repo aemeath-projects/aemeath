@@ -52,8 +52,8 @@ export class IrisInterceptor implements HandlerInterceptor<AnyOneBotEvent, Conte
     await this.irisService.saveMessage({
       messageId: BigInt(msgEvent.messageId),
       messageType: resolveMessageType(msgEvent.messageType),
-      groupId: msgEvent.groupId != null ? BigInt(msgEvent.groupId) : undefined,
-      userId: BigInt(msgEvent.userId),
+      groupId: msgEvent.groupId != null ? String(msgEvent.groupId) : undefined,
+      userId: String(msgEvent.userId),
       rawMessage: msgEvent.rawMessage,
       segments: msgEvent.message,
       senderNickname: msgEvent.sender.nickname ?? '',

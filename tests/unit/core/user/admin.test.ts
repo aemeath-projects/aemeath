@@ -74,13 +74,13 @@ describe('AdminService', () => {
   describe('setAdmin()', () => {
     it('master 未在线时应当抛 ValidationError', async () => {
       const { svc } = buildService(null)
-      await expect(svc.setAdmin(999n)).rejects.toThrow(ValidationError)
+      await expect(svc.setAdmin('999')).rejects.toThrow(ValidationError)
       expect(mockCache.setNx).not.toHaveBeenCalled()
     })
 
     it('候选不在好友列表时应当抛 ValidationError', async () => {
       const { svc } = buildService([{ userId: 111, nickname: '别人' }])
-      await expect(svc.setAdmin(999n)).rejects.toThrow(ValidationError)
+      await expect(svc.setAdmin('999')).rejects.toThrow(ValidationError)
     })
 
     it('master 掉线（transport 抛异常而非 resolve {ok:false}）时应当抛 ValidationError，而不是让异常裸露给路由层（500）', async () => {
@@ -98,7 +98,7 @@ describe('AdminService', () => {
         mockCache as unknown as RedisStore,
         masterApis,
       )
-      await expect(svc.setAdmin(999n)).rejects.toThrow(ValidationError)
+      await expect(svc.setAdmin('999')).rejects.toThrow(ValidationError)
       expect(mockCache.setNx).not.toHaveBeenCalled()
     })
 
@@ -106,7 +106,7 @@ describe('AdminService', () => {
       mockCache.setNx.mockResolvedValue(false)
       const { svc } = buildService()
 
-      await expect(svc.setAdmin(999n)).rejects.toThrow(ValidationError)
+      await expect(svc.setAdmin('999')).rejects.toThrow(ValidationError)
       expect(mockDb.$transaction).not.toHaveBeenCalled()
     })
 
@@ -115,7 +115,7 @@ describe('AdminService', () => {
       mockDb.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
         const tx = {
           user: {
-            findFirst: vi.fn().mockResolvedValue({ qq: 111n }),
+            findFirst: vi.fn().mockResolvedValue({ qq: '111' }),
             update: vi.fn(),
             upsert: vi.fn(),
           },
@@ -123,18 +123,18 @@ describe('AdminService', () => {
         }
         await fn(tx)
         expect(tx.user.update).toHaveBeenCalledWith({
-          where: { qq: 111n },
+          where: { qq: '111' },
           data: { relation: 'group_member' },
         })
         expect(tx.user.upsert).toHaveBeenCalledWith({
-          where: { qq: 999n },
-          create: { qq: 999n, nickname: '好友', relation: 'admin' },
+          where: { qq: '999' },
+          create: { qq: '999', nickname: '好友', relation: 'admin' },
           update: { relation: 'admin' },
         })
-        return 111n
+        return '111'
       })
 
-      await svc.setAdmin(999n)
+      await svc.setAdmin('999')
     })
 
     it('旧御者仍是好友时应降级为 friend，即使有活跃群成员关系（好友优先级高于群成员关系）', async () => {
@@ -145,7 +145,7 @@ describe('AdminService', () => {
       mockDb.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
         const tx = {
           user: {
-            findFirst: vi.fn().mockResolvedValue({ qq: 111n }),
+            findFirst: vi.fn().mockResolvedValue({ qq: '111' }),
             update: vi.fn(),
             upsert: vi.fn(),
           },
@@ -153,13 +153,13 @@ describe('AdminService', () => {
         }
         await fn(tx)
         expect(tx.user.update).toHaveBeenCalledWith({
-          where: { qq: 111n },
+          where: { qq: '111' },
           data: { relation: 'friend' },
         })
-        return 111n
+        return '111'
       })
 
-      await svc.setAdmin(999n)
+      await svc.setAdmin('999')
     })
 
     it('旧御者无活跃群成员关系应降级为 stranger', async () => {
@@ -167,7 +167,7 @@ describe('AdminService', () => {
       mockDb.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
         const tx = {
           user: {
-            findFirst: vi.fn().mockResolvedValue({ qq: 111n }),
+            findFirst: vi.fn().mockResolvedValue({ qq: '111' }),
             update: vi.fn(),
             upsert: vi.fn(),
           },
@@ -175,13 +175,13 @@ describe('AdminService', () => {
         }
         await fn(tx)
         expect(tx.user.update).toHaveBeenCalledWith({
-          where: { qq: 111n },
+          where: { qq: '111' },
           data: { relation: 'stranger' },
         })
-        return 111n
+        return '111'
       })
 
-      await svc.setAdmin(999n)
+      await svc.setAdmin('999')
     })
 
     it('目标 qq 不在 User 表中时应通过 upsert 创建新记录而不是抛错', async () => {
@@ -193,14 +193,14 @@ describe('AdminService', () => {
         }
         await fn(tx)
         expect(tx.user.upsert).toHaveBeenCalledWith({
-          where: { qq: 999n },
-          create: { qq: 999n, nickname: '新用户', relation: 'admin' },
+          where: { qq: '999' },
+          create: { qq: '999', nickname: '新用户', relation: 'admin' },
           update: { relation: 'admin' },
         })
         return null
       })
 
-      await expect(svc.setAdmin(999n)).resolves.toBeUndefined()
+      await expect(svc.setAdmin('999')).resolves.toBeUndefined()
     })
 
     it('重复设置同一 qq 为御者应当幂等，不降级自己', async () => {
@@ -208,7 +208,7 @@ describe('AdminService', () => {
       mockDb.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
         const tx = {
           user: {
-            findFirst: vi.fn().mockResolvedValue({ qq: 999n }),
+            findFirst: vi.fn().mockResolvedValue({ qq: '999' }),
             update: vi.fn(),
             upsert: vi.fn(),
           },
@@ -220,7 +220,7 @@ describe('AdminService', () => {
         return null
       })
 
-      await expect(svc.setAdmin(999n)).resolves.toBeUndefined()
+      await expect(svc.setAdmin('999')).resolves.toBeUndefined()
     })
 
     it('成功后应当释放锁（无论成功失败都要 del）', async () => {
@@ -233,7 +233,7 @@ describe('AdminService', () => {
         return fn(tx)
       })
 
-      await svc.setAdmin(999n)
+      await svc.setAdmin('999')
 
       expect(mockCache.del).toHaveBeenCalledWith('aemeath:lock:admin')
     })
@@ -242,7 +242,7 @@ describe('AdminService', () => {
       const { svc } = buildService()
       mockDb.$transaction.mockRejectedValue(new Error('事务失败'))
 
-      await expect(svc.setAdmin(999n)).rejects.toThrow('事务失败')
+      await expect(svc.setAdmin('999')).rejects.toThrow('事务失败')
 
       expect(mockCache.del).toHaveBeenCalledWith('aemeath:lock:admin')
     })
@@ -259,31 +259,31 @@ describe('AdminService', () => {
     })
 
     it('有御者且有活跃群成员关系时应降级为 group_member', async () => {
-      mockDb.user.findFirst.mockResolvedValue({ qq: 111n })
+      mockDb.user.findFirst.mockResolvedValue({ qq: '111' })
       mockDb.groupMembership.findFirst.mockResolvedValue({ id: 'm1' })
-      mockDb.user.update.mockResolvedValue({ qq: 111n, relation: 'group_member' })
+      mockDb.user.update.mockResolvedValue({ qq: '111', relation: 'group_member' })
 
       const { svc } = buildService()
       const result = await svc.removeAdmin()
 
       expect(result).toBe(true)
       expect(mockDb.user.update).toHaveBeenCalledWith({
-        where: { qq: 111n },
+        where: { qq: '111' },
         data: { relation: 'group_member' },
       })
     })
 
     it('有御者且无活跃群成员关系时应降级为 stranger', async () => {
-      mockDb.user.findFirst.mockResolvedValue({ qq: 111n })
+      mockDb.user.findFirst.mockResolvedValue({ qq: '111' })
       mockDb.groupMembership.findFirst.mockResolvedValue(null)
-      mockDb.user.update.mockResolvedValue({ qq: 111n, relation: 'stranger' })
+      mockDb.user.update.mockResolvedValue({ qq: '111', relation: 'stranger' })
 
       const { svc } = buildService()
       const result = await svc.removeAdmin()
 
       expect(result).toBe(true)
       expect(mockDb.user.update).toHaveBeenCalledWith({
-        where: { qq: 111n },
+        where: { qq: '111' },
         data: { relation: 'stranger' },
       })
     })
@@ -304,7 +304,7 @@ describe('AdminService', () => {
       mockDb.user.findFirst.mockResolvedValue(undefined) // 不影响 findMany 路径
       const findManyMock = vi.fn().mockResolvedValue([
         {
-          qq: 111n,
+          qq: '111',
           nickname: '御者',
           relation: 'admin',
           lastSynced: new Date('2024-01-01T00:00:00Z'),
@@ -318,7 +318,7 @@ describe('AdminService', () => {
 
       expect(findManyMock).toHaveBeenCalledWith({ where: { relation: 'admin' } })
       expect(result).toEqual([
-        { qq: 111n, nickname: '御者', relation: 'admin', lastSynced: '2024-01-01T00:00:00.000Z' },
+        { qq: '111', nickname: '御者', relation: 'admin', lastSynced: '2024-01-01T00:00:00.000Z' },
       ])
     })
   })
@@ -347,24 +347,24 @@ describe('AdminService', () => {
       expect(mockDb.user.findFirst).not.toHaveBeenCalled()
     })
 
-    it('缓存命中非空值时应当返回对应 bigint', async () => {
+    it('缓存命中非空值时应当返回对应 string', async () => {
       mockCache.get.mockResolvedValue('123456')
 
       const { svc } = buildService()
       const result = await svc.getAdminQq()
 
-      expect(result).toBe(123456n)
+      expect(result).toBe('123456')
       expect(mockDb.user.findFirst).not.toHaveBeenCalled()
     })
 
     it('缓存未命中且数据库有御者时应当返回其 qq 并写入缓存', async () => {
       mockCache.get.mockResolvedValue(null)
-      mockDb.user.findFirst.mockResolvedValue({ qq: 999n })
+      mockDb.user.findFirst.mockResolvedValue({ qq: '999' })
 
       const { svc } = buildService()
       const result = await svc.getAdminQq()
 
-      expect(result).toBe(999n)
+      expect(result).toBe('999')
       expect(mockCache.set).toHaveBeenCalledWith('aemeath:user:admin', '999', 300)
     })
   })

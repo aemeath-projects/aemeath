@@ -42,7 +42,7 @@ export interface LikeStatus {
 
 /** 历史查询参数。 */
 export interface ListHistoryParams {
-  qq?: bigint | number
+  qq?: string
   source?: string
   dateFrom?: Date
   dateTo?: Date
@@ -79,11 +79,10 @@ export class LikeService {
    * @param times - 点赞次数
    * @param source - 触发来源
    */
-  async sendLikeNow(qq: bigint | number, times: number, source: LikeSource): Promise<boolean> {
-    const qqBig = BigInt(qq)
+  async sendLikeNow(qq: string, times: number, source: LikeSource): Promise<boolean> {
     let success = false
     try {
-      const result = await this.friendApi.sendLike(Number(qqBig), times)
+      const result = await this.friendApi.sendLike(Number(qq), times)
       success = result.ok
     } catch (err) {
       this._log.warn({ qq, times, err }, 'send_like 异常')
@@ -93,7 +92,7 @@ export class LikeService {
     try {
       await this.db.likeHistory.create({
         data: {
-          qq: qqBig,
+          qq,
           times,
           triggeredAt: new Date(),
           source,
@@ -113,15 +112,9 @@ export class LikeService {
    * @param qq - 用户 QQ（number 或 bigint）
    * @param groupId - 注册时所在群（私聊注册为 null）
    */
-  async registerTask(
-    qq: bigint | number,
-    groupId: bigint | number | null,
-  ): Promise<RegisterResult> {
-    const qqBig = BigInt(qq)
-    const groupIdBig = groupId != null ? BigInt(groupId) : null
-
+  async registerTask(qq: string, groupId: string | null): Promise<RegisterResult> {
     const existing = await this.db.likeTask.findUnique({
-      where: { qq: qqBig },
+      where: { qq },
       select: { id: true },
     })
     if (existing !== null) {
@@ -131,9 +124,9 @@ export class LikeService {
     try {
       await this.db.likeTask.create({
         data: {
-          qq: qqBig,
+          qq,
           registeredAt: new Date(),
-          registeredGroupId: groupIdBig,
+          registeredGroupId: groupId,
         },
       })
     } catch (err) {
@@ -152,10 +145,9 @@ export class LikeService {
    *
    * @returns true 删除成功；false 任务不存在
    */
-  async cancelTask(qq: bigint | number): Promise<boolean> {
-    const qqBig = BigInt(qq)
+  async cancelTask(qq: string): Promise<boolean> {
     try {
-      await this.db.likeTask.delete({ where: { qq: qqBig } })
+      await this.db.likeTask.delete({ where: { qq } })
       return true
     } catch (err) {
       if (isPrismaKnownError(err) && err.code === 'P2025') {
@@ -168,12 +160,11 @@ export class LikeService {
   /**
    * 查询用户点赞状态与历史统计。
    */
-  async getStatus(qq: bigint | number): Promise<LikeStatus> {
-    const qqBig = BigInt(qq)
+  async getStatus(qq: string): Promise<LikeStatus> {
     const [taskRow, historyRows] = await Promise.all([
-      this.db.likeTask.findUnique({ where: { qq: qqBig }, select: { id: true } }),
+      this.db.likeTask.findUnique({ where: { qq }, select: { id: true } }),
       this.db.likeHistory.aggregate({
-        where: { qq: qqBig, success: true },
+        where: { qq, success: true },
         _sum: { times: true },
         _max: { triggeredAt: true },
       }),
@@ -211,7 +202,7 @@ export class LikeService {
     const { qq, source, dateFrom, dateTo, page = 1, pageSize = 20 } = params
 
     const where: Prisma.LikeHistoryWhereInput = {
-      ...(qq != null ? { qq: BigInt(qq) } : {}),
+      ...(qq != null ? { qq } : {}),
       ...(source != null ? { source: source as LikeSource } : {}),
       ...(dateFrom != null || dateTo != null
         ? {

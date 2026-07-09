@@ -26,7 +26,7 @@ export interface NotifyAdminsInput {
 
 /** 查询站内信列表的入参。 */
 export interface ListMailboxParams {
-  recipientId: bigint
+  recipientId: string
   page?: number
   pageSize?: number
   isRead?: boolean
@@ -109,7 +109,7 @@ export class MailboxService {
   /**
    * 查询指定收件人的未读数量。
    */
-  async getUnreadCount(recipientId: bigint): Promise<number> {
+  async getUnreadCount(recipientId: string): Promise<number> {
     return this.db.mailbox.count({ where: { recipientId, isRead: false } })
   }
 

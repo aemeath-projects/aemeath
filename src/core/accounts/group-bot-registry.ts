@@ -8,10 +8,10 @@ export type GroupBotRole = 'member' | 'admin' | 'owner'
 /** 维护 bot 账号在各群内的角色，并提供能力查询。 */
 export class GroupBotRegistry {
   /** groupId → clientId → role */
-  private readonly _roles = new Map<bigint, Map<string, GroupBotRole>>()
+  private readonly _roles = new Map<string, Map<string, GroupBotRole>>()
 
   /** 设置或更新指定群内某 bot 账号的角色。 */
-  setRole(groupId: bigint, clientId: string, role: GroupBotRole): void {
+  setRole(groupId: string, clientId: string, role: GroupBotRole): void {
     let group = this._roles.get(groupId)
     if (!group) {
       group = new Map()
@@ -21,17 +21,17 @@ export class GroupBotRegistry {
   }
 
   /** 从指定群中移除某 bot 账号的角色记录。 */
-  removeClient(groupId: bigint, clientId: string): void {
+  removeClient(groupId: string, clientId: string): void {
     this._roles.get(groupId)?.delete(clientId)
   }
 
   /** 移除整个群的所有角色记录。 */
-  removeGroup(groupId: bigint): void {
+  removeGroup(groupId: string): void {
     this._roles.delete(groupId)
   }
 
   /** 返回指定群内所有已注册 bot 账号的 clientId 列表。 */
-  getClientsInGroup(groupId: bigint): string[] {
+  getClientsInGroup(groupId: string): string[] {
     return [...(this._roles.get(groupId)?.keys() ?? [])]
   }
 
@@ -40,7 +40,7 @@ export class GroupBotRegistry {
    * - `group_admin`：admin 和 owner 均满足
    * - `group_owner`：仅 owner 满足
    */
-  getCapableClients(groupId: bigint, capability: BotCapability): string[] {
+  getCapableClients(groupId: string, capability: BotCapability): string[] {
     const group = this._roles.get(groupId)
     if (!group) return []
     const result: string[] = []

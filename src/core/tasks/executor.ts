@@ -90,33 +90,33 @@ export class TaskExecutor {
       try {
         switch (call.method) {
           case 'sendGroupMsg': {
-            const [groupId, message] = call.args as [number, MessageSegment[]]
-            await this.msgApi.sendGroupMsg(groupId, message)
+            const [groupId, message] = call.args as [string, MessageSegment[]]
+            await this.msgApi.sendGroupMsg(Number(groupId), message)
             break
           }
           case 'sendGroupSign': {
-            const [groupId] = call.args as [number]
-            await this.groupApi.sendGroupSign(groupId)
+            const [groupId] = call.args as [string]
+            await this.groupApi.sendGroupSign(Number(groupId))
             break
           }
           case 'sendLike': {
-            const [userId, times] = call.args as [number, number]
-            await this.friendApi.sendLike(userId, times)
+            const [userId, times] = call.args as [string, number]
+            await this.friendApi.sendLike(Number(userId), times)
             break
           }
           case 'sendMsg': {
             const [params] = call.args as [
               {
                 messageType: 'group' | 'private'
-                groupId?: number
-                userId?: number
+                groupId?: string
+                userId?: string
                 message: MessageSegment[]
               },
             ]
             if (params.messageType === 'group' && params.groupId != null) {
-              await this.msgApi.sendGroupMsg(params.groupId, params.message)
+              await this.msgApi.sendGroupMsg(Number(params.groupId), params.message)
             } else if (params.messageType === 'private' && params.userId != null) {
-              await this.msgApi.sendPrivateMsg(params.userId, params.message)
+              await this.msgApi.sendPrivateMsg(Number(params.userId), params.message)
             }
             break
           }
@@ -164,9 +164,9 @@ export class TaskExecutor {
 
     try {
       if ('groupId' in result.sendTo) {
-        await this.msgApi.sendGroupMsg(result.sendTo.groupId, [imageSegment])
+        await this.msgApi.sendGroupMsg(Number(result.sendTo.groupId), [imageSegment])
       } else {
-        await this.msgApi.sendPrivateMsg(result.sendTo.userId, [imageSegment])
+        await this.msgApi.sendPrivateMsg(Number(result.sendTo.userId), [imageSegment])
       }
     } catch (err) {
       log.error({ tempKey: result.tempKey, err }, 'render-send Bot API 调用失败')

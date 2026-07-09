@@ -25,16 +25,16 @@ export const PaginatedRecordsResponseSchema = Type.Object({
 
 /** 手动设置老婆请求 Schema。 */
 export const SetWifeRequestSchema = Type.Object({
-  groupId: Type.Number({ description: '群号' }),
-  userId: Type.Number({ description: '抽取者 QQ' }),
-  wifeQq: Type.Number({ description: '老婆 QQ' }),
+  groupId: Type.String({ description: '群号' }),
+  userId: Type.String({ description: '抽取者 QQ' }),
+  wifeQq: Type.String({ description: '老婆 QQ' }),
   date: Type.String({ description: '日期（YYYY-MM-DD）' }),
 })
 
 /** 修改记录请求 Schema。 */
 export const UpdateRecordRequestSchema = Type.Object({
   id: Type.Number({ description: '记录 ID' }),
-  wifeQq: Type.Number({ description: '新老婆 QQ' }),
+  wifeQq: Type.String({ description: '新老婆 QQ' }),
 })
 
 /** 删除记录请求 Schema。 */
@@ -64,15 +64,15 @@ export interface JrlpRecordsQuery {
 }
 
 export interface SetWifeRequest {
-  groupId: number
-  userId: number
-  wifeQq: number
+  groupId: string
+  userId: string
+  wifeQq: string
   date: string
 }
 
 export interface UpdateRecordRequest {
   id: number
-  wifeQq: number
+  wifeQq: string
 }
 
 export interface DeleteRecordRequest {

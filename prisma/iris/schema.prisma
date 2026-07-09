@@ -34,8 +34,8 @@ model ChatMessage {
 
   messageId   BigInt  @map("message_id")
   messageType Int     @map("message_type") @db.SmallInt
-  groupId     BigInt? @map("group_id")
-  userId      BigInt  @map("user_id")
+  groupId     String? @map("group_id") @db.Text
+  userId      String  @map("user_id") @db.Text
 
   rawMessage     String   @default("") @map("raw_message")     @db.Text
   segments       Json     @db.JsonB
@@ -54,7 +54,7 @@ model ChatMessage {
 /// 聊天记录归档日志表
 model ArchiveLog {
   id              String        @id @default(uuid())            @db.Uuid
-  groupId         BigInt?       @map("group_id")
+  groupId         String?       @map("group_id") @db.Text
   seq             Int           @default(0)
   periodStart     DateTime      @map("period_start")            @db.Timestamptz
   periodEnd       DateTime      @map("period_end")              @db.Timestamptz

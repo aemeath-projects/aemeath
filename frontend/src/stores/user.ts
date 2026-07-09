@@ -38,7 +38,7 @@ export const useUserStore = defineStore('user', () => {
     page?: number
     pageSize?: number
     relation?: string | null
-    qq?: number | null
+    qq?: string | null
     nickname?: string | null
   }) {
     usersLoading.value = true
@@ -53,7 +53,7 @@ export const useUserStore = defineStore('user', () => {
   const currentUser = ref<UserDetail | null>(null)
   const currentUserGroups = ref<GroupItem[]>([])
 
-  async function loadUser(qq: number) {
+  async function loadUser(qq: string) {
     try {
       currentUser.value = await api.fetchUser(qq)
     } catch {
@@ -62,7 +62,7 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  async function loadUserGroups(qq: number) {
+  async function loadUserGroups(qq: string) {
     try {
       currentUserGroups.value = await api.fetchUserGroups(qq)
     } catch {
@@ -106,13 +106,13 @@ export const useUserStore = defineStore('user', () => {
   const membersLoading = ref(false)
 
   async function loadGroupMembers(
-    groupId: number,
+    groupId: string,
     params: {
       page?: number
       pageSize?: number
       role?: string | null
       nickname?: string | null
-      qq?: number | null
+      qq?: string | null
     },
   ) {
     membersLoading.value = true
@@ -146,17 +146,17 @@ export const useUserStore = defineStore('user', () => {
 
   /* 非共享状态的数据获取函数（组件内部使用，不写入共享 ref） */
 
-  async function fetchUserDetail(qq: number): Promise<{ user: UserDetail; groups: GroupItem[] }> {
+  async function fetchUserDetail(qq: string): Promise<{ user: UserDetail; groups: GroupItem[] }> {
     const [user, groups] = await Promise.all([api.fetchUser(qq), api.fetchUserGroups(qq)])
     return { user, groups }
   }
 
-  async function fetchMemberDetail(groupId: number, qq: number): Promise<GroupMemberItem | null> {
+  async function fetchMemberDetail(groupId: string, qq: string): Promise<GroupMemberItem | null> {
     const result = await api.fetchGroupMembers(groupId, { page: 1, pageSize: 1, qq })
     return result.items[0] ?? null
   }
 
-  async function fetchGroupDetail(groupId: number): Promise<GroupItem> {
+  async function fetchGroupDetail(groupId: string): Promise<GroupItem> {
     return api.fetchGroup(groupId)
   }
 
@@ -184,12 +184,12 @@ export const useUserStore = defineStore('user', () => {
   /* ID 解析缓存 */
 
   // shallowRef 包裹 Map，修改后手动 triggerRef 触发响应式更新
-  const userCache = shallowRef(new Map<number, ResolvedUser>())
-  const groupCache = shallowRef(new Map<number, ResolvedGroup>())
+  const userCache = shallowRef(new Map<string, ResolvedUser>())
+  const groupCache = shallowRef(new Map<string, ResolvedGroup>())
 
   // 待解析的 ID 集合（非响应式，仅用于批量合并）
-  const pendingUserIds = new Set<number>()
-  const pendingGroupIds = new Set<number>()
+  const pendingUserIds = new Set<string>()
+  const pendingGroupIds = new Set<string>()
   let flushScheduled = false
 
   async function _flushPending() {
@@ -212,7 +212,7 @@ export const useUserStore = defineStore('user', () => {
   /**
    * 同步获取用户昵称；缓存未命中时返回 QQ 号字符串，并自动调度批量解析。
    */
-  function getUserName(qq: number): string {
+  function getUserName(qq: string): string {
     const cached = userCache.value.get(qq)
     if (cached) return cached.nickname
     pendingUserIds.add(qq)
@@ -223,7 +223,7 @@ export const useUserStore = defineStore('user', () => {
   /**
    * 同步获取群名称；缓存未命中时返回群号字符串，并自动调度批量解析。
    */
-  function getGroupName(groupId: number): string {
+  function getGroupName(groupId: string): string {
     const cached = groupCache.value.get(groupId)
     if (cached) return cached.groupName
     pendingGroupIds.add(groupId)
@@ -234,7 +234,7 @@ export const useUserStore = defineStore('user', () => {
   /**
    * 主动预取一批 ID，在数据加载完成后立即调用以减少渲染闪烁。
    */
-  function prefetchIds(userIds: number[], groupIds: number[]) {
+  function prefetchIds(userIds: string[], groupIds: string[]) {
     userIds.forEach((id) => {
       if (!userCache.value.has(id)) pendingUserIds.add(id)
     })
@@ -278,7 +278,7 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  async function setAdmin(userId: number) {
+  async function setAdmin(userId: string) {
     await api.setAdmin(userId)
     await loadAdmins()
   }

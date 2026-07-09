@@ -9,15 +9,15 @@ import type { PaginatedResult } from './types'
 
 export interface CheckinRecord {
   id: number
-  groupId: number
-  userId: number
+  groupId: string
+  userId: string
   checkinDate: string
   checkinAt: string
 }
 
 export interface LeaderEntry {
   rank: number
-  userId: number
+  userId: string
   value: number
 }
 
@@ -33,8 +33,8 @@ export interface Summary {
 }
 
 export interface ListRecordsParams {
-  groupId?: number | null
-  userId?: number | null
+  groupId?: string | null
+  userId?: string | null
   date?: string | null
   page?: number
   pageSize?: number
@@ -57,7 +57,7 @@ export async function listRecords(
 }
 
 export async function getLeaderboard(
-  groupId: number | null | undefined,
+  groupId: string | null | undefined,
   by: 'total' | 'streak' = 'total',
   limit = 20,
 ): Promise<LeaderEntry[]> {
@@ -67,7 +67,7 @@ export async function getLeaderboard(
 }
 
 export async function getDailyTrend(
-  groupId: number | null | undefined,
+  groupId: string | null | undefined,
   days = 30,
 ): Promise<DayCount[]> {
   const params: Record<string, string | number> = { days }
@@ -75,7 +75,7 @@ export async function getDailyTrend(
   return get<DayCount[]>(`${BASE}/trend`, params)
 }
 
-export async function getSummary(groupId: number | null | undefined): Promise<Summary> {
+export async function getSummary(groupId: string | null | undefined): Promise<Summary> {
   const params: Record<string, string | number> = {}
   if (groupId != null) params.groupId = groupId
   return get<Summary>(`${BASE}/summary`, params)

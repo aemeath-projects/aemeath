@@ -39,18 +39,18 @@ export async function dailyCheckinProcessor(
     const botEnabled = await getSettingValue<boolean>('bot.enabled', {
       db,
       schemaMap,
-      path: Path.group(g.groupId.toString()),
+      path: Path.group(g.groupId),
     })
     if (!botEnabled) continue
 
     const featureEnabled = await getSettingValue<boolean>('daily_checkin.enabled', {
       db,
       schemaMap,
-      path: Path.group(g.groupId.toString()),
+      path: Path.group(g.groupId),
     })
     if (!featureEnabled) continue
 
-    const dailyKey = cacheKeyRegistry.buildKey('checkin', 'daily', String(g.groupId), today)
+    const dailyKey = cacheKeyRegistry.buildKey('checkin', 'daily', g.groupId, today)
     if (await cache.exists(dailyKey)) continue
 
     calls.push({ method: 'sendGroupSign', args: [Number(g.groupId)] })

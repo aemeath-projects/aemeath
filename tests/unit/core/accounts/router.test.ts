@@ -56,7 +56,7 @@ describe('MessageRouter', () => {
       pool.getClientRole.mockImplementation((id: string) =>
         id === 'bot-master' ? 'master' : 'normal',
       )
-      routingTable.resolve.mockImplementation((_groupId: bigint, candidates: Candidate[]) => {
+      routingTable.resolve.mockImplementation((_groupId: string, candidates: Candidate[]) => {
         const master = candidates.find((c) => c.clientId === 'bot-master')!
         const normal = candidates.find((c) => c.clientId === 'bot-normal')!
         expect(master.priority).toBeLessThan(normal.priority)
@@ -71,7 +71,7 @@ describe('MessageRouter', () => {
         'prefer_master',
       )
 
-      await router.sendGroupMsg(123n, [])
+      await router.sendGroupMsg('123', [])
       expect(routingTable.resolve).toHaveBeenCalledTimes(1)
     })
 
@@ -81,7 +81,7 @@ describe('MessageRouter', () => {
       pool.getClientRole.mockImplementation((id: string) =>
         id === 'bot-master' ? 'master' : 'normal',
       )
-      routingTable.resolve.mockImplementation((_groupId: bigint, candidates: Candidate[]) => {
+      routingTable.resolve.mockImplementation((_groupId: string, candidates: Candidate[]) => {
         const master = candidates.find((c) => c.clientId === 'bot-master')!
         const normal = candidates.find((c) => c.clientId === 'bot-normal')!
         expect(normal.priority).toBeLessThan(master.priority)
@@ -96,7 +96,7 @@ describe('MessageRouter', () => {
         'prefer_normal',
       )
 
-      await router.sendGroupMsg(123n, [])
+      await router.sendGroupMsg('123', [])
       expect(routingTable.resolve).toHaveBeenCalledTimes(1)
     })
 
@@ -112,7 +112,7 @@ describe('MessageRouter', () => {
         'prefer_master',
       )
 
-      await expect(router.sendGroupMsg(123n, [])).rejects.toThrow('当前群无可用账号发送消息')
+      await expect(router.sendGroupMsg('123', [])).rejects.toThrow('当前群无可用账号发送消息')
       expect(routingTable.resolve).not.toHaveBeenCalled()
     })
   })
@@ -140,7 +140,7 @@ describe('MessageRouter', () => {
       sendGroupMsgMock.mockResolvedValue({ ok: true, data: { messageId: 1 } })
 
       let capturedCandidates: Candidate[] = []
-      routingTable.resolve.mockImplementation((_groupId: bigint, candidates: Candidate[]) => {
+      routingTable.resolve.mockImplementation((_groupId: string, candidates: Candidate[]) => {
         capturedCandidates = candidates
         return candidates[0]!.clientId
       })
@@ -153,7 +153,7 @@ describe('MessageRouter', () => {
       )
       router.setPriorityMode('prefer_normal')
 
-      await router.sendGroupMsg(123n, [])
+      await router.sendGroupMsg('123', [])
 
       const master = capturedCandidates.find((c) => c.clientId === 'bot-master')!
       const normal = capturedCandidates.find((c) => c.clientId === 'bot-normal')!

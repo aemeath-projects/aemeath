@@ -6,7 +6,7 @@ import { Type } from '@sinclair/typebox'
 
 /** 新增定时点赞任务请求 Schema。 */
 export const CreateLikeTaskRequestSchema = Type.Object({
-  qq: Type.Number({ description: '被点赞用户 QQ 号', exclusiveMinimum: 0 }),
+  qq: Type.String({ description: '被点赞用户 QQ 号' }),
 })
 
 /** 定时点赞任务响应 Schema。 */
@@ -73,7 +73,7 @@ export const LikeTaskParamsSchema = Type.Object({
 /* TypeScript 接口 */
 
 export interface CreateLikeTaskRequest {
-  qq: number
+  qq: string
 }
 
 export interface LikeTasksQuery {

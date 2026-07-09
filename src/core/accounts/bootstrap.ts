@@ -73,7 +73,7 @@ export class MultiAccountBootstrap {
   masterApis!: MasterApis
 
   /** 启动期间创建的路由表，供 clientStateChange 监听器引用。 */
-  private _routingTable!: RoutingTable<bigint>
+  private _routingTable!: RoutingTable<string>
 
   @Startup
   async start(): Promise<void> {
@@ -121,7 +121,7 @@ export class MultiAccountBootstrap {
     )
 
     // 增量更新 GroupBotRegistry：在 dedup 之前监听各账号的原始 notice 事件
-    const botQqs = new Set(accounts.map((a) => Number(a.qq))) // Set<number>
+    const botQqs = new Set(accounts.map((a) => a.qq)) // Set<string>
 
     for (const adapter of adaptersList) {
       adapter.client.on('notice', (event) => {
@@ -132,20 +132,20 @@ export class MultiAccountBootstrap {
           const userId = (event as { userId?: number }).userId
 
           if (noticeType === 'group_admin' && groupId != null && userId != null) {
-            if (!botQqs.has(userId)) return
+            if (!botQqs.has(String(userId))) return
             const role: GroupBotRole = subType === 'set' ? 'admin' : 'member'
-            this.registry.setRole(BigInt(groupId), adapter.id, role)
+            this.registry.setRole(String(groupId), adapter.id, role)
           }
 
           if (noticeType === 'group_decrease' && groupId != null) {
             if (subType === 'kick_me' || subType === 'leave') {
-              this.registry.removeClient(BigInt(groupId), adapter.id)
+              this.registry.removeClient(String(groupId), adapter.id)
             }
           }
 
           if (noticeType === 'group_increase' && groupId != null && userId != null) {
-            if (!botQqs.has(userId)) return
-            this.registry.setRole(BigInt(groupId), adapter.id, 'member')
+            if (!botQqs.has(String(userId))) return
+            this.registry.setRole(String(groupId), adapter.id, 'member')
           }
         } catch (err: unknown) {
           log.error({ err, adapterId: adapter.id }, 'GroupBotRegistry notice 处理失败')
@@ -154,9 +154,9 @@ export class MultiAccountBootstrap {
     }
 
     // 6. 创建路由表和消息路由器
-    this._routingTable = new RoutingTable<bigint>({
+    this._routingTable = new RoutingTable<string>({
       strategy: new PriorityStickyStrategy(),
-      keySerializer: (groupId) => String(groupId),
+      keySerializer: (groupId) => groupId,
     })
     this.router = new MessageRouter(this.pool, this._routingTable, this.registry, mode)
 
@@ -214,7 +214,7 @@ export class MultiAccountBootstrap {
 
   /** 重连彻底放弃（error 状态）后，自动禁用对应账号并从连接池移除。 */
   private async _autoDisableAfterGiveUp(clientId: string): Promise<void> {
-    const qq = BigInt(clientId.replace('bot-', ''))
+    const qq = clientId.replace('bot-', '')
     await this.db.account.update({ where: { qq }, data: { isEnabled: false } })
     if (this.pool.getClient(clientId)) await this.pool.removeClient(clientId)
     log.warn(`账号 ${clientId} 重连尝试次数已达上限，已自动禁用`)
@@ -238,7 +238,7 @@ export class MultiAccountBootstrap {
           )
           if (!memberInfoResult.ok) return
           const role = memberInfoResult.data.role
-          this.registry.setRole(BigInt(group.groupId), adapter.id, role)
+          this.registry.setRole(String(group.groupId), adapter.id, role)
         }),
       ),
     )

@@ -45,14 +45,14 @@ export class SessionInterceptor implements HandlerInterceptor<AnyOneBotEvent, Co
     if (this._sessionManager === null) return true
 
     // 计算与 keyExtractor 一致的会话 key
-    const sessionKey = `${String(c.userId)}_${String(c.groupId ?? 'private')}`
+    const sessionKey = `${c.userId}_${c.groupId ?? 'private'}`
     if (!this._sessionManager.isActive(sessionKey)) return true
 
     // 有活跃会话 → 路由消息到会话
     const text = c.getPlaintext()
 
     if (DEFAULT_CANCEL_COMMANDS.includes(text)) {
-      log.debug(`用户 ${String(c.userId)} 取消会话`)
+      log.debug(`用户 ${c.userId} 取消会话`)
       await this._sessionManager.cancel(sessionKey)
     } else {
       await this._sessionManager.processMessage(c, text)

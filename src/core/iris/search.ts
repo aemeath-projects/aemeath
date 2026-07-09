@@ -5,8 +5,8 @@
 
 export interface SearchOptions {
   keyword?: string
-  groupId?: bigint
-  userId?: bigint
+  groupId?: string
+  userId?: string
   startDate?: Date
   endDate?: Date
   limit?: number
@@ -14,10 +14,10 @@ export interface SearchOptions {
 }
 
 export interface SearchResult {
-  id: bigint
-  messageId: bigint
-  groupId: bigint | null
-  userId: bigint
+  id: string
+  messageId: string
+  groupId: string | null
+  userId: string
   createdAt: Date
   senderNickname: string
   textSnippet: string

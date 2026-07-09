@@ -12,8 +12,8 @@ export interface ChatMessage {
   id: number
   messageId: number
   messageType: number
-  groupId: number | null
-  userId: number
+  groupId: string | null
+  userId: string
   rawMessage: string
   segments: MessageSegment[]
   senderNickname: string
@@ -55,12 +55,12 @@ export interface ArchiveLog {
 const BASE = '/api/iris'
 
 export async function fetchGroupMessages(
-  groupId: number,
+  groupId: string,
   params?: {
     before?: string
     limit?: number
     keyword?: string
-    userId?: number
+    userId?: string
     startDate?: string
     endDate?: string
   },
@@ -76,7 +76,7 @@ export async function fetchGroupMessages(
 }
 
 export async function fetchPrivateMessages(
-  userId: number,
+  userId: string,
   params?: { before?: string; limit?: number },
 ): Promise<ChatMessage[]> {
   const query: Record<string, string | number> = {}
@@ -112,7 +112,7 @@ export async function triggerArchive(partitionName?: string): Promise<{ taskId: 
 
 export async function queryArchive(
   periodStart: string,
-  groupId?: number,
+  groupId?: string,
   limit?: number,
 ): Promise<ChatMessage[]> {
   const params: Record<string, string | number> = { periodStart }

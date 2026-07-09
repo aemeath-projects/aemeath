@@ -11,31 +11,31 @@ export type { PaginatedResult } from './types'
 
 export interface WifeRecord {
   id: number
-  groupId: number
-  userId: number
-  wifeQq: number
+  groupId: string
+  userId: string
+  wifeQq: string
   date: string
   drawnAt: string | null
 }
 
 export interface ListRecordsParams {
-  groupId?: number | null
-  userId?: number | null
+  groupId?: string | null
+  userId?: string | null
   date?: string | null
   page?: number
   pageSize?: number
 }
 
 export interface SetWifeRequest {
-  groupId: number
-  userId: number
-  wifeQq: number
+  groupId: string
+  userId: string
+  wifeQq: string
   date: string
 }
 
 export interface UpdateRecordRequest {
   id: number
-  wifeQq: number
+  wifeQq: string
 }
 
 export interface DeleteRecordRequest {

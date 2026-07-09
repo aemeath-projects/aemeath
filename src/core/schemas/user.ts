@@ -61,7 +61,7 @@ export const MemberListQuerySchema = Type.Object({
 
 /** 用户详情 Schema —— 对应 UserView。 */
 export const UserDetailSchema = Type.Object({
-  qq: Type.Number({ description: 'QQ 号' }),
+  qq: Type.String({ description: 'QQ 号' }),
   nickname: Type.String({ description: '昵称' }),
   relation: Type.String({ description: '关系' }),
   groupCount: Type.Number({ description: '所在活跃群数' }),
@@ -79,7 +79,7 @@ export const PaginatedUsersDataSchema = Type.Object({
 
 /** 用户所属群信息 Schema —— 对应 UserGroupView。 */
 export const UserGroupSchema = Type.Object({
-  groupId: Type.Number({ description: '群号' }),
+  groupId: Type.String({ description: '群号' }),
   groupName: Type.String({ description: '群名称' }),
   memberCount: Type.Number({ description: '当前成员数' }),
   maxMemberCount: Type.Number({ description: '最大成员数' }),
@@ -95,7 +95,7 @@ export const UserGroupsDataSchema = Type.Array(UserGroupSchema)
 
 /** 群聊详情 Schema —— 对应 GroupView。 */
 export const GroupDetailSchema = Type.Object({
-  groupId: Type.Number({ description: '群号' }),
+  groupId: Type.String({ description: '群号' }),
   groupName: Type.String({ description: '群名称' }),
   memberCount: Type.Number({ description: '当前成员数' }),
   maxMemberCount: Type.Number({ description: '最大成员数' }),
@@ -114,7 +114,7 @@ export const PaginatedGroupsDataSchema = Type.Object({
 
 /** 群成员详情 Schema —— 对应 GroupMemberView。 */
 export const MemberDetailSchema = Type.Object({
-  qq: Type.Number({ description: 'QQ 号' }),
+  qq: Type.String({ description: 'QQ 号' }),
   nickname: Type.String({ description: '昵称' }),
   card: Type.String({ description: '群名片' }),
   role: Type.String({ description: '角色（owner/admin/member）' }),
@@ -143,7 +143,7 @@ export const SetAdminBodySchema = Type.Object({
 
 /** 管理员信息 Schema。 */
 export const AdminInfoSchema = Type.Object({
-  qq: Type.Number({ description: 'QQ 号' }),
+  qq: Type.String({ description: 'QQ 号' }),
   nickname: Type.String({ description: '昵称' }),
   relation: Type.String({ description: '关系（admin）' }),
   lastSynced: Type.Union([Type.String(), Type.Null()]),
@@ -154,7 +154,7 @@ export const AdminListDataSchema = Type.Array(AdminInfoSchema)
 
 /** 御者候选人 Schema（master 账号好友）。 */
 export const AdminCandidateSchema = Type.Object({
-  qq: Type.Number({ description: 'QQ 号' }),
+  qq: Type.String({ description: 'QQ 号' }),
   nickname: Type.String({ description: '昵称' }),
   remark: Type.Optional(Type.String({ description: '备注' })),
 })

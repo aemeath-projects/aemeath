@@ -24,7 +24,7 @@ export function buildContextApis(
   const msgApi = new Proxy(sourceClient ? new MessageApi(sourceClient) : ({} as MessageApi), {
     get(target, prop) {
       if (prop === 'sendGroupMsg') {
-        return (groupId: bigint, message: MessageSegment[]) => router.sendGroupMsg(groupId, message)
+        return (groupId: string, message: MessageSegment[]) => router.sendGroupMsg(groupId, message)
       }
       return Reflect.get(target, prop) as unknown
     },

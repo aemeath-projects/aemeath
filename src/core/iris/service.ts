@@ -22,7 +22,7 @@ export interface GroupHistoryOptions {
   /** 关键词过滤。 */
   keyword?: string
   /** 按 user_id 过滤。 */
-  userId?: bigint
+  userId?: string
   /** 起始时间（含）。 */
   startDate?: Date
   /** 结束时间（含）。 */
@@ -37,8 +37,8 @@ export interface PrivateHistoryOptions {
 
 /** 消息搜索参数。 */
 export interface SearchOptions {
-  groupId?: bigint
-  userId?: bigint
+  groupId?: string
+  userId?: string
   startDate?: Date
   endDate?: Date
   limit?: number
@@ -81,8 +81,8 @@ export class IrisService {
   async saveMessage(data: {
     messageId: bigint
     messageType: number
-    groupId?: bigint | null
-    userId: bigint
+    groupId?: string | null
+    userId: string
     rawMessage: string
     segments: unknown
     senderNickname: string
@@ -122,7 +122,7 @@ export class IrisService {
   /**
    * 查询群聊消息（游标分页，支持筛选）。
    */
-  async getGroupHistory(groupId: bigint, opts: GroupHistoryOptions = {}): Promise<ChatMessage[]> {
+  async getGroupHistory(groupId: string, opts: GroupHistoryOptions = {}): Promise<ChatMessage[]> {
     const { before, limit = 50, keyword, userId, startDate, endDate } = opts
 
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
@@ -157,7 +157,7 @@ export class IrisService {
    * messageType=1 对应 PRIVATE。
    */
   async getPrivateHistory(
-    userId: bigint,
+    userId: string,
     opts: PrivateHistoryOptions = {},
   ): Promise<ChatMessage[]> {
     const { before, limit = 50 } = opts

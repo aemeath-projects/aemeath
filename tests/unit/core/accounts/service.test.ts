@@ -15,9 +15,9 @@ const mockAdapterInstances: {
 }[] = []
 
 vi.mock('@/core/accounts/adapter.js', () => {
-  const NapCatClientAdapter = vi.fn().mockImplementation(function (account: { qq: bigint }) {
+  const NapCatClientAdapter = vi.fn().mockImplementation(function (account: { qq: string }) {
     const instance = {
-      id: `bot-${String(account.qq)}`,
+      id: `bot-${account.qq}`,
       client: {},
       state: 'disconnected',
       connect: vi.fn().mockResolvedValue(undefined),
@@ -79,7 +79,7 @@ type MockDb = ReturnType<typeof createMockDb>
 type MockPool = ReturnType<typeof createMockPool>
 
 const baseAccount = {
-  qq: 1739280698n,
+  qq: '1739280698',
   nickname: '测试1',
   role: 'master',
   transport: 'ws' as const,
@@ -158,7 +158,7 @@ describe('AccountService', () => {
       mockDb.account.update.mockResolvedValue({ ...baseAccount, nickname: '新昵称' })
       const svc = new AccountService(mockDb as unknown as AemeathPrismaClient, mockPool as never)
 
-      await svc.updateAccount(1739280698n, { nickname: '新昵称' })
+      await svc.updateAccount('1739280698', { nickname: '新昵称' })
 
       expect(mockPool.removeClient).not.toHaveBeenCalled()
       expect(mockPool.addClient).not.toHaveBeenCalled()
@@ -171,7 +171,7 @@ describe('AccountService', () => {
       mockDb.account.update.mockResolvedValue(updated)
       const svc = new AccountService(mockDb as unknown as AemeathPrismaClient, mockPool as never)
 
-      await svc.updateAccount(1739280698n, { endpoint: 'ws://127.0.0.1:9999' })
+      await svc.updateAccount('1739280698', { endpoint: 'ws://127.0.0.1:9999' })
 
       expect(mockPool.removeClient).toHaveBeenCalledWith('bot-1739280698')
       expect(mockPool.addClient).toHaveBeenCalledTimes(1)
@@ -187,7 +187,7 @@ describe('AccountService', () => {
       mockDb.account.update.mockResolvedValue(updated)
       const svc = new AccountService(mockDb as unknown as AemeathPrismaClient, mockPool as never)
 
-      await svc.updateAccount(1739280698n, { endpoint: 'ws://127.0.0.1:9999' })
+      await svc.updateAccount('1739280698', { endpoint: 'ws://127.0.0.1:9999' })
 
       expect(mockPool.removeClient).toHaveBeenCalledWith('bot-1739280698')
       expect(mockPool.addClient).toHaveBeenCalledTimes(1)
@@ -202,7 +202,7 @@ describe('AccountService', () => {
       mockDb.account.update.mockResolvedValue(updated)
       const svc = new AccountService(mockDb as unknown as AemeathPrismaClient, mockPool as never)
 
-      await svc.updateAccount(1739280698n, { isEnabled: false })
+      await svc.updateAccount('1739280698', { isEnabled: false })
 
       expect(mockPool.removeClient).toHaveBeenCalledWith('bot-1739280698')
       expect(mockPool.addClient).not.toHaveBeenCalled()
@@ -216,7 +216,7 @@ describe('AccountService', () => {
       mockDb.account.update.mockResolvedValue(updated)
       const svc = new AccountService(mockDb as unknown as AemeathPrismaClient, mockPool as never)
 
-      await svc.updateAccount(1739280698n, { isEnabled: true })
+      await svc.updateAccount('1739280698', { isEnabled: true })
 
       expect(mockPool.addClient).toHaveBeenCalledTimes(1)
       const [newAdapterArg] = mockPool.addClient.mock.calls[0] as [{ connect: () => unknown }]
@@ -233,9 +233,9 @@ describe('AccountService', () => {
       // 让下一次构造出的 adapter 的 connect() reject
       const NapCatClientAdapterModule = await import('@/core/accounts/adapter.js')
       vi.mocked(NapCatClientAdapterModule.NapCatClientAdapter).mockImplementationOnce(
-        function (account: { qq: bigint }) {
+        function (account: { qq: string }) {
           const instance = {
-            id: `bot-${String(account.qq)}`,
+            id: `bot-${account.qq}`,
             client: {},
             state: 'disconnected',
             connect: vi.fn().mockRejectedValue(new Error('连接失败')),
@@ -249,7 +249,7 @@ describe('AccountService', () => {
       )
 
       await expect(
-        svc.updateAccount(1739280698n, { endpoint: 'ws://127.0.0.1:9999' }),
+        svc.updateAccount('1739280698', { endpoint: 'ws://127.0.0.1:9999' }),
       ).resolves.toEqual(updated)
     })
 
@@ -260,7 +260,7 @@ describe('AccountService', () => {
       const svc = new AccountService(mockDb as unknown as AemeathPrismaClient)
 
       await expect(
-        svc.updateAccount(1739280698n, { endpoint: 'ws://127.0.0.1:9999' }),
+        svc.updateAccount('1739280698', { endpoint: 'ws://127.0.0.1:9999' }),
       ).resolves.toEqual(updated)
     })
   })

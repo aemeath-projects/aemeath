@@ -37,8 +37,8 @@ export class CapabilityInterceptor implements HandlerInterceptor<AnyOneBotEvent,
     const groupId = obc.groupId
     if (groupId === undefined) return true
 
-    // groupId 在 OneBotContext 中为 number，GroupBotRegistry 使用 bigint
-    const gid = BigInt(groupId)
+    // groupId 在 OneBotContext 中为 number，GroupBotRegistry 使用 string
+    const gid = groupId
 
     // 缓存查找结果，避免对同一 ID 调用两次 getClient
     let clientAdapter: { state: ClientState; client: NapCatClient } | undefined

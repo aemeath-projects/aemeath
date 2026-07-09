@@ -47,7 +47,7 @@ export class SettingsPermissionChecker implements FeatureChecker {
 
     // 御者绕过
     const adminQq = await this.adminService.getAdminQq()
-    if (adminQq === BigInt(ctx.userId)) return true
+    if (adminQq?.toString() === ctx.userId) return true
 
     // ADMIN 权限硬编码，非管理员直接拒绝
     if (required === Permission.ADMIN) return false
@@ -60,27 +60,22 @@ export class SettingsPermissionChecker implements FeatureChecker {
 
   private async _checkGroup(
     ctx: Context,
-    groupId: number,
+    groupId: string,
     featureName: string,
     required: number,
   ): Promise<boolean> {
-    const gid = BigInt(groupId)
-
     // bot 总开关
-    const botEnabled = await this.settings.get<boolean>('bot.enabled', Path.group(gid.toString()))
+    const botEnabled = await this.settings.get<boolean>('bot.enabled', Path.group(groupId))
     if (!botEnabled) return false
 
     // 功能开关
-    const enabled = await this.settings.get<boolean>(
-      `${featureName}.enabled`,
-      Path.group(gid.toString()),
-    )
+    const enabled = await this.settings.get<boolean>(`${featureName}.enabled`, Path.group(groupId))
     if (!enabled) return false
 
     // 配置树中的 permission（enum 标签），如果存在则覆盖装饰器静态权限
     const permissionKey = `${featureName}.permission`
     if (this.schemaMap.has(permissionKey)) {
-      const label = await this.settings.get<string>(permissionKey, Path.group(gid.toString()))
+      const label = await this.settings.get<string>(permissionKey, Path.group(groupId))
       const minLevel = this.settings.resolveEnum(permissionKey, label)
       return this._checkGroupRole(ctx, minLevel)
     }
@@ -90,10 +85,9 @@ export class SettingsPermissionChecker implements FeatureChecker {
   }
 
   private async _checkPrivate(ctx: Context, featureName: string): Promise<boolean> {
-    const userId = BigInt(ctx.userId)
     const enabled = await this.settings.get<boolean>(
       `${featureName}.enabled`,
-      Path.private(userId.toString()),
+      Path.private(ctx.userId),
     )
     return enabled
   }

@@ -5,7 +5,7 @@ import { GroupBotRegistry } from '../../../../../src/core/accounts/group-bot-reg
 import type { OneBotContext } from '../../../../../src/core/dispatch/context.js'
 import { CapabilityInterceptor } from '../../../../../src/core/dispatch/interceptors/capability.js'
 
-function makeCtx(groupId: number | undefined, replySpy: ReturnType<typeof vi.fn>) {
+function makeCtx(groupId: string | undefined, replySpy: ReturnType<typeof vi.fn>) {
   const apis = {
     msgApi: {},
     friendApi: {},
@@ -40,7 +40,7 @@ describe('CapabilityInterceptor', () => {
   })
 
   it('无能力要求时直通返回 true', async () => {
-    const ctx = makeCtx(100, vi.fn())
+    const ctx = makeCtx('100', vi.fn())
     const result = await interceptor.preHandle(ctx, makeHandler(null))
     expect(result).toBe(true)
   })
@@ -52,11 +52,11 @@ describe('CapabilityInterceptor', () => {
   })
 
   it('找到有能力的账号时替换 groupApi 并返回 true', async () => {
-    registry.setRole(100n, 'client-B', 'admin')
+    registry.setRole('100', 'client-B', 'admin')
     const mockClient = { state: 'connected', client: { id: 'napcat-B' } }
     pool.getClient.mockReturnValue(mockClient)
 
-    const ctx = makeCtx(100, vi.fn())
+    const ctx = makeCtx('100', vi.fn())
     const result = await interceptor.preHandle(ctx, makeHandler('group_admin'))
 
     expect(result).toBe(true)
@@ -67,7 +67,7 @@ describe('CapabilityInterceptor', () => {
   it('无可用能力账号时回复错误并返回 false', async () => {
     // 群内无任何账号
     const replySpy = vi.fn()
-    const ctx = makeCtx(100, replySpy)
+    const ctx = makeCtx('100', replySpy)
 
     const result = await interceptor.preHandle(ctx, makeHandler('group_admin'))
 
@@ -76,12 +76,12 @@ describe('CapabilityInterceptor', () => {
   })
 
   it('有能力账号但已断线时返回 false', async () => {
-    registry.setRole(100n, 'client-B', 'admin')
+    registry.setRole('100', 'client-B', 'admin')
     const mockClient = { state: 'disconnected', client: {} }
     pool.getClient.mockReturnValue(mockClient)
 
     const replySpy = vi.fn()
-    const ctx = makeCtx(100, replySpy)
+    const ctx = makeCtx('100', replySpy)
 
     const result = await interceptor.preHandle(ctx, makeHandler('group_admin'))
 

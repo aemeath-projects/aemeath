@@ -9,14 +9,14 @@ describe('enqueueRender', () => {
     const jobId = await enqueueRender(queue, {
       template: 'help',
       data: { title: 'test' },
-      sendTo: { groupId: 100 },
+      sendTo: { groupId: '100' },
     })
 
     expect(queue.add).toHaveBeenCalledWith(
       'render',
       expect.objectContaining({
         template: 'help',
-        sendTo: { groupId: 100 },
+        sendTo: { groupId: '100' },
       }),
     )
     expect(jobId).toBe('job-123')

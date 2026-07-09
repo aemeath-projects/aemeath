@@ -4,7 +4,7 @@ import type { Queue } from 'bullmq'
 
 import { AppError } from '@/core/errors.js'
 
-export type RenderTarget = { groupId: number; userId?: never } | { userId: number; groupId?: never }
+export type RenderTarget = { groupId: string; userId?: never } | { userId: string; groupId?: never }
 
 export interface EnqueueRenderOptions {
   template: string

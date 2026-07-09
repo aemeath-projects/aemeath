@@ -11,14 +11,14 @@ export type LikeSource = 'manual' | 'scheduled'
 
 export interface LikeTask {
   id: number
-  qq: number
+  qq: string
   registeredAt: string
-  registeredGroupId: number | null
+  registeredGroupId: string | null
 }
 
 export interface LikeHistory {
   id: number
-  qq: number
+  qq: string
   times: number
   triggeredAt: string
   source: LikeSource
@@ -31,7 +31,7 @@ export interface ListTasksParams {
 }
 
 export interface ListHistoryParams {
-  qq?: number | null
+  qq?: string | null
   source?: LikeSource | null
   dateFrom?: string | null
   dateTo?: string | null
@@ -47,12 +47,12 @@ export async function listTasks(params: ListTasksParams = {}): Promise<Paginated
   return get<PaginatedResult<LikeTask>>(`${BASE}/tasks`, params)
 }
 
-export async function createTask(qq: number): Promise<{ qq: number }> {
-  return post<{ qq: number }>(`${BASE}/tasks`, { qq })
+export async function createTask(qq: string): Promise<{ qq: string }> {
+  return post<{ qq: string }>(`${BASE}/tasks`, { qq })
 }
 
-export async function cancelTask(qq: number): Promise<{ qq: number }> {
-  return post<{ qq: number }>(`${BASE}/tasks/${qq}/cancel`)
+export async function cancelTask(qq: string): Promise<{ qq: string }> {
+  return post<{ qq: string }>(`${BASE}/tasks/${qq}/cancel`)
 }
 
 export async function listHistory(

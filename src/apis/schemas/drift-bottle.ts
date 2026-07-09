@@ -11,7 +11,7 @@ export const CreatePoolRequestSchema = Type.Object({
 
 /** 群池分配请求 Schema。 */
 export const GroupAssignRequestSchema = Type.Object({
-  groupId: Type.Number({ description: '群号' }),
+  groupId: Type.String({ description: '群号' }),
   poolId: Type.Number({ minimum: 0, description: '目标池 id，0=移回默认池' }),
 })
 
@@ -33,7 +33,7 @@ export const PoolListDataSchema = Type.Array(PoolInfoResponseSchema)
 /** 池下群列表响应 Schema。 */
 export const PoolGroupsResponseSchema = Type.Object({
   poolId: Type.Number(),
-  groupIds: Type.Array(Type.Number()),
+  groupIds: Type.Array(Type.String()),
 })
 
 /* TypeScript 接口 */
@@ -43,6 +43,6 @@ export interface CreatePoolRequest {
 }
 
 export interface GroupAssignRequest {
-  groupId: number
+  groupId: string
   poolId: number
 }

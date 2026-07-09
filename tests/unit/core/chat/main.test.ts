@@ -39,8 +39,8 @@ describe('IrisService', () => {
       await service.saveMessage({
         messageId: 1001n,
         messageType: 2,
-        groupId: 123456n,
-        userId: 987654n,
+        groupId: '123456',
+        userId: '987654',
         rawMessage: '你好',
         segments: [{ type: 'text', data: { text: '你好' } }],
         senderNickname: '测试用户',
@@ -54,8 +54,8 @@ describe('IrisService', () => {
         data: expect.objectContaining({
           messageId: 1001n,
           messageType: 2,
-          groupId: 123456n,
-          userId: 987654n,
+          groupId: '123456',
+          userId: '987654',
           rawMessage: '你好',
           senderNickname: '测试用户',
         }),
@@ -69,7 +69,7 @@ describe('IrisService', () => {
         service.saveMessage({
           messageId: 1002n,
           messageType: 1,
-          userId: 111n,
+          userId: '111',
           rawMessage: '测试',
           segments: [],
           senderNickname: '用户',
@@ -85,7 +85,7 @@ describe('IrisService', () => {
         messageId: 2001n,
         messageType: 1,
         groupId: undefined,
-        userId: 555n,
+        userId: '555',
         rawMessage: '私聊消息',
         segments: [],
         senderNickname: '私聊用户',
@@ -107,8 +107,8 @@ describe('IrisService', () => {
         createdAt: new Date('2024-06-01'),
         messageId: 100n,
         messageType: 2,
-        groupId: 888n,
-        userId: 999n,
+        groupId: '888',
+        userId: '999',
         rawMessage: '群消息',
         segments: [],
         senderNickname: '群友',
@@ -121,17 +121,17 @@ describe('IrisService', () => {
     it('应当按 groupId 查询并按 createdAt desc 排序', async () => {
       mockChatDb.chatMessage.findMany.mockResolvedValue(fakeMessages)
 
-      const result = await service.getGroupHistory(888n)
+      const result = await service.getGroupHistory('888')
 
       expect(mockChatDb.chatMessage.findMany).toHaveBeenCalledOnce()
 
       interface FindManyArg {
-        where: { groupId: bigint }
+        where: { groupId: string }
         orderBy: { createdAt: string }
         take: number
       }
       const callArg = mockChatDb.chatMessage.findMany.mock.calls[0]?.[0] as FindManyArg
-      expect(callArg.where.groupId).toBe(888n)
+      expect(callArg.where.groupId).toBe('888')
       expect(callArg.orderBy.createdAt).toBe('desc')
       expect(callArg.take).toBe(50) // 默认 limit
 
@@ -141,7 +141,7 @@ describe('IrisService', () => {
     it('传入 limit 时应当使用指定值', async () => {
       mockChatDb.chatMessage.findMany.mockResolvedValue([])
 
-      await service.getGroupHistory(888n, { limit: 20 })
+      await service.getGroupHistory('888', { limit: 20 })
 
       interface FindManyArg {
         take: number
@@ -154,7 +154,7 @@ describe('IrisService', () => {
       mockChatDb.chatMessage.findMany.mockResolvedValue([])
       const before = new Date('2024-05-01')
 
-      await service.getGroupHistory(888n, { before })
+      await service.getGroupHistory('888', { before })
 
       interface FindManyArg {
         where: { createdAt?: { lt?: Date } }
@@ -170,13 +170,13 @@ describe('IrisService', () => {
     it('应当按 userId 和 messageType=1 查询', async () => {
       mockChatDb.chatMessage.findMany.mockResolvedValue([])
 
-      await service.getPrivateHistory(12345n)
+      await service.getPrivateHistory('12345')
 
       interface FindManyArg {
-        where: { userId: bigint; messageType: number }
+        where: { userId: string; messageType: number }
       }
       const callArg = mockChatDb.chatMessage.findMany.mock.calls[0]?.[0] as FindManyArg
-      expect(callArg.where.userId).toBe(12345n)
+      expect(callArg.where.userId).toBe('12345')
       expect(callArg.where.messageType).toBe(1)
     })
   })

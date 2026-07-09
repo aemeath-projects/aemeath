@@ -40,15 +40,15 @@ describe('UserQueryService', () => {
     it('用户不存在时应当返回 null', async () => {
       mockDb.user.findUnique.mockResolvedValue(null)
 
-      const result = await svc.getUser(123456789n)
+      const result = await svc.getUser('123456789')
 
       expect(result).toBeNull()
-      expect(mockDb.user.findUnique).toHaveBeenCalledWith({ where: { qq: 123456789n } })
+      expect(mockDb.user.findUnique).toHaveBeenCalledWith({ where: { qq: '123456789' } })
     })
 
     it('用户存在时应当返回用户视图（含 groupCount）', async () => {
       const mockUser = {
-        qq: 123456789n,
+        qq: '123456789',
         nickname: '测试用户',
         relation: 'friend',
         lastSynced: new Date('2024-01-01T00:00:00.000Z'),
@@ -56,10 +56,10 @@ describe('UserQueryService', () => {
       mockDb.user.findUnique.mockResolvedValue(mockUser)
       mockDb.groupMembership.count.mockResolvedValue(3)
 
-      const result = await svc.getUser(123456789n)
+      const result = await svc.getUser('123456789')
 
       expect(result).not.toBeNull()
-      expect(result?.qq).toBe(123456789n)
+      expect(result?.qq).toBe('123456789')
       expect(result?.nickname).toBe('测试用户')
       expect(result?.relation).toBe('friend')
       expect(result?.groupCount).toBe(3)
@@ -69,7 +69,7 @@ describe('UserQueryService', () => {
     it('用户存在时应当返回格式化的 lastSynced', async () => {
       const syncDate = new Date('2024-03-15T10:00:00.000Z')
       const mockUser = {
-        qq: 123456789n,
+        qq: '123456789',
         nickname: '测试用户',
         relation: 'stranger',
         lastSynced: syncDate,
@@ -77,7 +77,7 @@ describe('UserQueryService', () => {
       mockDb.user.findUnique.mockResolvedValue(mockUser)
       mockDb.groupMembership.count.mockResolvedValue(0)
 
-      const result = await svc.getUser(123456789n)
+      const result = await svc.getUser('123456789')
 
       expect(result?.lastSynced).toBe(syncDate.toISOString())
     })
@@ -87,11 +87,11 @@ describe('UserQueryService', () => {
     it('用户 relation 为 admin 时应当返回 true', async () => {
       mockDb.user.findUnique.mockResolvedValue({ relation: 'admin' })
 
-      const result = await svc.isAdmin(987654321n)
+      const result = await svc.isAdmin('987654321')
 
       expect(result).toBe(true)
       expect(mockDb.user.findUnique).toHaveBeenCalledWith({
-        where: { qq: 987654321n },
+        where: { qq: '987654321' },
         select: { relation: true },
       })
     })
@@ -99,7 +99,7 @@ describe('UserQueryService', () => {
     it('用户 relation 为 friend 时应当返回 false', async () => {
       mockDb.user.findUnique.mockResolvedValue({ relation: 'friend' })
 
-      const result = await svc.isAdmin(987654321n)
+      const result = await svc.isAdmin('987654321')
 
       expect(result).toBe(false)
     })
@@ -107,7 +107,7 @@ describe('UserQueryService', () => {
     it('用户不存在时应当返回 false', async () => {
       mockDb.user.findUnique.mockResolvedValue(null)
 
-      const result = await svc.isAdmin(999999999n)
+      const result = await svc.isAdmin('999999999')
 
       expect(result).toBe(false)
     })
@@ -115,7 +115,7 @@ describe('UserQueryService', () => {
     it('用户 relation 为 stranger 时应当返回 false', async () => {
       mockDb.user.findUnique.mockResolvedValue({ relation: 'stranger' })
 
-      const result = await svc.isAdmin(111111111n)
+      const result = await svc.isAdmin('111111111')
 
       expect(result).toBe(false)
     })
@@ -123,7 +123,7 @@ describe('UserQueryService', () => {
     it('用户 relation 为 group_member 时应当返回 false', async () => {
       mockDb.user.findUnique.mockResolvedValue({ relation: 'group_member' })
 
-      const result = await svc.isAdmin(222222222n)
+      const result = await svc.isAdmin('222222222')
 
       expect(result).toBe(false)
     })
@@ -144,19 +144,19 @@ describe('UserQueryService', () => {
     it('有结果时应当正确分页返回', async () => {
       const now = new Date()
       const mockUsers = [
-        { qq: 100n, nickname: 'user1', relation: 'friend', lastSynced: now },
-        { qq: 200n, nickname: 'user2', relation: 'stranger', lastSynced: now },
+        { qq: '100', nickname: 'user1', relation: 'friend', lastSynced: now },
+        { qq: '200', nickname: 'user2', relation: 'stranger', lastSynced: now },
       ]
       mockDb.user.count.mockResolvedValue(2)
       mockDb.user.findMany.mockResolvedValue(mockUsers)
-      mockDb.groupMembership.groupBy.mockResolvedValue([{ userId: 100n, _count: { userId: 2 } }])
+      mockDb.groupMembership.groupBy.mockResolvedValue([{ userId: '100', _count: { userId: 2 } }])
 
       const result = await svc.listUsers({ page: 1, pageSize: 20 })
 
       expect(result.total).toBe(2)
       expect(result.items).toHaveLength(2)
-      expect(result.items[0]).toMatchObject({ qq: 100n, groupCount: 2 })
-      expect(result.items[1]).toMatchObject({ qq: 200n, groupCount: 0 })
+      expect(result.items[0]).toMatchObject({ qq: '100', groupCount: 2 })
+      expect(result.items[1]).toMatchObject({ qq: '200', groupCount: 0 })
     })
   })
 
@@ -164,14 +164,14 @@ describe('UserQueryService', () => {
     it('群不存在时应当返回 null', async () => {
       mockDb.group.findUnique.mockResolvedValue(null)
 
-      const result = await svc.getGroup(999999n)
+      const result = await svc.getGroup('999999')
 
       expect(result).toBeNull()
     })
 
     it('群存在时应当返回群视图', async () => {
       const mockGroup = {
-        groupId: 123456n,
+        groupId: '123456',
         groupName: '测试群',
         memberCount: 100,
         maxMemberCount: 500,
@@ -180,10 +180,10 @@ describe('UserQueryService', () => {
       }
       mockDb.group.findUnique.mockResolvedValue(mockGroup)
 
-      const result = await svc.getGroup(123456n)
+      const result = await svc.getGroup('123456')
 
       expect(result).not.toBeNull()
-      expect(result?.groupId).toBe(123456n)
+      expect(result?.groupId).toBe('123456')
       expect(result?.groupName).toBe('测试群')
       expect(result?.memberCount).toBe(100)
     })

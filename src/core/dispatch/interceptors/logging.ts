@@ -26,10 +26,8 @@ export class LoggingInterceptor implements HandlerInterceptor<AnyOneBotEvent, Co
   ): Promise<boolean> {
     ctx.setAttribute(CTX_KEY_START_TIME, Date.now())
     const c = ctx as unknown as OneBotContext
-    const groupId = c.groupId !== undefined ? String(c.groupId) : 'N/A'
-    log.debug(
-      `正在处理事件 postType=${ctx.event.postType} userId=${String(c.userId)} groupId=${groupId}`,
-    )
+    const groupId = c.groupId ?? 'N/A'
+    log.debug(`正在处理事件 postType=${ctx.event.postType} userId=${c.userId} groupId=${groupId}`)
     return true
   }
 

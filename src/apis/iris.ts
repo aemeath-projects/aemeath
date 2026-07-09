@@ -43,8 +43,8 @@ function serializeChatMessage(m: Record<string, unknown>): Record<string, unknow
     createdAt: m.createdAt instanceof Date ? m.createdAt.toISOString() : m.createdAt,
     messageId: Number(m.messageId),
     messageType: Number(m.messageType),
-    groupId: m.groupId != null ? Number(m.groupId) : null,
-    userId: Number(m.userId),
+    groupId: m.groupId != null ? String(Number(m.groupId)) : null,
+    userId: String(m.userId),
     rawMessage: m.rawMessage,
     segments: m.segments,
     senderNickname: m.senderNickname,
@@ -95,14 +95,14 @@ const irisRoutes: FastifyPluginAsync = async (app) => {
     ) => {
       const svc = app.services.get('iris') as IrisService
 
-      const groupId = BigInt(req.params.groupId)
+      const groupId = req.params.groupId
       const q = req.query
 
       const result = await svc.getGroupHistory(groupId, {
         before: q.before ? new Date(q.before) : undefined,
         limit: q.limit ? parseInt(q.limit, 10) : 50,
         keyword: q.keyword,
-        userId: q.userId ? BigInt(q.userId) : undefined,
+        userId: q.userId ?? undefined,
         startDate: q.startDate ? new Date(q.startDate) : undefined,
         endDate: q.endDate ? new Date(q.endDate) : undefined,
       })
@@ -133,7 +133,7 @@ const irisRoutes: FastifyPluginAsync = async (app) => {
     ) => {
       const svc = app.services.get('iris') as IrisService
 
-      const userId = BigInt(req.params.userId)
+      const userId = req.params.userId
       const q = req.query
 
       const result = await svc.getPrivateHistory(userId, {
@@ -279,8 +279,8 @@ const irisRoutes: FastifyPluginAsync = async (app) => {
 
       const options = {
         keyword: q.keyword,
-        groupId: q.groupId ? BigInt(q.groupId) : undefined,
-        userId: q.userId ? BigInt(q.userId) : undefined,
+        groupId: q.groupId ?? undefined,
+        userId: q.userId ?? undefined,
         startDate: q.startDate ? new Date(q.startDate) : undefined,
         endDate: q.endDate ? new Date(q.endDate) : undefined,
         limit: q.limit ?? 50,
@@ -290,10 +290,10 @@ const irisRoutes: FastifyPluginAsync = async (app) => {
       const [items, total] = await Promise.all([svc.search(options), svc.count(options)])
 
       const serialized = items.map((item) => ({
-        id: String(item.id),
+        id: item.id,
         messageId: Number(item.messageId),
-        groupId: item.groupId != null ? Number(item.groupId) : null,
-        userId: Number(item.userId),
+        groupId: item.groupId ?? null,
+        userId: item.userId,
         textSnippet: item.textSnippet,
         archivedAt: item.createdAt.toISOString(),
         createdAt: item.createdAt.toISOString(),

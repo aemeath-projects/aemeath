@@ -33,11 +33,11 @@ import {
   GroupDetailSchema,
   PaginatedMembersDataSchema,
 } from '@/core/schemas/index.js'
-function parseBigIntParam(value: string, name: string): bigint {
+function parseQQParam(value: string, name: string): string {
   if (!/^\d+$/.test(value)) {
     throw new ValidationError(`参数 ${name} 必须为非负整数，收到：${value}`)
   }
-  return BigInt(value)
+  return value
 }
 
 function getUserService(app: FastifyInstance): UserService {
@@ -102,7 +102,7 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
       const svc = getUserQueryService(app)
       const page = Math.max(1, Number(req.query.page ?? 1))
       const pageSize = Math.min(100, Math.max(1, Number(req.query.pageSize ?? 20)))
-      const qq = req.query.qq !== undefined ? parseBigIntParam(req.query.qq, 'qq') : undefined
+      const qq = req.query.qq !== undefined ? parseQQParam(req.query.qq, 'qq') : undefined
       const result = await svc.listUsers({
         page,
         pageSize,
@@ -125,7 +125,7 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
     },
     async (req: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
       const svc = getUserQueryService(app)
-      const user = await svc.getUser(parseBigIntParam(req.params.userId, 'userId'))
+      const user = await svc.getUser(parseQQParam(req.params.userId, 'userId'))
       if (!user) {
         await reply.status(404).send(fail('User not found'))
         return
@@ -149,7 +149,7 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
     },
     async (req: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) => {
       const svc = getUserQueryService(app)
-      const groups = await svc.getUserGroups(parseBigIntParam(req.params.userId, 'userId'))
+      const groups = await svc.getUserGroups(parseQQParam(req.params.userId, 'userId'))
       await reply.send(ok(groups))
     },
   )
@@ -204,7 +204,7 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
     },
     async (req: FastifyRequest<{ Params: { groupId: string } }>, reply: FastifyReply) => {
       const svc = getUserQueryService(app)
-      const group = await svc.getGroup(parseBigIntParam(req.params.groupId, 'groupId'))
+      const group = await svc.getGroup(parseQQParam(req.params.groupId, 'groupId'))
       if (!group) {
         await reply.status(404).send(fail('Group not found'))
         return
@@ -241,12 +241,12 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
       reply: FastifyReply,
     ) => {
       const svc = getUserQueryService(app)
-      const result = await svc.listGroupMembers(parseBigIntParam(req.params.groupId, 'groupId'), {
+      const result = await svc.listGroupMembers(parseQQParam(req.params.groupId, 'groupId'), {
         page: Math.max(1, Number(req.query.page ?? 1)),
         pageSize: Math.min(100, Math.max(1, Number(req.query.pageSize ?? 20))),
         role: req.query.role,
         nickname: req.query.nickname,
-        qq: req.query.qq !== undefined ? parseBigIntParam(req.query.qq, 'qq') : undefined,
+        qq: req.query.qq !== undefined ? parseQQParam(req.query.qq, 'qq') : undefined,
       })
       await reply.send(ok(result))
     },
@@ -288,7 +288,7 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
     async (req: FastifyRequest<{ Body: { userId: string } }>, reply: FastifyReply) => {
       try {
         const svc = getAdminService(app)
-        await svc.setAdmin(parseBigIntParam(req.body.userId, 'userId'))
+        await svc.setAdmin(parseQQParam(req.body.userId, 'userId'))
         await reply.send(ok(null, '御者已设置'))
       } catch (err) {
         await handleError(reply, err)

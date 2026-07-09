@@ -176,8 +176,8 @@ describe('Context 属性', () => {
   it('群消息 groupId 应返回正确的群 ID', () => {
     const { apis } = makeMockApis()
     const ctx = new Context(makeGroupMsgEvent('test'), apis, oneBotContextConfig)
-    expect(ctx.groupId).toBe(99999)
-    expect(ctx.userId).toBe(11111)
+    expect(ctx.groupId).toBe('99999')
+    expect(ctx.userId).toBe('11111')
     expect(ctx.messageId).toBe(42)
   })
 
@@ -185,7 +185,7 @@ describe('Context 属性', () => {
     const { apis } = makeMockApis()
     const ctx = new Context(makePrivateMsgEvent('test'), apis, oneBotContextConfig)
     expect(ctx.groupId).toBeUndefined()
-    expect(ctx.userId).toBe(22222)
+    expect(ctx.userId).toBe('22222')
   })
 })
 

@@ -52,7 +52,7 @@ describe('IrisArchiveService._discoverGroupCycles', () => {
   })
 
   it('master 群无显式设置时默认 180 天，无数据则 results 为空', async () => {
-    const masterGroupRow = { groupId: 888n }
+    const masterGroupRow = { groupId: '888' }
     // irisDb.$queryRaw 返回 null minCreatedAt（无数据）
     const irisDb = makeMockIrisDb()
     irisDb.$queryRaw = vi.fn().mockResolvedValue([{ minCreatedAt: null }])
@@ -71,10 +71,10 @@ describe('IrisArchiveService._discoverGroupCycles', () => {
   })
 
   it('显式设置 value=0 时不归档（主动禁用）', async () => {
-    const settingsRow = { scope: 888n, value: '0' }
+    const settingsRow = { scope: '888', value: '0' }
     const service = new IrisArchiveService(
       makeMockIrisDb(),
-      makeMockMainDb([settingsRow], [{ groupId: 888n }]),
+      makeMockMainDb([settingsRow], [{ groupId: '888' }]),
       { retentionMonths: 6, batchSize: 100, compression: 'zstd' },
       makeMockS3(),
       '/tmp',
@@ -92,7 +92,7 @@ describe('IrisArchiveService.archive（单群）', () => {
     irisDb.$queryRaw = vi.fn().mockResolvedValue([{ minCreatedAt: null }])
 
     const aemeathDb = {
-      $queryRaw: vi.fn().mockResolvedValueOnce([{ scope: 123n, value: '30' }]), // settings 查询（单群路径）
+      $queryRaw: vi.fn().mockResolvedValueOnce([{ scope: '123', value: '30' }]), // settings 查询（单群路径）
     } as unknown as AemeathPrismaClient
 
     const service = new IrisArchiveService(
@@ -103,7 +103,7 @@ describe('IrisArchiveService.archive（单群）', () => {
       '/tmp',
     )
 
-    const result = await service.archive(123n)
+    const result = await service.archive('123')
     expect(result.status).toBe('completed')
     const groupResult = result.results?.[0]
     expect(groupResult?.status).toBe('empty')

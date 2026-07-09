@@ -40,7 +40,7 @@ export async function archiveIrisProcessor(
     config.TMPDIR,
   )
 
-  const groupId = job.data.groupId != null ? BigInt(job.data.groupId) : undefined
+  const groupId = job.data.groupId
   const result = await service.archive(groupId)
 
   return { type: 'self-contained', summary: result as unknown as Record<string, unknown> }

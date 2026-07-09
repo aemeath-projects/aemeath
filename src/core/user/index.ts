@@ -93,7 +93,7 @@ export class UserService {
     let total = 0
 
     for (const u of usersData) {
-      const qq = BigInt(u.userId)
+      const qq = String(u.userId)
       if (!qq) continue
       const nickname = u.nickname
 
@@ -132,7 +132,7 @@ export class UserService {
     let total = 0
 
     for (const g of groupsData) {
-      const groupId = BigInt(g.groupId)
+      const groupId = String(g.groupId)
       if (!groupId) continue
 
       await this.db.group.upsert({
@@ -162,13 +162,13 @@ export class UserService {
   /**
    * 批量 upsert 群成员关系，并确保用户存在。
    */
-  async upsertMemberships(groupId: bigint, membersData: GroupMember[]): Promise<number> {
+  async upsertMemberships(groupId: string, membersData: GroupMember[]): Promise<number> {
     if (membersData.length === 0) return 0
     const now = new Date()
     let total = 0
 
     for (const m of membersData) {
-      const qq = BigInt(m.userId)
+      const qq = String(m.userId)
       if (!qq) continue
 
       // 确保用户存在（admin/friend 关系不降级）
@@ -224,7 +224,7 @@ export class UserService {
   /* 失效数据清理 */
 
   /** 将不在最新群列表中的群标记为 is_active=False。 */
-  async deactivateStaleGroups(activeGroupIds: Set<bigint>): Promise<void> {
+  async deactivateStaleGroups(activeGroupIds: Set<string>): Promise<void> {
     if (activeGroupIds.size === 0) {
       await this.db.group.updateMany({ data: { isActive: false } })
       return
@@ -237,7 +237,7 @@ export class UserService {
   }
 
   /** 将不在最新成员列表中的成员关系标记为 is_active=False。 */
-  async deactivateStateMemberships(groupId: bigint, activeUserIds: Set<bigint>): Promise<void> {
+  async deactivateStateMemberships(groupId: string, activeUserIds: Set<string>): Promise<void> {
     if (activeUserIds.size === 0) {
       await this.db.groupMembership.updateMany({
         where: { groupId, isActive: true },
@@ -267,23 +267,23 @@ export class UserService {
     let groupsSynced = 0
     let membershipsSynced = 0
 
-    const friendQqSet = new Set<bigint>()
+    const friendQqSet = new Set<string>()
 
     // 1. 同步好友
     if (friends && friends.length > 0) {
       usersSynced = await this._upsertUsersSimple(friends, 'friend')
       for (const f of friends) {
-        const qq = BigInt(f.userId)
+        const qq = String(f.userId)
         if (qq) friendQqSet.add(qq)
       }
     }
 
     // 2. 同步群聊
-    const activeGroupIds = new Set<bigint>()
+    const activeGroupIds = new Set<string>()
     if (groups && groups.length > 0) {
       groupsSynced = await this.upsertGroups(groups)
       for (const g of groups) {
-        const gid = BigInt(g.groupId)
+        const gid = String(g.groupId)
         if (gid) activeGroupIds.add(gid)
       }
     }
@@ -291,10 +291,10 @@ export class UserService {
     // 3. 同步群成员
     if (members) {
       for (const [gidStr, memberList] of Object.entries(members)) {
-        const gid = BigInt(gidStr)
+        const gid = gidStr
         membershipsSynced += await this.upsertMemberships(gid, memberList)
-        const activeUserIds = new Set<bigint>(
-          memberList.map((m) => BigInt(m.userId)).filter((q) => q > 0n),
+        const activeUserIds = new Set<string>(
+          memberList.map((m) => String(m.userId)).filter((q) => q !== '0'),
         )
         await this.deactivateStateMemberships(gid, activeUserIds)
       }
@@ -344,8 +344,8 @@ export class UserService {
   }
 
   /** 获取用户关系等级（带缓存）。 */
-  async getUserRelation(qq: bigint): Promise<string> {
-    const key = cacheKeyRegistry.buildKey('user', 'relation', String(qq))
+  async getUserRelation(qq: string): Promise<string> {
+    const key = cacheKeyRegistry.buildKey('user', 'relation', qq)
     const cached = await this.cache.get<string>(key)
     if (cached !== null) return cached
 
@@ -367,7 +367,7 @@ export class UserService {
     let total = 0
 
     for (const u of usersData) {
-      const qq = BigInt(u.userId)
+      const qq = String(u.userId)
       if (!qq) continue
       const nickname = u.nickname
 
@@ -386,9 +386,9 @@ export class UserService {
   }
 
   /** 重算所有非 admin 用户的 relation 字段（游标分批，每批 1000 条）。 */
-  private async _recalculateRelations(friendQqSet: Set<bigint>): Promise<void> {
+  private async _recalculateRelations(friendQqSet: Set<string>): Promise<void> {
     const BATCH_SIZE = 1000
-    let cursor: bigint | undefined
+    let cursor: string | undefined
 
     for (;;) {
       const users = await this.db.user.findMany({

@@ -15,7 +15,7 @@ export interface PaginatedResult<T> {
 
 /** 用户视图。 */
 export interface UserView {
-  qq: bigint
+  qq: string
   nickname: string
   relation: string
   groupCount: number
@@ -24,7 +24,7 @@ export interface UserView {
 
 /** 群聊视图。 */
 export interface GroupView {
-  groupId: bigint
+  groupId: string
   groupName: string
   memberCount: number
   maxMemberCount: number
@@ -34,7 +34,7 @@ export interface GroupView {
 
 /** 群成员视图。 */
 export interface GroupMemberView {
-  qq: bigint
+  qq: string
   nickname: string
   card: string
   role: string
@@ -47,7 +47,7 @@ export interface GroupMemberView {
 
 /** 用户所属群视图。 */
 export interface UserGroupView {
-  groupId: bigint
+  groupId: string
   groupName: string
   memberCount: number
   maxMemberCount: number
@@ -78,7 +78,7 @@ export class UserQueryService {
   /* 用户查询 */
 
   /** 获取单个用户详情（含活跃群聊数）。 */
-  async getUser(qq: bigint): Promise<UserView | null> {
+  async getUser(qq: string): Promise<UserView | null> {
     const user = await this.db.user.findUnique({ where: { qq } })
     if (!user) return null
 
@@ -100,7 +100,7 @@ export class UserQueryService {
     page?: number
     pageSize?: number
     relation?: string
-    qq?: bigint
+    qq?: string
     nickname?: string
   }): Promise<PaginatedResult<UserView>> {
     const page = opts?.page ?? 1
@@ -146,7 +146,7 @@ export class UserQueryService {
   }
 
   /** 获取用户所属的所有群聊。 */
-  async getUserGroups(qq: bigint): Promise<UserGroupView[]> {
+  async getUserGroups(qq: string): Promise<UserGroupView[]> {
     const rows = await this.db.groupMembership.findMany({
       where: { userId: qq, isActive: true },
       include: { group: true },
@@ -225,7 +225,7 @@ export class UserQueryService {
   }
 
   /** 获取单个群聊详情。 */
-  async getGroup(groupId: bigint): Promise<GroupView | null> {
+  async getGroup(groupId: string): Promise<GroupView | null> {
     const group = await this.db.group.findUnique({ where: { groupId } })
     if (!group) return null
 
@@ -257,13 +257,13 @@ export class UserQueryService {
 
   /** 分页获取群成员列表。 */
   async listGroupMembers(
-    groupId: bigint,
+    groupId: string,
     opts?: {
       page?: number
       pageSize?: number
       role?: string
       nickname?: string
-      qq?: bigint
+      qq?: string
     },
   ): Promise<PaginatedResult<GroupMemberView>> {
     const page = opts?.page ?? 1
@@ -312,7 +312,7 @@ export class UserQueryService {
   }
 
   /** 获取群成员列表（全量，无分页）。 */
-  async getGroupMembers(groupId: bigint): Promise<UserView[]> {
+  async getGroupMembers(groupId: string): Promise<UserView[]> {
     const rows = await this.db.groupMembership.findMany({
       where: { groupId, isActive: true },
       include: { user: true },
@@ -328,7 +328,7 @@ export class UserQueryService {
   }
 
   /** 查询用户是否为超级管理员。 */
-  async isAdmin(userId: bigint): Promise<boolean> {
+  async isAdmin(userId: string): Promise<boolean> {
     const user = await this.db.user.findUnique({
       where: { qq: userId },
       select: { relation: true },
@@ -354,7 +354,7 @@ export class UserQueryService {
   }
 
   /** 批量解析用户和群 ID 到基本展示信息。 */
-  async resolveBatch(userIds: bigint[], groupIds: bigint[]): Promise<ResolveResult> {
+  async resolveBatch(userIds: string[], groupIds: string[]): Promise<ResolveResult> {
     const [users, groups] = await Promise.all([
       userIds.length > 0
         ? this.db.user.findMany({
@@ -372,11 +372,9 @@ export class UserQueryService {
 
     return {
       users: Object.fromEntries(
-        users.map((u) => [String(u.qq), { nickname: u.nickname, relation: u.relation }]),
+        users.map((u) => [u.qq, { nickname: u.nickname, relation: u.relation }]),
       ),
-      groups: Object.fromEntries(
-        groups.map((g) => [String(g.groupId), { groupName: g.groupName }]),
-      ),
+      groups: Object.fromEntries(groups.map((g) => [g.groupId, { groupName: g.groupName }])),
     }
   }
 }

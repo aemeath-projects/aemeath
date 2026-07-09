@@ -109,7 +109,7 @@ export class DailyCheckinService {
       let alreadyDone: boolean
       try {
         alreadyDone = await this.cache.exists(
-          cacheKeyRegistry.buildKey('checkin', 'daily', String(groupId), today),
+          cacheKeyRegistry.buildKey('checkin', 'daily', groupId, today),
         )
       } catch (err) {
         this._log.warn({ groupId, err }, 'Redis 查询失败，跳过该群')
@@ -125,10 +125,7 @@ export class DailyCheckinService {
       // 功能开关：通过 SettingsService 查询群级配置
       let enabled: boolean
       try {
-        enabled = await this.settings.get<boolean>(
-          `${FEATURE_NAME}.enabled`,
-          Path.group(groupId.toString()),
-        )
+        enabled = await this.settings.get<boolean>(`${FEATURE_NAME}.enabled`, Path.group(groupId))
       } catch (err) {
         this._log.warn({ groupId, err }, '功能开关查询失败，跳过该群')
         skipped++
@@ -151,7 +148,7 @@ export class DailyCheckinService {
           failed++
         } else {
           await this.cache.set(
-            cacheKeyRegistry.buildKey('checkin', 'daily', String(groupId), today),
+            cacheKeyRegistry.buildKey('checkin', 'daily', groupId, today),
             '1',
             CHECKIN_TTL,
           )
@@ -168,7 +165,7 @@ export class DailyCheckinService {
     this._log.info({ total: groupIds.length, sent, skipped, failed }, '本轮打卡完成')
   }
 
-  private async _getEligibleGroupIds(): Promise<bigint[]> {
+  private async _getEligibleGroupIds(): Promise<string[]> {
     const rows = await this.db.group.findMany({
       where: { isActive: true },
       select: { groupId: true },
@@ -178,14 +175,11 @@ export class DailyCheckinService {
     // 通过 SettingsService 过滤 bot.enabled=true 的群
     const checks = await Promise.all(
       rows.map(async (r) => {
-        const enabled = await this.settings.get<boolean>(
-          'bot.enabled',
-          Path.group(r.groupId.toString()),
-        )
+        const enabled = await this.settings.get<boolean>('bot.enabled', Path.group(r.groupId))
         return enabled ? r.groupId : null
       }),
     )
-    return checks.filter((id): id is bigint => id !== null)
+    return checks.filter((id): id is string => id !== null)
   }
 }
 

@@ -85,7 +85,7 @@ class DriftBottleHandler {
       return false
     }
 
-    const groupId = BigInt(ctx.groupId)
+    const groupId = ctx.groupId
 
     const rawMessage = (ctx.event as Record<string, unknown>).message
     const message = Array.isArray(rawMessage)
@@ -104,7 +104,7 @@ class DriftBottleHandler {
       const poolId = await this.driftBottleService.getPoolId(groupId)
       await this.driftBottleService.throwBottle({
         poolId,
-        senderId: BigInt(ctx.userId),
+        senderId: ctx.userId,
         senderGroupId: groupId,
         content,
       })
@@ -128,12 +128,12 @@ class DriftBottleHandler {
       return false
     }
 
-    const groupId = BigInt(ctx.groupId)
+    const groupId = ctx.groupId
 
     let bottle: Awaited<ReturnType<DriftBottleService['pickBottle']>>
     try {
       const poolId = await this.driftBottleService.getPoolId(groupId)
-      bottle = await this.driftBottleService.pickBottle({ poolId, userId: BigInt(ctx.userId) })
+      bottle = await this.driftBottleService.pickBottle({ poolId, userId: ctx.userId })
     } catch (err) {
       this._log.error({ groupId: ctx.groupId, userId: ctx.userId, err }, '捞漂流瓶失败')
       await ctx.reply('捞漂流瓶失败，请稍后重试')

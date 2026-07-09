@@ -31,9 +31,9 @@ function ceilDiv(a: number, b: number): number {
 function feedbackToDict(f: Feedback): Record<string, unknown> {
   return {
     id: f.id,
-    userId: String(f.userId),
+    userId: f.userId,
 
-    groupId: f.groupId != null ? String(f.groupId) : null,
+    groupId: f.groupId,
     content: f.content,
     status: f.status,
     feedbackType: f.feedbackType ?? null,
@@ -86,7 +86,7 @@ const feedbackRoutes: FastifyPluginAsync = async (app) => {
         pageSize,
         status: req.query.status,
         feedbackType: req.query.feedbackType,
-        userId: req.query.userId ? BigInt(req.query.userId) : undefined,
+        userId: req.query.userId ?? undefined,
         source: req.query.source,
         search: req.query.search,
       })

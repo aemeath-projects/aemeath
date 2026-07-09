@@ -8,7 +8,7 @@ import type { PaginatedResult } from './types'
 export type { PaginatedResult } from './types'
 
 export interface UserItem {
-  qq: number
+  qq: string
   nickname: string
   relation: string
   groupCount: number
@@ -20,7 +20,7 @@ export interface UserDetail extends UserItem {
 }
 
 export interface GroupItem {
-  groupId: number
+  groupId: string
   groupName: string
   memberCount: number
   maxMemberCount: number
@@ -29,7 +29,7 @@ export interface GroupItem {
 }
 
 export interface GroupMemberItem {
-  qq: number
+  qq: string
   nickname: string
   card: string
   role: string
@@ -41,7 +41,7 @@ export interface GroupMemberItem {
 }
 
 export interface GroupMembershipInfo {
-  groupId: number
+  groupId: string
   groupName: string
   card: string
   role: string
@@ -58,7 +58,7 @@ export interface SyncStatus {
 }
 
 export interface AdminCandidate {
-  qq: number
+  qq: string
   nickname: string
   remark?: string
 }
@@ -69,7 +69,7 @@ export async function fetchUsers(params: {
   page?: number
   pageSize?: number
   relation?: string | null
-  qq?: number | null
+  qq?: string | null
   nickname?: string | null
 }): Promise<PaginatedResult<UserItem>> {
   const query: Record<string, string | number> = {}
@@ -81,11 +81,11 @@ export async function fetchUsers(params: {
   return get<PaginatedResult<UserItem>>(`${BASE}/users`, query)
 }
 
-export async function fetchUser(qq: number): Promise<UserDetail> {
+export async function fetchUser(qq: string): Promise<UserDetail> {
   return get<UserDetail>(`${BASE}/users/${qq}`)
 }
 
-export async function fetchUserGroups(qq: number): Promise<GroupItem[]> {
+export async function fetchUserGroups(qq: string): Promise<GroupItem[]> {
   return get<GroupItem[]>(`${BASE}/users/${qq}/groups`)
 }
 
@@ -103,18 +103,18 @@ export async function fetchGroups(params: {
   return get<PaginatedResult<GroupItem>>(`${BASE}/groups`, query)
 }
 
-export async function fetchGroup(groupId: number): Promise<GroupItem> {
+export async function fetchGroup(groupId: string): Promise<GroupItem> {
   return get<GroupItem>(`${BASE}/groups/${groupId}`)
 }
 
 export async function fetchGroupMembers(
-  groupId: number,
+  groupId: string,
   params: {
     page?: number
     pageSize?: number
     role?: string | null
     nickname?: string | null
-    qq?: number | null
+    qq?: string | null
   },
 ): Promise<PaginatedResult<GroupMemberItem>> {
   const query: Record<string, string | number> = {}
@@ -138,8 +138,8 @@ export async function fetchAdmins(): Promise<UserItem[]> {
   return get<UserItem[]>(`${BASE}/admin`)
 }
 
-export async function setAdmin(userId: number): Promise<void> {
-  await put<null>(`${BASE}/admin`, { userId: String(userId) })
+export async function setAdmin(userId: string): Promise<void> {
+  await put<null>(`${BASE}/admin`, { userId })
 }
 
 export async function removeAdmin(): Promise<void> {

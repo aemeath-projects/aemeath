@@ -48,7 +48,7 @@ export const taskDefinition: TaskDefinition = {
     const { template, data, sendTo, width, height, skipCache, cacheTtl } = job.data as {
       template: string
       data: unknown
-      sendTo: { groupId: number } | { userId: number }
+      sendTo: { groupId: string } | { userId: string }
       width?: number
       height?: number
       skipCache?: boolean

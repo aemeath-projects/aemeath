@@ -38,7 +38,7 @@ export class SessionManagerBootstrap {
       keyExtractor: (ctx) => {
         const userId = ctx.userId
         const groupId = ctx.groupId
-        return `${String(userId)}_${String(groupId ?? 'private')}`
+        return `${userId}_${groupId ?? 'private'}`
       },
     })
     log.info('SessionManager 已启动')

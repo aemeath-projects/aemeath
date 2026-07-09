@@ -19,7 +19,7 @@ function createMockSettings(overrides: Record<string, unknown> = {}) {
   } as unknown as SettingsService
 }
 
-function createMockAdminService(adminQq: bigint | null = null) {
+function createMockAdminService(adminQq: string | null = null) {
   return {
     getAdminQq: vi.fn().mockResolvedValue(adminQq),
   } as unknown as AdminService
@@ -27,16 +27,16 @@ function createMockAdminService(adminQq: bigint | null = null) {
 
 function createGroupContext(
   opts: {
-    userId?: number
-    groupId?: number
+    userId?: string
+    groupId?: string
     componentName?: string
     permission?: number
     senderRole?: string
   } = {},
 ): Partial<Context> {
   return {
-    userId: opts.userId ?? 100,
-    groupId: opts.groupId ?? 12345,
+    userId: opts.userId ?? '100',
+    groupId: opts.groupId ?? '12345',
     event: {
       sender: { role: opts.senderRole ?? 'member' },
     } as unknown as Context['event'],
@@ -50,10 +50,10 @@ function createGroupContext(
 }
 
 function createPrivateContext(
-  opts: { userId?: number; componentName?: string } = {},
+  opts: { userId?: string; componentName?: string } = {},
 ): Partial<Context> {
   return {
-    userId: opts.userId ?? 200,
+    userId: opts.userId ?? '200',
     groupId: undefined,
     event: {} as unknown as Context['event'],
     getAttribute: vi.fn().mockReturnValue({
@@ -101,7 +101,7 @@ function registerTestHandler(): void {
   Handler({ name: 'test_feature', displayName: 'Test Feature' })(TestHandler, ctxBase)
 }
 
-function buildChecker(settingsValues: Record<string, unknown> = {}, adminQq: bigint | null = null) {
+function buildChecker(settingsValues: Record<string, unknown> = {}, adminQq: string | null = null) {
   registerTestHandler()
   const schemaMap = buildSchemaMap()
   const settings = createMockSettings(settingsValues)
@@ -139,14 +139,14 @@ describe('system 功能直通', () => {
 
 describe('御者绕过', () => {
   it('御者无视所有功能开关', async () => {
-    const { checker } = buildChecker({ 'bot.enabled': false }, 100n)
-    const ctx = createGroupContext({ userId: 100 })
+    const { checker } = buildChecker({ 'bot.enabled': false }, '100')
+    const ctx = createGroupContext({ userId: '100' })
     expect(await checker.check(ctx as Context)).toBe(true)
   })
 
   it('存在御者但与当前发起者不匹配时不绕过，继续走后续检查', async () => {
-    const { checker } = buildChecker({ 'bot.enabled': false }, 999n)
-    const ctx = createGroupContext({ userId: 100 })
+    const { checker } = buildChecker({ 'bot.enabled': false }, '999')
+    const ctx = createGroupContext({ userId: '100' })
     expect(await checker.check(ctx as Context)).toBe(false)
   })
 })
@@ -227,8 +227,8 @@ describe('handlerMethod 缺失', () => {
   it('无 handlerMethod 属性时直通', async () => {
     const { checker } = buildChecker()
     const ctx: Partial<Context> = {
-      userId: 100,
-      groupId: 12345,
+      userId: '100',
+      groupId: '12345',
       event: {} as Context['event'],
       getAttribute: vi.fn().mockReturnValue(undefined),
       setAttribute: vi.fn(),

@@ -50,7 +50,7 @@ export interface RenderSendJobResult {
   type: 'render-send'
   /** Redis temp key，存储渲染后的 base64 PNG，60s TTL。 */
   tempKey: string
-  sendTo: { groupId: number } | { userId: number }
+  sendTo: { groupId: string } | { userId: string }
 }
 
 export function isRenderSendResult(v: unknown): v is RenderSendJobResult {

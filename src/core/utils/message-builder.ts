@@ -33,9 +33,9 @@ export class MessageBuilder {
     return this.add(seg.image(file, opts))
   }
 
-  /** 追加 @提及消息段。qq 为 number 或 'all'。 */
-  at(qq: number | 'all'): this {
-    return this.add(seg.at(qq))
+  /** 追加 @提及消息段。qq 为 string 或 'all'。 */
+  at(qq: string): this {
+    return this.add(seg.at(qq === 'all' ? 'all' : Number(qq)))
   }
 
   /** 追加引用回复消息段。 */

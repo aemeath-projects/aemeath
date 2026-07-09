@@ -25,10 +25,10 @@ export type { Feedback, FeedbackStatus, FeedbackSource, FeedbackType }
 
 /** 创建反馈的入参。 */
 export interface CreateFeedbackData {
-  userId: bigint
+  userId: string
   content: string
   source: FeedbackSource
-  groupId?: bigint | null
+  groupId?: string | null
   feedbackType?: FeedbackType | null
 }
 
@@ -38,7 +38,7 @@ export interface ListFeedbacksParams {
   pageSize?: number
   status?: string
   feedbackType?: string
-  userId?: bigint | number
+  userId?: string
   source?: string
   search?: string
 }
@@ -89,7 +89,7 @@ export class FeedbackService {
     const where: Prisma.FeedbackWhereInput = {
       ...(status != null ? { status: status as FeedbackStatus } : {}),
       ...(feedbackType != null ? { feedbackType: feedbackType as FeedbackType } : {}),
-      ...(userId != null ? { userId: BigInt(userId) } : {}),
+      ...(userId != null ? { userId } : {}),
       ...(source != null ? { source: source as FeedbackSource } : {}),
       ...(search != null && search !== ''
         ? {
@@ -162,7 +162,7 @@ export class FeedbackService {
   /**
    * 获取用户自己的反馈列表（最近 N 条）。
    */
-  async getUserFeedbacks(userId: bigint, limit = 5): Promise<Feedback[]> {
+  async getUserFeedbacks(userId: string, limit = 5): Promise<Feedback[]> {
     return this.db.feedback.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
@@ -180,12 +180,12 @@ export class FeedbackService {
     const content =
       `- **来源**：${sourceText}\n` +
       `- **类型**：${typeText}\n` +
-      `- **用户**：${String(feedback.userId)}\n` +
+      `- **用户**：${feedback.userId}\n` +
       `- **内容**：${feedback.content}\n` +
       `- **ID**：${feedback.id}`
     const notifyText =
       `【新反馈通知】\n来源：${sourceText}\n类型：${typeText}\n` +
-      `用户：${String(feedback.userId)}\n内容：${feedback.content}\nID：${feedback.id}`
+      `用户：${feedback.userId}\n内容：${feedback.content}\nID：${feedback.id}`
 
     try {
       await this.mailbox.notifyAdmins({ title, content, notifyText })

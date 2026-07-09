@@ -21,7 +21,7 @@ const ADMIN_LOCK_TTL_MS = 5000
 
 /** 御者视图（用于 REST /admins 和站内信）。 */
 export interface AdminView {
-  qq: bigint
+  qq: string
   nickname: string
   relation: string
   lastSynced: string | null
@@ -40,12 +40,12 @@ export class AdminService {
   ) {}
 
   /** 设置/更换御者，仅允许 master 账号好友列表内的 QQ。 */
-  async setAdmin(qq: bigint): Promise<void> {
+  async setAdmin(qq: string): Promise<void> {
     const friends = await this._safeGetFriendList()
     if (!friends) {
       throw new ValidationError('master 账号未在线或获取好友列表失败，无法设置御者')
     }
-    if (!friends.some((f) => BigInt(f.userId) === qq)) {
+    if (!friends.some((f) => String(f.userId) === qq)) {
       throw new ValidationError('目标 QQ 不在 master 账号好友列表中，无法设置为御者')
     }
 
@@ -53,7 +53,7 @@ export class AdminService {
       const previousQq = await this.db.$transaction(async (tx) => {
         const current = await tx.user.findFirst({ where: { relation: 'admin' } })
         if (current && current.qq !== qq) {
-          const isFriend = friends.some((f) => BigInt(f.userId) === current.qq)
+          const isFriend = friends.some((f) => String(f.userId) === current.qq)
           let newRelation: UserRelation
           if (isFriend) {
             newRelation = 'friend'
@@ -69,7 +69,7 @@ export class AdminService {
           where: { qq },
           create: {
             qq,
-            nickname: friends.find((f) => BigInt(f.userId) === qq)?.nickname ?? '',
+            nickname: friends.find((f) => String(f.userId) === qq)?.nickname ?? '',
             relation: 'admin',
           },
           update: { relation: 'admin' },
@@ -77,9 +77,9 @@ export class AdminService {
         return current && current.qq !== qq ? current.qq : null
       })
 
-      await this._safeDelCache(cacheKeyRegistry.buildKey('user', 'relation', String(qq)))
+      await this._safeDelCache(cacheKeyRegistry.buildKey('user', 'relation', qq))
       if (previousQq !== null) {
-        await this._safeDelCache(cacheKeyRegistry.buildKey('user', 'relation', String(previousQq)))
+        await this._safeDelCache(cacheKeyRegistry.buildKey('user', 'relation', previousQq))
       }
       await this._invalidateAdminCache()
     })
@@ -100,7 +100,7 @@ export class AdminService {
       const newRelation: UserRelation = hasMembership ? 'group_member' : 'stranger'
       await this.db.user.update({ where: { qq: user.qq }, data: { relation: newRelation } })
 
-      await this._safeDelCache(cacheKeyRegistry.buildKey('user', 'relation', String(user.qq)))
+      await this._safeDelCache(cacheKeyRegistry.buildKey('user', 'relation', user.qq))
       await this._invalidateAdminCache()
       return true
     })
@@ -136,14 +136,14 @@ export class AdminService {
   }
 
   /** 获取当前御者 QQ（无则为 null），带 Redis 缓存，供权限检查用。 */
-  async getAdminQq(): Promise<bigint | null> {
+  async getAdminQq(): Promise<string | null> {
     const key = cacheKeyRegistry.buildKey('user', 'admin')
     const cached = await this.cache.get<string>(key)
-    if (cached !== null) return cached === '' ? null : BigInt(cached)
+    if (cached !== null) return cached === '' ? null : cached
 
     const admin = await this.db.user.findFirst({ where: { relation: 'admin' } })
-    await this.cache.set(key, admin ? String(admin.qq) : '', 300)
-    return admin?.qq ?? null
+    await this.cache.set(key, admin ? admin.qq : '', 300)
+    return admin ? admin.qq : null
   }
 
   /** 获取候选人列表（master 好友列表），供前端选择框使用，不缓存。无主账号/master 掉线时返回空列表。 */

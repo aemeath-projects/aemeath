@@ -26,7 +26,7 @@ const log: PinoLogger = getLogger('accounts') as unknown as PinoLogger
 
 /** 创建账号所需字段。 */
 export interface CreateAccountInput {
-  qq: bigint
+  qq: string
   nickname?: string | null
   role: 'master' | 'normal' | 'readonly'
   transport: 'ws' | 'sse'
@@ -63,14 +63,14 @@ export class AccountService {
   async listAccountsWithStatus(): Promise<AccountWithStatus[]> {
     const accounts = await this.listAccounts()
     return accounts.map((account) => {
-      const clientId = `bot-${String(account.qq)}`
+      const clientId = `bot-${account.qq}`
       const adapter = this.pool?.getClient(clientId)
       const state = adapter?.state
       return { ...account, state: state === 'error' ? 'unknown' : (state ?? 'unknown') }
     })
   }
 
-  async getAccount(qq: bigint): Promise<Account | null> {
+  async getAccount(qq: string): Promise<Account | null> {
     return this.db.account.findUnique({ where: { qq } })
   }
 
@@ -85,18 +85,18 @@ export class AccountService {
     return account
   }
 
-  async updateAccount(qq: bigint, data: UpdateAccountInput): Promise<Account> {
+  async updateAccount(qq: string, data: UpdateAccountInput): Promise<Account> {
     const before = await this.db.account.findUnique({ where: { qq } })
     const after = await this.db.account.update({ where: { qq }, data })
     if (before) {
       await this._syncPoolAfterUpdate(before, after)
     } else {
-      log.warn({ qq: String(qq) }, '更新账号时未找到更新前的记录，跳过连接池同步')
+      log.warn({ qq }, '更新账号时未找到更新前的记录，跳过连接池同步')
     }
     return after
   }
 
-  async deleteAccount(qq: bigint): Promise<void> {
+  async deleteAccount(qq: string): Promise<void> {
     await this.db.account.delete({ where: { qq } })
   }
 
@@ -122,20 +122,20 @@ export class AccountService {
   /** 若 pool 已注入且账号已启用，构造 adapter 并加入连接池，随后 fire-and-forget 尝试连接。 */
   private _addToPoolIfEnabled(account: Account): void {
     if (!this.pool || !account.isEnabled) return
-    const clientId = `bot-${String(account.qq)}`
+    const clientId = `bot-${account.qq}`
     if (this.pool.getClient(clientId)) return
     const adapter = new NapCatClientAdapter(account)
     this.pool.addClient(adapter, account.role as AccountRole)
     this._registerGroupNotices(adapter)
     void adapter.connect().catch((err: unknown) => {
-      log.error({ err, qq: String(account.qq) }, '账号创建后自动连接失败，将由重连策略自动重试')
+      log.error({ err, qq: account.qq }, '账号创建后自动连接失败，将由重连策略自动重试')
     })
   }
 
   /** 账号更新后，将 endpoint/token/transport/isEnabled 的变化同步到运行中的连接池。 */
   private async _syncPoolAfterUpdate(before: Account, after: Account): Promise<void> {
     if (!this.pool) return
-    const clientId = `bot-${String(after.qq)}`
+    const clientId = `bot-${after.qq}`
     const wasEnabled = before.isEnabled
     const isEnabled = after.isEnabled
 
@@ -154,7 +154,7 @@ export class AccountService {
       this.pool.addClient(adapter, after.role as AccountRole)
       this._registerGroupNotices(adapter)
       void adapter.connect().catch((err: unknown) => {
-        log.error({ err, qq: String(after.qq) }, '账号启用后自动连接失败，将由重连策略自动重试')
+        log.error({ err, qq: after.qq }, '账号启用后自动连接失败，将由重连策略自动重试')
       })
       return
     }
@@ -181,7 +181,7 @@ export class AccountService {
       try {
         await adapter.connect()
       } catch (err) {
-        log.error({ err, qq: String(after.qq), clientId }, '账号更新后自动重连失败，请手动重新连接')
+        log.error({ err, qq: after.qq, clientId }, '账号更新后自动重连失败，请手动重新连接')
       }
     }
   }
@@ -205,7 +205,7 @@ export class AccountService {
         const event = raw as {
           noticeType?: string
           subType?: string
-          groupId?: bigint | number
+          groupId?: string | number
           userId?: number
         }
         const { noticeType, subType, groupId, userId } = event
@@ -213,18 +213,18 @@ export class AccountService {
         if (noticeType === 'group_admin' && groupId != null && userId != null) {
           if (userId !== Number(botQq)) return
           const role: GroupBotRole = subType === 'set' ? 'admin' : 'member'
-          registry.setRole(BigInt(groupId), adapter.id, role)
+          registry.setRole(String(groupId), adapter.id, role)
         }
 
         if (noticeType === 'group_decrease' && groupId != null) {
           if (subType === 'kick_me' || subType === 'leave') {
-            registry.removeClient(BigInt(groupId), adapter.id)
+            registry.removeClient(String(groupId), adapter.id)
           }
         }
 
         if (noticeType === 'group_increase' && groupId != null && userId != null) {
           if (userId !== Number(botQq)) return
-          registry.setRole(BigInt(groupId), adapter.id, 'member')
+          registry.setRole(String(groupId), adapter.id, 'member')
         }
       } catch (err: unknown) {
         log.error({ err, adapterId: adapter.id }, 'GroupBotRegistry notice 处理失败')

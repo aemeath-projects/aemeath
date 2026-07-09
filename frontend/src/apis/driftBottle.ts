@@ -34,6 +34,6 @@ export async function listPoolGroups(poolId: number): Promise<PoolGroupsResponse
 }
 
 /** 将群分配到指定池（poolId=0 = 移回默认池） */
-export async function assignGroupPool(groupId: number, poolId: number): Promise<void> {
+export async function assignGroupPool(groupId: string, poolId: number): Promise<void> {
   await post<null>('/api/drift-bottle-pools/group-assign', { groupId, poolId })
 }

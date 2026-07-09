@@ -77,7 +77,7 @@ export class IrisExporter {
    * @returns [totalRows, originalBytes（近似）, compressedBytes, sha256Hex, maxExportedId]
    */
   async exportGroup(
-    groupId: bigint,
+    groupId: string,
     periodStart: Date,
     periodEnd: Date,
     outputPath: string,

@@ -18,7 +18,7 @@ import { AppError } from '@/core/errors.js'
 export class MessageRouter {
   constructor(
     private readonly pool: ClientPool<NapCatClient, AccountRole, AnyOneBotEvent>,
-    private readonly routingTable: RoutingTable<bigint>,
+    private readonly routingTable: RoutingTable<string>,
     private readonly membershipTracker: GroupBotRegistry,
     private priorityMode: PriorityMode,
   ) {}
@@ -31,7 +31,7 @@ export class MessageRouter {
 
   /** 常规群消息发送 —— 走路由策略（sticky + 优先级）。 */
   async sendGroupMsg(
-    groupId: bigint,
+    groupId: string,
     message: MessageSegment[],
   ): Promise<Result<{ messageId: number }>> {
     const masterAndNormalRoles: AccountRole[] = ['master', 'normal']
@@ -64,7 +64,7 @@ export class MessageRouter {
 
   /** 管理员通知 —— 强制走主账号发送私聊消息。 */
   async sendAdminMsg(
-    adminQq: bigint,
+    adminQq: string,
     message: MessageSegment[],
   ): Promise<Result<{ messageId: number }>> {
     const masters = this.pool.getClientsByRole('master')

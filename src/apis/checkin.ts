@@ -45,8 +45,8 @@ const checkinRoutes: FastifyPluginAsync = async (app) => {
     async (req: FastifyRequest<{ Querystring: CheckinRecordsQuery }>, reply: FastifyReply) => {
       const svc = await getCheckinSvc(app)
 
-      const groupId = req.query.groupId ? BigInt(req.query.groupId) : undefined
-      const userId = req.query.userId ? BigInt(req.query.userId) : undefined
+      const groupId = req.query.groupId ?? undefined
+      const userId = req.query.userId ?? undefined
       const recordDate = req.query.date ? new Date(req.query.date) : undefined
       const page = req.query.page ? parseInt(req.query.page, 10) : 1
       const pageSize = req.query.pageSize ? parseInt(req.query.pageSize, 10) : 20
@@ -90,14 +90,14 @@ const checkinRoutes: FastifyPluginAsync = async (app) => {
     async (req: FastifyRequest<{ Querystring: CheckinLeaderboardQuery }>, reply: FastifyReply) => {
       const svc = await getCheckinSvc(app)
 
-      const groupId = req.query.groupId ? BigInt(req.query.groupId) : undefined
+      const groupId = req.query.groupId ?? undefined
       const by = req.query.by ?? 'total'
       const limit = req.query.limit ? parseInt(req.query.limit, 10) : 20
 
       const entries: LeaderEntry[] = await svc.getLeaderboard({ groupId, by, limit })
       const result = entries.map((e, i) => ({
         rank: i + 1,
-        userId: String(e.userId),
+        userId: e.userId,
         value: e.value,
       }))
 
@@ -121,7 +121,7 @@ const checkinRoutes: FastifyPluginAsync = async (app) => {
     async (req: FastifyRequest<{ Querystring: CheckinTrendQuery }>, reply: FastifyReply) => {
       const svc = await getCheckinSvc(app)
 
-      const groupId = req.query.groupId ? BigInt(req.query.groupId) : undefined
+      const groupId = req.query.groupId ?? undefined
       const days = req.query.days ? parseInt(req.query.days, 10) : 30
 
       const trend: DayCount[] = await svc.getDailyTrend({ groupId, days })
@@ -145,7 +145,7 @@ const checkinRoutes: FastifyPluginAsync = async (app) => {
     async (req: FastifyRequest<{ Querystring: CheckinSummaryQuery }>, reply: FastifyReply) => {
       const svc = await getCheckinSvc(app)
 
-      const groupId = req.query.groupId ? BigInt(req.query.groupId) : undefined
+      const groupId = req.query.groupId ?? undefined
       const summary = await svc.getSummary({ groupId })
 
       await reply.send(

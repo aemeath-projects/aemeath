@@ -62,8 +62,8 @@ export class IrisArchiveService {
    *
    * 指定 groupId 时只归档该群；不指定时自动发现所有已配置周期的群。
    */
-  async archive(groupId?: bigint): Promise<ArchiveResult> {
-    let cycles: Map<bigint, number>
+  async archive(groupId?: string): Promise<ArchiveResult> {
+    let cycles: Map<string, number>
 
     if (groupId != null) {
       // 单群：查该群显式 settings 记录，无记录则默认 180 天
@@ -96,8 +96,8 @@ export class IrisArchiveService {
           results.push(r)
         }
       } catch (err) {
-        this._log.error({ groupId: gId.toString(), err }, '归档群失败')
-        results.push({ groupId: gId.toString(), status: 'failed', error: String(err) })
+        this._log.error({ groupId: gId, err }, '归档群失败')
+        results.push({ groupId: gId, status: 'failed', error: String(err) })
       }
     }
 
@@ -130,7 +130,7 @@ export class IrisArchiveService {
     // BigInt → Number 转换（JSON.stringify 不支持 BigInt）
     const items = rawItems.map((r) => ({
       ...r,
-      groupId: r.groupId != null ? r.groupId.toString() : null,
+      groupId: r.groupId ?? null,
       totalRows: Number(r.totalRows),
       originalBytes: Number(r.originalBytes),
       compressedBytes: Number(r.compressedBytes),
@@ -159,7 +159,7 @@ export class IrisArchiveService {
     })
     return rows.map((r) => ({
       ...r,
-      groupId: r.groupId != null ? r.groupId.toString() : null,
+      groupId: r.groupId ?? null,
       totalRows: Number(r.totalRows),
       originalBytes: Number(r.originalBytes),
       compressedBytes: Number(r.compressedBytes),
@@ -174,12 +174,12 @@ export class IrisArchiveService {
    * 1. 查 settings 表中显式配置的群，value > 0 才纳入归档
    * 2. 查 master 账号所在的群，若无显式配置则默认 180 天
    */
-  private async _discoverGroupCycles(): Promise<Map<bigint, number>> {
-    const result = new Map<bigint, number>()
+  private async _discoverGroupCycles(): Promise<Map<string, number>> {
+    const result = new Map<string, number>()
 
     // 第一步：查显式 settings 记录
     interface SettingsRow {
-      scope: bigint
+      scope: string
       value: string
     }
     const settingsRows = await this.aemeathDb.$queryRaw<SettingsRow[]>`
@@ -188,7 +188,7 @@ export class IrisArchiveService {
         AND type = 'group'::settings_entry_type
         AND value ~ '^\d+$'
     `
-    const explicitGroups = new Set<bigint>()
+    const explicitGroups = new Set<string>()
     for (const row of settingsRows) {
       explicitGroups.add(row.scope)
       const days = parseInt(row.value, 10)
@@ -197,7 +197,7 @@ export class IrisArchiveService {
 
     // 第二步：查 master 账号所在群，补充默认 180 天
     interface MasterGroupRow {
-      groupId: bigint
+      groupId: string
     }
     const masterGroups = await this.aemeathDb.$queryRaw<MasterGroupRow[]>`
       SELECT DISTINCT gm.group_id AS "groupId"
@@ -215,8 +215,8 @@ export class IrisArchiveService {
   }
 
   /** 单群归档主流程。 */
-  private async _archiveGroup(groupId: bigint, cycleDays: number): Promise<GroupArchiveResult> {
-    const groupIdStr = groupId.toString()
+  private async _archiveGroup(groupId: string, cycleDays: number): Promise<GroupArchiveResult> {
+    const groupIdStr = groupId
 
     // 关闭僵尸记录（上次运行意外中止的记录）
     await this.chatDb.archiveLog.updateMany({
@@ -396,7 +396,7 @@ export function archiveIrisProcessor(
   service: IrisArchiveService,
 ): (job: { data: ArchiveJobData }) => Promise<ArchiveResult> {
   return async (job) => {
-    const groupId = job.data.groupId != null ? BigInt(job.data.groupId) : undefined
+    const groupId = job.data.groupId ?? undefined
     return service.archive(groupId)
   }
 }

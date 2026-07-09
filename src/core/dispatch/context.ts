@@ -115,14 +115,14 @@ export class OneBotContext extends Context<AnyOneBotEvent, ContextApis> {
   }
 
   /** 当前群 ID（仅群消息事件有值）。 */
-  get groupId(): number | undefined {
-    return isGroupEvent(this.event) ? this.event.groupId : undefined
+  get groupId(): string | undefined {
+    return isGroupEvent(this.event) ? String(this.event.groupId) : undefined
   }
 
   /** 触发事件的用户 ID。 */
-  get userId(): number {
+  get userId(): string {
     const uid = (this.event as { userId?: number }).userId
-    return typeof uid === 'number' ? uid : 0
+    return typeof uid === 'number' ? String(uid) : ''
   }
 
   /** 当前消息 ID（仅消息事件有值）。 */

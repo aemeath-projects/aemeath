@@ -25,8 +25,8 @@ export interface DrawResult {
 
 /** 列表查询参数。 */
 export interface ListRecordsParams {
-  groupId?: bigint | number
-  userId?: bigint | number
+  groupId?: string
+  userId?: string
   recordDate?: Date
   page?: number
   pageSize?: number
@@ -47,13 +47,9 @@ export class JrlpService {
    *
    * @throws Error 群内无可抽取活跃成员时抛出
    */
-  async getOrDraw(params: {
-    groupId: bigint | number
-    userId: bigint | number
-    today: Date
-  }): Promise<DrawResult> {
-    const groupId = BigInt(params.groupId)
-    const userId = BigInt(params.userId)
+  async getOrDraw(params: { groupId: string; userId: string; today: Date }): Promise<DrawResult> {
+    const groupId = params.groupId
+    const userId = params.userId
     const today = params.today
     // 1. 查是否已有记录
     const existing = await this._findRecord(groupId, userId, today)
@@ -92,7 +88,7 @@ export class JrlpService {
     const wifeDisplayName =
       (member.card.trim() !== '' ? member.card.trim() : null) ??
       (member.user.nickname.trim() !== '' ? member.user.nickname.trim() : null) ??
-      String(member.userId)
+      member.userId
 
     // 3. 写入记录（唯一约束冲突时重查）
     try {
@@ -129,8 +125,8 @@ export class JrlpService {
     const { groupId, userId, recordDate, page = 1, pageSize = 20 } = params
 
     const where: Prisma.WifeRecordWhereInput = {
-      ...(groupId != null ? { groupId: BigInt(groupId) } : {}),
-      ...(userId != null ? { userId: BigInt(userId) } : {}),
+      ...(groupId != null ? { groupId } : {}),
+      ...(userId != null ? { userId } : {}),
       ...(recordDate != null ? { date: recordDate } : {}),
     }
 
@@ -153,20 +149,20 @@ export class JrlpService {
    * @throws Error 该用户今日已有记录时抛出
    */
   async createPreset(params: {
-    groupId: bigint | number
-    userId: bigint | number
-    wifeQq: bigint | number
+    groupId: string
+    userId: string
+    wifeQq: string
     recordDate: Date
   }): Promise<WifeRecord> {
-    const groupId = BigInt(params.groupId)
-    const userId = BigInt(params.userId)
-    const wifeQq = BigInt(params.wifeQq)
+    const groupId = params.groupId
+    const userId = params.userId
+    const wifeQq = params.wifeQq
     const recordDate = params.recordDate
 
     const existing = await this._findRecord(groupId, userId, recordDate)
     if (existing !== null) {
       throw new ValidationError(
-        `用户 ${String(userId)} 在群 ${String(groupId)} 于 ${recordDate.toISOString().slice(0, 10)} 已有记录`,
+        `用户 ${userId} 在群 ${groupId} 于 ${recordDate.toISOString().slice(0, 10)} 已有记录`,
       )
     }
 
@@ -184,10 +180,7 @@ export class JrlpService {
   /**
    * 修改记录的老婆（预设和已抽取均可修改）。
    */
-  async updateRecord(
-    recordId: number,
-    opts: { wifeQq: bigint | number },
-  ): Promise<WifeRecord | null> {
+  async updateRecord(recordId: number, opts: { wifeQq: string }): Promise<WifeRecord | null> {
     const existing = await this.db.wifeRecord.findUnique({
       where: { id: recordId },
     })
@@ -195,7 +188,7 @@ export class JrlpService {
 
     return this.db.wifeRecord.update({
       where: { id: recordId },
-      data: { wifeQq: BigInt(opts.wifeQq) },
+      data: { wifeQq: opts.wifeQq },
     })
   }
 
@@ -219,8 +212,8 @@ export class JrlpService {
   // 内部辅助
 
   private async _findRecord(
-    groupId: bigint,
-    userId: bigint,
+    groupId: string,
+    userId: string,
     recordDate: Date,
   ): Promise<WifeRecord | null> {
     return this.db.wifeRecord.findFirst({
@@ -229,12 +222,12 @@ export class JrlpService {
   }
 
   /** 根据 wifeQq 解析显示名称。 */
-  private async _resolveWifeName(wifeQq: bigint): Promise<string> {
+  private async _resolveWifeName(wifeQq: string): Promise<string> {
     const user = await this.db.user.findUnique({
       where: { qq: wifeQq },
       select: { nickname: true },
     })
-    return user?.nickname ?? String(wifeQq)
+    return user?.nickname ?? wifeQq
   }
 }
 

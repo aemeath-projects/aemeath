@@ -87,7 +87,7 @@ const likeRoutes: FastifyPluginAsync = async (app) => {
     async (req: FastifyRequest<{ Body: CreateLikeTaskRequest }>, reply: FastifyReply) => {
       const svc = await getLikeSvc(app)
 
-      const result = await svc.registerTask(BigInt(req.body.qq), null)
+      const result = await svc.registerTask(req.body.qq, null)
       if (result.alreadyExists) {
         await reply.status(409).send(fail('该用户已存在定时点赞任务'))
         return
@@ -113,7 +113,7 @@ const likeRoutes: FastifyPluginAsync = async (app) => {
     async (req: FastifyRequest<{ Params: { qq: string } }>, reply: FastifyReply) => {
       const svc = await getLikeSvc(app)
 
-      const qq = BigInt(req.params.qq)
+      const qq = req.params.qq
       const deleted = await svc.cancelTask(qq)
       if (!deleted) {
         await reply.status(404).send(fail('任务不存在'))
@@ -138,7 +138,7 @@ const likeRoutes: FastifyPluginAsync = async (app) => {
     },
     async (req: FastifyRequest<{ Querystring: LikeHistoryQuery }>, reply: FastifyReply) => {
       const svc = await getLikeSvc(app)
-      const qq = req.query.qq ? BigInt(req.query.qq) : undefined
+      const qq = req.query.qq ?? undefined
       const source = req.query.source
       const dateFrom = req.query.dateFrom ? new Date(req.query.dateFrom) : undefined
       const dateTo = req.query.dateTo ? new Date(req.query.dateTo) : undefined

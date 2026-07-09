@@ -81,7 +81,7 @@ export class IrisS3 {
    * 构建归档 manifest 对象。
    */
   static buildManifest(
-    groupId: bigint,
+    groupId: string,
     seq: number,
     periodStart: Date,
     periodEnd: Date,
@@ -95,7 +95,7 @@ export class IrisS3 {
 
     return {
       version: 1,
-      groupId: groupId.toString(),
+      groupId,
       seq,
       period: {
         start: periodStart.toISOString().slice(0, 10),

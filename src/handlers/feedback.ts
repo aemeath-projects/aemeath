@@ -77,10 +77,10 @@ class FeedbackHandler {
     try {
       const source: FeedbackSource = ctx.isGroupEvent() ? 'group' : 'private'
       const feedback = await this.feedbackService.createFeedback({
-        userId: BigInt(ctx.userId),
+        userId: ctx.userId,
         content,
         source,
-        groupId: ctx.groupId !== undefined ? BigInt(ctx.groupId) : null,
+        groupId: ctx.groupId ?? null,
         feedbackType: feedbackType ?? null,
       })
       await ctx.reply(`反馈已提交，编号：${feedback.id.slice(0, 8)}`)
@@ -97,7 +97,7 @@ class FeedbackHandler {
   @PermissionDecorator(0)
   async myFeedbacks(ctx: Context): Promise<boolean> {
     try {
-      const feedbacks = await this.feedbackService.getUserFeedbacks(BigInt(ctx.userId), 5)
+      const feedbacks = await this.feedbackService.getUserFeedbacks(ctx.userId, 5)
 
       if (feedbacks.length === 0) {
         await ctx.reply('您还没有提交过反馈')

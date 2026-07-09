@@ -59,7 +59,7 @@ describe('IrisExporter.exportGroup', () => {
     })
 
     const [totalRows, , , , maxId] = await exporter.exportGroup(
-      123n,
+      '123',
       new Date('2024-01-01Z'),
       new Date('2024-07-01Z'),
       '/tmp/test.parquet',
@@ -79,9 +79,9 @@ describe('IrisExporter.exportGroup', () => {
 
       message_type: 2,
 
-      group_id: 123n,
+      group_id: '123',
 
-      user_id: 456n,
+      user_id: '456',
 
       raw_message: 'hello',
       segments: [],
@@ -106,7 +106,7 @@ describe('IrisExporter.exportGroup', () => {
     })
 
     const [totalRows, , , , maxId] = await exporter.exportGroup(
-      123n,
+      '123',
       new Date('2024-01-01Z'),
       new Date('2024-07-01Z'),
       '/tmp/test.parquet',

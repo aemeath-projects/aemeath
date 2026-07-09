@@ -18,14 +18,6 @@ export const CreateProviderSchema = Type.Object({
   type: LlmProviderTypeSchema,
   apiBase: Type.String({ minLength: 1, maxLength: 512, description: 'API 基础地址' }),
   apiKey: Type.String({ minLength: 1, maxLength: 512, description: 'API 密钥' }),
-  maxRetries: Type.Integer({ minimum: 0, maximum: 10, default: 2, description: '最大重试次数' }),
-  timeout: Type.Integer({ minimum: 1, maximum: 600, default: 60, description: '请求超时 (秒)' }),
-  retryInterval: Type.Integer({
-    minimum: 0,
-    maximum: 60,
-    default: 1,
-    description: '重试间隔 (秒)',
-  }),
 })
 
 /** 提供商更新请求 Schema（所有字段可选）。 */
@@ -35,9 +27,6 @@ export const UpdateProviderSchema = Type.Partial(
     type: LlmProviderTypeSchema,
     apiBase: Type.String({ minLength: 1, maxLength: 512 }),
     apiKey: Type.String({ minLength: 1, maxLength: 512 }),
-    maxRetries: Type.Integer({ minimum: 0, maximum: 10 }),
-    timeout: Type.Integer({ minimum: 1, maximum: 600 }),
-    retryInterval: Type.Integer({ minimum: 0, maximum: 60 }),
   }),
 )
 
@@ -48,9 +37,6 @@ export const LlmProviderSchema = Type.Object({
   type: LlmProviderTypeSchema,
   apiBase: Type.String(),
   apiKeyMasked: Type.String({ description: 'API Key 掩码（sk-****abcd）' }),
-  maxRetries: Type.Integer(),
-  timeout: Type.Integer(),
-  retryInterval: Type.Integer(),
   modelCount: Type.Integer(),
 })
 
@@ -64,8 +50,6 @@ export const CreateModelSchema = Type.Object({
   providerId: Type.String({ description: '提供商 UUID' }),
   modelName: Type.String({ minLength: 1, maxLength: 128 }),
   displayName: Type.Optional(Type.String({ maxLength: 128 })),
-  inputPrice: Type.Number({ minimum: 0, default: 0 }),
-  outputPrice: Type.Number({ minimum: 0, default: 0 }),
   temperature: Type.Number({ minimum: 0, maximum: 2, default: 0.7 }),
   maxTokens: Type.Optional(Type.Integer({ minimum: 1 })),
   forceStream: Type.Boolean({ default: false }),
@@ -76,8 +60,6 @@ export const CreateModelSchema = Type.Object({
 export const UpdateModelSchema = Type.Partial(
   Type.Object({
     displayName: Type.Union([Type.String({ maxLength: 128 }), Type.Null()]),
-    inputPrice: Type.Number({ minimum: 0 }),
-    outputPrice: Type.Number({ minimum: 0 }),
     temperature: Type.Number({ minimum: 0, maximum: 2 }),
     maxTokens: Type.Union([Type.Integer({ minimum: 1 }), Type.Null()]),
     forceStream: Type.Boolean(),
@@ -92,8 +74,6 @@ export const LlmModelSchema = Type.Object({
   providerName: Type.String(),
   modelName: Type.String(),
   displayName: Type.Union([Type.String(), Type.Null()]),
-  inputPrice: Type.Number(),
-  outputPrice: Type.Number(),
   temperature: Type.Number(),
   maxTokens: Type.Union([Type.Integer(), Type.Null()]),
   forceStream: Type.Boolean(),

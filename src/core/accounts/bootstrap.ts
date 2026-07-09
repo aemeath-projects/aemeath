@@ -214,7 +214,7 @@ export class MultiAccountBootstrap {
 
   /** 重连彻底放弃（error 状态）后，自动禁用对应账号并从连接池移除。 */
   private async _autoDisableAfterGiveUp(clientId: string): Promise<void> {
-    const qq = clientId.replace('bot-', '')
+    const qq = clientId
     await this.db.account.update({ where: { qq }, data: { isEnabled: false } })
     if (this.pool.getClient(clientId)) await this.pool.removeClient(clientId)
     log.warn(`账号 ${clientId} 重连尝试次数已达上限，已自动禁用`)
@@ -234,7 +234,7 @@ export class MultiAccountBootstrap {
         limit(async () => {
           const memberInfoResult = await groupApi.getGroupMemberInfo(
             group.groupId,
-            Number(adapter.qq), // 使用 .qq（bigint），不能用 .id（"bot-xxx" 字符串）
+            Number(adapter.qq),
           )
           if (!memberInfoResult.ok) return
           const role = memberInfoResult.data.role

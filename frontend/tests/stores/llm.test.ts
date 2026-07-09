@@ -25,10 +25,6 @@ const mockProvider = {
   type: 'openai' as const,
   apiBase: 'https://api.openai.com/v1',
   apiKeyMasked: 'sk-****',
-  maxRetries: 3,
-  timeout: 30,
-  retryInterval: 1,
-  isEnabled: true,
   modelCount: 2,
 }
 
@@ -43,8 +39,6 @@ const mockModel = {
   providerName: 'OpenAI',
   modelName: 'gpt-4o',
   displayName: 'GPT-4o',
-  inputPrice: 0.005,
-  outputPrice: 0.015,
   temperature: 0.7,
   maxTokens: 4096,
   forceStream: false,

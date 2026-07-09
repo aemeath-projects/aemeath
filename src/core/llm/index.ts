@@ -27,9 +27,6 @@ export interface ProviderDto {
   type: 'openai' | 'anthropic' | 'gemini'
   apiBase: string
   apiKeyMasked: string
-  maxRetries: number
-  timeout: number
-  retryInterval: number
   modelCount: number
   models?: ModelDto[]
 }
@@ -41,8 +38,6 @@ export interface ModelDto {
   providerName: string
   modelName: string
   displayName: string | null
-  inputPrice: number
-  outputPrice: number
   temperature: number
   maxTokens: number | null
   forceStream: boolean
@@ -91,9 +86,6 @@ export class LLMService {
         type: data.type,
         apiBase: data.apiBase,
         apiKey: data.apiKey,
-        maxRetries: data.maxRetries,
-        timeout: data.timeout,
-        retryInterval: data.retryInterval,
       },
     })
     this._log.info({ name: data.name }, 'LLM 提供商已创建')
@@ -114,9 +106,6 @@ export class LLMService {
         ...(data.type !== undefined ? { type: data.type } : {}),
         ...(data.apiBase !== undefined ? { apiBase: data.apiBase } : {}),
         ...(data.apiKey !== undefined ? { apiKey: data.apiKey } : {}),
-        ...(data.maxRetries !== undefined ? { maxRetries: data.maxRetries } : {}),
-        ...(data.timeout !== undefined ? { timeout: data.timeout } : {}),
-        ...(data.retryInterval !== undefined ? { retryInterval: data.retryInterval } : {}),
       },
       include: { models: true },
     })
@@ -171,8 +160,6 @@ export class LLMService {
         providerId: data.providerId,
         modelName: data.modelName,
         displayName: data.displayName ?? null,
-        inputPrice: data.inputPrice,
-        outputPrice: data.outputPrice,
         temperature: data.temperature,
         maxTokens: data.maxTokens ?? null,
         forceStream: data.forceStream,
@@ -195,8 +182,6 @@ export class LLMService {
       where: { id: modelId },
       data: {
         ...(data.displayName !== undefined ? { displayName: data.displayName } : {}),
-        ...(data.inputPrice !== undefined ? { inputPrice: data.inputPrice } : {}),
-        ...(data.outputPrice !== undefined ? { outputPrice: data.outputPrice } : {}),
         ...(data.temperature !== undefined ? { temperature: data.temperature } : {}),
         ...(data.maxTokens !== undefined ? { maxTokens: data.maxTokens } : {}),
         ...(data.forceStream !== undefined ? { forceStream: data.forceStream } : {}),
@@ -228,9 +213,6 @@ export class LLMService {
       type: provider.type,
       apiBase: provider.apiBase,
       apiKeyMasked: maskApiKey(provider.apiKey),
-      maxRetries: provider.maxRetries,
-      timeout: provider.timeout,
-      retryInterval: provider.retryInterval,
       modelCount: models.length,
     }
   }
@@ -242,8 +224,6 @@ export class LLMService {
       providerName: provider.name,
       modelName: model.modelName,
       displayName: model.displayName,
-      inputPrice: Number(model.inputPrice),
-      outputPrice: Number(model.outputPrice),
       temperature: model.temperature,
       maxTokens: model.maxTokens,
       forceStream: model.forceStream,

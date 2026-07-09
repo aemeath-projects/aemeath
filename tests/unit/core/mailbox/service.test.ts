@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+vi.mock('@/core/mailbox/broadcast.js', () => ({
+  mailboxBroadcaster: { broadcast: vi.fn() },
+}))
+
 import type { MessageRouter } from '@/core/accounts/index.js'
 import type { AemeathPrismaClient } from '@/core/db/index.js'
+import { mailboxBroadcaster } from '@/core/mailbox/broadcast.js'
 import { MailboxService } from '@/core/mailbox/service.js'
 import type { AdminService } from '@/core/user/admin.js'
 
@@ -113,6 +118,8 @@ describe('MailboxService', () => {
           }),
         ]),
       )
+
+      expect(mailboxBroadcaster.broadcast).toHaveBeenCalledWith(result)
     })
 
     it('私聊提醒发送失败时不应影响返回结果（不阻塞、不抛出）', async () => {
@@ -123,6 +130,20 @@ describe('MailboxService', () => {
       await expect(
         service.notifyAdmins({ title: '标题', content: '内容', notifyText: '通知文本' }),
       ).resolves.toEqual(baseMessage)
+    })
+
+    it('写库成功后应当无条件调用 mailboxBroadcaster.broadcast()（无论是否有御者）', async () => {
+      mockAdminService.getAdminQq.mockResolvedValue(null)
+      mockDb.mailbox.create.mockResolvedValue(baseMessage)
+
+      const result = await service.notifyAdmins({
+        title: '标题',
+        content: '内容',
+        notifyText: '通知文本',
+      })
+
+      expect(mailboxBroadcaster.broadcast).toHaveBeenCalledOnce()
+      expect(mailboxBroadcaster.broadcast).toHaveBeenCalledWith(result)
     })
   })
 

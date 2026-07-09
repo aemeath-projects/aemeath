@@ -63,7 +63,7 @@ export class AccountService {
   async listAccountsWithStatus(): Promise<AccountWithStatus[]> {
     const accounts = await this.listAccounts()
     return accounts.map((account) => {
-      const clientId = `bot-${account.qq}`
+      const clientId = account.qq
       const adapter = this.pool?.getClient(clientId)
       const state = adapter?.state
       return { ...account, state: state === 'error' ? 'unknown' : (state ?? 'unknown') }
@@ -122,7 +122,7 @@ export class AccountService {
   /** 若 pool 已注入且账号已启用，构造 adapter 并加入连接池，随后 fire-and-forget 尝试连接。 */
   private _addToPoolIfEnabled(account: Account): void {
     if (!this.pool || !account.isEnabled) return
-    const clientId = `bot-${account.qq}`
+    const clientId = account.qq
     if (this.pool.getClient(clientId)) return
     const adapter = new NapCatClientAdapter(account)
     this.pool.addClient(adapter, account.role as AccountRole)
@@ -135,7 +135,7 @@ export class AccountService {
   /** 账号更新后，将 endpoint/token/transport/isEnabled 的变化同步到运行中的连接池。 */
   private async _syncPoolAfterUpdate(before: Account, after: Account): Promise<void> {
     if (!this.pool) return
-    const clientId = `bot-${after.qq}`
+    const clientId = after.qq
     const wasEnabled = before.isEnabled
     const isEnabled = after.isEnabled
 

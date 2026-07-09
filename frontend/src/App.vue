@@ -4,6 +4,21 @@
       <v-app-bar-nav-icon @click="menuOpen = !menuOpen"></v-app-bar-nav-icon>
       <v-app-bar-title>Aemeath</v-app-bar-title>
       <v-spacer></v-spacer>
+      <v-tooltip text="站内信" location="bottom">
+        <template #activator="{ props }">
+          <v-badge
+            :model-value="mailboxStore.unreadCount > 0"
+            :content="mailboxStore.unreadCount > 99 ? '99+' : mailboxStore.unreadCount"
+            color="error"
+          >
+            <v-btn
+              :icon="mailboxStore.unreadCount > 0 ? 'mdi-email' : 'mdi-email-outline'"
+              v-bind="props"
+              @click="$router.push('/mailbox')"
+            ></v-btn>
+          </v-badge>
+        </template>
+      </v-tooltip>
       <v-tooltip text="主题偏好" location="bottom">
         <template #activator="{ props }">
           <v-btn icon="mdi-weather-night" v-bind="props" @click="dialogDark = true"></v-btn>
@@ -42,25 +57,39 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
+      <v-snackbar v-model="mailboxSnackbar" color="info" timeout="4000" location="top end">
+        <div class="d-flex align-center ga-2">
+          <v-icon>mdi-email-alert</v-icon>
+          <span>{{ mailboxStore.latestMessage?.title }}</span>
+        </div>
+        <template #actions>
+          <v-btn variant="text" @click="goToMailbox">查看</v-btn>
+        </template>
+      </v-snackbar>
       <router-view />
     </v-main>
   </v-app>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useTheme } from 'vuetify'
+import { useRouter } from 'vue-router'
 import { useThemeStore } from './stores/theme'
 import { useUserStore } from './stores/user'
+import { useMailboxStore } from '@/stores/mailbox'
 import type { ThemePreference } from './stores/theme'
 import Menu from './layouts/Menu.vue'
 
 const vuetifyTheme = useTheme()
 const themeStore = useThemeStore()
 const userStore = useUserStore()
+const mailboxStore = useMailboxStore()
+const router = useRouter()
 
 const dialogDark = ref(false)
 const menuOpen = ref(false)
+const mailboxSnackbar = ref(false)
 
 const themePreference = computed({
   get(): ThemePreference {
@@ -71,10 +100,24 @@ const themePreference = computed({
   },
 })
 
+function goToMailbox() {
+  mailboxSnackbar.value = false
+  router.push('/mailbox')
+}
+
+watch(
+  () => mailboxStore.latestMessage,
+  (msg) => {
+    if (msg) mailboxSnackbar.value = true
+  },
+)
+
 onMounted(() => {
   themeStore.initTheme(vuetifyTheme)
   // 全局预加载会话数据，供全站 GroupAutocomplete/UserAutocomplete 本地搜索使用
   userStore.loadSessionData()
+  mailboxStore.fetchUnreadCount()
+  mailboxStore.connectSSE()
 })
 </script>
 

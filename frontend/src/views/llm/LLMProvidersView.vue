@@ -41,21 +41,6 @@
               <div class="text-caption text-medium-emphasis mb-1">API Key</div>
               <div class="text-body-2 mb-3 font-weight-medium">{{ provider.apiKeyMasked }}</div>
 
-              <div class="d-flex ga-3 mb-3">
-                <div>
-                  <div class="text-caption text-medium-emphasis">最大重试</div>
-                  <div class="text-body-2">{{ provider.maxRetries }} 次</div>
-                </div>
-                <div>
-                  <div class="text-caption text-medium-emphasis">超时</div>
-                  <div class="text-body-2">{{ provider.timeout }} 秒</div>
-                </div>
-                <div>
-                  <div class="text-caption text-medium-emphasis">重试间隔</div>
-                  <div class="text-body-2">{{ provider.retryInterval }} 秒</div>
-                </div>
-              </div>
-
               <v-chip size="small" variant="elevated" color="blue">
                 <v-icon start size="x-small">mdi-brain</v-icon>
                 {{ provider.modelCount }} 个模型

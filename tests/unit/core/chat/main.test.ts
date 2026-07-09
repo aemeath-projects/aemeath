@@ -150,17 +150,22 @@ describe('IrisService', () => {
       expect(callArg.take).toBe(20)
     })
 
-    it('传入 before 时应当添加 lt 时间过滤', async () => {
+    it('传入 before 时应当添加 lt 时间过滤，且默认携带 30 天下界防止全表扫描', async () => {
       mockChatDb.chatMessage.findMany.mockResolvedValue([])
       const before = new Date('2024-05-01')
 
       await service.getGroupHistory('888', { before })
 
       interface FindManyArg {
-        where: { createdAt?: { lt?: Date } }
+        where: { createdAt?: { lt?: Date; gte?: Date } }
       }
       const callArg = mockChatDb.chatMessage.findMany.mock.calls[0]?.[0] as FindManyArg
-      expect(callArg.where.createdAt).toEqual({ lt: before })
+      expect(callArg.where.createdAt?.lt).toEqual(before)
+      // gte 下界基于 Date.now() 计算，允许合理的时间误差
+      expect(callArg.where.createdAt?.gte?.getTime()).toBeCloseTo(
+        Date.now() - 30 * 24 * 60 * 60 * 1000,
+        -3,
+      )
     })
   })
 

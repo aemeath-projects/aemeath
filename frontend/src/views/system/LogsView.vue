@@ -99,7 +99,7 @@ interface LogEntry {
 
 const MAX_LINES = 2000
 
-const levels = ['DEBUG', 'INFO', 'WARNING', 'ERROR']
+const levels = ['DEBUG', 'INFO', 'WARN', 'ERROR']
 const level = ref('DEBUG')
 const autoScroll = ref(true)
 const connected = ref(false)
@@ -123,7 +123,7 @@ let eventSource: EventSource | null = null
 
 function connect() {
   disconnect()
-  const url = `/api/logs?level=${encodeURIComponent(level.value)}`
+  const url = `/api/logs?level=${encodeURIComponent(level.value.toLowerCase())}`
   eventSource = new EventSource(url)
 
   eventSource.addEventListener('connected', () => {
@@ -285,13 +285,13 @@ onUnmounted(() => {
 .level-info {
   color: #58a6ff;
 }
-.level-warning {
+.level-warn {
   color: #d29922;
 }
 .level-error {
   color: #f85149;
 }
-.level-critical {
+.level-fatal {
   color: #ff7b72;
   font-weight: 800;
 }
@@ -317,7 +317,7 @@ onUnmounted(() => {
 .log-level-error {
   background: rgba(248, 81, 73, 0.06);
 }
-.log-level-warning {
+.log-level-warn {
   background: rgba(210, 153, 34, 0.04);
 }
 </style>

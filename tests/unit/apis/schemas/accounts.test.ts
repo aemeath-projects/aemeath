@@ -9,7 +9,7 @@ import {
 
 function baseCreateBody(endpoint: string) {
   return {
-    qq: '1739280698',
+    qq: '100000',
     role: 'normal' as const,
     transport: 'ws' as const,
     endpoint,

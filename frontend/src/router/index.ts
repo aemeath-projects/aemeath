@@ -38,7 +38,7 @@ export const menuOrder: Record<string, Record<string, string[]>> = {
     大模型: ['llm-providers', 'llm-models'],
   },
   系统: {
-    _unsectioned: ['queue', 'logs'],
+    _unsectioned: ['mailbox', 'queue', 'logs'],
     设置: ['settings', 'settings-preferences', 'user-admin', 'accounts'],
   },
 }
@@ -184,6 +184,17 @@ const router = createRouter({
         subtitle: '管理各群/用户的功能权限配置',
         panel: 'IRIS',
         section: '权限管理',
+      },
+    },
+    {
+      path: '/mailbox',
+      name: 'mailbox',
+      component: () => import('@/views/system/MailboxView.vue'),
+      meta: {
+        title: '站内信',
+        icon: 'mdi-email-outline',
+        subtitle: '系统通知与消息',
+        panel: '系统',
       },
     },
     {

@@ -8,6 +8,8 @@ import { seg } from '@aemeath-projects/napcat'
 
 import type { Mailbox } from '#prisma/aemeath'
 
+import { mailboxBroadcaster } from './broadcast.js'
+
 import type { MessageRouter } from '@/core/accounts/index.js'
 import type { AemeathPrismaClient } from '@/core/db/index.js'
 import type { AdminService } from '@/core/user/index.js'
@@ -55,6 +57,8 @@ export class MailboxService {
         content: input.content,
       },
     })
+
+    mailboxBroadcaster.broadcast(message)
 
     const adminQq = await this.adminService.getAdminQq()
     if (adminQq === null) {

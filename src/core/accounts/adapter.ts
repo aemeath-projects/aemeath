@@ -23,7 +23,7 @@ export class NapCatClientAdapter implements ClientAdapter<NapCatClient> {
 
   constructor(account: Account) {
     this.qq = account.qq
-    this.id = `bot-${account.qq}`
+    this.id = account.qq
 
     this.transport =
       account.transport === 'ws'

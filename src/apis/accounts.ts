@@ -55,7 +55,7 @@ const plugin: FastifyPluginAsync = async (app) => {
       if (!account) return reply.send(fail('账号不存在'))
 
       const pool = req.server.services.getOptional('account_pool')
-      const clientId = `bot-${account.qq}`
+      const clientId = account.qq
       const adapter = pool?.getClient(clientId)
 
       return reply.send(
@@ -132,7 +132,7 @@ const plugin: FastifyPluginAsync = async (app) => {
       if (!account) return reply.send(fail('账号不存在'))
 
       const pool = req.server.services.getOptional('account_pool')
-      const clientId = `bot-${account.qq}`
+      const clientId = account.qq
       if (pool?.getClient(clientId)) await pool.removeClient(clientId)
 
       await svc.deleteAccount(req.params.qq)

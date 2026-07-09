@@ -50,47 +50,6 @@
             placeholder="sk-..."
             @click:append-inner="showKey = !showKey"
           />
-          <v-row dense class="mb-3">
-            <v-col cols="4">
-              <v-text-field
-                v-model.number="form.maxRetries"
-                label="最大重试"
-                type="number"
-                variant="solo-filled"
-                density="compact"
-                :rules="[rules.nonNegativeInt]"
-                suffix="次"
-                min="0"
-                max="10"
-              />
-            </v-col>
-            <v-col cols="4">
-              <v-text-field
-                v-model.number="form.timeout"
-                label="超时"
-                type="number"
-                variant="solo-filled"
-                density="compact"
-                :rules="[rules.positiveInt]"
-                suffix="秒"
-                min="1"
-                max="600"
-              />
-            </v-col>
-            <v-col cols="4">
-              <v-text-field
-                v-model.number="form.retryInterval"
-                label="重试间隔"
-                type="number"
-                variant="solo-filled"
-                density="compact"
-                :rules="[rules.nonNegativeInt]"
-                suffix="秒"
-                min="0"
-                max="60"
-              />
-            </v-col>
-          </v-row>
         </v-form>
       </v-card-text>
 
@@ -139,18 +98,12 @@ function defaultForm(): {
   type: LlmProviderType | undefined
   apiBase: string
   apiKey: string
-  maxRetries: number
-  timeout: number
-  retryInterval: number
 } {
   return {
     name: '',
     type: undefined,
     apiBase: '',
     apiKey: '',
-    maxRetries: 2,
-    timeout: 60,
-    retryInterval: 1,
   }
 }
 
@@ -172,9 +125,6 @@ watch(
           type: props.provider.type,
           apiBase: props.provider.apiBase,
           apiKey: '',
-          maxRetries: props.provider.maxRetries,
-          timeout: props.provider.timeout,
-          retryInterval: props.provider.retryInterval,
         }
       } else {
         form.value = defaultForm()
@@ -196,11 +146,6 @@ async function submitForm() {
       if (form.value.type !== props.provider.type) payload.type = form.value.type
       if (form.value.apiBase !== props.provider.apiBase) payload.apiBase = form.value.apiBase
       if (form.value.apiKey) payload.apiKey = form.value.apiKey
-      if (form.value.maxRetries !== props.provider.maxRetries)
-        payload.maxRetries = form.value.maxRetries
-      if (form.value.timeout !== props.provider.timeout) payload.timeout = form.value.timeout
-      if (form.value.retryInterval !== props.provider.retryInterval)
-        payload.retryInterval = form.value.retryInterval
       await store.updateProvider(props.provider.id, payload)
     } else {
       await store.createProvider({
@@ -208,9 +153,6 @@ async function submitForm() {
         type: form.value.type as LlmProviderType,
         apiBase: form.value.apiBase,
         apiKey: form.value.apiKey,
-        maxRetries: form.value.maxRetries,
-        timeout: form.value.timeout,
-        retryInterval: form.value.retryInterval,
       })
     }
     emit('update:modelValue', false)

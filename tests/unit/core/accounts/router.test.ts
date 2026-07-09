@@ -51,16 +51,14 @@ describe('MessageRouter', () => {
 
   describe('sendGroupMsg — 优先级模式', () => {
     it('prefer_master 模式下 master 账号 priority 数值低于 normal', async () => {
-      membershipTracker.getClientsInGroup.mockReturnValue(['bot-master', 'bot-normal'])
+      membershipTracker.getClientsInGroup.mockReturnValue(['master', 'normal'])
       pool.getClient.mockImplementation((id: string) => ({ id, state: 'connected', client: {} }))
-      pool.getClientRole.mockImplementation((id: string) =>
-        id === 'bot-master' ? 'master' : 'normal',
-      )
+      pool.getClientRole.mockImplementation((id: string) => (id === 'master' ? 'master' : 'normal'))
       routingTable.resolve.mockImplementation((_groupId: string, candidates: Candidate[]) => {
-        const master = candidates.find((c) => c.clientId === 'bot-master')!
-        const normal = candidates.find((c) => c.clientId === 'bot-normal')!
+        const master = candidates.find((c) => c.clientId === 'master')!
+        const normal = candidates.find((c) => c.clientId === 'normal')!
         expect(master.priority).toBeLessThan(normal.priority)
-        return 'bot-master'
+        return 'master'
       })
       sendGroupMsgMock.mockResolvedValue({ ok: true, data: { messageId: 1 } })
 
@@ -76,16 +74,14 @@ describe('MessageRouter', () => {
     })
 
     it('prefer_normal 模式下 normal 账号 priority 数值低于 master', async () => {
-      membershipTracker.getClientsInGroup.mockReturnValue(['bot-master', 'bot-normal'])
+      membershipTracker.getClientsInGroup.mockReturnValue(['master', 'normal'])
       pool.getClient.mockImplementation((id: string) => ({ id, state: 'connected', client: {} }))
-      pool.getClientRole.mockImplementation((id: string) =>
-        id === 'bot-master' ? 'master' : 'normal',
-      )
+      pool.getClientRole.mockImplementation((id: string) => (id === 'master' ? 'master' : 'normal'))
       routingTable.resolve.mockImplementation((_groupId: string, candidates: Candidate[]) => {
-        const master = candidates.find((c) => c.clientId === 'bot-master')!
-        const normal = candidates.find((c) => c.clientId === 'bot-normal')!
+        const master = candidates.find((c) => c.clientId === 'master')!
+        const normal = candidates.find((c) => c.clientId === 'normal')!
         expect(normal.priority).toBeLessThan(master.priority)
-        return 'bot-normal'
+        return 'normal'
       })
       sendGroupMsgMock.mockResolvedValue({ ok: true, data: { messageId: 1 } })
 
@@ -101,7 +97,7 @@ describe('MessageRouter', () => {
     })
 
     it('readonly 角色不参与候选，无可用账号时抛出 AppError', async () => {
-      membershipTracker.getClientsInGroup.mockReturnValue(['bot-readonly'])
+      membershipTracker.getClientsInGroup.mockReturnValue(['readonly'])
       pool.getClient.mockImplementation((id: string) => ({ id, state: 'connected', client: {} }))
       pool.getClientRole.mockReturnValue('readonly')
 
@@ -132,11 +128,9 @@ describe('MessageRouter', () => {
     })
 
     it('切换后 sendGroupMsg 使用新模式重新计算优先级', async () => {
-      membershipTracker.getClientsInGroup.mockReturnValue(['bot-master', 'bot-normal'])
+      membershipTracker.getClientsInGroup.mockReturnValue(['master', 'normal'])
       pool.getClient.mockImplementation((id: string) => ({ id, state: 'connected', client: {} }))
-      pool.getClientRole.mockImplementation((id: string) =>
-        id === 'bot-master' ? 'master' : 'normal',
-      )
+      pool.getClientRole.mockImplementation((id: string) => (id === 'master' ? 'master' : 'normal'))
       sendGroupMsgMock.mockResolvedValue({ ok: true, data: { messageId: 1 } })
 
       let capturedCandidates: Candidate[] = []
@@ -155,8 +149,8 @@ describe('MessageRouter', () => {
 
       await router.sendGroupMsg('123', [])
 
-      const master = capturedCandidates.find((c) => c.clientId === 'bot-master')!
-      const normal = capturedCandidates.find((c) => c.clientId === 'bot-normal')!
+      const master = capturedCandidates.find((c) => c.clientId === 'master')!
+      const normal = capturedCandidates.find((c) => c.clientId === 'normal')!
       expect(normal.priority).toBeLessThan(master.priority)
     })
   })

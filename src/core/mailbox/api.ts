@@ -4,6 +4,7 @@
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 
+import { mailboxBroadcaster } from './broadcast.js'
 import {
   MailboxIdParamSchema,
   MailboxListQuerySchema,
@@ -131,4 +132,34 @@ export async function mailboxRoutes(fastify: FastifyInstance): Promise<void> {
       }
     },
   )
+
+  /**
+   * GET /api/mailbox/stream — SSE 端点，实时推送新到达的站内信。
+   */
+  fastify.get('/stream', { schema: { hide: true } }, async (request, reply) => {
+    reply.raw.setHeader('Content-Type', 'text/event-stream')
+    reply.raw.setHeader('Cache-Control', 'no-cache')
+    reply.raw.setHeader('X-Accel-Buffering', 'no')
+    reply.raw.setHeader('Connection', 'keep-alive')
+    reply.raw.write('event: connected\ndata: {}\n\n')
+
+    const onMailbox = (item: Mailbox): void => {
+      try {
+        reply.raw.write(`data: ${JSON.stringify(mailboxToDict(item))}\n\n`)
+      } catch {
+        // 序列化失败时忽略
+      }
+    }
+    mailboxBroadcaster.on('mailbox', onMailbox)
+
+    const cleanup = (): void => {
+      mailboxBroadcaster.off('mailbox', onMailbox)
+      reply.raw.end()
+    }
+    request.raw.on('close', cleanup)
+
+    await new Promise<void>((resolve) => {
+      request.raw.on('close', resolve)
+    })
+  })
 }

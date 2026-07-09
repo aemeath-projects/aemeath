@@ -37,14 +37,6 @@
           </div>
         </template>
 
-        <!-- 价格列 -->
-        <template #[`item.price`]="{ item }">
-          <div class="text-caption">
-            <div>入 &#xFFE5;{{ item.inputPrice.toFixed(2) }}/M</div>
-            <div>出 &#xFFE5;{{ item.outputPrice.toFixed(2) }}/M</div>
-          </div>
-        </template>
-
         <!-- 温度列 -->
         <template #[`item.temperature`]="{ item }">
           <v-chip size="small" variant="elevated">{{ item.temperature.toFixed(1) }}</v-chip>
@@ -110,31 +102,6 @@
                 class="mb-3"
                 placeholder="如 GPT-4o"
               />
-
-              <v-row dense class="mb-3">
-                <v-col cols="6">
-                  <v-text-field
-                    v-model.number="modelForm.inputPrice"
-                    label="输入价格 (&#xFFE5;/M tokens)"
-                    variant="solo-filled"
-                    density="compact"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                  />
-                </v-col>
-                <v-col cols="6">
-                  <v-text-field
-                    v-model.number="modelForm.outputPrice"
-                    label="输出价格 (&#xFFE5;/M tokens)"
-                    variant="solo-filled"
-                    density="compact"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                  />
-                </v-col>
-              </v-row>
 
               <!-- 温度滑块 -->
               <div class="text-body-2 mb-1">温度: {{ modelForm.temperature.toFixed(1) }}</div>
@@ -243,7 +210,6 @@ const providerOptions = computed(() => store.providers.map((p) => ({ title: p.na
 const headers = [
   { title: '模型名称', key: 'modelName', sortable: false },
   { title: '提供商', key: 'providerName', sortable: false },
-  { title: '价格 (CNY/M tokens)', key: 'price', sortable: false },
   { title: '温度', key: 'temperature', sortable: false },
   { title: '最大 Token', key: 'maxTokens', sortable: false },
   { title: '强制流式', key: 'forceStream', sortable: false },
@@ -261,8 +227,6 @@ const modelForm = ref({
   providerId: '',
   modelName: '',
   displayName: '',
-  inputPrice: 0,
-  outputPrice: 0,
   temperature: 0.7,
   maxTokens: null as number | null,
   forceStream: false,
@@ -282,8 +246,6 @@ watch(formDialog, (open) => {
         providerId: editingModel.value.providerId,
         modelName: editingModel.value.modelName,
         displayName: editingModel.value.displayName ?? '',
-        inputPrice: editingModel.value.inputPrice,
-        outputPrice: editingModel.value.outputPrice,
         temperature: editingModel.value.temperature,
         maxTokens: editingModel.value.maxTokens,
         forceStream: editingModel.value.forceStream,
@@ -294,8 +256,6 @@ watch(formDialog, (open) => {
         providerId: '',
         modelName: '',
         displayName: '',
-        inputPrice: 0,
-        outputPrice: 0,
         temperature: 0.7,
         maxTokens: null,
         forceStream: false,
@@ -359,8 +319,6 @@ async function submitModelForm() {
     if (isEditModel.value && editingModel.value) {
       await store.updateModel(editingModel.value.id, {
         displayName: modelForm.value.displayName || null,
-        inputPrice: modelForm.value.inputPrice,
-        outputPrice: modelForm.value.outputPrice,
         temperature: modelForm.value.temperature,
         maxTokens: modelForm.value.maxTokens,
         forceStream: modelForm.value.forceStream,
@@ -371,8 +329,6 @@ async function submitModelForm() {
         providerId: modelForm.value.providerId,
         modelName: modelForm.value.modelName,
         displayName: modelForm.value.displayName || null,
-        inputPrice: modelForm.value.inputPrice,
-        outputPrice: modelForm.value.outputPrice,
         temperature: modelForm.value.temperature,
         maxTokens: modelForm.value.maxTokens,
         forceStream: modelForm.value.forceStream,

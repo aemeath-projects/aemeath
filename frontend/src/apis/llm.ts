@@ -14,10 +14,6 @@ export interface ProviderItem {
   type: LlmProviderType
   apiBase: string
   apiKeyMasked: string
-  maxRetries: number
-  timeout: number
-  retryInterval: number
-  isEnabled: boolean
   modelCount: number
 }
 
@@ -30,9 +26,6 @@ export interface ProviderCreateData {
   type: LlmProviderType
   apiBase: string
   apiKey: string
-  maxRetries?: number
-  timeout?: number
-  retryInterval?: number
 }
 
 export interface ProviderUpdateData {
@@ -40,9 +33,6 @@ export interface ProviderUpdateData {
   type?: LlmProviderType
   apiBase?: string
   apiKey?: string
-  maxRetries?: number
-  timeout?: number
-  retryInterval?: number
 }
 
 export interface ModelItem {
@@ -51,8 +41,6 @@ export interface ModelItem {
   providerName: string
   modelName: string
   displayName: string | null
-  inputPrice: number
-  outputPrice: number
   temperature: number
   maxTokens: number | null
   forceStream: boolean
@@ -63,8 +51,6 @@ export interface ModelCreateData {
   providerId: string
   modelName: string
   displayName?: string | null
-  inputPrice?: number
-  outputPrice?: number
   temperature?: number
   maxTokens?: number | null
   forceStream?: boolean
@@ -73,8 +59,6 @@ export interface ModelCreateData {
 
 export interface ModelUpdateData {
   displayName?: string | null
-  inputPrice?: number
-  outputPrice?: number
   temperature?: number
   maxTokens?: number | null
   forceStream?: boolean

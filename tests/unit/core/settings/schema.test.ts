@@ -173,7 +173,7 @@ describe('cleanOrphanKeys', () => {
     } as unknown as AemeathPrismaClient
   }
 
-  it('DB 中不存在废弃 key 时不执行 DELETE，且查询表名为 setting_values', async () => {
+  it('DB 中不存在废弃 key 时不执行 DELETE，且查询表名为 settings', async () => {
     const map = buildSchemaMap()
     const db = createMockDb(['bot.enabled'])
     await cleanOrphanKeys(db, map)
@@ -181,7 +181,7 @@ describe('cleanOrphanKeys', () => {
     expect(db.$executeRaw).not.toHaveBeenCalled()
     const queryStrings = vi.mocked(db.$queryRaw).mock
       .calls[0]?.[0] as unknown as TemplateStringsArray
-    expect(queryStrings.join('')).toContain('setting_values')
+    expect(queryStrings.join('')).toContain('settings')
   })
 
   it('Schema 中不存在的 DB key 应被 DELETE，且携带精确的 orphan key 列表与目标表', async () => {
@@ -192,7 +192,7 @@ describe('cleanOrphanKeys', () => {
     expect(db.$executeRaw).toHaveBeenCalledTimes(1)
     const call = vi.mocked(db.$executeRaw).mock.calls[0]!
     const [deleteStrings, orphanArg] = call as unknown as [TemplateStringsArray, string[]]
-    expect(deleteStrings.join('')).toContain('setting_values')
+    expect(deleteStrings.join('')).toContain('settings')
     expect(orphanArg).toEqual(['obsolete.key'])
   })
 

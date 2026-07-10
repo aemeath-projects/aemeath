@@ -31,7 +31,12 @@ vi.mock('@/core/accounts/adapter.js', () => {
   return { NapCatClientAdapter }
 })
 
+vi.mock('@/core/accounts/status-broadcaster.js', () => ({
+  accountStatusBroadcaster: { broadcast: vi.fn() },
+}))
+
 const { AccountService } = await import('@/core/accounts/service.js')
+const { accountStatusBroadcaster } = await import('@/core/accounts/status-broadcaster.js')
 
 /* Mock 工厂 */
 
@@ -86,8 +91,8 @@ const baseAccount = {
   endpoint: 'ws://127.0.0.1:6100',
   token: '1234',
   isEnabled: true,
-  createdAt: new Date(),
-  updatedAt: new Date(),
+  lastConnectedAt: null,
+  disabledReason: null,
 }
 
 describe('AccountService', () => {
@@ -119,6 +124,24 @@ describe('AccountService', () => {
       expect(mockAdapterInstances).toHaveLength(1)
       expect(mockPool.addClient).toHaveBeenCalledWith(mockAdapterInstances[0], 'master')
       expect(mockAdapterInstances[0]!.connect).toHaveBeenCalledTimes(1)
+    })
+
+    it('创建后立即广播 connecting 状态', async () => {
+      mockDb.account.create.mockResolvedValue(baseAccount)
+      const svc = new AccountService(mockDb as unknown as AemeathPrismaClient, mockPool as never)
+
+      await svc.createAccount({
+        qq: baseAccount.qq,
+        role: 'master',
+        transport: 'ws',
+        endpoint: baseAccount.endpoint,
+        isEnabled: true,
+      })
+
+      expect(accountStatusBroadcaster.broadcast).toHaveBeenCalledWith({
+        ...baseAccount,
+        state: 'connecting',
+      })
     })
 
     it('isEnabled=false 时不加入 pool', async () => {
@@ -275,6 +298,40 @@ describe('AccountService', () => {
         svc.updateAccount('100000', { endpoint: 'ws://127.0.0.1:9999' }),
       ).resolves.toEqual(updated)
     })
+
+    it('isEnabled true -> false 时写入 disabledReason: manual', async () => {
+      mockPool.getClient.mockReturnValue({
+        state: 'connected',
+        client: { removeAllListeners: vi.fn() },
+      })
+      mockDb.account.findUnique.mockResolvedValue(baseAccount)
+      const updated = { ...baseAccount, isEnabled: false, disabledReason: 'manual' }
+      mockDb.account.update.mockResolvedValue(updated)
+      const svc = new AccountService(mockDb as unknown as AemeathPrismaClient, mockPool as never)
+
+      await svc.updateAccount('100000', { isEnabled: false })
+
+      expect(mockDb.account.update).toHaveBeenCalledWith({
+        where: { qq: '100000' },
+        data: { isEnabled: false, disabledReason: 'manual' },
+      })
+    })
+
+    it('isEnabled false -> true 时清空 disabledReason', async () => {
+      const disabledAccount = { ...baseAccount, isEnabled: false, disabledReason: 'manual' }
+      mockPool.getClient.mockReturnValue(undefined)
+      mockDb.account.findUnique.mockResolvedValue(disabledAccount)
+      const updated = { ...baseAccount, isEnabled: true, disabledReason: null }
+      mockDb.account.update.mockResolvedValue(updated)
+      const svc = new AccountService(mockDb as unknown as AemeathPrismaClient, mockPool as never)
+
+      await svc.updateAccount('100000', { isEnabled: true })
+
+      expect(mockDb.account.update).toHaveBeenCalledWith({
+        where: { qq: '100000' },
+        data: { isEnabled: true, disabledReason: null },
+      })
+    })
   })
 
   describe('listAccountsWithStatus()', () => {
@@ -306,6 +363,36 @@ describe('AccountService', () => {
       const result = await svc.listAccountsWithStatus()
 
       expect(result).toEqual([{ ...baseAccount, state: 'unknown' }])
+    })
+  })
+
+  describe('getAccountWithStatus()', () => {
+    it('账号存在且 pool 中有对应客户端时返回组合状态', async () => {
+      mockDb.account.findUnique.mockResolvedValue(baseAccount)
+      mockPool.getClient.mockReturnValue({ state: 'connected' })
+      const svc = new AccountService(mockDb as unknown as AemeathPrismaClient, mockPool as never)
+
+      const result = await svc.getAccountWithStatus('100000')
+
+      expect(result).toEqual({ ...baseAccount, state: 'connected' })
+    })
+
+    it('账号不存在时返回 null', async () => {
+      mockDb.account.findUnique.mockResolvedValue(null)
+      const svc = new AccountService(mockDb as unknown as AemeathPrismaClient, mockPool as never)
+
+      const result = await svc.getAccountWithStatus('nonexistent')
+
+      expect(result).toBeNull()
+    })
+
+    it('未注入 pool 时 state 为 unknown', async () => {
+      mockDb.account.findUnique.mockResolvedValue(baseAccount)
+      const svc = new AccountService(mockDb as unknown as AemeathPrismaClient)
+
+      const result = await svc.getAccountWithStatus('100000')
+
+      expect(result).toEqual({ ...baseAccount, state: 'unknown' })
     })
   })
 

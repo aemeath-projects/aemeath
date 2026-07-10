@@ -31,8 +31,8 @@ const account: Account = {
   endpoint: 'ws://127.0.0.1:1',
   token: null,
   isEnabled: true,
-  createdAt: new Date(),
-  updatedAt: new Date(),
+  lastConnectedAt: null,
+  disabledReason: null,
 }
 
 describe('NapCatClientAdapter.wireToPool', () => {
@@ -62,5 +62,42 @@ describe('NapCatClientAdapter.wireToPool — giveUp 转发', () => {
     adapter.client.emit('giveUp')
 
     expect(pool.notifyStateChange).toHaveBeenCalledWith(adapter.id, 'connecting', 'error')
+  })
+})
+
+describe('NapCatClientAdapter.wireToPool — connect 转发', () => {
+  it('client 上 emit connect 时立即通知连接池状态变为 connected', () => {
+    const adapter = new NapCatClientAdapter(account)
+    const pool = createMockPool()
+
+    adapter.wireToPool(pool, 'master')
+    adapter.client.emit('connect')
+
+    expect(pool.notifyStateChange).toHaveBeenCalledWith(adapter.id, 'connecting', 'connected')
+  })
+})
+
+describe('NapCatClientAdapter.forceReconnect', () => {
+  it('依次调用 disconnect() 和 connect()', async () => {
+    const adapter = new NapCatClientAdapter(account)
+    const disconnectSpy = vi.spyOn(adapter, 'disconnect').mockResolvedValue(undefined)
+    const connectSpy = vi.spyOn(adapter, 'connect').mockResolvedValue(undefined)
+
+    await adapter.forceReconnect()
+
+    expect(disconnectSpy).toHaveBeenCalledTimes(1)
+    expect(connectSpy).toHaveBeenCalledTimes(1)
+    expect(disconnectSpy.mock.invocationCallOrder[0]).toBeLessThan(
+      connectSpy.mock.invocationCallOrder[0]!,
+    )
+  })
+
+  it('disconnect() 失败时不调用 connect()，异常向上抛出', async () => {
+    const adapter = new NapCatClientAdapter(account)
+    vi.spyOn(adapter, 'disconnect').mockRejectedValue(new Error('断开失败'))
+    const connectSpy = vi.spyOn(adapter, 'connect').mockResolvedValue(undefined)
+
+    await expect(adapter.forceReconnect()).rejects.toThrow('断开失败')
+    expect(connectSpy).not.toHaveBeenCalled()
   })
 })

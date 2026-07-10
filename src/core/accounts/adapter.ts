@@ -80,6 +80,11 @@ export class NapCatClientAdapter implements ClientAdapter<NapCatClient> {
     this.client.on('notice', emit)
     this.client.on('request', emit)
 
+    // 连接建立（首次或自动重连）立即通知连接池，无需等待健康检测轮询（最长 30 秒）
+    this.client.on('connect', () => {
+      pool.notifyStateChange(this.id, 'connecting', 'connected')
+    })
+
     // WebSocket 断连时立即通知连接池，无需等待健康检测轮询
     this.client.on('close', () => {
       pool.notifyStateChange(this.id, 'connected', 'disconnected')
@@ -97,5 +102,11 @@ export class NapCatClientAdapter implements ClientAdapter<NapCatClient> {
     this.client.on('error', (err) => {
       log.error({ err, clientId: this.id }, 'NapCat 客户端连接错误')
     })
+  }
+
+  /** 断开重建连接。供连接池健康检查判定"假死连接"时调用；实际重连结果由 close/connect/giveUp 事件链路驱动状态迁移。 */
+  async forceReconnect(): Promise<void> {
+    await this.disconnect()
+    await this.connect()
   }
 }

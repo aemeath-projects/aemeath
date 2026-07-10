@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import type { VForm } from 'vuetify/components'
 import PageLayout from '@/layouts/PageLayout.vue'
 import { requiredRule, endpointRule, qqRule } from '@/utils/validators'
 import AccountCard from '@/components/accounts/AccountCard.vue'
 import {
-  listAccountsWithStatus,
   createAccount,
   updateAccount,
   deleteAccount,
@@ -16,13 +15,15 @@ import {
   type UpdateAccountDto,
   type PriorityMode,
 } from '@/apis/accounts'
+import { useAccountsStore } from '@/stores/accounts'
 
-const accounts = ref<AccountWithStatus[]>([])
+const accountsStore = useAccountsStore()
 const sortedAccounts = computed(() =>
-  [...accounts.value].sort((a, b) => (a.role === 'master' ? -1 : b.role === 'master' ? 1 : 0)),
+  [...accountsStore.accounts].sort((a, b) =>
+    a.role === 'master' ? -1 : b.role === 'master' ? 1 : 0,
+  ),
 )
 const togglingAccountQq = ref<string | null>(null)
-const loading = ref(false)
 
 /* 对话框状态 */
 const createDialog = ref(false)
@@ -79,20 +80,11 @@ async function onSavePriorityMode() {
   }
 }
 
-async function load() {
-  loading.value = true
-  try {
-    accounts.value = await listAccountsWithStatus()
-  } finally {
-    loading.value = false
-  }
-}
-
 async function onToggleEnabled(qq: string, value: boolean) {
   togglingAccountQq.value = qq
   try {
     await updateAccount(qq, { isEnabled: value })
-    await load()
+    await accountsStore.load()
   } finally {
     togglingAccountQq.value = null
   }
@@ -119,7 +111,7 @@ async function onSaveEdit() {
   const { qq: _qq, role: _role, ...updateFields } = form.value
   await updateAccount(editTarget.value.qq, updateFields as UpdateAccountDto)
   editDialog.value = false
-  await load()
+  await accountsStore.load()
 }
 
 async function onSaveCreate() {
@@ -127,7 +119,7 @@ async function onSaveCreate() {
   if (!valid) return
   await createAccount(form.value)
   createDialog.value = false
-  await load()
+  await accountsStore.load()
 }
 
 function onDeleteConfirm(qq: string) {
@@ -139,7 +131,7 @@ async function onDeleteExecute() {
   if (!deleteTargetQq.value) return
   await deleteAccount(deleteTargetQq.value)
   deleteDialog.value = false
-  await load()
+  await accountsStore.load()
 }
 
 function resetForm() {
@@ -152,7 +144,20 @@ function onCreateOpen() {
   createDialog.value = true
 }
 
-onMounted(load)
+let unmounted = false
+
+onMounted(() => {
+  void accountsStore.load().then(() => {
+    // 如果加载期间组件已经卸载（比如用户很快导航离开），不要再建立 SSE 连接——
+    // 否则这条连接会挂到下一次进入本页面之前，无人负责关闭。
+    if (!unmounted) accountsStore.connectStream()
+  })
+})
+
+onUnmounted(() => {
+  unmounted = true
+  accountsStore.disconnectStream()
+})
 </script>
 
 <template>
@@ -169,7 +174,7 @@ onMounted(load)
     </template>
 
     <!-- 账号卡片网格 -->
-    <v-row v-if="loading && !accounts.length">
+    <v-row v-if="accountsStore.loading && !accountsStore.accounts.length">
       <v-col v-for="n in 4" :key="n" cols="12" sm="6" md="3">
         <v-skeleton-loader type="card" />
       </v-col>

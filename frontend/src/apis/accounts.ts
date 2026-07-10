@@ -84,3 +84,47 @@ export async function getPriorityMode(): Promise<{ mode: PriorityMode }> {
 export async function setPriorityMode(mode: PriorityMode): Promise<void> {
   await post<null>('/api/accounts/priority-mode', { mode })
 }
+
+/* SSE 实时流 */
+
+export type AccountStatusEvent = AccountWithStatus
+
+/** 建立账号状态 SSE 连接；onReconnect 在浏览器自动重连成功后触发，用于重新拉取全量状态兜底可能错过的事件。 */
+export function connectAccountStatusStream(
+  onMessage: (evt: AccountStatusEvent) => void,
+  onReconnect?: () => void,
+): () => void {
+  const eventSource = new EventSource('/api/accounts/stream')
+  let hasErrored = false
+
+  eventSource.onopen = () => {
+    if (hasErrored) {
+      hasErrored = false
+      onReconnect?.()
+    }
+  }
+
+  eventSource.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data) as Partial<AccountStatusEvent>
+      // 防御性检查：后端握手事件走的是具名 `event: connected`，浏览器 EventSource 只会把
+      // 未指定 event 字段的默认消息类型事件分发给 onmessage，握手事件本身不会走到这里；
+      // 这里只是兜底过滤任何缺少 qq 的异常载荷，避免下游拿到不完整的状态对象。
+      if (!data.qq) return
+      onMessage(data as AccountStatusEvent)
+    } catch {
+      // 忽略解析失败的行
+    }
+  }
+
+  eventSource.onerror = () => {
+    hasErrored = true
+  }
+
+  return () => {
+    eventSource.onopen = null
+    eventSource.onmessage = null
+    eventSource.onerror = null
+    eventSource.close()
+  }
+}

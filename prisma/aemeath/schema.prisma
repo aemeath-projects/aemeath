@@ -364,15 +364,15 @@ model Setting {
 
 /// 机器人账号表 —— 存储多个 NapCat 实例的连接配置。
 model Account {
-  qq        String  @id @db.Text
-  nickname  String?
-  role      String // 'master' | 'normal' | 'readonly'
-  transport String // 'ws' | 'sse'
-  endpoint  String // ws://host:port 或 http://host:port
-  token     String? // 列级加密待后续统一设计，当前明文存储
-  isEnabled Boolean @default(true) @map("is_enabled")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  qq              String    @id @db.Text
+  nickname        String?
+  role            String // 'master' | 'normal' | 'readonly'
+  transport       String // 'ws' | 'sse'
+  endpoint        String // ws://host:port 或 http://host:port
+  token           String? // 列级加密待后续统一设计，当前明文存储
+  isEnabled       Boolean   @default(true) @map("is_enabled")
+  lastConnectedAt DateTime? @map("last_connected_at") // 最近一次连接成功的时间
+  disabledReason  String?   @map("disabled_reason") // 'manual' | 'auto_giveup'，isEnabled=true 时应为 null
 
   @@map("accounts")
 }

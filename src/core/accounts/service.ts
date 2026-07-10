@@ -9,6 +9,7 @@ import type { AccountPool } from './bootstrap.js'
 import type { GroupBotRegistry, GroupBotRole } from './group-bot-registry.js'
 import type { AccountRole, PriorityMode } from './roles.js'
 import type { MessageRouter } from './router.js'
+import { accountStatusBroadcaster } from './status-broadcaster.js'
 
 import type { AemeathPrismaClient } from '@/core/db/index.js'
 import { AppError } from '@/core/errors.js'
@@ -74,6 +75,15 @@ export class AccountService {
     return this.db.account.findUnique({ where: { qq } })
   }
 
+  /** 查询单个账号信息 + 实时连接状态，供状态广播复用。 */
+  async getAccountWithStatus(qq: string): Promise<AccountWithStatus | null> {
+    const account = await this.getAccount(qq)
+    if (!account) return null
+    const adapter = this.pool?.getClient(qq)
+    const state = adapter?.state
+    return { ...account, state: state === 'error' ? 'unknown' : (state ?? 'unknown') }
+  }
+
   async hasMaster(): Promise<boolean> {
     const existing = await this.db.account.findFirst({ where: { role: 'master' } })
     return existing !== null
@@ -87,7 +97,12 @@ export class AccountService {
 
   async updateAccount(qq: string, data: UpdateAccountInput): Promise<Account> {
     const before = await this.db.account.findUnique({ where: { qq } })
-    const after = await this.db.account.update({ where: { qq }, data })
+    const patch: UpdateAccountInput & { disabledReason?: string | null } = { ...data }
+    if (before) {
+      if (data.isEnabled === false && before.isEnabled) patch.disabledReason = 'manual'
+      if (data.isEnabled === true && !before.isEnabled) patch.disabledReason = null
+    }
+    const after = await this.db.account.update({ where: { qq }, data: patch })
     if (before) {
       await this._syncPoolAfterUpdate(before, after)
     } else {
@@ -127,6 +142,7 @@ export class AccountService {
     const adapter = new NapCatClientAdapter(account)
     this.pool.addClient(adapter, account.role as AccountRole)
     this._registerGroupNotices(adapter)
+    accountStatusBroadcaster.broadcast({ ...account, state: 'connecting' })
     void adapter.connect().catch((err: unknown) => {
       log.error({ err, qq: account.qq }, '账号创建后自动连接失败，将由重连策略自动重试')
     })
@@ -143,6 +159,7 @@ export class AccountService {
     if (wasEnabled && !isEnabled) {
       this._cleanupAdapterNotices(clientId)
       if (this.pool.getClient(clientId)) await this.pool.removeClient(clientId)
+      accountStatusBroadcaster.broadcast({ ...after, state: 'unknown' })
       return
     }
 
@@ -153,6 +170,7 @@ export class AccountService {
       const adapter = new NapCatClientAdapter(after)
       this.pool.addClient(adapter, after.role as AccountRole)
       this._registerGroupNotices(adapter)
+      accountStatusBroadcaster.broadcast({ ...after, state: 'connecting' })
       void adapter.connect().catch((err: unknown) => {
         log.error({ err, qq: after.qq }, '账号启用后自动连接失败，将由重连策略自动重试')
       })
@@ -176,6 +194,7 @@ export class AccountService {
     const adapter = new NapCatClientAdapter(after)
     this.pool.addClient(adapter, after.role as AccountRole)
     this._registerGroupNotices(adapter)
+    accountStatusBroadcaster.broadcast({ ...after, state: 'connecting' })
 
     if (wasConnected) {
       try {

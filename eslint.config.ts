@@ -12,6 +12,7 @@ export default tseslint.config(
       'frontend/',
       'prisma/*/generated/',
       'docs/',
+      '.superpowers/',
       '**/*.js',
       '**/*.cjs',
       '**/*.mjs',

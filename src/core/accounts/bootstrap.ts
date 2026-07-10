@@ -31,6 +31,8 @@ import { GroupBotRegistry } from './group-bot-registry.js'
 import type { GroupBotRole } from './group-bot-registry.js'
 import type { AccountRole } from './roles.js'
 import { MessageRouter } from './router.js'
+import { AccountService } from './service.js'
+import { accountStatusBroadcaster } from './status-broadcaster.js'
 
 import type { AemeathPrismaClient } from '@/core/db/index.js'
 
@@ -188,34 +190,68 @@ export class MultiAccountBootstrap {
     log.info('MultiAccountBootstrap: 多账号系统启动完成')
   }
 
-  /** 处理连接池状态变化：清除失效路由映射、放弃重连后自动禁用、重连后同步群角色。 */
+  /** 处理连接池状态变化：清除失效路由映射、放弃重连后自动禁用、连接成功后更新时间戳与同步群角色，并在每次变化后广播最新状态。 */
   private _handleClientStateChange(clientId: string, _from: ClientState, to: ClientState): void {
     if (to === 'disconnected' || to === 'error') {
       this._routingTable.invalidate(clientId)
       log.warn(`账号 ${clientId} 下线，已清除路由映射`)
     }
+
     if (to === 'error') {
-      void this._autoDisableAfterGiveUp(clientId).catch((err: unknown) => {
-        log.error({ err, clientId }, '重连放弃后自动禁用账号失败')
-      })
+      void this._autoDisableAfterGiveUp(clientId)
+        .catch((err: unknown) => {
+          log.error({ err, clientId }, '重连放弃后自动禁用账号失败')
+        })
+        .then(() => {
+          this._broadcastStatus(clientId)
+        })
+      return
     }
+
     if (to === 'connected') {
       void (async () => {
+        await this.db.account
+          .update({ where: { qq: clientId }, data: { lastConnectedAt: new Date() } })
+          .catch((err: unknown) => {
+            log.error({ err, clientId }, '更新 lastConnectedAt 失败')
+          })
         const adapter = this.pool.getClient(clientId) as NapCatClientAdapter | undefined
         if (adapter) {
           const limit2 = pLimit(10)
           await this._syncClientGroupRoles(adapter, limit2)
         }
-      })().catch((err: unknown) => {
-        log.error({ err }, `账号 ${clientId} 重连后同步群角色失败`)
-      })
+      })()
+        .catch((err: unknown) => {
+          log.error({ err }, `账号 ${clientId} 重连后同步群角色失败`)
+        })
+        .then(() => {
+          this._broadcastStatus(clientId)
+        })
+      return
     }
+
+    this._broadcastStatus(clientId)
+  }
+
+  /** 查询账号最新状态并广播；账号已被删除（如恰好在事件处理期间被删）时静默跳过。 */
+  private _broadcastStatus(clientId: string): void {
+    void new AccountService(this.db, this.pool)
+      .getAccountWithStatus(clientId)
+      .then((status) => {
+        if (status) accountStatusBroadcaster.broadcast(status)
+      })
+      .catch((err: unknown) => {
+        log.error({ err, clientId }, '广播账号状态失败')
+      })
   }
 
   /** 重连彻底放弃（error 状态）后，自动禁用对应账号并从连接池移除。 */
   private async _autoDisableAfterGiveUp(clientId: string): Promise<void> {
     const qq = clientId
-    await this.db.account.update({ where: { qq }, data: { isEnabled: false } })
+    await this.db.account.update({
+      where: { qq },
+      data: { isEnabled: false, disabledReason: 'auto_giveup' },
+    })
     if (this.pool.getClient(clientId)) await this.pool.removeClient(clientId)
     log.warn(`账号 ${clientId} 重连尝试次数已达上限，已自动禁用`)
   }

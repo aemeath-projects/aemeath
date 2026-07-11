@@ -20,7 +20,7 @@ export type { Account }
 
 /** 账号 + 实时连接状态组合视图，供批量状态查询使用。 */
 export interface AccountWithStatus extends Account {
-  state: 'connected' | 'disconnected' | 'connecting' | 'unknown'
+  state: 'connected' | 'disconnected' | 'connecting' | 'reconnecting' | 'unknown'
 }
 
 const log: PinoLogger = getLogger('accounts') as unknown as PinoLogger
@@ -97,12 +97,7 @@ export class AccountService {
 
   async updateAccount(qq: string, data: UpdateAccountInput): Promise<Account> {
     const before = await this.db.account.findUnique({ where: { qq } })
-    const patch: UpdateAccountInput & { disabledReason?: string | null } = { ...data }
-    if (before) {
-      if (data.isEnabled === false && before.isEnabled) patch.disabledReason = 'manual'
-      if (data.isEnabled === true && !before.isEnabled) patch.disabledReason = null
-    }
-    const after = await this.db.account.update({ where: { qq }, data: patch })
+    const after = await this.db.account.update({ where: { qq }, data })
     if (before) {
       await this._syncPoolAfterUpdate(before, after)
     } else {

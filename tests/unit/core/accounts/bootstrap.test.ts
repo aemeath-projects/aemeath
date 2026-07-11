@@ -21,8 +21,6 @@ const sampleStatus: AccountWithStatus = {
   endpoint: 'ws://127.0.0.1:1',
   token: null,
   isEnabled: true,
-  lastConnectedAt: null,
-  disabledReason: null,
   state: 'connected',
 }
 
@@ -82,18 +80,6 @@ describe('MultiAccountBootstrap', () => {
       expect(spy).not.toHaveBeenCalled()
     })
 
-    it('状态变为 connected 时更新 lastConnectedAt', async () => {
-      testable.pool.getClient.mockReturnValue(undefined)
-
-      testable._handleClientStateChange('1', 'disconnected', 'connected')
-      await vi.waitFor(() => {
-        expect(testable.db.account.update).toHaveBeenCalledWith({
-          where: { qq: '1' },
-          data: { lastConnectedAt: expect.any(Date) },
-        })
-      })
-    })
-
     it('状态变为 connected 时广播最新账号状态', async () => {
       testable.pool.getClient.mockReturnValue(undefined)
 
@@ -107,6 +93,15 @@ describe('MultiAccountBootstrap', () => {
     it('状态变为 disconnected 时广播最新账号状态', async () => {
       testable._handleClientStateChange('1', 'connected', 'disconnected')
 
+      await vi.waitFor(() => {
+        expect(accountStatusBroadcaster.broadcast).toHaveBeenCalledWith(sampleStatus)
+      })
+    })
+
+    it('状态变为 reconnecting 时不清除路由映射，只广播最新账号状态', async () => {
+      testable._handleClientStateChange('1', 'disconnected', 'reconnecting')
+
+      expect(testable._routingTable.invalidate).not.toHaveBeenCalled()
       await vi.waitFor(() => {
         expect(accountStatusBroadcaster.broadcast).toHaveBeenCalledWith(sampleStatus)
       })
@@ -136,14 +131,14 @@ describe('MultiAccountBootstrap', () => {
   })
 
   describe('_autoDisableAfterGiveUp', () => {
-    it('将账号 isEnabled 置为 false、写入 disabledReason: auto_giveup 并从 pool 移除', async () => {
+    it('将账号 isEnabled 置为 false 并从 pool 移除', async () => {
       testable.pool.getClient.mockReturnValue({ id: '100000' })
 
       await testable._autoDisableAfterGiveUp('100000')
 
       expect(testable.db.account.update).toHaveBeenCalledWith({
         where: { qq: '100000' },
-        data: { isEnabled: false, disabledReason: 'auto_giveup' },
+        data: { isEnabled: false },
       })
       expect(testable.pool.removeClient).toHaveBeenCalledWith('100000')
     })

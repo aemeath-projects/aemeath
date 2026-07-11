@@ -10,7 +10,6 @@ const mockAdapterInstances: {
   state: string
   connect: ReturnType<typeof vi.fn>
   disconnect: ReturnType<typeof vi.fn>
-  healthCheck: ReturnType<typeof vi.fn>
   wireToPool: ReturnType<typeof vi.fn>
 }[] = []
 
@@ -22,7 +21,6 @@ vi.mock('@/core/accounts/adapter.js', () => {
       state: 'disconnected',
       connect: vi.fn().mockResolvedValue(undefined),
       disconnect: vi.fn().mockResolvedValue(undefined),
-      healthCheck: vi.fn().mockResolvedValue(true),
       wireToPool: vi.fn(),
     }
     mockAdapterInstances.push(instance)
@@ -62,8 +60,6 @@ function createMockPool() {
     getAvailableClients: vi.fn(),
     connectAll: vi.fn(),
     disconnectAll: vi.fn(),
-    startHealthCheck: vi.fn(),
-    stopHealthCheck: vi.fn(),
   }
 }
 
@@ -91,8 +87,6 @@ const baseAccount = {
   endpoint: 'ws://127.0.0.1:6100',
   token: '1234',
   isEnabled: true,
-  lastConnectedAt: null,
-  disabledReason: null,
 }
 
 describe('AccountService', () => {
@@ -275,7 +269,6 @@ describe('AccountService', () => {
             state: 'disconnected',
             connect: vi.fn().mockRejectedValue(new Error('连接失败')),
             disconnect: vi.fn().mockResolvedValue(undefined),
-            healthCheck: vi.fn().mockResolvedValue(true),
             wireToPool: vi.fn(),
           }
           mockAdapterInstances.push(instance)
@@ -297,40 +290,6 @@ describe('AccountService', () => {
       await expect(
         svc.updateAccount('100000', { endpoint: 'ws://127.0.0.1:9999' }),
       ).resolves.toEqual(updated)
-    })
-
-    it('isEnabled true -> false 时写入 disabledReason: manual', async () => {
-      mockPool.getClient.mockReturnValue({
-        state: 'connected',
-        client: { removeAllListeners: vi.fn() },
-      })
-      mockDb.account.findUnique.mockResolvedValue(baseAccount)
-      const updated = { ...baseAccount, isEnabled: false, disabledReason: 'manual' }
-      mockDb.account.update.mockResolvedValue(updated)
-      const svc = new AccountService(mockDb as unknown as AemeathPrismaClient, mockPool as never)
-
-      await svc.updateAccount('100000', { isEnabled: false })
-
-      expect(mockDb.account.update).toHaveBeenCalledWith({
-        where: { qq: '100000' },
-        data: { isEnabled: false, disabledReason: 'manual' },
-      })
-    })
-
-    it('isEnabled false -> true 时清空 disabledReason', async () => {
-      const disabledAccount = { ...baseAccount, isEnabled: false, disabledReason: 'manual' }
-      mockPool.getClient.mockReturnValue(undefined)
-      mockDb.account.findUnique.mockResolvedValue(disabledAccount)
-      const updated = { ...baseAccount, isEnabled: true, disabledReason: null }
-      mockDb.account.update.mockResolvedValue(updated)
-      const svc = new AccountService(mockDb as unknown as AemeathPrismaClient, mockPool as never)
-
-      await svc.updateAccount('100000', { isEnabled: true })
-
-      expect(mockDb.account.update).toHaveBeenCalledWith({
-        where: { qq: '100000' },
-        data: { isEnabled: true, disabledReason: null },
-      })
     })
   })
 

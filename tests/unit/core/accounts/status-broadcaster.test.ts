@@ -11,8 +11,6 @@ const sampleStatus: AccountWithStatus = {
   endpoint: 'ws://127.0.0.1:1',
   token: null,
   isEnabled: true,
-  lastConnectedAt: null,
-  disabledReason: null,
   state: 'connected',
 }
 

@@ -31,8 +31,6 @@ const account: Account = {
   endpoint: 'ws://127.0.0.1:1',
   token: null,
   isEnabled: true,
-  lastConnectedAt: null,
-  disabledReason: null,
 }
 
 describe('NapCatClientAdapter.wireToPool', () => {
@@ -77,27 +75,17 @@ describe('NapCatClientAdapter.wireToPool — connect 转发', () => {
   })
 })
 
-describe('NapCatClientAdapter.forceReconnect', () => {
-  it('依次调用 disconnect() 和 connect()', async () => {
+describe('NapCatClientAdapter.wireToPool — reconnecting 可观测性', () => {
+  it('client 上 emit reconnecting 时立即通知连接池状态变为 reconnecting', () => {
+    // 背景：reconnecting 已提升为正式状态值——退避等待期间账号状态应实时显示"重连中"，
+    // 而不是像此前那样一直停留在 disconnected，业务层/前端才能区分"正在自动重试"
+    // 和"已经彻底放弃"。
     const adapter = new NapCatClientAdapter(account)
-    const disconnectSpy = vi.spyOn(adapter, 'disconnect').mockResolvedValue(undefined)
-    const connectSpy = vi.spyOn(adapter, 'connect').mockResolvedValue(undefined)
+    const pool = createMockPool()
 
-    await adapter.forceReconnect()
+    adapter.wireToPool(pool, 'master')
+    adapter.client.emit('reconnecting', 1, 1000)
 
-    expect(disconnectSpy).toHaveBeenCalledTimes(1)
-    expect(connectSpy).toHaveBeenCalledTimes(1)
-    expect(disconnectSpy.mock.invocationCallOrder[0]).toBeLessThan(
-      connectSpy.mock.invocationCallOrder[0]!,
-    )
-  })
-
-  it('disconnect() 失败时不调用 connect()，异常向上抛出', async () => {
-    const adapter = new NapCatClientAdapter(account)
-    vi.spyOn(adapter, 'disconnect').mockRejectedValue(new Error('断开失败'))
-    const connectSpy = vi.spyOn(adapter, 'connect').mockResolvedValue(undefined)
-
-    await expect(adapter.forceReconnect()).rejects.toThrow('断开失败')
-    expect(connectSpy).not.toHaveBeenCalled()
+    expect(pool.notifyStateChange).toHaveBeenCalledWith(adapter.id, 'disconnected', 'reconnecting')
   })
 })

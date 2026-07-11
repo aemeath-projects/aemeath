@@ -4,7 +4,7 @@
 import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { ClientAdapter, ClientState, PoolEmitter } from '@aemeath-projects/exostrider/pool'
-import { NapCatClient, WebSocketTransport, SseTransport, SystemApi } from '@aemeath-projects/napcat'
+import { NapCatClient, WebSocketTransport, SseTransport } from '@aemeath-projects/napcat'
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 
 import type { Account } from '#prisma/aemeath'
@@ -47,6 +47,8 @@ export class NapCatClientAdapter implements ClientAdapter<NapCatClient> {
         return 'connected'
       case 'connecting':
         return 'connecting'
+      case 'reconnecting':
+        return 'reconnecting'
       default:
         return 'disconnected'
     }
@@ -58,12 +60,6 @@ export class NapCatClientAdapter implements ClientAdapter<NapCatClient> {
 
   async disconnect(): Promise<void> {
     await this.client.disconnect()
-  }
-
-  async healthCheck(): Promise<boolean> {
-    const api = new SystemApi(this.client)
-    const result = await api.getLoginInfo()
-    return result.ok
   }
 
   /**
@@ -90,6 +86,16 @@ export class NapCatClientAdapter implements ClientAdapter<NapCatClient> {
       pool.notifyStateChange(this.id, 'connected', 'disconnected')
     })
 
+    // 记录每一次指数退避重连尝试，并立即通知连接池状态变为 reconnecting——
+    // 退避等待期间账号应实时显示"重连中"，而不是一直停留在 disconnected。
+    this.client.on('reconnecting', (attempt, delay) => {
+      log.warn(
+        { clientId: this.id, attempt, delayMs: Math.round(delay) },
+        `账号 ${this.id} 第 ${String(attempt)} 次重连尝试，${Math.round(delay).toString()}ms 后执行`,
+      )
+      pool.notifyStateChange(this.id, 'disconnected', 'reconnecting')
+    })
+
     // 指数退避重连彻底放弃后，通知连接池进入 error 状态，触发上层自动禁用账号
     this.client.on('giveUp', () => {
       pool.notifyStateChange(this.id, 'connecting', 'error')
@@ -102,11 +108,5 @@ export class NapCatClientAdapter implements ClientAdapter<NapCatClient> {
     this.client.on('error', (err) => {
       log.error({ err, clientId: this.id }, 'NapCat 客户端连接错误')
     })
-  }
-
-  /** 断开重建连接。供连接池健康检查判定"假死连接"时调用；实际重连结果由 close/connect/giveUp 事件链路驱动状态迁移。 */
-  async forceReconnect(): Promise<void> {
-    await this.disconnect()
-    await this.connect()
   }
 }

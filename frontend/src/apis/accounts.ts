@@ -8,7 +8,7 @@ import { get, post, put, del } from './http'
 
 export type AccountRole = 'master' | 'normal' | 'readonly'
 export type AccountTransport = 'ws' | 'sse'
-export type AccountState = 'connected' | 'disconnected' | 'connecting' | 'unknown'
+export type AccountState = 'connected' | 'disconnected' | 'connecting' | 'reconnecting' | 'unknown'
 export type PriorityMode = 'prefer_master' | 'prefer_normal'
 
 export interface Account {

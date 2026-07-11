@@ -16,6 +16,7 @@ const emit = defineEmits<{
 const stateBgColor: Record<string, string> = {
   connected: '#e8f5e9',
   connecting: '#fff8e1',
+  reconnecting: '#ffe0b2',
   disconnected: '#ffebee',
   unknown: '',
 }
@@ -23,6 +24,7 @@ const stateBgColor: Record<string, string> = {
 const stateLabel: Record<string, string> = {
   connected: '在线',
   connecting: '连接中',
+  reconnecting: '重连中',
   disconnected: '离线',
   unknown: '未知',
 }

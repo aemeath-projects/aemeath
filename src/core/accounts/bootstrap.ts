@@ -10,7 +10,7 @@
  * 6. 创建 RoutingTable + MessageRouter
  * 7. 构建主账号 API bundle（master_apis）
  * 8. 注册状态变化处理：失效路由表 + 重新同步群关系
- * 9. 启动健康检测
+ * 9. 启动状态轮询
  *
  * 注意：事件管道（pool → dispatcher）在 main.ts 完成，bootstrap 不持有 dispatcher 引用。
  */
@@ -185,12 +185,12 @@ export class MultiAccountBootstrap {
       this._handleClientStateChange(clientId, from, to)
     })
 
-    // 9. 启动健康检测
-    this.pool.startHealthCheck(appConfig.routing?.healthCheckIntervalMs ?? 30_000)
+    // 9. 启动状态轮询（无副作用兜底：wireToPool 未覆盖的场景由此定时发现）
+    this.pool.startStatePolling(appConfig.routing?.healthCheckIntervalMs ?? 30_000)
     log.info('MultiAccountBootstrap: 多账号系统启动完成')
   }
 
-  /** 处理连接池状态变化：清除失效路由映射、放弃重连后自动禁用、连接成功后更新时间戳与同步群角色，并在每次变化后广播最新状态。 */
+  /** 处理连接池状态变化：清除失效路由映射、放弃重连后自动禁用、连接成功后同步群角色，并在每次变化后广播最新状态。 */
   private _handleClientStateChange(clientId: string, _from: ClientState, to: ClientState): void {
     if (to === 'disconnected' || to === 'error') {
       this._routingTable.invalidate(clientId)
@@ -209,12 +209,8 @@ export class MultiAccountBootstrap {
     }
 
     if (to === 'connected') {
+      log.info(`账号 ${clientId} 已（重新）连接`)
       void (async () => {
-        await this.db.account
-          .update({ where: { qq: clientId }, data: { lastConnectedAt: new Date() } })
-          .catch((err: unknown) => {
-            log.error({ err, clientId }, '更新 lastConnectedAt 失败')
-          })
         const adapter = this.pool.getClient(clientId) as NapCatClientAdapter | undefined
         if (adapter) {
           const limit2 = pLimit(10)
@@ -250,7 +246,7 @@ export class MultiAccountBootstrap {
     const qq = clientId
     await this.db.account.update({
       where: { qq },
-      data: { isEnabled: false, disabledReason: 'auto_giveup' },
+      data: { isEnabled: false },
     })
     if (this.pool.getClient(clientId)) await this.pool.removeClient(clientId)
     log.warn(`账号 ${clientId} 重连尝试次数已达上限，已自动禁用`)
@@ -282,7 +278,7 @@ export class MultiAccountBootstrap {
 
   @Shutdown
   async stop(): Promise<void> {
-    this.pool.stopHealthCheck()
+    this.pool.stopStatePolling()
     await this.pool.disconnectAll()
     log.info('MultiAccountBootstrap: 已断开所有账号连接')
   }

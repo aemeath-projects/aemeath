@@ -1,5 +1,5 @@
 {
-  "name": "aemeath",
+  "name": "aemeath-frontend",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -29,7 +29,7 @@
   },
   "devDependencies": {
     "@tsconfig/node24": "^24.0.4",
-    "@types/node": "^26.1.0",
+    "@types/node": "^26.1.1",
     "@vitejs/plugin-vue": "^6.0.7",
     "@vitest/coverage-v8": "^4.1.10",
     "@vue/eslint-config-typescript": "^14.9.0",
@@ -46,7 +46,7 @@
     "prettier": "3.9.0",
     "typescript": "~6.0.3",
     "unplugin-fonts": "^2.0.0",
-    "vite": "^8.1.3",
+    "vite": "^8.1.4",
     "vite-plugin-vue-devtools": "^8.1.5",
     "vite-plugin-vuetify": "^2.1.3",
     "vitest": "^4.1.10",

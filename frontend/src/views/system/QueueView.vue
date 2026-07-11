@@ -39,7 +39,7 @@
             <span class="text-subtitle-2">定时任务</span>
           </div>
           <div class="text-h5 font-weight-bold">{{ store.scheduledTasks.length }}</div>
-          <div class="text-caption text-medium-emphasis mt-1">已注册的周期性任务</div>
+          <div class="text-caption text-white mt-1">已注册的周期性任务</div>
         </v-card>
       </v-col>
 
@@ -54,7 +54,7 @@
             <span class="text-subtitle-2">Worker 节点</span>
           </div>
           <div class="text-h5 font-weight-bold">{{ store.workers.length }}</div>
-          <div class="text-caption text-medium-emphasis mt-1">
+          <div class="text-caption text-white mt-1">
             {{ store.workers.length > 0 ? '在线' : '无在线节点' }}
           </div>
         </v-card>
@@ -67,7 +67,7 @@
             <span class="text-subtitle-2">执行中</span>
           </div>
           <div class="text-h5 font-weight-bold">{{ store.activeTasks.length }}</div>
-          <div class="text-caption text-medium-emphasis mt-1">正在执行的任务</div>
+          <div class="text-caption text-white mt-1">正在执行的任务</div>
         </v-card>
       </v-col>
 
@@ -80,7 +80,7 @@
           <div class="text-h5 font-weight-bold">
             {{ store.queueLength?.length ?? '-' }}
           </div>
-          <div class="text-caption text-medium-emphasis mt-1">
+          <div class="text-caption text-white mt-1">
             {{ store.queueLength?.queue ?? 'celery' }} 队列等待中
           </div>
         </v-card>

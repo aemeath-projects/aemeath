@@ -134,8 +134,8 @@ docker build -t aemeath:latest .
 | 配置校验 | TypeBox + 自定义 `loadConfig`         |
 | 日志     | Pino（via @aemeath-projects/exostrider/logger）|
 | LLM      | LangChain (`@langchain/openai`)       |
-| 运行时   | Node.js ≥22.12.0                      |
-| 包管理   | pnpm 11.6.0                           |
+| 运行时   | Node.js ≥24.17.0                      |
+| 包管理   | pnpm 11.11.0                          |
 | 测试     | Vitest                                |
 | Lint     | ESLint + typescript-eslint + Prettier |
 
@@ -268,17 +268,19 @@ src/
 │   ├── settings/    # 设置领域（SettingsService、SettingsPermissionChecker，Startup key: settings）
 │   ├── tasks/       # BullMQ broker、TaskExecutor、scheduler、任务模型
 │   ├── utils/       # 公共工具（message-builder、enqueue-render）
+│   ├── mailbox/     # 站内信领域（service、bootstrap、broadcast、api、schemas，Startup key: mailbox_bootstrap，Provide key: mailbox）
 │   config.ts        # 环境变量校验（TypeBox ConfigSchema）
 │   errors.ts        # 业务异常类定义
 │   main.ts          # Fastify 应用入口
 │   registries.ts    # 注册表聚合导出（handlerRegistry、cacheKeyRegistry 等）
 │   worker.ts        # BullMQ Worker 进程入口
-├── apis/        # HTTP API 路由（Fastify 路由 + TypeBox schema）
+├── apis/        # HTTP API 路由（Fastify 路由 + TypeBox schema，由 EchoLoader 按 aemeath.config.ts 的 echoes.route 自动扫描注册，无聚合文件）
 │   ├── plugins/     # Fastify 插件（auth、cors、swagger）
 │   ├── schemas/     # 请求/响应 TypeBox schema
-│   ├── accounts.ts  # 账号管理 + 多账号路由 API（/api/accounts、/api/routing）
+│   ├── accounts.ts  # 账号管理 + 多账号路由 API（/api/accounts，含 GET /api/accounts/stream SSE 状态推送）
 │   ├── iris.ts      # Iris 聊天记录查询 API（/api/iris）
-│   └── router.ts    # 路由聚合注册
+│   ├── handlers.ts  # 只读系统内省：GET /api/handlers 列出已注册 Handler 元数据
+│   └── permission.ts # 实际路由前缀是 /api/settings（settings 模块通用 CRUD，category=permission 只是其中一个分类，文件名为历史遗留）
 ├── handlers/    # Bot 事件处理器（EchoLoader 自动扫描）
 ├── renderer/    # Satori + resvg-js 渲染服务（service、templates、fonts、cache-keys）
 ├── services/    # 功能业务服务（@Service/@Startup 注册）
@@ -360,6 +362,15 @@ aemeath.config.ts    # EchoLoader 扫描路径配置（echoes: handler/service/t
 | `sync.ts`   | `SyncCoordinator`：定时从 NapCat 同步用户数据             |
 | `api.ts`    | Fastify 路由：用户查询 API                                |
 
+**`src/core/mailbox/`** — 站内信领域
+
+| 文件           | 职责                                                                     |
+| -------------- | ------------------------------------------------------------------------ |
+| `service.ts`   | `MailboxService`：站内信写入/查询/标记已读，御者在线时异步私聊提醒推送   |
+| `bootstrap.ts` | `MailboxBootstrap`：生命周期注册（Startup key: `mailbox_bootstrap`，Provide key: `mailbox`），供 `FeedbackService` 等复用 |
+| `broadcast.ts` | `mailboxBroadcaster`：EventEmitter，供 SSE 端点订阅新站内信事件           |
+| `api.ts`       | Fastify 路由，挂载于 `/api/mailbox`（`GET /`、`GET /unread-count`、`POST /:id/read`、`GET /stream` SSE 实时推送），**手动**在 `src/core/main.ts` 注册，不走 `echoes.route` 自动扫描 |
+
 ### 功能业务服务层 (`src/services/`)
 
 | 文件               | 服务                  | 职责                                              |
@@ -396,7 +407,7 @@ BullMQ（任务队列）取代原有的 Dramatiq。Worker 进程运行在 `src/c
 
 `ctx.apis`（由 `buildContextApis()` 构建）中的 `msgApi` 是一个 Proxy，`sendGroupMsg` 等方法被委托给 `MessageRouter`，由其在多个在线账号间按优先级/粘性策略选路，实现消息发送的负载均衡与故障转移；`groupApi`/`friendApi` 直接绑定事件来源账号的客户端。需要固定使用主账号 API 的场景（如部分定时任务）可注入 `master_apis`（`MasterApis`：`msgApi`/`groupApi`/`friendApi`，无主账号时为 `null`）。
 
-路由行为可通过 `aemeath.config.ts` 的 `routing` 配置块调整：`healthCheckIntervalMs`、`dedupWindowMs`；多账号路由优先级模式（`prefer_master` | `prefer_normal`）存储在 Settings 的 `accounts.priority_mode`，可通过 `GET`/`POST /api/accounts/priority-mode` 运行时读写，无需重启。账号管理与路由状态的 REST API 见 `src/apis/accounts.ts`（`/api/accounts`）。
+路由行为可通过 `aemeath.config.ts` 的 `routing` 配置块调整：`healthCheckIntervalMs`、`dedupWindowMs`；多账号路由优先级模式（`prefer_master` | `prefer_normal`）存储在 Settings 的 `accounts.priority_mode`，可通过 `GET`/`POST /api/accounts/priority-mode` 运行时读写，无需重启。账号管理与路由状态的 REST API 见 `src/apis/accounts.ts`（`/api/accounts`），另有 `GET /api/accounts/stream`（SSE，订阅 `accountStatusBroadcaster` 实时推送账号连接状态变化）。
 
 > ⚠️ 业务代码（`src/handlers`、`src/services`、`src/tasks`）已全量迁移，不再存在 `@Inject('bot_client' | 'msg_api' | 'group_api' | 'friend_api' | 'file_api' | 'system_api' | 'extension_api')` 这类旧的单账号注入点。
 
@@ -405,6 +416,8 @@ BullMQ（任务队列）取代原有的 Dramatiq。Worker 进程运行在 `src/c
 - **Pinia** 分模块状态管理（`stores/`），`pinia-plugin-persistedstate` 做 localStorage 持久化
 - **API 层** (`apis/`) 封装所有 HTTP 请求，通过 Axios + Vite 代理访问后端
 - **Vuetify 4** 作为 UI 框架，路由见 `frontend/src/router/index.ts`
+- 权限管理页 `PermissionView.vue`（路由 `/permissions`）对应后端 `src/apis/permission.ts`（`/api/settings`，`category=permission`）
+- 站内信页 `MailboxView.vue`（路由 `/mailbox`）对应后端 `src/core/mailbox/api.ts`（`/api/mailbox`）
 
 ## 关键配置
 
@@ -442,6 +455,18 @@ BullMQ（任务队列）取代原有的 Dramatiq。Worker 进程运行在 `src/c
 | `S3_MEDIA_BUCKET`      | `aemeath-media`     | 媒体存储 bucket                        |
 | `S3_RENDER_BUCKET`     | `aemeath-render`    | 渲染结果 bucket                        |
 | `RENDER_CACHE_TTL`     | （见 config.ts）    | 渲染结果缓存 TTL（秒）                 |
+| `HOST`                 | `0.0.0.0`           | 服务监听地址                           |
+| `CORS_ORIGINS`         | `http://localhost:5173` | CORS 白名单（逗号分隔）            |
+| `DB_POOL_SIZE`         | `10`                | 主库连接池大小                         |
+| `IRIS_DB_POOL_SIZE`    | `5`                 | Iris 库连接池大小                      |
+| `CACHE_DEFAULT_TTL`    | `300`               | 缓存默认 TTL（秒）                     |
+| `IMAGE_URL_TTL`        | `7200`              | 图片签名 URL 有效期（秒）              |
+| `ENABLE_RKEY_REFRESH`  | `true`              | 是否启用 rkey 自动刷新                 |
+| `TASK_SEND_DELAY_MS`   | `500`               | 任务发送节流延迟（毫秒）               |
+| `WORKER_CONCURRENCY`   | `3`                 | BullMQ Worker 并发数                   |
+| `WORKER_HEARTBEAT_TTL_MS` | `30000`          | Worker 心跳 TTL（毫秒）                |
+| `METRICS_ENABLED`      | `true`              | 是否启用 Prometheus 指标               |
+| `TMPDIR`               | `/tmp`              | 临时文件目录                           |
 
 配置校验逻辑：`src/core/config.ts` → `loadConfig()` 函数。
 
@@ -459,6 +484,8 @@ BullMQ（任务队列）取代原有的 Dramatiq。Worker 进程运行在 `src/c
 | `app.heartbeatKeyPrefix` | `aemeath:worker:heartbeat` | Worker 心跳 Redis key 前缀 |
 | `routing.healthCheckIntervalMs` | `30000` | `ClientPool` 健康检查间隔（毫秒） |
 | `routing.dedupWindowMs` | `5000` | 多账号事件去重窗口（毫秒） |
+| `iris.archiveThreshold` | `100000` | 全局消息数达到此值时自动入队归档任务 |
+| `iris.textSnippetLength` | `200` | 归档索引文本摘要最大长度（字符数） |
 | `echoes.*` | 见文件 | EchoLoader 扫描目录（handler/service/task/route） |
 
 ## 代码风格
@@ -474,12 +501,14 @@ BullMQ（任务队列）取代原有的 Dramatiq。Worker 进程运行在 `src/c
 
 ## API 约定
 
-- 统一响应格式 `{code: 0, data, message}` / `{code: -1, data, message}`，使用 `src/core/response.ts` 的 `ok()` / `fail()`
+- 统一响应格式 `{code: 0, data, message}` / `{code: -1, data, message}`，使用 `src/core/schemas/response.ts` 的 `ok()` / `fail()`
 - 后端路由 `src/apis/<module>.ts` 与前端 `frontend/src/apis/<module>.ts` 一一对应（目录名为 `apis`）
-- 核心层 API 路由随领域包内聚：`src/core/llm/api.ts`、`src/core/user/api.ts`
+- 核心层 API 路由随领域包内聚：`src/core/llm/api.ts`、`src/core/user/api.ts`、`src/core/mailbox/api.ts`
 - 前端 API 层统一通过 `frontend/src/apis/client.ts` 的 Axios 实例发请求
 - `src/apis/logs.ts`：SSE 实时日志推送（`GET /logs/stream`）
 - `src/apis/queue.ts`：BullMQ 队列监控（`GET /queue/*`，含 Worker 信息、定时任务、SSE 实时推送）
+- `src/apis/accounts.ts`：`GET /api/accounts/stream` SSE 实时推送账号连接状态
+- `src/core/mailbox/api.ts`：`GET /api/mailbox/stream` SSE 实时推送新站内信
 - 系统端点：`GET /health`（健康检查）、`GET /metrics`（Prometheus 指标）
 
 ## 测试

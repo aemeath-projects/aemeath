@@ -1,31 +1,29 @@
 /**
  * OneBotDedupKeyExtractor —— OneBot 消息事件去重键提取策略。
  *
- * 优先级：messageSeq（QQ 服务端序列号）> 复合键（groupId+userId+time）
- * message_seq 跨账号一致性需在实现阶段抓包验证，若不一致改用复合键。
+ * 使用 QQ 服务端分配的全局唯一雪花ID（messageId）作为去重键，
+ * 覆盖 message（群/私聊）与 message_sent（机器人自发消息回显）两类事件。
  */
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { DedupKeyExtractor } from '@aemeath-projects/exostrider/pool'
+import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 
-export class OneBotDedupKeyExtractor implements DedupKeyExtractor<Record<string, unknown>> {
-  extract(event: Record<string, unknown>): string | null {
-    if (event.postType !== 'message') return null
+const log: PinoLogger = getLogger('accounts') as unknown as PinoLogger
 
-    // 优先使用 message_seq（QQ 服务端序列号，跨账号应一致）
-    if ('messageSeq' in event && 'groupId' in event && event.messageSeq != null) {
+export class OneBotDedupKeyExtractor implements DedupKeyExtractor<AnyOneBotEvent> {
+  extract(event: AnyOneBotEvent): string | null {
+    if (event.postType === 'message' || event.postType === 'message_sent') {
+      if (event.messageId == null) {
+        log.warn({ postType: event.postType }, 'OneBot 消息事件缺失 messageId，跳过去重')
+        return null
+      }
+      // AnyOneBotEvent 含裸 OneBotEvent 兜底成员（postType 非字面量类型），
+      // postType 判别式无法把它从联合类型里完全排除，导致此处 messageId 类型
+      // 仍残留非 number 分支，触发该规则；String() 在此处是安全的。
       // eslint-disable-next-line @typescript-eslint/no-base-to-string
-      return `g:${String(event.groupId)}:seq:${String(event.messageSeq)}`
+      return `m:${String(event.messageId)}`
     }
-
-    // 群消息复合键
-    if ('groupId' in event && 'userId' in event && 'time' in event) {
-      return `g:${String(event.groupId)}:u:${String(event.userId)}:t:${String(event.time)}`
-    }
-
-    // 私聊消息
-    if (event.messageType === 'private' && 'userId' in event && 'time' in event) {
-      return `p:${String(event.userId)}:t:${String(event.time)}`
-    }
-
     return null
   }
 }

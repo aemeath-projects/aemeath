@@ -66,6 +66,21 @@ export const useChatStore = defineStore('chat', () => {
     hasMore.value = true
   }
 
+  /* 实时推送 */
+  let closeLiveStream: (() => void) | null = null
+
+  function connectLive(target: { groupId?: string; userId?: string }) {
+    disconnectLive()
+    closeLiveStream = api.connectChatMessageStream(target, (msg) => {
+      messages.value = [msg, ...messages.value]
+    })
+  }
+
+  function disconnectLive() {
+    closeLiveStream?.()
+    closeLiveStream = null
+  }
+
   /* 归档 */
   const archives = ref<PaginatedResult<ArchiveLog>>({
     items: [],
@@ -98,6 +113,8 @@ export const useChatStore = defineStore('chat', () => {
     loadGroupMessages,
     loadPrivateMessages,
     clearMessages,
+    connectLive,
+    disconnectLive,
     // 归档
     archives,
     archivesLoading,

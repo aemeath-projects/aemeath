@@ -21,6 +21,14 @@ export const IrisSearchQuerySchema = Type.Object({
   offset: Type.Optional(Type.Integer({ minimum: 0, default: 0, description: '跳过条数' })),
 })
 
+/** 消息实时推送 SSE 流查询参数 —— GET /api/iris/messages/stream */
+export const IrisMessageStreamQuerySchema = Type.Object({
+  groupId: Type.Optional(Type.String({ pattern: '^\\d+$', description: '群号，与 userId 二选一' })),
+  userId: Type.Optional(
+    Type.String({ pattern: '^\\d+$', description: '用户 QQ，与 groupId 二选一' }),
+  ),
+})
+
 /* 请求体（Body） */
 
 /** 手动触发归档任务请求体 —— POST /api/iris/archives/trigger */

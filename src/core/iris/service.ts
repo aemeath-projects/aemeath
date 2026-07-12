@@ -7,6 +7,7 @@ import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 
 import type { ChatMessage } from '#prisma/iris'
 
+import { irisMessageBroadcaster } from './broadcast.js'
 import type { MediaStorageService } from './media.js'
 
 import type { IrisPrismaClient } from '@/core/db/index.js'
@@ -97,7 +98,7 @@ export class IrisService {
         processedSegments = await this._persistMediaSegments(data.segments)
       }
 
-      await this.chatDb.chatMessage.create({
+      const created = await this.chatDb.chatMessage.create({
         data: {
           messageId: data.messageId,
           messageType: data.messageType,
@@ -111,6 +112,8 @@ export class IrisService {
           createdAt: data.createdAt,
         },
       })
+
+      irisMessageBroadcaster.broadcast(created)
     } catch (err) {
       // 持久化失败不应中断消息处理流程，仅记录错误
       this._log.error({ messageId: data.messageId, err }, '消息持久化失败')

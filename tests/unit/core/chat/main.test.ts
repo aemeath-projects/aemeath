@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { IrisPrismaClient } from '@/core/db/index.js'
-import { IrisService } from '@/core/iris/index.js'
+import { IrisService, irisMessageBroadcaster } from '@/core/iris/index.js'
 
 /** 创建 chatDb mock。 */
 function createMockChatDb() {
@@ -95,6 +95,64 @@ describe('IrisService', () => {
       expect(mockChatDb.chatMessage.create).toHaveBeenCalledWith({
         data: expect.objectContaining({ groupId: null }),
       })
+    })
+
+    it('持久化成功后应当调用 irisMessageBroadcaster.broadcast() 广播新消息', async () => {
+      const created = {
+        id: 1n,
+        messageId: 3001n,
+        messageType: 2,
+        groupId: '123456',
+        userId: '987654',
+        rawMessage: '广播测试',
+        segments: [],
+        senderNickname: '测试用户',
+        senderCard: null,
+        senderRole: null,
+        createdAt: new Date('2024-01-01T12:00:00Z'),
+        storedAt: new Date('2024-01-01T12:00:01Z'),
+      }
+      mockChatDb.chatMessage.create.mockResolvedValue(created)
+      const broadcastSpy = vi
+        .spyOn(irisMessageBroadcaster, 'broadcast')
+        .mockImplementation(() => {})
+
+      await service.saveMessage({
+        messageId: 3001n,
+        messageType: 2,
+        groupId: '123456',
+        userId: '987654',
+        rawMessage: '广播测试',
+        segments: [],
+        senderNickname: '测试用户',
+        senderCard: null,
+        senderRole: null,
+        createdAt: new Date('2024-01-01T12:00:00Z'),
+      })
+
+      expect(broadcastSpy).toHaveBeenCalledOnce()
+      expect(broadcastSpy).toHaveBeenCalledWith(created)
+      broadcastSpy.mockRestore()
+    })
+
+    it('持久化失败时不应调用 broadcast()', async () => {
+      mockChatDb.chatMessage.create.mockRejectedValue(new Error('DB 连接失败'))
+      const broadcastSpy = vi
+        .spyOn(irisMessageBroadcaster, 'broadcast')
+        .mockImplementation(() => {})
+
+      await service.saveMessage({
+        messageId: 3002n,
+        messageType: 1,
+        userId: '111',
+        rawMessage: '测试',
+        segments: [],
+        senderNickname: '用户',
+        createdAt: new Date(),
+      })
+
+      expect(broadcastSpy).not.toHaveBeenCalled()
+      broadcastSpy.mockRestore()
     })
   })
 

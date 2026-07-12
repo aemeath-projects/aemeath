@@ -24,8 +24,10 @@ import {
   IrisSearchDataSchema,
   IrisStatsDataSchema,
   IrisTriggerDataSchema,
+  IrisMessageStreamQuerySchema,
 } from '@/apis/schemas/index.js'
 import type { IrisArchiveService, IrisService } from '@/core/iris/index.js'
+import { irisMessageBroadcaster } from '@/core/iris/index.js'
 import { ok, fail, OkResponse, FailResponse } from '@/core/schemas/index.js'
 
 const log: PinoLogger = getLogger('iris') as unknown as PinoLogger
@@ -52,6 +54,28 @@ function serializeChatMessage(m: Record<string, unknown>): Record<string, unknow
     senderRole: m.senderRole ?? null,
     storedAt: m.storedAt instanceof Date ? m.storedAt.toISOString() : m.storedAt,
   }
+}
+
+/**
+ * 判断一条消息是否匹配 SSE 订阅目标（groupId 或 userId 二选一）。
+ *
+ * 过滤规则与 REST 查询接口语义对齐：
+ * - groupId 模式：仅比较 groupId，不过滤 messageType（与 getGroupHistory 一致，
+ *   群内 bot 自己发送的消息 messageType=3 也会推送）。
+ * - userId 模式：要求 messageType === 1（私聊收到），与 getPrivateHistory 一致，
+ *   不含 messageType=3 的 bot 自己发送记录。
+ */
+export function matchesStreamTarget(
+  msg: Record<string, unknown>,
+  target: { groupId?: string; userId?: string },
+): boolean {
+  if (target.groupId) {
+    return msg.groupId === target.groupId
+  }
+  if (target.userId) {
+    return msg.userId === target.userId && Number(msg.messageType) === 1
+  }
+  return false
 }
 
 /** 触发归档任务的队列接口。 */
@@ -179,6 +203,50 @@ const irisRoutes: FastifyPluginAsync = async (app) => {
           after: result.after.map(serializeChatMessage),
         }),
       )
+    },
+  )
+
+  /** GET /api/iris/messages/stream — SSE 端点，实时推送当前会话新入库的消息。 */
+  app.get(
+    '/api/iris/messages/stream',
+    {
+      schema: { hide: true, querystring: IrisMessageStreamQuerySchema },
+    },
+    async (
+      req: FastifyRequest<{ Querystring: { groupId?: string; userId?: string } }>,
+      reply: FastifyReply,
+    ) => {
+      const { groupId, userId } = req.query
+      if ((!groupId && !userId) || (groupId && userId)) {
+        await reply.status(400).send(fail('必须且只能指定 groupId 或 userId 其中一个'))
+        return
+      }
+
+      reply.raw.setHeader('Content-Type', 'text/event-stream')
+      reply.raw.setHeader('Cache-Control', 'no-cache')
+      reply.raw.setHeader('X-Accel-Buffering', 'no')
+      reply.raw.setHeader('Connection', 'keep-alive')
+      reply.raw.write('event: connected\ndata: {}\n\n')
+
+      const onMessage = (msg: Record<string, unknown>): void => {
+        if (!matchesStreamTarget(msg, { groupId, userId })) return
+        try {
+          reply.raw.write(`data: ${JSON.stringify(serializeChatMessage(msg))}\n\n`)
+        } catch {
+          // 序列化失败时忽略
+        }
+      }
+      irisMessageBroadcaster.on('message', onMessage)
+
+      const cleanup = (): void => {
+        irisMessageBroadcaster.off('message', onMessage)
+        reply.raw.end()
+      }
+      req.raw.on('close', cleanup)
+
+      await new Promise<void>((resolve) => {
+        req.raw.on('close', resolve)
+      })
     },
   )
 

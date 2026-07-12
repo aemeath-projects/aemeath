@@ -119,4 +119,5 @@ export {
   IrisSearchDataSchema,
   IrisStatsDataSchema,
   IrisTriggerDataSchema,
+  IrisMessageStreamQuerySchema,
 } from './iris.js'

@@ -95,6 +95,43 @@ export async function fetchMessageContext(
   return get<MessageContext>(`${BASE}/messages/${messageId}/context`, params)
 }
 
+/**
+ * 建立 SSE 连接，实时接收当前会话新入库的消息。
+ * @param target 订阅目标：groupId（群聊）或 userId（私聊）二选一
+ * @param onMessage 每次收到新消息的回调
+ * @param onError 连接错误回调
+ * @returns 关闭连接的函数
+ */
+export function connectChatMessageStream(
+  target: { groupId?: string; userId?: string },
+  onMessage: (msg: ChatMessage) => void,
+  onError?: (error: string) => void,
+): () => void {
+  const params = new URLSearchParams()
+  if (target.groupId) params.set('groupId', target.groupId)
+  if (target.userId) params.set('userId', target.userId)
+  const eventSource = new EventSource(`${BASE}/messages/stream?${params.toString()}`)
+
+  eventSource.onmessage = (event) => {
+    try {
+      const msg: ChatMessage = JSON.parse(event.data)
+      onMessage(msg)
+    } catch (e) {
+      onError?.(`解析实时消息推送失败: ${e}`)
+    }
+  }
+
+  eventSource.onerror = () => {
+    onError?.('聊天记录 SSE 连接断开，正在重连…')
+  }
+
+  return () => {
+    eventSource.onmessage = null
+    eventSource.onerror = null
+    eventSource.close()
+  }
+}
+
 export async function fetchArchives(
   page?: number,
   pageSize?: number,

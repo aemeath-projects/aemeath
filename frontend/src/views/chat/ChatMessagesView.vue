@@ -146,7 +146,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, onMounted } from 'vue'
+import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { useChatStore } from '@/stores/chat'
 import { useUserStore } from '@/stores/user'
 import type { ChatMessage } from '@/apis/chat'
@@ -215,12 +215,13 @@ function openImagePreview(src: string) {
   imagePreviewDialog.value = true
 }
 
-function onSessionSelect(type: 'group' | 'private', id: number, name: string) {
+async function onSessionSelect(type: 'group' | 'private', id: number, name: string) {
   currentSession.value = { type, id, name }
   searchKeyword.value = ''
   filterUserId.value = null
   store.clearMessages()
-  loadMessages(true)
+  await loadMessages(true)
+  store.connectLive(type === 'group' ? { groupId: String(id) } : { userId: String(id) })
 }
 
 function scrollToBottom() {
@@ -229,6 +230,19 @@ function scrollToBottom() {
     if (el) el.scrollTop = el.scrollHeight
   })
 }
+
+function isNearBottom(): boolean {
+  const el = messageContainer.value
+  if (!el) return true
+  return el.scrollHeight - el.scrollTop - el.clientHeight < 100
+}
+
+watch(
+  () => store.messages[0]?.id,
+  () => {
+    if (isNearBottom()) scrollToBottom()
+  },
+)
 
 async function loadMessages(scrollBottom = false) {
   if (!currentSession.value) return
@@ -265,6 +279,9 @@ function loadMore() {
 
 function doSearch() {
   store.clearMessages()
+  if (searchKeyword.value || filterUserId.value) {
+    store.disconnectLive()
+  }
   loadMessages()
 }
 
@@ -273,12 +290,20 @@ function clearSearch() {
   filterUserId.value = null
   store.clearMessages()
   loadMessages()
+  if (currentSession.value) {
+    store.connectLive(
+      currentSession.value.type === 'group'
+        ? { groupId: String(currentSession.value.id) }
+        : { userId: String(currentSession.value.id) },
+    )
+  }
 }
 
 function onDateJump(date: unknown) {
   if (!currentSession.value || !date) return
   const d = date instanceof Date ? date : new Date(String(date))
   store.clearMessages()
+  store.disconnectLive()
   if (currentSession.value.type === 'group') {
     store.loadGroupMessages(currentSession.value.id, { startDate: d.toISOString(), limit: 50 })
   }
@@ -294,5 +319,9 @@ function onScroll() {
 
 onMounted(() => {
   userStore.loadSessionData()
+})
+
+onUnmounted(() => {
+  store.disconnectLive()
 })
 </script>

@@ -21,27 +21,27 @@ vi.mock('@/apis/user', () => ({
 import * as api from '@/apis/user'
 
 const mockPaginatedUsers = {
-  items: [{ qq: 1, nickname: 'Alice', relation: 'friend', groupCount: 0, lastSynced: null }],
+  items: [{ qq: '1', nickname: 'Alice', relation: 'friend', groupCount: 0, lastSynced: null }],
   total: 1,
   page: 1,
   pageSize: 20,
   pages: 1,
 }
 const mockPaginatedGroups = {
-  items: [{ groupId: 100, groupName: 'TestGroup', memberCount: 1, maxMemberCount: 200, isActive: true, lastSynced: null }],
+  items: [{ groupId: '100', groupName: 'TestGroup', memberCount: 1, maxMemberCount: 200, isActive: true, lastSynced: null }],
   total: 1,
   page: 1,
   pageSize: 20,
   pages: 1,
 }
 const mockPaginatedMembers = {
-  items: [{ qq: 1, nickname: 'Alice', card: '', role: 'member', relation: 'friend', joinTime: 0, lastActiveTime: 0, title: '', level: '' }],
+  items: [{ qq: '1', nickname: 'Alice', card: '', role: 'member', relation: 'friend', joinTime: 0, lastActiveTime: 0, title: '', level: '' }],
   total: 1,
   page: 1,
   pageSize: 20,
   pages: 1,
 }
-const mockUserDetail = { qq: 1, nickname: 'Alice', relation: 'friend', groupCount: 1, lastSynced: null }
+const mockUserDetail = { qq: '1', nickname: 'Alice', relation: 'friend', groupCount: 1, lastSynced: null }
 const mockSyncStatus = {
   lastSyncTime: '2024-01-01T00:00:00Z',
   durationSeconds: null,
@@ -136,7 +136,7 @@ describe('useUserStore', () => {
       vi.mocked(api.fetchUser).mockResolvedValue(mockUserDetail)
       const store = useUserStore()
 
-      await store.loadUser(1)
+      await store.loadUser('1')
 
       expect(store.currentUser).toEqual(mockUserDetail)
     })
@@ -146,7 +146,7 @@ describe('useUserStore', () => {
       const store = useUserStore()
       store.currentUser = mockUserDetail
 
-      await expect(store.loadUser(1)).rejects.toThrow('加载用户详情失败')
+      await expect(store.loadUser('1')).rejects.toThrow('加载用户详情失败')
       expect(store.currentUser).toBeNull()
     })
   })
@@ -187,7 +187,7 @@ describe('useUserStore', () => {
       vi.mocked(api.fetchGroupMembers).mockResolvedValue(mockPaginatedMembers)
       const store = useUserStore()
 
-      await store.loadGroupMembers(100, {})
+      await store.loadGroupMembers('100', {})
 
       expect(store.groupMembers).toEqual(mockPaginatedMembers)
     })
@@ -201,7 +201,7 @@ describe('useUserStore', () => {
       )
       const store = useUserStore()
 
-      const p = store.loadGroupMembers(100, {})
+      const p = store.loadGroupMembers('100', {})
       expect(store.membersLoading).toBe(true)
       resolve(mockPaginatedMembers)
       await p
@@ -248,7 +248,7 @@ describe('useUserStore', () => {
   /* loadAdmins() / setAdmin() / unsetAdmin() */
 
   describe('御者操作', () => {
-    const mockAdmins = [{ qq: 1, nickname: 'Alice', relation: 'friend', groupCount: 0, lastSynced: null }]
+    const mockAdmins = [{ qq: '1', nickname: 'Alice', relation: 'friend', groupCount: 0, lastSynced: null }]
 
     it('loadAdmins() 成功时更新 admins', async () => {
       vi.mocked(api.fetchAdmins).mockResolvedValue(mockAdmins)
@@ -264,9 +264,9 @@ describe('useUserStore', () => {
       vi.mocked(api.fetchAdmins).mockResolvedValue(mockAdmins)
       const store = useUserStore()
 
-      await store.setAdmin(1)
+      await store.setAdmin('1')
 
-      expect(api.setAdmin).toHaveBeenCalledWith(1)
+      expect(api.setAdmin).toHaveBeenCalledWith('1')
       expect(store.admins).toEqual(mockAdmins)
     })
 
@@ -282,7 +282,7 @@ describe('useUserStore', () => {
     })
 
     it('loadAdminCandidates() 成功时更新 adminCandidates', async () => {
-      const mockCandidates = [{ qq: 111, nickname: '好友甲' }]
+      const mockCandidates = [{ qq: '111', nickname: '好友甲' }]
       vi.mocked(api.fetchAdminCandidates).mockResolvedValue(mockCandidates)
       const store = useUserStore()
 
@@ -297,18 +297,18 @@ describe('useUserStore', () => {
   describe('getUserName() / getGroupName()', () => {
     it('缓存未命中时返回 QQ 号字符串', () => {
       const store = useUserStore()
-      expect(store.getUserName(12345)).toBe('12345')
+      expect(store.getUserName('12345')).toBe('12345')
     })
 
     it('缓存未命中时返回群号字符串', () => {
       const store = useUserStore()
-      expect(store.getGroupName(100)).toBe('100')
+      expect(store.getGroupName('100')).toBe('100')
     })
 
     it('clearCache() 清空缓存后 getUserName 返回 ID 字符串', () => {
       const store = useUserStore()
       store.clearCache()
-      expect(store.getUserName(1)).toBe('1')
+      expect(store.getUserName('1')).toBe('1')
     })
   })
 

@@ -137,16 +137,16 @@ const syncDialog = ref(false)
 
 // 用户详情弹窗
 const detailDialog = ref(false)
-const detailQQ = ref<number | null>(null)
+const detailQQ = ref<string | null>(null)
 
 // 群信息弹窗（从用户详情钻取）
 const groupDialog = ref(false)
-const groupIdToOpen = ref<number | null>(null)
+const groupIdToOpen = ref<string | null>(null)
 
 // 群成员弹窗（从群信息钻取）
 const memberFromGroupDialog = ref(false)
-const memberFromGroupQQ = ref<number | null>(null)
-const memberGroupId = ref<number | null>(null)
+const memberFromGroupQQ = ref<string | null>(null)
+const memberGroupId = ref<string | null>(null)
 
 const relationOptions = [
   { title: '陌生人', value: 'stranger' },
@@ -169,22 +169,22 @@ const { page, pageSize, loadPage, onPageSizeChange, debouncedLoad } = usePaginat
     page: p,
     pageSize: size,
     relation: filterRelation.value,
-    qq: filterQQ.value ? Number(filterQQ.value) : null,
+    qq: filterQQ.value || null,
     nickname: filterNickname.value,
   }),
 )
 
-function openDetail(qq: number) {
+function openDetail(qq: string) {
   detailQQ.value = qq
   detailDialog.value = true
 }
 
-function openGroup(groupId: number) {
+function openGroup(groupId: string) {
   groupIdToOpen.value = groupId
   groupDialog.value = true
 }
 
-function openMemberFromGroup(qq: number, groupId: number) {
+function openMemberFromGroup(qq: string, groupId: string) {
   memberFromGroupQQ.value = qq
   memberGroupId.value = groupId
   memberFromGroupDialog.value = true

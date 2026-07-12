@@ -111,14 +111,14 @@ import type { GroupItem, UserItem } from '@/apis/user'
 
 const props = defineProps<{
   activeType: 'group' | 'private' | null
-  activeId: number | null
+  activeId: string | null
   groups: GroupItem[]
   users: UserItem[]
   loading?: boolean
 }>()
 
 const emit = defineEmits<{
-  select: [type: 'group' | 'private', id: number, name: string]
+  select: [type: 'group' | 'private', id: string, name: string]
 }>()
 
 const searchQuery = ref('')

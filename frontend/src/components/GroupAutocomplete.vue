@@ -17,7 +17,7 @@ type FieldVariant =
   'outlined' | 'plain' | 'solo-filled' | 'filled' | 'solo' | 'solo-inverted' | 'underlined'
 
 interface Props {
-  modelValue: number | null
+  modelValue: string | null
   label?: string
   density?: Density
   variant?: FieldVariant
@@ -39,7 +39,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  'update:modelValue': [value: number | null]
+  'update:modelValue': [value: string | null]
 }>()
 
 const store = useUserStore()
@@ -53,8 +53,8 @@ let requestSeq = 0
 let watchSeq = 0
 
 /** 通过 group_id 快速查找 GroupItem，用于 #item slot 渲染 */
-const suggestionMap = computed<Map<number, GroupItem>>(() => {
-  const map = new Map<number, GroupItem>()
+const suggestionMap = computed<Map<string, GroupItem>>(() => {
+  const map = new Map<string, GroupItem>()
   for (const g of suggestions.value) {
     map.set(g.groupId, g)
   }
@@ -78,7 +78,7 @@ watch(
       if (watchSeq !== seq) return
       suggestions.value = [group, ...suggestions.value]
     } catch {
-      // 静默失败，Vuetify 会 fallback 显示原始数字
+      // 静默失败，Vuetify 会 fallback 显示原始群号
     }
   },
   { immediate: true },
@@ -130,7 +130,7 @@ watch(
       debounceTimer = setTimeout(async () => {
         loading.value = true
         try {
-          const numericId = /^\d+$/.test(q) ? Number(q) : null
+          const numericId = /^\d+$/.test(q) ? q : null
           if (numericId !== null) {
             // 纯数字：精确查询单条群组
             const exactGroup = await fetchGroup(numericId).catch(() => null)
@@ -161,7 +161,7 @@ watch(
 
 function onSelect(value: unknown) {
   justSelected = true
-  const normalized = typeof value === 'number' ? value : null
+  const normalized = typeof value === 'string' ? value : null
   emit('update:modelValue', normalized)
 }
 </script>
@@ -188,13 +188,16 @@ function onSelect(value: unknown) {
       <!-- itemProps.value 即 group_id -->
       <v-list-item v-bind="itemProps" :title="undefined">
         <template
-          v-if="suggestionMap.get(itemProps.value as number) as GroupItem | undefined"
+          v-if="
+            (itemProps.value as string) &&
+            (suggestionMap.get(itemProps.value as string) as GroupItem | undefined)
+          "
           #prepend
         >
           <v-avatar size="40" class="mr-2">
             <v-img
               :src="`https://p.qlogo.cn/gh/${itemProps.value}/${itemProps.value}/40`"
-              :alt="(suggestionMap.get(itemProps.value as number) as GroupItem).groupName"
+              :alt="(suggestionMap.get(itemProps.value as string) as GroupItem).groupName"
             >
               <template #error>
                 <v-icon>mdi-account-group</v-icon>
@@ -205,7 +208,7 @@ function onSelect(value: unknown) {
         <v-list-item-title>
           <span class="font-weight-medium">
             {{
-              (suggestionMap.get(itemProps.value as number) as GroupItem | undefined)?.groupName ??
+              (suggestionMap.get(itemProps.value as string) as GroupItem | undefined)?.groupName ??
               itemProps.title
             }}
           </span>

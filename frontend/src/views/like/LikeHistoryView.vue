@@ -103,7 +103,7 @@ const items = ref<LikeHistory[]>([])
 const total = ref(0)
 
 const filter = reactive({
-  qq: null as number | null,
+  qq: null as string | null,
   source: null as LikeSource | null,
   dateFrom: null as string | null,
   dateTo: null as string | null,

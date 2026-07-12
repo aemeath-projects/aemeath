@@ -115,7 +115,7 @@ const userStore = useUserStore()
 const loading = ref(false)
 const items = ref<CheckinRecord[]>([])
 const total = ref(0)
-const filter = ref<{ groupId: number | null; userId: number | null; date: string | null }>({
+const filter = ref<{ groupId: string | null; userId: string | null; date: string | null }>({
   groupId: null,
   userId: null,
   date: null,
@@ -153,10 +153,10 @@ const { page, pageSize, loadPage, onPageSizeChange } = usePagination(fetchRecord
 
 /* 用户信息弹窗 */
 const userInfoDialog = ref(false)
-const userInfoQq = ref<number | null>(null)
-const userInfoGroupId = ref<number | null>(null)
+const userInfoQq = ref<string | null>(null)
+const userInfoGroupId = ref<string | null>(null)
 
-function openUserInfo(qq: number, groupId: number) {
+function openUserInfo(qq: string, groupId: string) {
   userInfoQq.value = qq
   userInfoGroupId.value = groupId
   userInfoDialog.value = true
@@ -164,9 +164,9 @@ function openUserInfo(qq: number, groupId: number) {
 
 /* 群聊信息弹窗 */
 const groupInfoDialog = ref(false)
-const groupInfoId = ref<number | null>(null)
+const groupInfoId = ref<string | null>(null)
 
-function openGroupInfo(groupId: number) {
+function openGroupInfo(groupId: string) {
   groupInfoId.value = groupId
   groupInfoDialog.value = true
 }

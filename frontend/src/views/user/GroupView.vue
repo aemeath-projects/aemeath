@@ -127,11 +127,11 @@ const syncDialog = ref(false)
 // 群成员弹窗
 const memberDialog = ref(false)
 const selectedGroup = ref<GroupItem | null>(null)
-const selectedGroupId = ref<number | null>(null)
+const selectedGroupId = ref<string | null>(null)
 
 // 成员详情弹窗（从群成员列表钻取）
 const memberDetailDialog = ref(false)
-const memberDetailQQ = ref<number | null>(null)
+const memberDetailQQ = ref<string | null>(null)
 
 const activeOptions = [
   { title: '活跃', value: true },
@@ -162,7 +162,7 @@ function openMembers(group: GroupItem) {
   memberDialog.value = true
 }
 
-function openMemberDetail(qq: number, groupId: number) {
+function openMemberDetail(qq: string, groupId: string) {
   memberDetailQQ.value = qq
   selectedGroupId.value = groupId
   memberDetailDialog.value = true

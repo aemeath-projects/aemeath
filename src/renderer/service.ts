@@ -14,7 +14,8 @@ type SatoriInput = Parameters<typeof satori>[0]
 
 import { RenderError, TemplateNotFoundError, TemplateRenderError } from './errors.js'
 import { loadFonts } from './fonts.js'
-import type { RenderOptions, SatoriElement, TemplateFunction, TemplateRegistry } from './types.js'
+import { templateRegistry } from './templates.js'
+import type { RenderOptions, SatoriElement } from './types.js'
 
 const log: PinoLogger = getLogger('renderer') as unknown as PinoLogger
 const _require = createRequire(import.meta.url)
@@ -51,14 +52,9 @@ const GRAPHEME_IMAGES = buildGraphemeImages()
 
 export class RenderService {
   private fonts: Font[] = []
-  private readonly templates: TemplateRegistry = new Map()
 
   async initialize(): Promise<void> {
     this.fonts = await loadFonts()
-  }
-
-  register(name: string, template: TemplateFunction): void {
-    this.templates.set(name, template)
   }
 
   async render(name: string, data: unknown, options?: RenderOptions): Promise<Buffer> {
@@ -66,7 +62,7 @@ export class RenderService {
       throw new RenderError('Renderer not initialized')
     }
 
-    const template = this.templates.get(name)
+    const template = templateRegistry.get(name)
     if (!template) {
       throw new TemplateNotFoundError(name)
     }

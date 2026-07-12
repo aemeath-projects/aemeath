@@ -20,10 +20,10 @@ type ScopeMode = 'system' | 'group' | 'private'
 type GroupTarget = 'whole' | 'member'
 
 const scopeMode = ref<ScopeMode>('system')
-const selectedGroup = ref<number | null>(null)
+const selectedGroup = ref<string | null>(null)
 const groupTarget = ref<GroupTarget>('whole')
-const selectedMember = ref<number | null>(null)
-const selectedUser = ref<number | null>(null)
+const selectedMember = ref<string | null>(null)
+const selectedUser = ref<string | null>(null)
 
 /** 是否已选择完整目标（系统默认恒为 true）。 */
 const hasTarget = computed(() => {
@@ -40,14 +40,14 @@ const path = computed<Path>(() => {
   if (scopeMode.value === 'group' && selectedGroup.value !== null) {
     if (groupTarget.value === 'member' && selectedMember.value !== null) {
       return [
-        { type: 'group', id: String(selectedGroup.value) },
-        { type: 'member', id: String(selectedMember.value) },
+        { type: 'group', id: selectedGroup.value },
+        { type: 'member', id: selectedMember.value },
       ]
     }
-    return [{ type: 'group', id: String(selectedGroup.value) }]
+    return [{ type: 'group', id: selectedGroup.value }]
   }
   if (scopeMode.value === 'private' && selectedUser.value !== null) {
-    return [{ type: 'private', id: String(selectedUser.value) }]
+    return [{ type: 'private', id: selectedUser.value }]
   }
   return []
 })
@@ -67,7 +67,7 @@ const selectedOwner = ref<string>('')
 watch(
   () => schemaStore.owners,
   (owners) => {
-    if (!selectedOwner.value && owners.length > 0) selectedOwner.value = owners[0]
+    if (!selectedOwner.value && owners.length > 0) selectedOwner.value = owners[0]!
   },
   { immediate: true },
 )

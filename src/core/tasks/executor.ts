@@ -12,6 +12,7 @@ import type { ConnectionOptions } from 'bullmq'
 import { isBotActionResult, isRenderSendResult, isSelfContainedResult } from './models.js'
 import type { BotActionJobResult, RenderSendJobResult } from './models.js'
 
+import type { MessageRouter } from '@/core/accounts/index.js'
 import type { RedisStore } from '@/core/redis/index.js'
 
 const log: PinoLogger = getLogger('tasks:executor') as unknown as PinoLogger
@@ -26,6 +27,7 @@ export class TaskExecutor {
     private readonly groupApi: GroupApi,
     private readonly pool: ClientPool<NapCatClient, string, unknown>,
     private readonly cache: RedisStore,
+    private readonly router: MessageRouter,
     connection: ConnectionOptions,
     queueName: string,
     private readonly sendDelayMs = 500,
@@ -38,7 +40,7 @@ export class TaskExecutor {
   start(): void {
     this.events.on(
       'completed',
-      ({ jobId, returnvalue }: { jobId: string; returnvalue: string }) => {
+      ({ jobId, returnvalue }: { jobId: string; returnvalue: unknown }) => {
         void this._onCompleted(jobId, returnvalue)
       },
     )
@@ -50,17 +52,11 @@ export class TaskExecutor {
     await Promise.all([this.events.close(), this.queue.close()])
   }
 
-  private async _onCompleted(jobId: string, returnvalue: string): Promise<void> {
+  private async _onCompleted(jobId: string, returnvalue: unknown): Promise<void> {
     const job = await Job.fromId(this.queue, jobId)
     const jobName = job?.name ?? 'unknown'
 
-    let result: unknown
-    try {
-      result = JSON.parse(returnvalue) as unknown
-    } catch {
-      log.error({ jobId, jobName }, 'job result 解析失败')
-      return
-    }
+    const result = returnvalue
 
     if (isSelfContainedResult(result)) {
       log.info({ jobName, summary: result.summary }, '自闭环任务完成')
@@ -152,12 +148,6 @@ export class TaskExecutor {
   }
 
   private async _executeRenderSend(result: RenderSendJobResult): Promise<void> {
-    // 同 _executeBotActions：msgApi 是 master 专属通道，前置检查须按 master 角色过滤。
-    if (this.pool.getAvailableClients('master').length === 0) {
-      log.warn({ tempKey: result.tempKey }, '无可用账号，跳过 render-send')
-      return
-    }
-
     const b64 = await this.cache.get<string>(result.tempKey)
     if (b64 === null) {
       log.warn({ tempKey: result.tempKey }, 'render-send temp key 已过期，静默丢弃')
@@ -166,11 +156,13 @@ export class TaskExecutor {
 
     const imageSegment = seg.image(`base64://${b64}`)
 
+    // render-send 是面向任意 handler 触发者的通用回复通道（如 /help），与 _executeBotActions
+    // 不同，不应绑定 master 专属通道——走 MessageRouter 才能在只有 normal 账号在线时也能送达。
     try {
       if ('groupId' in result.sendTo) {
-        await this.msgApi.sendGroupMsg(Number(result.sendTo.groupId), [imageSegment])
+        await this.router.sendGroupMsg(result.sendTo.groupId, [imageSegment])
       } else {
-        await this.msgApi.sendPrivateMsg(Number(result.sendTo.userId), [imageSegment])
+        await this.router.sendPrivateMsg(result.sendTo.userId, [imageSegment])
       }
     } catch (err) {
       log.error({ tempKey: result.tempKey, err }, 'render-send Bot API 调用失败')

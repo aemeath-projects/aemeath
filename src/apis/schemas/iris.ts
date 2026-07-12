@@ -47,8 +47,8 @@ export const IrisSearchDataSchema = Type.Object({
     Type.Object({
       id: Type.String({ description: '消息索引 UUID' }),
       messageId: Type.Number({ description: '消息 ID' }),
-      groupId: Type.Union([Type.Number(), Type.Null()], { description: '群号' }),
-      userId: Type.Number({ description: '用户 QQ' }),
+      groupId: Type.Union([Type.String(), Type.Null()], { description: '群号' }),
+      userId: Type.String({ description: '用户 QQ' }),
       textSnippet: Type.String({ description: '文本摘要' }),
       archivedAt: Type.String({ description: '归档时间（ISO 8601）' }),
       createdAt: Type.String({ description: '消息创建时间（ISO 8601）' }),

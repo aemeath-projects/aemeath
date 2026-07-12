@@ -200,7 +200,7 @@ import { formatBytes } from '@/utils/format'
 
 const props = defineProps<{
   segments: ChatMessage['segments']
-  memberNameMap: Map<number, string>
+  memberNameMap: Map<string, string>
 }>()
 
 const emit = defineEmits<{
@@ -210,9 +210,7 @@ const emit = defineEmits<{
 
 function getAtDisplayName(qq: unknown): string {
   if (qq === 'all') return '全体成员'
-  const qqNum = Number(qq)
-  if (isNaN(qqNum)) return String(qq)
-  return props.memberNameMap.get(qqNum) || String(qq)
+  return props.memberNameMap.get(String(qq)) || String(qq)
 }
 
 function getImageSrc(seg: { data?: Record<string, unknown> }): string {

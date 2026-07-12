@@ -15,12 +15,12 @@ export const useChatStore = defineStore('chat', () => {
   const hasMore = ref(true)
 
   async function loadGroupMessages(
-    groupId: number,
+    groupId: string,
     params?: {
       before?: string
       limit?: number
       keyword?: string
-      userId?: number
+      userId?: string
       startDate?: string
       endDate?: string
     },
@@ -43,7 +43,7 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
-  async function loadPrivateMessages(userId: number, params?: { before?: string; limit?: number }) {
+  async function loadPrivateMessages(userId: string, params?: { before?: string; limit?: number }) {
     messagesLoading.value = true
     messagesError.value = null
     try {

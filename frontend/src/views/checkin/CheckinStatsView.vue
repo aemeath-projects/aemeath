@@ -4,13 +4,12 @@
     <v-row class="mb-4" align="center">
       <v-col cols="12" sm="4" md="3">
         <v-text-field
-          v-model.number="groupId"
+          v-model="groupId"
           label="群号"
           density="compact"
           variant="solo-filled"
           hide-details
           clearable
-          type="number"
           prepend-inner-icon="mdi-account-group"
           @update:model-value="onGroupChange"
         />
@@ -105,7 +104,7 @@ import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
 
-const groupId = ref<number | null>(null)
+const groupId = ref<string | null>(null)
 
 /* 汇总卡片 */
 const summaryLoading = ref(false)

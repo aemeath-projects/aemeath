@@ -12,7 +12,7 @@ import {
 
 const pools = ref<PoolInfo[]>([])
 const selectedPool = ref<PoolInfo | null>(null)
-const groupIds = ref<number[]>([])
+const groupIds = ref<string[]>([])
 const loading = ref(false)
 
 const createDialog = ref(false)
@@ -61,8 +61,8 @@ async function onDeleteExecute() {
 }
 
 async function onAssign() {
-  const gid = parseInt(assignGroupId.value, 10)
-  if (!selectedPool.value || isNaN(gid)) return
+  const gid = assignGroupId.value.trim()
+  if (!selectedPool.value || !gid || !/^\d+$/.test(gid)) return
   await assignGroupPool(gid, selectedPool.value.id)
   assignGroupId.value = ''
   await selectPool(selectedPool.value)
@@ -94,7 +94,7 @@ onMounted(loadPools)
           >
             <template #append>
               <v-btn
-                v-if="pool.id !== 0"
+                v-if="pool.id !== '0'"
                 size="x-small"
                 icon="mdi-delete"
                 variant="text"

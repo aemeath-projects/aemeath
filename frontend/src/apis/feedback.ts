@@ -11,8 +11,8 @@ export type { PaginatedResult } from './types'
 
 export interface Feedback {
   id: string
-  userId: number
-  groupId: number | null
+  userId: string
+  groupId: string | null
   content: string
   status: string
   feedbackType: string | null
@@ -28,7 +28,7 @@ export interface FeedbackListParams {
   pageSize?: number
   status?: string | null
   feedbackType?: string | null
-  userId?: number | null
+  userId?: string | null
   source?: string | null
   search?: string | null
 }

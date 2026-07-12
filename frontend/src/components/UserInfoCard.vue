@@ -250,13 +250,13 @@ import {
 
 const props = defineProps<{
   modelValue: boolean
-  qq: number | null
-  groupId?: number | null
+  qq: string | null
+  groupId?: string | null
 }>()
 
 defineEmits<{
   'update:modelValue': [value: boolean]
-  'open-group': [groupId: number]
+  'open-group': [groupId: string]
 }>()
 
 const store = useUserStore()

@@ -295,6 +295,7 @@ async function _startup(
     masterApis.groupApi,
     pool,
     cacheStore,
+    router,
     bullConn,
     queueName,
     config.TASK_SEND_DELAY_MS,

@@ -78,6 +78,42 @@ export class MessageRouter {
     return msgApi.sendGroupMsg(Number(groupId), message)
   }
 
+  /**
+   * 通用私聊消息发送 —— 走路由策略（sticky + 优先级），面向渲染回复等无强绑定场景
+   * （例如 /help 图片回复）。与 sendGroupMsg 不同，候选账号不依赖 GroupBotRegistry
+   * 的群成员关系，而是取当前所有在线的 master/normal 账号。
+   */
+  async sendPrivateMsg(
+    userId: string,
+    message: MessageSegment[],
+  ): Promise<Result<{ messageId: number }>> {
+    const masterAndNormalRoles: AccountRole[] = ['master', 'normal']
+    const roleDefs = getRolesForMode(this.priorityMode)
+
+    const candidates = this.pool
+      .getAvailableClients()
+      .map((c) => ({ clientId: c.id, role: this.pool.getClientRole(c.id) }))
+      .filter(
+        (c): c is { clientId: string; role: AccountRole } =>
+          c.role !== undefined && masterAndNormalRoles.includes(c.role),
+      )
+      .map((c) => ({
+        ...c,
+        priority: roleDefs.find((r) => r.name === c.role)?.priority ?? Number.MAX_SAFE_INTEGER,
+      }))
+
+    if (candidates.length === 0) {
+      log.error({ userId }, '当前无可用账号发送私聊消息：候选账号列表为空')
+      throw new AppError(-1, '当前无可用账号发送私聊消息', 503)
+    }
+
+    const selectedId = this.routingTable.resolve(`private:${userId}`, candidates)
+    const adapter = this.pool.getClient(selectedId)
+    if (!adapter) throw new AppError(-1, '路由选择的账号已离线', 503)
+    const msgApi = new MessageApi(adapter.client)
+    return msgApi.sendPrivateMsg(Number(userId), message)
+  }
+
   /** 管理员通知 —— 强制走主账号发送私聊消息。 */
   async sendAdminMsg(
     adminQq: string,

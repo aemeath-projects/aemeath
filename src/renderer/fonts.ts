@@ -21,31 +21,31 @@ const FONT_SPECS: readonly FontSpec[] = [
     name: 'Noto Sans CJK SC',
     weight: 400,
     style: 'normal',
-    resolveId: '@fontsource/noto-sans-sc/files/noto-sans-sc-chinese-simplified-400-normal.woff2',
+    resolveId: '@fontsource/noto-sans-sc/files/noto-sans-sc-chinese-simplified-400-normal.woff',
   },
   {
     name: 'Noto Sans',
     weight: 400,
     style: 'normal',
-    resolveId: '@fontsource/noto-sans/files/noto-sans-latin-400-normal.woff2',
+    resolveId: '@fontsource/noto-sans/files/noto-sans-latin-400-normal.woff',
   },
   {
     name: 'Noto Sans JP',
     weight: 400,
     style: 'normal',
-    resolveId: '@fontsource/noto-sans-jp/files/noto-sans-jp-japanese-400-normal.woff2',
+    resolveId: '@fontsource/noto-sans-jp/files/noto-sans-jp-japanese-400-normal.woff',
   },
   {
     name: 'Noto Sans KR',
     weight: 400,
     style: 'normal',
-    resolveId: '@fontsource/noto-sans-kr/files/noto-sans-kr-korean-400-normal.woff2',
+    resolveId: '@fontsource/noto-sans-kr/files/noto-sans-kr-korean-400-normal.woff',
   },
   {
     name: 'JetBrains Mono',
     weight: 400,
     style: 'normal',
-    resolveId: '@fontsource/jetbrains-mono/files/jetbrains-mono-latin-400-normal.woff2',
+    resolveId: '@fontsource/jetbrains-mono/files/jetbrains-mono-latin-400-normal.woff',
   },
 ] as const
 

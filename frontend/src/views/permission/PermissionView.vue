@@ -11,6 +11,7 @@ import SettingField from '@/components/settings/SettingField.vue'
 import { useSettingsSchemaStore } from '@/stores/settingsSchema'
 import { useSettingsEditor } from '@/composables/useSettingsEditor'
 import type { SettingNodeSchema } from '@/apis/settings'
+import type { Path } from '@/apis/settings'
 
 const schemaStore = useSettingsSchemaStore()
 
@@ -18,20 +19,25 @@ const schemaStore = useSettingsSchemaStore()
 
 type ScopeType = 'group' | 'user'
 const scopeType = ref<ScopeType>('group')
-const selectedGroup = ref<number | null>(null)
-const selectedUser = ref<number | null>(null)
+const selectedGroup = ref<string | null>(null)
+const selectedUser = ref<string | null>(null)
 
-/** 响应式 scope 对象，传给 useSettingsEditor。 */
-const scope = computed(() => ({
-  group: scopeType.value === 'group' ? selectedGroup.value : null,
-  user: scopeType.value === 'user' ? selectedUser.value : null,
-}))
+/** 响应式 path 对象，根据作用域类型动态构建。 */
+const path = computed<Path>(() => {
+  if (scopeType.value === 'group' && selectedGroup.value) {
+    return [{ type: 'group', id: selectedGroup.value }]
+  }
+  if (scopeType.value === 'user' && selectedUser.value) {
+    return [{ type: 'user', id: selectedUser.value }]
+  }
+  return []
+})
 
 /* 设置编辑器（仅 category='permission'） */
 
 const { values, loading, error, save, reset } = useSettingsEditor({
   prefix: '',
-  scope,
+  path,
   category: 'permission',
 })
 

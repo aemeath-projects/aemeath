@@ -127,7 +127,7 @@ const { page, pageSize, loadPage, onPageSizeChange } = usePagination(fetchTasks)
 
 /* 新增任务 */
 const createDialog = ref(false)
-const newQq = ref<number | null>(null)
+const newQq = ref<string | null>(null)
 const createError = ref('')
 const creating = ref(false)
 
@@ -138,7 +138,7 @@ function openCreate() {
 }
 
 async function submitCreate() {
-  if (!newQq.value || newQq.value <= 0) {
+  if (!newQq.value || !/^\d+$/.test(newQq.value)) {
     createError.value = '请输入有效的 QQ 号'
     return
   }
@@ -159,7 +159,7 @@ async function submitCreate() {
 /* 取消任务 */
 const cancelDialog = ref(false)
 const cancelTarget = ref<LikeTask | null>(null)
-const cancellingQq = ref<number | null>(null)
+const cancellingQq = ref<string | null>(null)
 const cancelError = ref('')
 
 function confirmCancel(item: LikeTask) {

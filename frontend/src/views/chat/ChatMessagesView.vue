@@ -164,9 +164,9 @@ const reversedMessages = computed(() => [...store.messages].reverse())
 
 /* 会话状态 */
 
-const currentSession = ref<{ type: 'group' | 'private'; id: number; name: string } | null>(null)
+const currentSession = ref<{ type: 'group' | 'private'; id: string; name: string } | null>(null)
 const searchKeyword = ref('')
-const filterUserId = ref<number | null>(null)
+const filterUserId = ref<string | null>(null)
 const messageContainer = ref<HTMLElement | null>(null)
 
 /* 弹窗状态 */
@@ -175,7 +175,7 @@ const detailDialog = ref(false)
 const detailMessage = ref<ChatMessage | null>(null)
 
 const memberDetailDialog = ref(false)
-const memberDetailQQ = ref<number | null>(null)
+const memberDetailQQ = ref<string | null>(null)
 
 const imagePreviewDialog = ref(false)
 const imagePreviewSrc = ref('')
@@ -183,7 +183,7 @@ const imagePreviewSrc = ref('')
 /* @成员名片映射 */
 
 const memberNameMap = computed(() => {
-  const map = new Map<number, string>()
+  const map = new Map<string, string>()
   for (const msg of store.messages) {
     if (msg.userId && !map.has(msg.userId)) {
       const name = msg.senderCard || msg.senderNickname
@@ -203,9 +203,8 @@ function showDetail(msg: ChatMessage) {
 function onAtChipClick(qq: unknown) {
   if (qq === 'all') return
   if (!currentSession.value || currentSession.value.type !== 'group') return
-  const qqNum = Number(qq)
-  if (isNaN(qqNum)) return
-  memberDetailQQ.value = qqNum
+  const qqStr = String(qq)
+  memberDetailQQ.value = qqStr
   memberDetailDialog.value = true
 }
 
@@ -215,7 +214,7 @@ function openImagePreview(src: string) {
   imagePreviewDialog.value = true
 }
 
-async function onSessionSelect(type: 'group' | 'private', id: number, name: string) {
+async function onSessionSelect(type: 'group' | 'private', id: string, name: string) {
   currentSession.value = { type, id, name }
   searchKeyword.value = ''
   filterUserId.value = null
@@ -246,7 +245,7 @@ watch(
 
 async function loadMessages(scrollBottom = false) {
   if (!currentSession.value) return
-  const params: { keyword?: string; userId?: number; limit?: number } = { limit: 50 }
+  const params: { keyword?: string; userId?: string; limit?: number } = { limit: 50 }
   if (searchKeyword.value) params.keyword = searchKeyword.value
   if (filterUserId.value) params.userId = filterUserId.value
 

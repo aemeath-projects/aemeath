@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 
-import { RenderService } from '@/renderer/index.js'
+import { RenderService, registerTemplate } from '@/renderer/index.js'
 import type { TemplateFunction } from '@/renderer/index.js'
 
 vi.mock('@/core/logging/index.js', () => ({
@@ -44,7 +44,7 @@ describe('RenderService', () => {
   })
 
   it('throws RenderError if not initialized', async () => {
-    service.register('test', () => ({ type: 'div', props: {} }))
+    registerTemplate('test', () => ({ type: 'div', props: {} }))
     await expect(service.render('test', {})).rejects.toThrow('Renderer not initialized')
   })
 
@@ -53,9 +53,9 @@ describe('RenderService', () => {
     await expect(service.render('unknown', {})).rejects.toThrow('Template not found: unknown')
   })
 
-  it('renders registered template to PNG buffer', async () => {
+  it('renders a template registered via registerTemplate (真实模板文件的自注册方式) to PNG buffer', async () => {
     const tpl: TemplateFunction = () => ({ type: 'div', props: { children: 'hello' } })
-    service.register('greeting', tpl)
+    registerTemplate('greeting', tpl)
     await service.initialize()
     const buf = await service.render('greeting', {})
     expect(Buffer.isBuffer(buf)).toBe(true)

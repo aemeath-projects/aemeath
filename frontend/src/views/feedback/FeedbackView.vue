@@ -199,7 +199,7 @@ async function fetchFeedbacks(p: number, size: number) {
     // 预取用户和群昵称，减少渲染闪烁
     const userIds = [...new Set(result.items.map((f) => f.userId))]
     const groupIds = [
-      ...new Set(result.items.map((f) => f.groupId).filter((id): id is number => id != null)),
+      ...new Set(result.items.map((f) => f.groupId).filter((id): id is string => id != null)),
     ]
     userStore.prefetchIds(userIds, groupIds)
   } catch {

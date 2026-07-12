@@ -152,7 +152,7 @@ onMounted(async () => {
 
 // 设置御者
 const setDialog = ref(false)
-const selectedQQ = ref<number | null>(null)
+const selectedQQ = ref<string | null>(null)
 const setLoading = ref(false)
 const candidateError = ref('')
 

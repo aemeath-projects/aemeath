@@ -16,7 +16,7 @@ type FieldVariant =
   'outlined' | 'plain' | 'solo-filled' | 'filled' | 'solo' | 'solo-inverted' | 'underlined'
 
 interface Props {
-  modelValue: number | null
+  modelValue: string | null
   label?: string
   density?: Density
   variant?: FieldVariant
@@ -38,7 +38,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  'update:modelValue': [value: number | null]
+  'update:modelValue': [value: string | null]
 }>()
 
 const store = useUserStore()
@@ -52,8 +52,8 @@ let requestSeq = 0
 let watchSeq = 0
 
 /** 通过 qq 快速查找 UserItem，用于 #item slot 渲染 */
-const suggestionMap = computed<Map<number, UserItem>>(() => {
-  const map = new Map<number, UserItem>()
+const suggestionMap = computed<Map<string, UserItem>>(() => {
+  const map = new Map<string, UserItem>()
   for (const u of suggestions.value) {
     map.set(u.qq, u)
   }
@@ -77,7 +77,7 @@ watch(
       if (watchSeq !== seq) return
       suggestions.value = [user, ...suggestions.value]
     } catch {
-      // 静默失败，Vuetify 会 fallback 显示原始数字
+      // 静默失败，Vuetify 会 fallback 显示原始 QQ 号
     }
   },
   { immediate: true },
@@ -132,7 +132,7 @@ watch(
           const isNumeric = /^\d+$/.test(q)
           if (isNumeric) {
             // 纯数字：精确查询单条用户，与 GroupAutocomplete 策略一致
-            const exactUser = await fetchUser(Number(q)).catch(() => null)
+            const exactUser = await fetchUser(q).catch(() => null)
             if (requestSeq !== seq) return
             if (exactUser && !suggestions.value.some((u) => u.qq === exactUser.qq)) {
               suggestions.value = [...suggestions.value, exactUser].slice(0, 10)
@@ -160,7 +160,7 @@ watch(
 
 function onSelect(value: unknown) {
   justSelected = true
-  const normalized = typeof value === 'number' ? value : null
+  const normalized = typeof value === 'string' ? value : null
   emit('update:modelValue', normalized)
 }
 </script>
@@ -187,13 +187,16 @@ function onSelect(value: unknown) {
       <!-- itemProps.value 即 qq -->
       <v-list-item v-bind="itemProps" :title="undefined">
         <template
-          v-if="suggestionMap.get(itemProps.value as number) as UserItem | undefined"
+          v-if="
+            (itemProps.value as string) &&
+            (suggestionMap.get(itemProps.value as string) as UserItem | undefined)
+          "
           #prepend
         >
           <v-avatar size="40" class="mr-2">
             <v-img
               :src="`https://q1.qlogo.cn/g?b=qq&nk=${itemProps.value}&s=40`"
-              :alt="(suggestionMap.get(itemProps.value as number) as UserItem).nickname"
+              :alt="(suggestionMap.get(itemProps.value as string) as UserItem).nickname"
             >
               <template #error>
                 <v-icon>mdi-account-circle</v-icon>
@@ -204,7 +207,7 @@ function onSelect(value: unknown) {
         <v-list-item-title>
           <span class="font-weight-medium">
             {{
-              (suggestionMap.get(itemProps.value as number) as UserItem | undefined)?.nickname ??
+              (suggestionMap.get(itemProps.value as string) as UserItem | undefined)?.nickname ??
               itemProps.title
             }}
           </span>

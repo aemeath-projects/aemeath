@@ -80,7 +80,7 @@ import MessageSegmentRenderer from './MessageSegmentRenderer.vue'
 
 const props = defineProps<{
   msg: ChatMessage
-  memberNameMap: Map<number, string>
+  memberNameMap: Map<string, string>
 }>()
 
 const emit = defineEmits<{

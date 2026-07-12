@@ -161,13 +161,13 @@ import { debounce } from '@/utils/ui'
 
 const props = defineProps<{
   modelValue: boolean
-  groupId: number | null
+  groupId: string | null
   group?: GroupItem | null
 }>()
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
-  'open-user': [qq: number, groupId: number]
+  'open-user': [qq: string, groupId: string]
 }>()
 
 const store = useUserStore()
@@ -247,7 +247,7 @@ function onPageSizeChange(size: number) {
   loadMembers(1)
 }
 
-function onMemberClick(qq: number) {
+function onMemberClick(qq: string) {
   if (props.groupId) emit('open-user', qq, props.groupId)
 }
 </script>

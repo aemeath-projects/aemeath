@@ -290,7 +290,22 @@ export class MultiAccountBootstrap {
   ): Promise<void> {
     const groupApi = new GroupApi(adapter.client)
     const listResult = await groupApi.getGroupList()
-    if (!listResult.ok) return
+    if (!listResult.ok) {
+      log.error(
+        { clientId: adapter.id, err: listResult.error },
+        '同步群角色失败：getGroupList 调用未成功',
+      )
+      return
+    }
+
+    log.info(
+      {
+        clientId: adapter.id,
+        groupCount: listResult.data.length,
+        groupIds: listResult.data.map((g) => g.groupId),
+      },
+      '同步群角色：已获取账号所在群列表',
+    )
 
     await Promise.all(
       listResult.data.map((group) =>
@@ -299,7 +314,13 @@ export class MultiAccountBootstrap {
             group.groupId,
             Number(adapter.qq),
           )
-          if (!memberInfoResult.ok) return
+          if (!memberInfoResult.ok) {
+            log.error(
+              { clientId: adapter.id, groupId: group.groupId, err: memberInfoResult.error },
+              '同步群角色失败：getGroupMemberInfo 调用未成功',
+            )
+            return
+          }
           const role = memberInfoResult.data.role
           this.registry.setRole(String(group.groupId), adapter.id, role)
         }),

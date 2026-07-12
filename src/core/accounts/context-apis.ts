@@ -20,11 +20,16 @@ export function buildContextApis(
   const groupApi = sourceClient ? new GroupApi(sourceClient) : null
   const friendApi = sourceClient ? new FriendApi(sourceClient) : null
 
-  // msgApi 作为代理：sendGroupMsg 委托给 MessageRouter
+  // msgApi 作为代理：sendGroupMsg 委托给 MessageRouter。
+  // 注意：msgApi 对外类型是 MessageApi（真实调用方按该接口传 groupId: number），
+  // 而 MessageRouter/GroupBotRegistry 内部一律用 String(groupId) 作为 Map key——
+  // 这里必须做一次显式转换，否则数字类型的 groupId 永远查不到按字符串注册的账号，
+  // 会被误判为"当前群无可用账号发送消息"
   const msgApi = new Proxy(sourceClient ? new MessageApi(sourceClient) : ({} as MessageApi), {
     get(target, prop) {
       if (prop === 'sendGroupMsg') {
-        return (groupId: string, message: MessageSegment[]) => router.sendGroupMsg(groupId, message)
+        return (groupId: number, message: MessageSegment[]) =>
+          router.sendGroupMsg(String(groupId), message)
       }
       return Reflect.get(target, prop) as unknown
     },

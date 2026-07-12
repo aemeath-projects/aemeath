@@ -29,8 +29,8 @@ const logger = getLogger('main')
 
 import { loadConfig } from './config.js'
 import { createAemeathDb, createIrisDb } from './db/index.js'
-import { oneBotContextConfig } from './dispatch/index.js'
-import type { ContextApis, OneBotContext, FeatureChecker } from './dispatch/index.js'
+import { oneBotContextConfig, OneBotContext } from './dispatch/index.js'
+import type { ContextApis, FeatureChecker } from './dispatch/index.js'
 import {
   CapabilityInterceptor,
   FeatureCheckInterceptor,
@@ -202,12 +202,14 @@ async function _startup(
   }
 
   // 10. 实例化所有 handler（注入依赖）
+  // 依赖缺失时必须记录明确错误，禁止静默吞错——否则会在业务代码里表现为
+  // 难以定位的 "Cannot read properties of undefined" 深层 TypeError
   handlerRegistry.instantiate((key) => {
-    try {
-      return registry.get(key)
-    } catch {
+    if (!registry.has(key)) {
+      appLogger.error(`Handler 依赖注入失败：服务 "${key}" 未在注册表中找到`)
       return undefined
     }
+    return registry.get(key)
   })
 
   // 11. 构建 mapping 和 Dispatcher
@@ -228,13 +230,22 @@ async function _startup(
     mapping: composite,
     // 拦截器实现使用 OneBotContext（Context 子类），类型断言绕过逆变检查
     interceptors: [
-      irisInterceptor, // 最高优先级，第一个
       featureCheckInterceptor,
       loggingInterceptor,
       capabilityInterceptor, // logging 之后，session 之前
       sessionInterceptor,
     ],
+    // dispatch 级拦截器：每次 dispatch() 恰好执行一次，与是否命中业务 handler、
+    // 命中几个 handler 完全无关（区别于上面 interceptors 的"每个匹配 handler 各执行
+    // 一次"语义）。IrisInterceptor 需要对所有消息无条件归档，必须用这个通道注册，
+    // 否则普通聊天消息（未命中任何业务 handler）永远不会被归档，详见 iris.ts 顶部注释。
+    dispatchInterceptors: [irisInterceptor],
     contextConfig: oneBotContextConfig,
+    // EventDispatcher 内部默认构造 exostrider 内置的 Context 基类，OneBotContext
+    // 追加的 groupId/userId/reply() 等成员不会生效（详见 exostrider
+    // EventDispatcherOptions.contextFactory 的说明）。必须显式传入这个工厂，
+    // dispatch() 才会实际构造 OneBotContext 实例。
+    contextFactory: (event, apis, config) => new OneBotContext(event, apis, config),
     logger: appLogger,
   })
 

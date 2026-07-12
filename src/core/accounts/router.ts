@@ -4,6 +4,8 @@
  * 常规消息：通过 RoutingTable（PriorityStickyStrategy）选择账号，优先级由 priorityMode 驱动。
  * 管理员通知：强制走主账号。
  */
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { ClientPool, RoutingTable } from '@aemeath-projects/exostrider/pool'
 import { MessageApi } from '@aemeath-projects/napcat'
 import type { NapCatClient, Result } from '@aemeath-projects/napcat'
@@ -14,6 +16,8 @@ import { getRolesForMode } from './roles.js'
 import type { AccountRole, PriorityMode } from './roles.js'
 
 import { AppError } from '@/core/errors.js'
+
+const log: PinoLogger = getLogger('accounts') as unknown as PinoLogger
 
 export class MessageRouter {
   constructor(
@@ -52,6 +56,18 @@ export class MessageRouter {
       }))
 
     if (candidates.length === 0) {
+      log.error(
+        {
+          groupId,
+          availableIds,
+          rawStates: availableIds.map((id) => ({
+            id,
+            state: this.pool.getClient(id)?.state,
+            role: this.pool.getClientRole(id),
+          })),
+        },
+        '当前群无可用账号发送消息：候选账号列表为空，附完整诊断信息',
+      )
       throw new AppError(-1, '当前群无可用账号发送消息', 503)
     }
 

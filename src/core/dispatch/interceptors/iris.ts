@@ -1,13 +1,15 @@
 /**
- * IrisInterceptor —— 全局最高优先级拦截器。
- * 拦截消息事件并存储到 iris 聊天记录库，对业务 handler 完全透明。
- * 多账号去重已在 ClientPool 层完成（Plan 3），此处直接存储去重后事件。
+ * IrisInterceptor —— dispatch 级拦截器，将消息事件持久化到 iris 聊天记录库。
+ *
+ * 注意：必须注册到 EventDispatcher 的 dispatchInterceptors（而非 interceptors）。
+ * exostrider 的 interceptors 是"handler 级"拦截器：每个匹配到的业务 handler 都会完整
+ * 重跑一遍其 preHandle/postHandle/afterCompletion——命中 0 个 handler 时一次都不执行，
+ * 命中 N 个 handler 时会重复执行 N 次。消息归档需要"无论是否命中业务 handler，每条
+ * 消息都恰好归档一次"的语义，因此使用 dispatchInterceptors：每次 dispatch() 调用
+ * 恰好执行一次，与匹配到的业务 handler 数量完全无关（详见 exostrider
+ * DispatchInterceptor 类型定义）。
  */
-import type {
-  Context,
-  HandlerInterceptor,
-  ResolvedHandler,
-} from '@aemeath-projects/exostrider/dispatch'
+import type { Context, DispatchInterceptor } from '@aemeath-projects/exostrider/dispatch'
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 
 import type { ContextApis } from '../adapter.js'
@@ -22,13 +24,10 @@ function resolveMessageType(messageType: string): number {
   return 3
 }
 
-export class IrisInterceptor implements HandlerInterceptor<AnyOneBotEvent, ContextApis> {
+export class IrisInterceptor implements DispatchInterceptor<AnyOneBotEvent, ContextApis> {
   constructor(private readonly irisService: IrisService) {}
 
-  async preHandle(
-    ctx: Context<AnyOneBotEvent, ContextApis>,
-    _handler: ResolvedHandler,
-  ): Promise<boolean> {
+  async preHandle(ctx: Context<AnyOneBotEvent, ContextApis>): Promise<boolean> {
     const event = ctx.event
 
     if (event.postType !== 'message') return true

@@ -60,9 +60,16 @@ function createMockGroupApi() {
   } as unknown as GroupApi
 }
 
-function createMockPool(hasClients = true) {
+/**
+ * `hasMasterClients` 默认跟随 `hasClients`，保持既有用例（不区分角色）行为不变；
+ * 传入不同值时可以模拟"有非 master 账号在线，但 master 不在线"这种场景。
+ */
+function createMockPool(hasClients = true, hasMasterClients = hasClients) {
   return {
-    getAvailableClients: vi.fn().mockReturnValue(hasClients ? [{}] : []),
+    getAvailableClients: vi.fn((role?: string) => {
+      if (role === 'master') return hasMasterClients ? [{}] : []
+      return hasClients ? [{}] : []
+    }),
   } as unknown as ClientPool<never, string, unknown>
 }
 
@@ -135,6 +142,36 @@ describe('TaskExecutor', () => {
 
     mockEvents.emit('completed', {
       jobId: '2',
+      returnvalue: JSON.stringify({
+        type: 'bot-action',
+        calls: [{ method: 'sendGroupSign', args: ['100'] }],
+      }),
+    })
+
+    await new Promise((r) => setTimeout(r, 10))
+    expect(mockGroupApi.sendGroupSign).not.toHaveBeenCalled()
+  })
+
+  it('有非 master 账号在线但 master 不在线时跳过 BotAPI 调用（master_apis 均为 master 专属通道）', async () => {
+    const { Job } = await import('bullmq')
+    Job.fromId = vi.fn().mockResolvedValue({ name: 'checkin' })
+
+    const { TaskExecutor } = await import('@/core/tasks/executor.js')
+    const mockGroupApi = createMockGroupApi()
+    // hasClients=true（有非 master 账号在线）、hasMasterClients=false（master 不在线）
+    const executor = new TaskExecutor(
+      createMockMsgApi(),
+      createMockFriendApi(),
+      mockGroupApi,
+      createMockPool(true, false),
+      createMockCache(),
+      {},
+      'aemeath-tasks',
+    )
+    executor.start()
+
+    mockEvents.emit('completed', {
+      jobId: '2b',
       returnvalue: JSON.stringify({
         type: 'bot-action',
         calls: [{ method: 'sendGroupSign', args: ['100'] }],
@@ -356,5 +393,37 @@ describe('render-send result', () => {
       expect.arrayContaining([expect.objectContaining({ type: 'image' })]),
     )
     expect(cache.del).toHaveBeenCalledWith('aemeath:render:temp:job-pm')
+  })
+
+  it('有非 master 账号在线但 master 不在线时跳过 render-send（msgApi 为 master 专属通道）', async () => {
+    const { Job } = await import('bullmq')
+    Job.fromId = vi.fn().mockResolvedValue({ name: 'render' })
+
+    const { TaskExecutor } = await import('@/core/tasks/executor.js')
+    const cache = createMockCache()
+    ;(cache.get as ReturnType<typeof vi.fn>).mockResolvedValueOnce('base64pngdata')
+
+    const mockMsgApi = createMockMsgApi()
+    // hasClients=true（有非 master 账号在线）、hasMasterClients=false（master 不在线）
+    const executor = new TaskExecutor(
+      mockMsgApi,
+      createMockFriendApi(),
+      createMockGroupApi(),
+      createMockPool(true, false),
+      cache,
+      {},
+      'test-queue',
+    )
+    executor.start()
+
+    const result: RenderSendJobResult = {
+      type: 'render-send',
+      tempKey: 'aemeath:render:temp:job-no-master',
+      sendTo: { groupId: '12345' },
+    }
+    mockEvents.emit('completed', { jobId: 'job-4', returnvalue: JSON.stringify(result) })
+    await new Promise((r) => setTimeout(r, 30))
+
+    expect(mockMsgApi.sendGroupMsg).not.toHaveBeenCalled()
   })
 })

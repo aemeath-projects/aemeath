@@ -38,6 +38,7 @@ import {
   LoggingInterceptor,
   SessionInterceptor,
 } from './dispatch/interceptors/index.js'
+import { AppError } from './errors.js'
 import type { IrisService } from './iris/index.js'
 import type { AemeathServiceMap } from './lifecycle.js'
 import { metricsRegistry } from './monitoring/index.js'
@@ -268,24 +269,26 @@ async function _startup(
     void dispatcher.dispatch(aggregated.event, buildContextApis(aggregated, router, pool))
   })
 
-  // 15. 启动 TaskExecutor（监听 job completed 事件）
+  // 15. 启动 TaskExecutor（监听 job completed 事件）—— master_apis 现在始终是"活体
+  // 代理"（见 accounts/bootstrap.ts 的 createLiveMasterApi），即使启动时暂无主账号，
+  // 之后通过 /api/accounts 补建也无需重启即可生效，不再需要"无主账号不启动"的分支。
+  // MasterApis 的类型仍然声明为可空（兼容其他消费方独立的防御性兜底），此处用守卫
+  // 收窄类型，正常情况下不会真正命中。
   const masterApis = registry.get('master_apis')
-  let taskExecutor: TaskExecutor | null = null
   if (!masterApis.msgApi || !masterApis.friendApi || !masterApis.groupApi) {
-    app.log.warn('未找到主账号，TaskExecutor 不启动')
-  } else {
-    taskExecutor = new TaskExecutor(
-      masterApis.msgApi,
-      masterApis.friendApi,
-      masterApis.groupApi,
-      pool,
-      cacheStore,
-      bullConn,
-      queueName,
-      config.TASK_SEND_DELAY_MS,
-    )
-    taskExecutor.start()
+    throw new AppError(-1, 'master_apis 未正确初始化，TaskExecutor 无法启动', 500)
   }
+  const taskExecutor = new TaskExecutor(
+    masterApis.msgApi,
+    masterApis.friendApi,
+    masterApis.groupApi,
+    pool,
+    cacheStore,
+    bullConn,
+    queueName,
+    config.TASK_SEND_DELAY_MS,
+  )
+  taskExecutor.start()
 
   // 16. 通过 Fastify decorate 暴露服务（路由层访问入口）
   app.decorate('services', registry)

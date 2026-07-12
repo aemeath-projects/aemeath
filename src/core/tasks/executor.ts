@@ -81,7 +81,10 @@ export class TaskExecutor {
   }
 
   private async _executeBotActions(result: BotActionJobResult, jobName: string): Promise<void> {
-    if (this.pool.getAvailableClients().length === 0) {
+    // 本方法内调用的 msgApi/friendApi/groupApi 均为 master 专属通道（见 main.ts 装配），
+    // 前置检查须按 master 角色过滤，而非任意角色——否则"无 master、有 normal 账号在线"
+    // 这种被明确支持的部署形态下，每次触发都会因 API 调用失败而报 error 日志噪音。
+    if (this.pool.getAvailableClients('master').length === 0) {
       log.warn({ jobName }, '无可用账号，跳过 Bot API 调用')
       return
     }
@@ -149,7 +152,8 @@ export class TaskExecutor {
   }
 
   private async _executeRenderSend(result: RenderSendJobResult): Promise<void> {
-    if (this.pool.getAvailableClients().length === 0) {
+    // 同 _executeBotActions：msgApi 是 master 专属通道，前置检查须按 master 角色过滤。
+    if (this.pool.getAvailableClients('master').length === 0) {
       log.warn({ tempKey: result.tempKey }, '无可用账号，跳过 render-send')
       return
     }

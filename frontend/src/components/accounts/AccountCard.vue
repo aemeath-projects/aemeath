@@ -41,6 +41,13 @@ const roleColor: Record<string, string> = {
   readonly: '#fbc02d',
 }
 
+// 账号被停用（手动停用 或 自动放弃重连后被禁用）时，连接池里没有对应的 adapter，
+// 后端只能兜底广播 state: 'unknown'。这里单独用 isEnabled 区分"已停用"和真正的
+// "状态不明"，避免两种完全不同的语义在前端被合并成同一个"未知"文案。
+const displayLabel = computed(() =>
+  props.account.isEnabled ? stateLabel[props.account.state] : '已停用',
+)
+
 const cardBgColor = computed(() => stateBgColor[props.account.state] || '')
 
 function onToggle(value: boolean | null) {
@@ -56,9 +63,7 @@ function onToggle(value: boolean | null) {
         {{ roleLabel[account.role] ?? account.role }}
       </v-chip>
       <v-spacer />
-      <span class="text-medium-emphasis" style="font-size: 0.7rem">{{
-        stateLabel[account.state]
-      }}</span>
+      <span class="text-medium-emphasis" style="font-size: 0.7rem">{{ displayLabel }}</span>
     </v-card-title>
 
     <v-card-subtitle class="text-caption">{{ account.qq }}</v-card-subtitle>

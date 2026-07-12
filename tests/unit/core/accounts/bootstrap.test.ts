@@ -1,6 +1,7 @@
+import type { NapCatClient } from '@aemeath-projects/napcat'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { MultiAccountBootstrap } from '@/core/accounts/bootstrap.js'
+import { createLiveMasterApi, MultiAccountBootstrap } from '@/core/accounts/bootstrap.js'
 import { AccountService } from '@/core/accounts/service.js'
 import type { AccountWithStatus } from '@/core/accounts/service.js'
 import { accountStatusBroadcaster } from '@/core/accounts/status-broadcaster.js'
@@ -149,6 +150,53 @@ describe('MultiAccountBootstrap', () => {
       await testable._autoDisableAfterGiveUp('100000')
 
       expect(testable.pool.removeClient).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('createLiveMasterApi', () => {
+    /** 最小假 API 类：构造时记录传入的 client，方法读取 client.id 证明用的是哪个 client 实例。 */
+    class FakeApi {
+      private readonly clientId: string
+      constructor(client: NapCatClient) {
+        this.clientId = (client as unknown as { id: string }).id
+      }
+      getId(): string {
+        return this.clientId
+      }
+    }
+
+    function fakeClient(id: string): NapCatClient {
+      return { id } as unknown as NapCatClient
+    }
+
+    it('每次调用方法都现查连接池，account adapter 被重建后自动切换到新 client', () => {
+      const clientA = fakeClient('client-A')
+      const clientB = fakeClient('client-B')
+      const getAvailableClients = vi.fn().mockReturnValue([{ client: clientA }])
+      const fakePool = { getAvailableClients } as unknown as Parameters<
+        typeof createLiveMasterApi
+      >[0]
+
+      const api = createLiveMasterApi(fakePool, FakeApi)
+
+      expect(api.getId()).toBe('client-A')
+
+      // 模拟 master 账号被禁用后重新启用：adapter 重建，pool 现在返回全新的 client 实例
+      getAvailableClients.mockReturnValue([{ client: clientB }])
+
+      expect(api.getId()).toBe('client-B')
+      expect(getAvailableClients).toHaveBeenCalledWith('master')
+    })
+
+    it('找不到在线 master 时调用方法应抛出 AppError', () => {
+      const getAvailableClients = vi.fn().mockReturnValue([])
+      const fakePool = { getAvailableClients } as unknown as Parameters<
+        typeof createLiveMasterApi
+      >[0]
+
+      const api = createLiveMasterApi(fakePool, FakeApi)
+
+      expect(() => api.getId()).toThrow('主账号不在线，无法调用 Bot API')
     })
   })
 })

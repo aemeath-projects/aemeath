@@ -35,6 +35,7 @@ import { AccountService } from './service.js'
 import { accountStatusBroadcaster } from './status-broadcaster.js'
 
 import type { AemeathPrismaClient } from '@/core/db/index.js'
+import { AppError } from '@/core/errors.js'
 
 const log: PinoLogger = getLogger('accounts') as unknown as PinoLogger
 
@@ -55,6 +56,40 @@ export interface MasterApis {
   msgApi: MessageApi | null
   groupApi: GroupApi | null
   friendApi: FriendApi | null
+}
+
+/**
+ * 构造主账号 API 的"活体代理"——每次调用方法时都从连接池现查当前在线的 master
+ * adapter 再转发调用，而不是像旧实现那样在启动时把 API 实例绑死在某个固定的
+ * NapCatClient 上。
+ *
+ * 背景：exostrider 的 DI（@Inject/@Provide）是一次性快照，master_apis 一旦注册进
+ * ServiceRegistry 就不会再刷新；而 AccountService._syncPoolAfterUpdate 只要 master
+ * 账号 isEnabled 从关到开、或 endpoint/token/transport 变化，就会整体移除旧 adapter、
+ * 新建一个全新 NapCatClient 塞回池子。如果 API 实例在启动时绑死旧 client，账号
+ * 重建后前端会显示"已连接"，但通过 master_apis 发起的调用会静默作用在已废弃的
+ * 旧 client 上。这里改为每次方法调用时现查 pool，规避该问题（与 router.ts 的
+ * sendGroupMsg/sendAdminMsg、context-apis.ts 的 buildContextApis 保持同一模式）。
+ *
+ * 找不到在线 master 时抛出 AppError，与 router.ts 的 sendAdminMsg 行为一致。
+ */
+export function createLiveMasterApi<TApi extends object>(
+  pool: AccountPool,
+  apiClass: new (client: NapCatClient) => TApi,
+): TApi {
+  return new Proxy({} as TApi, {
+    get(_target, prop) {
+      const master = pool.getAvailableClients('master')[0]
+      if (!master) {
+        throw new AppError(-1, '主账号不在线，无法调用 Bot API', 503)
+      }
+      const api = new apiClass(master.client)
+      const value = Reflect.get(api, prop) as unknown
+      return typeof value === 'function'
+        ? (value as (...args: unknown[]) => unknown).bind(api)
+        : value
+    },
+  })
 }
 
 @Service({ name: 'multi_account_bootstrap' })
@@ -162,22 +197,18 @@ export class MultiAccountBootstrap {
     })
     this.router = new MessageRouter(this.pool, this._routingTable, this.registry, mode)
 
-    // 7. 构建主账号 API bundle
-    const masterAdapters = this.pool.getClientsByRole('master')
-    const masterAdapter = masterAdapters[0] as NapCatClientAdapter | undefined
-    if (masterAdapter) {
-      this.masterApis = {
-        msgApi: new MessageApi(masterAdapter.client),
-        groupApi: new GroupApi(masterAdapter.client),
-        friendApi: new FriendApi(masterAdapter.client),
-      }
-    } else {
-      log.warn('MultiAccountBootstrap: 未找到主账号，master_apis 将不可用')
-      this.masterApis = {
-        msgApi: null,
-        groupApi: null,
-        friendApi: null,
-      }
+    // 7. 构建主账号 API bundle——始终是"活体代理"，即使启动时尚无 master 账号，
+    // 之后通过 POST /api/accounts 补建也无需重启即可生效（createLiveMasterApi
+    // 内部每次调用都现查连接池，不需要在此提前判断 masterAdapter 是否存在）
+    if (this.pool.getClientsByRole('master').length === 0) {
+      log.warn(
+        'MultiAccountBootstrap: 启动时未找到主账号，master_apis 相关调用会在实际发起时报错，可稍后通过 /api/accounts 添加',
+      )
+    }
+    this.masterApis = {
+      msgApi: createLiveMasterApi(this.pool, MessageApi),
+      groupApi: createLiveMasterApi(this.pool, GroupApi),
+      friendApi: createLiveMasterApi(this.pool, FriendApi),
     }
 
     // 8. 监听连接状态变化

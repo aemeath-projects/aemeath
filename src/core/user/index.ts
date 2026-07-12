@@ -16,6 +16,7 @@ import type { ConnectionStatus } from './sync.js'
 
 import type { MasterApis, AccountPool } from '@/core/accounts/index.js'
 import type { AemeathPrismaClient } from '@/core/db/index.js'
+import { AppError } from '@/core/errors.js'
 import type { RedisStore } from '@/core/redis/index.js'
 import { cacheKeyRegistry } from '@/core/registries.js'
 
@@ -488,23 +489,23 @@ export class SyncCoordinatorBootstrap {
 
   @Startup
   start(): void {
+    // friendApi/groupApi 始终是 master 专属的"活体代理"（见 accounts/bootstrap.ts 的
+    // createLiveMasterApi），即使启动时尚无 master 账号，之后补建也无需重启即可生效，
+    // 因此这里不再需要"无主账号时用占位协调器"的分支。MasterApis 的类型仍然声明为可空
+    // （兼容 AdminBootstrap 等消费方独立的防御性兜底），此处用守卫收窄类型，正常情况下
+    // 不会真正命中。
     const { friendApi, groupApi } = this.masterApis
+    if (!friendApi || !groupApi) {
+      throw new AppError(-1, 'master_apis 未正确初始化，SyncCoordinator 无法启动', 500)
+    }
     const pool = this.accountPool
     const connStatus: ConnectionStatus = {
+      // 必须按 master 角色过滤，而不是任意角色——friendApi/groupApi 只走 master 通道，
+      // 否则"无 master、有 normal 账号在线"时会误判为已连接，进而在每次同步周期都
+      // 因为 API 调用失败而报 error 日志噪音。
       get connected() {
-        return pool.getAvailableClients().length > 0
+        return pool.getAvailableClients('master').length > 0
       },
-    }
-
-    if (!friendApi || !groupApi) {
-      // 无主账号时，创建一个永不执行同步的占位协调器
-      this.syncCoordinator = new SyncCoordinator(
-        { getFriendList: async () => ({ ok: false, error: 'no master account' }) } as never,
-        { getGroupList: async () => ({ ok: false, error: 'no master account' }) } as never,
-        this.userService,
-        { connected: false },
-      )
-      return
     }
 
     this.syncCoordinator = new SyncCoordinator(friendApi, groupApi, this.userService, connStatus)

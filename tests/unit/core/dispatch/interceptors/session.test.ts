@@ -1,7 +1,7 @@
 import type { ResolvedHandler } from '@aemeath-projects/exostrider/dispatch'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-import { SessionInterceptor } from '../../../../../src/core/dispatch/interceptors/session.js'
+import { SessionInterceptor } from '@/core/dispatch/interceptors/session.js'
 
 function makeHandler(): ResolvedHandler {
   return {

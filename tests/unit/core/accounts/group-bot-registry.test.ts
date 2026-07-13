@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
-import { GroupBotRegistry } from '../../../../src/core/accounts/group-bot-registry.js'
+import { GroupBotRegistry } from '@/core/accounts/group-bot-registry.js'
 
 const { debugMock } = vi.hoisted(() => ({
   debugMock: vi.fn(),

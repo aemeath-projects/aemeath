@@ -1,7 +1,7 @@
 import type { ResolvedHandler } from '@aemeath-projects/exostrider/dispatch'
 import { describe, it, expect } from 'vitest'
 
-import { MetricsInterceptor } from '../../../../../src/core/dispatch/interceptors/metrics.js'
+import { MetricsInterceptor } from '@/core/dispatch/interceptors/metrics.js'
 
 function makeHandler(): ResolvedHandler {
   return {

@@ -12,9 +12,9 @@ vi.mock('@aemeath-projects/exostrider/logger', () => ({
   getLogger: () => ({ debug: debugMock }),
 }))
 
-import type { ContextApis } from '../../../../../src/core/dispatch/index.js'
-import { IrisInterceptor } from '../../../../../src/core/dispatch/interceptors/iris.js'
-import type { IrisService } from '../../../../../src/core/iris/index.js'
+import type { ContextApis } from '@/core/dispatch/index.js'
+import { IrisInterceptor } from '@/core/dispatch/interceptors/iris.js'
+import type { IrisService } from '@/core/iris/index.js'
 
 type Ctx = Context<AnyOneBotEvent, ContextApis>
 

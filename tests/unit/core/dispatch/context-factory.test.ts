@@ -3,8 +3,8 @@ import type { HandlerMapping, HandlerMethod } from '@aemeath-projects/exostrider
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 import { describe, it, expect, vi } from 'vitest'
 
-import { OneBotContext, oneBotContextConfig } from '../../../../src/core/dispatch/index.js'
-import type { ContextApis } from '../../../../src/core/dispatch/index.js'
+import { OneBotContext, oneBotContextConfig } from '@/core/dispatch/index.js'
+import type { ContextApis } from '@/core/dispatch/index.js'
 
 // 回归测试：EventDispatcher 默认只会构造 exostrider 内置的 Context 基类，OneBotContext
 // 追加的 groupId/userId/reply() 等成员不会生效。main.ts 必须显式传入 contextFactory，

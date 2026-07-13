@@ -11,9 +11,9 @@ vi.mock('@aemeath-projects/exostrider/logger', () => ({
   getLogger: () => ({ debug: debugMock, info: vi.fn(), warn: vi.fn() }),
 }))
 
-import { GroupBotRegistry } from '../../../../../src/core/accounts/group-bot-registry.js'
-import type { OneBotContext } from '../../../../../src/core/dispatch/context.js'
-import { CapabilityInterceptor } from '../../../../../src/core/dispatch/interceptors/capability.js'
+import { GroupBotRegistry } from '@/core/accounts/group-bot-registry.js'
+import type { OneBotContext } from '@/core/dispatch/context.js'
+import { CapabilityInterceptor } from '@/core/dispatch/interceptors/capability.js'
 
 function makeCtx(groupId: string | undefined, replySpy: ReturnType<typeof vi.fn>) {
   const apis = {

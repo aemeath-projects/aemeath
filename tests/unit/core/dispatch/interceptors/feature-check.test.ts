@@ -1,9 +1,9 @@
 import type { ResolvedHandler } from '@aemeath-projects/exostrider/dispatch'
 import { describe, it, expect, vi } from 'vitest'
 
-import type { OneBotContext } from '../../../../../src/core/dispatch/context.js'
-import { FeatureCheckInterceptor } from '../../../../../src/core/dispatch/interceptors/feature-check.js'
-import type { FeatureChecker } from '../../../../../src/core/dispatch/interceptors/feature-check.js'
+import type { OneBotContext } from '@/core/dispatch/context.js'
+import { FeatureCheckInterceptor } from '@/core/dispatch/interceptors/feature-check.js'
+import type { FeatureChecker } from '@/core/dispatch/interceptors/feature-check.js'
 
 function makeHandler(): ResolvedHandler {
   return {

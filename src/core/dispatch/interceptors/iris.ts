@@ -10,6 +10,8 @@
  * DispatchInterceptor 类型定义）。
  */
 import type { Context, DispatchInterceptor } from '@aemeath-projects/exostrider/dispatch'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 
 import type { ContextApis } from '../adapter.js'
@@ -24,13 +26,18 @@ function resolveMessageType(messageType: string): number {
   return 3
 }
 
+const log: PinoLogger = getLogger('iris-interceptor') as unknown as PinoLogger
+
 export class IrisInterceptor implements DispatchInterceptor<AnyOneBotEvent, ContextApis> {
   constructor(private readonly irisService: IrisService) {}
 
   async preHandle(ctx: Context<AnyOneBotEvent, ContextApis>): Promise<boolean> {
     const event = ctx.event
 
-    if (event.postType !== 'message') return true
+    if (event.postType !== 'message') {
+      log.debug({ postType: event.postType }, 'IrisInterceptor: 非消息事件，跳过归档')
+      return true
+    }
 
     const msgEvent = event as {
       postType: 'message'

@@ -59,19 +59,13 @@ export interface MasterApis {
 }
 
 /**
- * 构造主账号 API 的"活体代理"——每次调用方法时都从连接池现查当前在线的 master
- * adapter 再转发调用，而不是像旧实现那样在启动时把 API 实例绑死在某个固定的
- * NapCatClient 上。
+ * 构造主账号 API 的"活体代理"——每次调用方法都现查连接池取当前在线的 master
+ * adapter，而非启动时绑死某个固定 NapCatClient 实例。
  *
- * 背景：exostrider 的 DI（@Inject/@Provide）是一次性快照，master_apis 一旦注册进
- * ServiceRegistry 就不会再刷新；而 AccountService._syncPoolAfterUpdate 只要 master
- * 账号 isEnabled 从关到开、或 endpoint/token/transport 变化，就会整体移除旧 adapter、
- * 新建一个全新 NapCatClient 塞回池子。如果 API 实例在启动时绑死旧 client，账号
- * 重建后前端会显示"已连接"，但通过 master_apis 发起的调用会静默作用在已废弃的
- * 旧 client 上。这里改为每次方法调用时现查 pool，规避该问题（与 router.ts 的
- * sendGroupMsg/sendAdminMsg、context-apis.ts 的 buildContextApis 保持同一模式）。
- *
- * 找不到在线 master 时抛出 AppError，与 router.ts 的 sendAdminMsg 行为一致。
+ * 原因：账号重建（isEnabled/endpoint/token/transport 变化）会整体替换 adapter，
+ * 若 API 实例绑死旧 client，重建后调用会静默作用在已废弃的连接上。与 router.ts
+ * 的 sendGroupMsg/sendAdminMsg、context-apis.ts 的 buildContextApis 同一模式。
+ * 找不到在线 master 时抛出 AppError，行为与 sendAdminMsg 一致。
  */
 export function createLiveMasterApi<TApi extends object>(
   pool: AccountPool,
@@ -240,7 +234,7 @@ export class MultiAccountBootstrap {
     }
 
     if (to === 'connected') {
-      log.info(`账号 ${clientId} 已（重新）连接`)
+      log.debug(`账号 ${clientId} 已（重新）连接`)
       void (async () => {
         const adapter = this.pool.getClient(clientId) as NapCatClientAdapter | undefined
         if (adapter) {
@@ -298,7 +292,7 @@ export class MultiAccountBootstrap {
       return
     }
 
-    log.info(
+    log.debug(
       {
         clientId: adapter.id,
         groupCount: listResult.data.length,

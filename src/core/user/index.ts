@@ -489,11 +489,8 @@ export class SyncCoordinatorBootstrap {
 
   @Startup
   start(): void {
-    // friendApi/groupApi 始终是 master 专属的"活体代理"（见 accounts/bootstrap.ts 的
-    // createLiveMasterApi），即使启动时尚无 master 账号，之后补建也无需重启即可生效，
-    // 因此这里不再需要"无主账号时用占位协调器"的分支。MasterApis 的类型仍然声明为可空
-    // （兼容 AdminBootstrap 等消费方独立的防御性兜底），此处用守卫收窄类型，正常情况下
-    // 不会真正命中。
+    // friendApi/groupApi 是活体代理（见 bootstrap.ts createLiveMasterApi），
+    // 理论上不会为 null；此处仅做类型收窄，兼容其他消费方的防御性判空。
     const { friendApi, groupApi } = this.masterApis
     if (!friendApi || !groupApi) {
       throw new AppError(-1, 'master_apis 未正确初始化，SyncCoordinator 无法启动', 500)

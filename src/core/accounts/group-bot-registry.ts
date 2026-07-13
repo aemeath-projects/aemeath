@@ -22,7 +22,7 @@ export class GroupBotRegistry {
       this._roles.set(groupId, group)
     }
     group.set(clientId, role)
-    log.info({ groupId, clientId, role }, 'GroupBotRegistry.setRole')
+    log.debug({ groupId, clientId, role }, 'GroupBotRegistry.setRole')
   }
 
   /** 从指定群中移除某 bot 账号的角色记录。 */

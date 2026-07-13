@@ -1,6 +1,10 @@
 /**
  * FeatureCheckInterceptor —— 功能开关 + 角色权限检查拦截器。
  * 替代原 EventDispatcher.setFeatureChecker()。
+ *
+ * 职责边界：这里检查的是"当前用户"是否有权限触发某个功能（角色等级 + 功能开关），
+ * 与 CapabilityInterceptor 检查"Bot 账号"在群内的权限等级是两个维度，不可合并——
+ * 前者决定要不要处理这条消息，后者决定用哪个账号发送请求。
  */
 import type {
   Context,

@@ -2,6 +2,16 @@ import type { Context } from '@aemeath-projects/exostrider/dispatch'
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 import { describe, it, expect, vi } from 'vitest'
 
+const { debugMock } = vi.hoisted(() => {
+  return {
+    debugMock: vi.fn(),
+  }
+})
+
+vi.mock('@aemeath-projects/exostrider/logger', () => ({
+  getLogger: () => ({ debug: debugMock }),
+}))
+
 import type { ContextApis } from '../../../../../src/core/dispatch/index.js'
 import { IrisInterceptor } from '../../../../../src/core/dispatch/interceptors/iris.js'
 import type { IrisService } from '../../../../../src/core/iris/index.js'
@@ -76,5 +86,9 @@ describe('IrisInterceptor（dispatch 级拦截器）', () => {
 
     expect(result).toBe(true)
     expect(saveMessage).not.toHaveBeenCalled()
+    expect(debugMock).toHaveBeenCalledWith(
+      { postType: 'notice' },
+      'IrisInterceptor: 非消息事件，跳过归档',
+    )
   })
 })

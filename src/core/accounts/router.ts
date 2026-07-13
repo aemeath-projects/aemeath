@@ -72,6 +72,10 @@ export class MessageRouter {
     }
 
     const selectedId = this.routingTable.resolve(groupId, candidates)
+    log.debug(
+      { groupId, selectedId, candidateIds: candidates.map((c) => c.clientId) },
+      '群消息路由决策：已选定发送账号',
+    )
     const adapter = this.pool.getClient(selectedId)
     if (!adapter) throw new AppError(-1, '路由选择的账号已离线', 503)
     const msgApi = new MessageApi(adapter.client)

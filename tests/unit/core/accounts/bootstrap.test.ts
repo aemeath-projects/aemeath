@@ -6,6 +6,15 @@ import { AccountService } from '@/core/accounts/service.js'
 import type { AccountWithStatus } from '@/core/accounts/service.js'
 import { accountStatusBroadcaster } from '@/core/accounts/status-broadcaster.js'
 
+const { debugMock, infoMock } = vi.hoisted(() => ({
+  debugMock: vi.fn(),
+  infoMock: vi.fn(),
+}))
+
+vi.mock('@aemeath-projects/exostrider/logger', () => ({
+  getLogger: () => ({ debug: debugMock, info: infoMock, warn: vi.fn(), error: vi.fn() }),
+}))
+
 interface TestableBootstrap {
   db: { account: { update: ReturnType<typeof vi.fn> } }
   pool: { getClient: ReturnType<typeof vi.fn>; removeClient: ReturnType<typeof vi.fn> }
@@ -128,6 +137,15 @@ describe('MultiAccountBootstrap', () => {
         expect(order).toEqual(['autoDisable', 'broadcast'])
       })
       expect(spy).toHaveBeenCalledWith('1')
+    })
+
+    it('状态变为 connected 时输出 debug 级别日志（而非 info，避免生产日志噪音）', () => {
+      debugMock.mockClear()
+      testable.pool.getClient.mockReturnValue(undefined)
+
+      testable._handleClientStateChange('1', 'disconnected', 'connected')
+
+      expect(debugMock).toHaveBeenCalledWith('账号 1 已（重新）连接')
     })
   })
 

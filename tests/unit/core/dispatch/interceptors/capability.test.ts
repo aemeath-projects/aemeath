@@ -1,6 +1,16 @@
 import type { ResolvedHandler } from '@aemeath-projects/exostrider/dispatch'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
+const { debugMock } = vi.hoisted(() => {
+  return {
+    debugMock: vi.fn(),
+  }
+})
+
+vi.mock('@aemeath-projects/exostrider/logger', () => ({
+  getLogger: () => ({ debug: debugMock, info: vi.fn(), warn: vi.fn() }),
+}))
+
 import { GroupBotRegistry } from '../../../../../src/core/accounts/group-bot-registry.js'
 import type { OneBotContext } from '../../../../../src/core/dispatch/context.js'
 import { CapabilityInterceptor } from '../../../../../src/core/dispatch/interceptors/capability.js'
@@ -73,6 +83,10 @@ describe('CapabilityInterceptor', () => {
 
     expect(result).toBe(false)
     expect(replySpy).toHaveBeenCalledWith('操作失败：群内没有具备所需权限的账号')
+    expect(debugMock).toHaveBeenCalledWith(
+      { groupId: '100', capability: 'group_admin' },
+      'CapabilityInterceptor: 群内无具备所需权限的账号',
+    )
   })
 
   it('有能力账号但已断线时返回 false', async () => {

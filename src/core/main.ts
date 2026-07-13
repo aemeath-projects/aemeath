@@ -235,16 +235,12 @@ async function _startup(
       capabilityInterceptor, // logging 之后，session 之前
       sessionInterceptor,
     ],
-    // dispatch 级拦截器：每次 dispatch() 恰好执行一次，与是否命中业务 handler、
-    // 命中几个 handler 完全无关（区别于上面 interceptors 的"每个匹配 handler 各执行
-    // 一次"语义）。IrisInterceptor 需要对所有消息无条件归档，必须用这个通道注册，
-    // 否则普通聊天消息（未命中任何业务 handler）永远不会被归档，详见 iris.ts 顶部注释。
+    // dispatch 级拦截器（每次 dispatch 恰好执行一次，与 handler 命中数无关），
+    // 完整语义与选型原因见 iris.ts 顶部注释。
     dispatchInterceptors: [irisInterceptor],
     contextConfig: oneBotContextConfig,
-    // EventDispatcher 内部默认构造 exostrider 内置的 Context 基类，OneBotContext
-    // 追加的 groupId/userId/reply() 等成员不会生效（详见 exostrider
-    // EventDispatcherOptions.contextFactory 的说明）。必须显式传入这个工厂，
-    // dispatch() 才会实际构造 OneBotContext 实例。
+    // 必须显式传入，否则 dispatch() 使用基类 Context，OneBotContext 的 groupId/
+    // reply() 等扩展成员不生效（完整说明见 exostrider EventDispatcherOptions.contextFactory JSDoc）。
     contextFactory: (event, apis, config) => new OneBotContext(event, apis, config),
     logger: appLogger,
   })

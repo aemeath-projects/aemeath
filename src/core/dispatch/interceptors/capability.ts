@@ -1,9 +1,17 @@
-/** CapabilityInterceptor —— 在 handler 执行前将 groupApi 替换为有对应权限的账号 API。 */
+/**
+ * CapabilityInterceptor —— 在 handler 执行前将 groupApi 替换为具备所需权限的账号 API。
+ *
+ * 职责边界：这里检查的是"Bot 账号"在群内的权限等级（谁能以管理员身份调用 API），
+ * 与 FeatureCheckInterceptor 检查"当前用户"是否有权限触发某个功能是两个维度，
+ * 不可合并——前者决定用哪个账号发送请求，后者决定要不要处理这条消息。
+ */
 import type {
   Context,
   HandlerInterceptor,
   ResolvedHandler,
 } from '@aemeath-projects/exostrider/dispatch'
+import { getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { ClientState } from '@aemeath-projects/exostrider/pool'
 import type { NapCatClient } from '@aemeath-projects/napcat'
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
@@ -17,6 +25,8 @@ import type { GroupBotRegistry } from '@/core/accounts/index.js'
 interface Pool {
   getClient(id: string): { state: ClientState; client: NapCatClient } | undefined
 }
+
+const log: PinoLogger = getLogger('capability-interceptor') as unknown as PinoLogger
 
 export class CapabilityInterceptor implements HandlerInterceptor<AnyOneBotEvent, ContextApis> {
   constructor(
@@ -51,6 +61,10 @@ export class CapabilityInterceptor implements HandlerInterceptor<AnyOneBotEvent,
     }
 
     if (!clientAdapter) {
+      log.debug(
+        { groupId: gid, capability: cap },
+        'CapabilityInterceptor: 群内无具备所需权限的账号',
+      )
       await obc.reply('操作失败：群内没有具备所需权限的账号')
       return false
     }

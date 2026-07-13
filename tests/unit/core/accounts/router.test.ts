@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+const debugMock = vi.fn()
+
+vi.mock('@aemeath-projects/exostrider/logger', () => ({
+  getLogger: () => ({ debug: debugMock, error: vi.fn() }),
+}))
+
 const sendGroupMsgMock = vi.fn()
 const sendPrivateMsgMock = vi.fn()
 
@@ -77,6 +83,10 @@ describe('MessageRouter', () => {
 
       await router.sendGroupMsg('123', [])
       expect(routingTable.resolve).toHaveBeenCalledTimes(1)
+      expect(debugMock).toHaveBeenCalledWith(
+        { groupId: '123', selectedId: 'master', candidateIds: ['master', 'normal'] },
+        '群消息路由决策：已选定发送账号',
+      )
     })
 
     it('prefer_normal 模式下 normal 账号 priority 数值低于 master', async () => {

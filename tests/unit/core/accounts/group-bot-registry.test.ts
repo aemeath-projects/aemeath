@@ -1,6 +1,14 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 
 import { GroupBotRegistry } from '../../../../src/core/accounts/group-bot-registry.js'
+
+const { debugMock } = vi.hoisted(() => ({
+  debugMock: vi.fn(),
+}))
+
+vi.mock('@aemeath-projects/exostrider/logger', () => ({
+  getLogger: () => ({ debug: debugMock, warn: vi.fn(), info: vi.fn() }),
+}))
 
 describe('GroupBotRegistry', () => {
   let registry: GroupBotRegistry
@@ -56,5 +64,14 @@ describe('GroupBotRegistry', () => {
   it('不同群互不影响', () => {
     registry.setRole('100', 'client-A', 'admin')
     expect(registry.getCapableClients('200', 'group_admin')).toHaveLength(0)
+  })
+
+  it('setRole 应输出 debug 级别日志（而非 info，避免生产日志噪音）', () => {
+    debugMock.mockClear()
+    registry.setRole('100', 'client-A', 'member')
+    expect(debugMock).toHaveBeenCalledWith(
+      { groupId: '100', clientId: 'client-A', role: 'member' },
+      'GroupBotRegistry.setRole',
+    )
   })
 })

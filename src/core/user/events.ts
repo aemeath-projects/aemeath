@@ -3,6 +3,9 @@
  *
  * 处理来自 Bot 的实时事件（好友添加、群成员进出、群管理员变动等），
  * 将增量变更持久化到数据库并维护 Redis 缓存。
+ *
+ * 写入边界：只处理单条 OneBot 事件触发的增量更新（好友添加、群成员进出/管理员变更/
+ * 名片变更），不做批量同步——批量同步写入见 UserService（index.ts）。
  */
 
 import { computeRelation } from './index.js'

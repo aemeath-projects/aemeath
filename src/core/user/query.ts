@@ -2,6 +2,8 @@
  * 用户管理只读查询服务 —— 分页列表、详情查询，SRP 分离自 UserService。
  */
 
+import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/lifecycle'
+
 import type { AemeathPrismaClient } from '@/core/db/index.js'
 
 /** 分页结果。 */
@@ -376,5 +378,21 @@ export class UserQueryService {
       ),
       groups: Object.fromEntries(groups.map((g) => [g.groupId, { groupName: g.groupName }])),
     }
+  }
+}
+
+/* 生命周期注册 */
+
+@Service({ name: 'user_query_bootstrap' })
+export class UserQueryBootstrap {
+  @Inject('db')
+  db!: AemeathPrismaClient
+
+  @Provide('user_query_service')
+  userQueryService!: UserQueryService
+
+  @Startup
+  start(): void {
+    this.userQueryService = new UserQueryService(this.db)
   }
 }

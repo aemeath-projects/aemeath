@@ -25,7 +25,7 @@ import type { SettingsService } from '@/core/settings/index.js'
 const ADMIN_OWNER = '__admin__'
 
 function getSettings(app: FastifyInstance): SettingsService {
-  return app.services.get('settings') as SettingsService
+  return app.services.get('settings')
 }
 
 /** 解析 URL 编码的 Path JSON 数组，缺省或空串时视为系统级（空数组）。 */

@@ -2,15 +2,12 @@
 
 import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
-import type { ClientPool } from '@aemeath-projects/exostrider/pool'
-import { seg } from '@aemeath-projects/napcat'
-import type { FriendApi, GroupApi, MessageApi, NapCatClient } from '@aemeath-projects/napcat'
 import type { MessageSegment } from '@aemeath-projects/napcat/types'
 import { Job, Queue, QueueEvents } from 'bullmq'
 import type { ConnectionOptions } from 'bullmq'
 
-import { isBotActionResult, isRenderSendResult, isSelfContainedResult } from './models.js'
-import type { BotActionJobResult, RenderSendJobResult } from './models.js'
+import { isBotActionResult, isSelfContainedResult } from './models.js'
+import type { BotActionJobResult } from './models.js'
 
 import type { MessageRouter } from '@/core/accounts/index.js'
 import type { RedisStore } from '@/core/redis/index.js'
@@ -22,10 +19,6 @@ export class TaskExecutor {
   private readonly queue: Queue
 
   constructor(
-    private readonly msgApi: MessageApi,
-    private readonly friendApi: FriendApi,
-    private readonly groupApi: GroupApi,
-    private readonly pool: ClientPool<NapCatClient, string, unknown>,
     private readonly cache: RedisStore,
     private readonly router: MessageRouter,
     connection: ConnectionOptions,
@@ -68,39 +61,29 @@ export class TaskExecutor {
       return
     }
 
-    if (isRenderSendResult(result)) {
-      await this._executeRenderSend(result)
-      return
-    }
-
     log.warn({ jobName, result }, '未知的 job result 类型')
   }
 
   private async _executeBotActions(result: BotActionJobResult, jobName: string): Promise<void> {
-    // 本方法内调用的 msgApi/friendApi/groupApi 均为 master 专属通道（见 main.ts 装配），
-    // 前置检查须按 master 角色过滤，而非任意角色——否则"无 master、有 normal 账号在线"
-    // 这种被明确支持的部署形态下，每次触发都会因 API 调用失败而报 error 日志噪音。
-    if (this.pool.getAvailableClients('master').length === 0) {
-      log.warn({ jobName }, '无可用账号，跳过 Bot API 调用')
-      return
-    }
-
+    // 所有调用统一走 MessageRouter：路由对业务透明，Router 内部无候选账号时会抛
+    // AppError(503)，已在下方逐 call 的 try/catch 中捕获并记录，不需要前置判断
+    // "是否有 master 在线"——这曾导致"只有 normal 账号在线"时被误判为不可用。
     for (const call of result.calls) {
       try {
         switch (call.method) {
           case 'sendGroupMsg': {
             const [groupId, message] = call.args as [string, MessageSegment[]]
-            await this.msgApi.sendGroupMsg(Number(groupId), message)
+            await this.router.sendGroupMsg(groupId, message)
             break
           }
           case 'sendGroupSign': {
             const [groupId] = call.args as [string]
-            await this.groupApi.sendGroupSign(Number(groupId))
+            await this.router.sendGroupSign(groupId)
             break
           }
           case 'sendLike': {
             const [userId, times] = call.args as [string, number]
-            await this.friendApi.sendLike(Number(userId), times)
+            await this.router.sendLike(userId, times)
             break
           }
           case 'sendMsg': {
@@ -113,9 +96,9 @@ export class TaskExecutor {
               },
             ]
             if (params.messageType === 'group' && params.groupId != null) {
-              await this.msgApi.sendGroupMsg(Number(params.groupId), params.message)
+              await this.router.sendGroupMsg(params.groupId, params.message)
             } else if (params.messageType === 'private' && params.userId != null) {
-              await this.msgApi.sendPrivateMsg(Number(params.userId), params.message)
+              await this.router.sendPrivateMsg(params.userId, params.message)
             }
             break
           }
@@ -144,31 +127,6 @@ export class TaskExecutor {
           log.error({ jobName, op, err }, 'postCacheOp 执行失败')
         }
       }
-    }
-  }
-
-  private async _executeRenderSend(result: RenderSendJobResult): Promise<void> {
-    const b64 = await this.cache.get<string>(result.tempKey)
-    if (b64 === null) {
-      log.warn({ tempKey: result.tempKey }, 'render-send temp key 已过期，静默丢弃')
-      return
-    }
-
-    const imageSegment = seg.image(`base64://${b64}`)
-
-    // render-send 是面向任意 handler 触发者的通用回复通道（如 /help），与 _executeBotActions
-    // 不同，不应绑定 master 专属通道——走 MessageRouter 才能在只有 normal 账号在线时也能送达。
-    try {
-      if ('groupId' in result.sendTo) {
-        await this.router.sendGroupMsg(result.sendTo.groupId, [imageSegment])
-      } else {
-        await this.router.sendPrivateMsg(result.sendTo.userId, [imageSegment])
-      }
-    } catch (err) {
-      log.error({ tempKey: result.tempKey, err }, 'render-send Bot API 调用失败')
-    } finally {
-      // 无论发送成功与否均清理 temp key，避免 TTL 内二次消费
-      await this.cache.del(result.tempKey).catch(() => undefined)
     }
   }
 }

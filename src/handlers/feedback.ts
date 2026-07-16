@@ -9,7 +9,13 @@ import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 
 import type { OneBotContext as Context } from '@/core/dispatch/index.js'
-import { Handler, OnCommand, PermissionDecorator, Permission } from '@/core/dispatch/index.js'
+import {
+  Handler,
+  OnCommand,
+  Scope,
+  PermissionDecorator,
+  Permission,
+} from '@/core/dispatch/index.js'
 import { SettingNode } from '@/core/settings/index.js'
 import type { FeedbackService } from '@/services/feedback.js'
 
@@ -57,8 +63,9 @@ class FeedbackHandler {
   @Inject('feedback_service')
   private readonly feedbackService!: FeedbackService
 
-  /** 提交反馈命令。有参数时直接提交，无参数时提示用法。 */
+  /** 提交反馈命令。有参数时直接提交，无参数时提示用法。支持群聊和私聊。 */
   @OnCommand('/反馈', { aliases: ['/feedback'] })
+  @Scope('all')
   @PermissionDecorator(0)
   async submitFeedback(ctx: Context): Promise<boolean> {
     const argStr = ctx.getArgStr().trim()
@@ -92,8 +99,9 @@ class FeedbackHandler {
     return true
   }
 
-  /** 查询用户最近 5 条反馈。 */
+  /** 查询用户最近 5 条反馈。支持群聊和私聊。 */
   @OnCommand('/我的反馈', { aliases: ['/myfeedback'] })
+  @Scope('all')
   @PermissionDecorator(0)
   async myFeedbacks(ctx: Context): Promise<boolean> {
     try {

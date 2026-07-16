@@ -59,10 +59,11 @@ export type {
 export * from './decorators.js'
 
 // aemeath 扩展类型与上下文
-export type { ContextApis } from './adapter.js'
+export type { ContextApis, MsgApi } from './adapter.js'
 export { oneBotContextConfig } from './adapter.js'
 export { OneBotContext } from './context.js'
 export type { FeatureChecker } from './types.js'
+export { MessageBuilder } from './message-builder.js'
 
 // 路由装饰器类型适配包装
 //

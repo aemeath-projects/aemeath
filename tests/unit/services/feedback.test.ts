@@ -23,6 +23,7 @@ function createMockRouter() {
   return {
     sendGroupMsg: vi.fn().mockResolvedValue({ status: 'ok', retcode: 0, data: null, echo: '' }),
     sendAdminMsg: vi.fn().mockResolvedValue({ status: 'ok', retcode: 0, data: null, echo: '' }),
+    sendPrivateMsg: vi.fn().mockResolvedValue({ status: 'ok', retcode: 0, data: null, echo: '' }),
   }
 }
 
@@ -242,8 +243,8 @@ describe('FeedbackService', () => {
       // 等待通知的微任务执行
       await new Promise((resolve) => setTimeout(resolve, 10))
 
-      expect(mockRouter.sendAdminMsg).toHaveBeenCalledOnce()
-      expect(mockRouter.sendAdminMsg).toHaveBeenCalledWith(
+      expect(mockRouter.sendPrivateMsg).toHaveBeenCalledOnce()
+      expect(mockRouter.sendPrivateMsg).toHaveBeenCalledWith(
         expect.any(String),
         expect.arrayContaining([
           expect.objectContaining({

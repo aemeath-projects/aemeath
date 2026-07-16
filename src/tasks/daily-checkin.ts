@@ -1,5 +1,8 @@
 /** 每日打卡 BullMQ 处理器 —— Worker 内完成预处理，返回 BotApiCall[]。 */
 
+// 导入 CheckinService 以注册 cache keys（副作用）
+import '@/services/checkin.js'
+
 import type { Job } from 'bullmq'
 
 import type { AemeathPrismaClient } from '@/core/db/index.js'
@@ -53,7 +56,7 @@ export async function dailyCheckinProcessor(
     const dailyKey = cacheKeyRegistry.buildKey('checkin', 'daily', g.groupId, today)
     if (await cache.exists(dailyKey)) continue
 
-    calls.push({ method: 'sendGroupSign', args: [Number(g.groupId)] })
+    calls.push({ method: 'sendGroupSign', args: [g.groupId] })
     postCacheOps.push({ action: 'set', key: dailyKey, value: '1', ttl: CHECKIN_TTL })
   }
 

@@ -20,7 +20,7 @@ import { fail, ok, FailResponse, OkResponse } from '@/core/schemas/index.js'
 import type { LikeService } from '@/services/like.js'
 
 async function getLikeSvc(app: FastifyInstance): Promise<LikeService> {
-  return app.services.get('like_service') as LikeService
+  return app.services.get('like_service')
 }
 
 function ceilDiv(a: number, b: number): number {

@@ -8,6 +8,8 @@ vi.mock('@aemeath-projects/exostrider/logger', () => ({
 
 const sendGroupMsgMock = vi.fn()
 const sendPrivateMsgMock = vi.fn()
+const sendGroupSignMock = vi.fn()
+const sendLikeMock = vi.fn()
 
 vi.mock('@aemeath-projects/napcat', () => {
   const MessageApi = vi.fn(function (this: {
@@ -17,7 +19,13 @@ vi.mock('@aemeath-projects/napcat', () => {
     this.sendGroupMsg = sendGroupMsgMock
     this.sendPrivateMsg = sendPrivateMsgMock
   })
-  return { MessageApi }
+  const GroupApi = vi.fn(function (this: { sendGroupSign: ReturnType<typeof vi.fn> }) {
+    this.sendGroupSign = sendGroupSignMock
+  })
+  const FriendApi = vi.fn(function (this: { sendLike: ReturnType<typeof vi.fn> }) {
+    this.sendLike = sendLikeMock
+  })
+  return { MessageApi, GroupApi, FriendApi }
 })
 
 const { MessageRouter } = await import('@/core/accounts/router.js')
@@ -257,6 +265,158 @@ describe('MessageRouter', () => {
       const master = capturedCandidates.find((c) => c.clientId === 'master')!
       const normal = capturedCandidates.find((c) => c.clientId === 'normal')!
       expect(normal.priority).toBeLessThan(master.priority)
+    })
+  })
+
+  describe('sendGroupSign', () => {
+    it('复用 sendGroupMsg 同款候选筛选逻辑，选中账号后调用 GroupApi.sendGroupSign', async () => {
+      membershipTracker.getClientsInGroup.mockReturnValue(['acc1'])
+      pool.getClient.mockImplementation((id: string) => ({ id, state: 'connected', client: {} }))
+      pool.getClientRole.mockReturnValue('normal')
+      routingTable.resolve.mockImplementation((_groupId: string, candidates: Candidate[]) => {
+        return candidates[0]!.clientId
+      })
+      sendGroupSignMock.mockResolvedValue({ ok: true, data: undefined })
+
+      const router = new MessageRouter(
+        pool as never,
+        routingTable as never,
+        membershipTracker as never,
+        'prefer_master',
+      )
+
+      await router.sendGroupSign('555')
+      expect(sendGroupSignMock).toHaveBeenCalledWith(555)
+    })
+
+    it('候选为空时抛出 AppError', async () => {
+      membershipTracker.getClientsInGroup.mockReturnValue([])
+
+      const router = new MessageRouter(
+        pool as never,
+        routingTable as never,
+        membershipTracker as never,
+        'prefer_master',
+      )
+
+      await expect(router.sendGroupSign('555')).rejects.toThrow('当前群无可用账号发送消息')
+    })
+  })
+
+  describe('sendLike', () => {
+    it('复用 sendPrivateMsg 同款候选筛选逻辑（任意在线账号），选中后调用 FriendApi.sendLike', async () => {
+      pool.getAvailableClients.mockReturnValue([{ id: 'acc1', state: 'connected', client: {} }])
+      pool.getClient.mockImplementation((id: string) => ({ id, state: 'connected', client: {} }))
+      pool.getClientRole.mockReturnValue('normal')
+      routingTable.resolve.mockImplementation((_key: string, candidates: Candidate[]) => {
+        return candidates[0]!.clientId
+      })
+      sendLikeMock.mockResolvedValue({ ok: true, data: undefined })
+
+      const router = new MessageRouter(
+        pool as never,
+        routingTable as never,
+        membershipTracker as never,
+        'prefer_master',
+      )
+
+      await router.sendLike('9999', 10)
+      expect(sendLikeMock).toHaveBeenCalledWith(9999, 10)
+    })
+
+    it('无在线账号时抛出 AppError', async () => {
+      pool.getAvailableClients.mockReturnValue([])
+
+      const router = new MessageRouter(
+        pool as never,
+        routingTable as never,
+        membershipTracker as never,
+        'prefer_master',
+      )
+
+      await expect(router.sendLike('9999', 10)).rejects.toThrow('当前无可用账号发送私聊消息')
+    })
+  })
+
+  describe('resolveGroupClient', () => {
+    it('复用 sendGroupMsg 同款候选筛选与粘性选号，返回选中账号的 NapCatClient', () => {
+      const fakeClient = { id: 'acc1' }
+      membershipTracker.getClientsInGroup.mockReturnValue(['acc1'])
+      pool.getClient.mockImplementation((id: string) => ({
+        id,
+        state: 'connected',
+        client: fakeClient,
+      }))
+      pool.getClientRole.mockReturnValue('normal')
+      routingTable.resolve.mockImplementation((_groupId: string, candidates: Candidate[]) => {
+        return candidates[0]!.clientId
+      })
+
+      const router = new MessageRouter(
+        pool as never,
+        routingTable as never,
+        membershipTracker as never,
+        'prefer_master',
+      )
+
+      const client = router.resolveGroupClient('555')
+      expect(client).toBe(fakeClient)
+    })
+
+    it('候选为空时返回 null，不抛异常', () => {
+      membershipTracker.getClientsInGroup.mockReturnValue([])
+
+      const router = new MessageRouter(
+        pool as never,
+        routingTable as never,
+        membershipTracker as never,
+        'prefer_master',
+      )
+
+      expect(router.resolveGroupClient('555')).toBeNull()
+    })
+  })
+
+  describe('hasAvailableAccounts', () => {
+    it('指定角色时委托给 pool.getAvailableClients(role)', () => {
+      pool.getAvailableClients.mockReturnValue([{ id: 'm1', state: 'connected', client: {} }])
+
+      const router = new MessageRouter(
+        pool as never,
+        routingTable as never,
+        membershipTracker as never,
+        'prefer_master',
+      )
+
+      expect(router.hasAvailableAccounts('master')).toBe(true)
+      expect(pool.getAvailableClients).toHaveBeenCalledWith('master')
+    })
+
+    it('无候选时返回 false', () => {
+      pool.getAvailableClients.mockReturnValue([])
+
+      const router = new MessageRouter(
+        pool as never,
+        routingTable as never,
+        membershipTracker as never,
+        'prefer_master',
+      )
+
+      expect(router.hasAvailableAccounts('master')).toBe(false)
+    })
+
+    it('不传 role 时查询任意角色', () => {
+      pool.getAvailableClients.mockReturnValue([{ id: 'n1', state: 'connected', client: {} }])
+
+      const router = new MessageRouter(
+        pool as never,
+        routingTable as never,
+        membershipTracker as never,
+        'prefer_master',
+      )
+
+      expect(router.hasAvailableAccounts()).toBe(true)
+      expect(pool.getAvailableClients).toHaveBeenCalledWith(undefined)
     })
   })
 })

@@ -44,24 +44,6 @@ export const cacheKeyRegistry = new CacheKeyRegistry()
 
 // 框架级 key 注册
 cacheKeyRegistry.register({
-  namespace: 'perm',
-  name: 'group',
-  build: (groupId, featureName) => `aemeath:perm:group:${groupId}:${featureName}`,
-})
-
-cacheKeyRegistry.register({
-  namespace: 'perm',
-  name: 'private',
-  build: (featureName, userId) => `aemeath:perm:private:${featureName}:${userId}`,
-})
-
-cacheKeyRegistry.register({
-  namespace: 'perm',
-  name: 'groupEnabled',
-  build: (groupId) => `aemeath:perm:group_enabled:${groupId}`,
-})
-
-cacheKeyRegistry.register({
   namespace: 'session',
   name: 'meta',
   build: (sessionKey) => `aemeath:session:${sessionKey}`,

@@ -26,7 +26,6 @@ import {
   IrisTriggerDataSchema,
   IrisMessageStreamQuerySchema,
 } from '@/apis/schemas/index.js'
-import type { IrisArchiveService, IrisService } from '@/core/iris/index.js'
 import { irisMessageBroadcaster } from '@/core/iris/index.js'
 import { ok, fail, OkResponse, FailResponse } from '@/core/schemas/index.js'
 
@@ -117,7 +116,7 @@ const irisRoutes: FastifyPluginAsync = async (app) => {
       }>,
       reply: FastifyReply,
     ) => {
-      const svc = app.services.get('iris') as IrisService
+      const svc = app.services.get('iris')
 
       const groupId = req.params.groupId
       const q = req.query
@@ -155,7 +154,7 @@ const irisRoutes: FastifyPluginAsync = async (app) => {
       }>,
       reply: FastifyReply,
     ) => {
-      const svc = app.services.get('iris') as IrisService
+      const svc = app.services.get('iris')
 
       const userId = req.params.userId
       const q = req.query
@@ -189,7 +188,7 @@ const irisRoutes: FastifyPluginAsync = async (app) => {
       }>,
       reply: FastifyReply,
     ) => {
-      const svc = app.services.get('iris') as IrisService
+      const svc = app.services.get('iris')
 
       const messageId = BigInt(req.params.messageId)
       const createdAt = new Date(req.query.createdAt)
@@ -269,7 +268,7 @@ const irisRoutes: FastifyPluginAsync = async (app) => {
       req: FastifyRequest<{ Querystring: { page?: string; pageSize?: string } }>,
       reply: FastifyReply,
     ) => {
-      const svc = app.services.get('iris_archive') as IrisArchiveService
+      const svc = app.services.get('iris_archive')
 
       const page = req.query.page ? parseInt(req.query.page, 10) : 1
       const pageSize = req.query.pageSize ? parseInt(req.query.pageSize, 10) : 20
@@ -306,7 +305,7 @@ const irisRoutes: FastifyPluginAsync = async (app) => {
       }
       const limit = req.query.limit ? parseInt(req.query.limit, 10) : 50
 
-      const svc = app.services.get('iris_archive') as IrisArchiveService
+      const svc = app.services.get('iris_archive')
 
       const result = await svc.listArchives({ periodStart, limit })
       await reply.send(ok(result))
@@ -385,7 +384,7 @@ const irisRoutes: FastifyPluginAsync = async (app) => {
       },
     },
     async (_req: FastifyRequest, reply: FastifyReply) => {
-      const archiveSvc = app.services.get('iris_archive') as IrisArchiveService
+      const archiveSvc = app.services.get('iris_archive')
       const { total: completedArchives } = await archiveSvc.getArchiveLogs(1, 1)
       await reply.send(ok({ totalMessages: 0, completedArchives }))
     },

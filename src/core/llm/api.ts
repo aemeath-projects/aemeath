@@ -33,7 +33,7 @@ import {
 /* 内部工具 */
 
 function getLlmService(request: FastifyRequest): LLMService {
-  return request.server.services.get('llm_service') as LLMService
+  return request.server.services.get('llm_service')
 }
 
 async function handleError(reply: FastifyReply, err: unknown): Promise<void> {

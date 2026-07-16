@@ -1,5 +1,5 @@
 import { FinishError } from '@aemeath-projects/exostrider/dispatch'
-import type { FriendApi, GroupApi, MessageApi } from '@aemeath-projects/napcat'
+import type { FriendApi, GroupApi } from '@aemeath-projects/napcat'
 import type { AnyOneBotEvent, MessageSegment } from '@aemeath-projects/napcat/types'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -22,7 +22,7 @@ function makeMockApis(): MockApis {
   const deleteMsg = vi.fn().mockResolvedValue({ ok: true, data: undefined })
   return {
     apis: {
-      msgApi: { sendGroupMsg, sendPrivateMsg, deleteMsg } as unknown as MessageApi,
+      msgApi: { sendGroupMsg, sendPrivateMsg, deleteMsg },
       friendApi: {} as unknown as FriendApi,
       groupApi: {} as unknown as GroupApi,
     },

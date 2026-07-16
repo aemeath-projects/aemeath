@@ -41,19 +41,19 @@ function parseQQParam(value: string, name: string): string {
 }
 
 function getUserService(app: FastifyInstance): UserService {
-  return app.services.get('userService') as UserService
+  return app.services.get('user_service')
 }
 
 function getUserQueryService(app: FastifyInstance): UserQueryService {
-  return app.services.get('userQueryService') as UserQueryService
+  return app.services.get('user_query_service')
 }
 
 function getSyncCoordinator(app: FastifyInstance): SyncCoordinator {
-  return app.services.get('syncCoordinator') as SyncCoordinator
+  return app.services.get('sync_coordinator')
 }
 
 function getAdminService(app: FastifyInstance): AdminService {
-  return app.services.get('adminService') as AdminService
+  return app.services.get('admin_service')
 }
 
 /** 统一错误映射：ValidationError → 422，其余 → 500（参考 mailbox/api.ts 的错误映射约定；本模块暂无 NotFoundError 场景，故未引入该分支）。 */

@@ -4,19 +4,22 @@
  * 只读查询已迁移至 UserQueryService（query.ts）。
  * 增量事件处理已迁移至 UserEventService（events.ts）。
  * 御者（超级管理员）管理已迁移至 AdminService（admin.ts）。
+ *
+ * 写入边界（User 表当前有三个写入方，职责按触发来源分离，不是重叠）：
+ * - UserService（本文件）：全量/批量同步场景的写入（upsertUsers/upsertGroups/
+ *   upsertMemberships/persistSyncData），触发来源是 SyncCoordinator 定时或手动全量同步。
+ * - UserEventService（events.ts）：单条 OneBot 事件驱动的增量写入（好友添加、
+ *   群成员变动等），触发来源是实时事件流。
+ * - AdminService（admin.ts）：只写 relation='admin' 这一个标志位，触发来源是
+ *   管理员管理 API，且用分布式锁保证全局唯一性。
  */
 
-import { Service, Inject, Provide, Startup, Shutdown } from '@aemeath-projects/exostrider/lifecycle'
+import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/lifecycle'
 import type { FriendInfo, GroupInfo, GroupMember } from '@aemeath-projects/napcat/types'
 
 import { USER_RELATION_GLOB } from './cache.js'
-import { UserQueryService } from './query.js'
-import { SyncCoordinator } from './sync.js'
-import type { ConnectionStatus } from './sync.js'
 
-import type { MasterApis, AccountPool } from '@/core/accounts/index.js'
 import type { AemeathPrismaClient } from '@/core/db/index.js'
-import { AppError } from '@/core/errors.js'
 import type { RedisStore } from '@/core/redis/index.js'
 import { cacheKeyRegistry } from '@/core/registries.js'
 
@@ -439,20 +442,6 @@ export class UserService {
 
 /* 生命周期注册 */
 
-@Service({ name: 'user_query_bootstrap' })
-export class UserQueryBootstrap {
-  @Inject('db')
-  db!: AemeathPrismaClient
-
-  @Provide('userQueryService')
-  userQueryService!: UserQueryService
-
-  @Startup
-  start(): void {
-    this.userQueryService = new UserQueryService(this.db)
-  }
-}
-
 @Service({ name: 'user_bootstrap' })
 export class UserBootstrap {
   /** 注入主数据库 */
@@ -464,53 +453,11 @@ export class UserBootstrap {
   cache!: RedisStore
 
   /** 对外暴露用户服务实例 */
-  @Provide('userService')
+  @Provide('user_service')
   userService!: UserService
 
   @Startup
   start(): void {
     this.userService = new UserService(this.db, this.cache)
-  }
-}
-
-@Service({ name: 'sync_coordinator_bootstrap' })
-export class SyncCoordinatorBootstrap {
-  @Inject('master_apis')
-  masterApis!: MasterApis
-
-  @Inject('userService')
-  userService!: UserService
-
-  @Inject('account_pool')
-  accountPool!: AccountPool
-
-  @Provide('syncCoordinator')
-  syncCoordinator!: SyncCoordinator
-
-  @Startup
-  start(): void {
-    // friendApi/groupApi 是活体代理（见 bootstrap.ts createLiveMasterApi），
-    // 理论上不会为 null；此处仅做类型收窄，兼容其他消费方的防御性判空。
-    const { friendApi, groupApi } = this.masterApis
-    if (!friendApi || !groupApi) {
-      throw new AppError(-1, 'master_apis 未正确初始化，SyncCoordinator 无法启动', 500)
-    }
-    const pool = this.accountPool
-    const connStatus: ConnectionStatus = {
-      // 必须按 master 角色过滤，而不是任意角色——friendApi/groupApi 只走 master 通道，
-      // 否则"无 master、有 normal 账号在线"时会误判为已连接，进而在每次同步周期都
-      // 因为 API 调用失败而报 error 日志噪音。
-      get connected() {
-        return pool.getAvailableClients('master').length > 0
-      },
-    }
-
-    this.syncCoordinator = new SyncCoordinator(friendApi, groupApi, this.userService, connStatus)
-    this.syncCoordinator.start()
-  }
-
-  @Shutdown
-  stop(): void {
-    this.syncCoordinator.stop()
   }
 }

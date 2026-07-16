@@ -19,7 +19,7 @@ import { NotFoundError, ValidationError } from '@/core/errors.js'
 import { ok, fail, OkResponse, FailResponse } from '@/core/schemas/index.js'
 
 function getMailboxService(request: FastifyRequest): MailboxService {
-  return request.server.services.get('mailbox') as MailboxService
+  return request.server.services.get('mailbox')
 }
 
 async function handleError(reply: FastifyReply, err: unknown): Promise<void> {

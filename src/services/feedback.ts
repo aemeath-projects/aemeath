@@ -207,7 +207,7 @@ export class FeedbackService {
       if (feedback.source === 'group' && feedback.groupId != null) {
         await this.router.sendGroupMsg(feedback.groupId, [seg.text(message)])
       } else {
-        await this.router.sendAdminMsg(feedback.userId, [seg.text(message)])
+        await this.router.sendPrivateMsg(feedback.userId, [seg.text(message)])
       }
     } catch (err) {
       this._log.warn({ userId: feedback.userId, feedbackId: feedback.id, err }, '通知用户失败')

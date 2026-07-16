@@ -12,7 +12,7 @@ import type {
   OneBotContext as Context,
 } from '@/core/dispatch/index.js'
 import { Handler, OnCommand, Scope, handlerRegistry } from '@/core/dispatch/index.js'
-import { enqueueRender } from '@/core/utils/index.js'
+import { enqueueRender } from '@/renderer/index.js'
 import type { HelpData } from '@/renderer/index.js'
 
 const log: PinoLogger = getLogger('help') as unknown as PinoLogger

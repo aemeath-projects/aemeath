@@ -1,8 +1,12 @@
-/** 站内信广播器 —— EventEmitter，供 SSE 端点订阅新消息。 */
+/** 站内信广播器 —— TypedEventEmitter，供 SSE 端点订阅新消息。 */
 
-import { EventEmitter } from 'node:events'
+import { TypedEventEmitter } from '@aemeath-projects/exostrider/types'
 
 import type { Mailbox } from '#prisma/aemeath'
+
+interface MailboxEvents {
+  mailbox: (item: Mailbox) => void
+}
 
 /**
  * 站内信广播器。
@@ -10,7 +14,7 @@ import type { Mailbox } from '#prisma/aemeath'
  * `MailboxService.notifyAdmins()` 写库成功后调用 {@link MailboxBroadcaster.broadcast}，
  * `GET /api/mailbox/stream` 监听 `'mailbox'` 事件实时推送给前端。
  */
-export class MailboxBroadcaster extends EventEmitter {
+export class MailboxBroadcaster extends TypedEventEmitter<MailboxEvents> {
   constructor() {
     super()
     this.setMaxListeners(50)

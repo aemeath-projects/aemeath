@@ -4,11 +4,11 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { AemeathPrismaClient } from '@/core/db/index.js'
 import type { RedisStore } from '@/core/redis/index.js'
-// 注册 checkin cache keys，否则 cacheKeyRegistry.buildKey 会抛错
-import '@/services/checkin-cache-keys.js'
+// 导入 CheckinService 以注册 checkin cache keys
+import '@/services/checkin.js'
 import { dailyCheckinProcessor, JOB_NAME } from '@/tasks/daily-checkin.js'
 
-function createMockDb(groups: { groupId: bigint }[] = []) {
+function createMockDb(groups: { groupId: string }[] = []) {
   return {
     group: {
       findMany: vi.fn().mockResolvedValue(groups),
@@ -45,7 +45,7 @@ describe('dailyCheckinProcessor', () => {
   })
 
   it('Redis 已打卡的群被跳过', async () => {
-    const db = createMockDb([{ groupId: 100n }])
+    const db = createMockDb([{ groupId: '100' }])
     // bot.enabled=true，daily_checkin.enabled=true（需 DB 覆盖）
     db.$queryRaw = vi
       .fn()
@@ -57,7 +57,7 @@ describe('dailyCheckinProcessor', () => {
   })
 
   it('功能未开启的群被跳过', async () => {
-    const db = createMockDb([{ groupId: 200n }])
+    const db = createMockDb([{ groupId: '200' }])
     // bot.enabled=true（schema default），daily_checkin.enabled=false（schema default）
     db.$queryRaw = vi.fn().mockImplementation(() => Promise.resolve([]))
     const cache = createMockCache(false)
@@ -66,7 +66,7 @@ describe('dailyCheckinProcessor', () => {
   })
 
   it('满足条件的群生成 sendGroupSign call', async () => {
-    const db = createMockDb([{ groupId: 300n }])
+    const db = createMockDb([{ groupId: '300' }])
     db.$queryRaw = vi
       .fn()
       .mockImplementationOnce(() => Promise.resolve([{ scope: 'group:300', value: 'true' }]))
@@ -75,6 +75,6 @@ describe('dailyCheckinProcessor', () => {
     const result = await dailyCheckinProcessor({} as Job, { db, cache, schemaMap: workerSchemaMap })
     expect(result.type).toBe('bot-action')
     expect(result.calls).toHaveLength(1)
-    expect(result.calls[0]).toMatchObject({ method: 'sendGroupSign', args: [300] })
+    expect(result.calls[0]).toMatchObject({ method: 'sendGroupSign', args: ['300'] })
   })
 })

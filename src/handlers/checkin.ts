@@ -14,9 +14,9 @@ import {
   Scope,
   PermissionDecorator,
   Permission,
+  MessageBuilder,
 } from '@/core/dispatch/index.js'
 import { SettingNode } from '@/core/settings/index.js'
-import { MessageBuilder } from '@/core/utils/index.js'
 import type { CheckinService } from '@/services/checkin.js'
 
 /* 上海时区辅助 */
@@ -52,6 +52,7 @@ class CheckinHandler {
   /** 处理用户签到请求（关键词触发）。 */
   @OnKeyword(['签到'])
   @Scope('group')
+  @PermissionDecorator(0)
   async handleCheckinKeyword(ctx: Context): Promise<boolean> {
     return this._doCheckin(ctx)
   }

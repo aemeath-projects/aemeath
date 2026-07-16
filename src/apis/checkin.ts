@@ -22,7 +22,7 @@ import { ok, OkResponse, FailResponse } from '@/core/schemas/index.js'
 import type { CheckinService, LeaderEntry, DayCount } from '@/services/checkin.js'
 
 async function getCheckinSvc(app: FastifyInstance): Promise<CheckinService> {
-  return app.services.get('user_checkin_service') as CheckinService
+  return app.services.get('user_checkin_service')
 }
 
 /**

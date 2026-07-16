@@ -5,6 +5,8 @@
 import { Type } from '@sinclair/typebox'
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
+import type { Feedback } from '#prisma/aemeath'
+
 import {
   FeedbackIdParamSchema,
   FeedbackListQuerySchema,
@@ -13,10 +15,9 @@ import {
   FeedbackDetailDataSchema,
 } from '@/apis/schemas/index.js'
 import { ok, fail, OkResponse, FailResponse } from '@/core/schemas/index.js'
-import type { Feedback, FeedbackService } from '@/services/feedback.js'
 
-async function getFeedbackSvc(app: FastifyInstance): Promise<FeedbackService> {
-  return app.services.get('feedback_service') as FeedbackService
+async function getFeedbackSvc(app: FastifyInstance) {
+  return app.services.get('feedback_service')
 }
 
 interface UpdateStatusBody {

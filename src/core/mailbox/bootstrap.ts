@@ -21,7 +21,7 @@ export class MailboxBootstrap {
   router!: MessageRouter
 
   /** 注入御者管理服务 */
-  @Inject('adminService')
+  @Inject('admin_service')
   adminService!: AdminService
 
   /** 对外暴露站内信服务实例，供其他服务（如 FeedbackService）通过 @Inject('mailbox') 复用 */

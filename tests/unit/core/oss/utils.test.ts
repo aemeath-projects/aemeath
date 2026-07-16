@@ -3,13 +3,20 @@ import { Readable } from 'node:stream'
 import type { Client } from 'minio'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-import { uploadBuffer, downloadBuffer, objectExists, deleteObject } from '@/core/oss/index.js'
+import {
+  uploadBuffer,
+  downloadBuffer,
+  objectExists,
+  deleteObject,
+  presignedGetObject,
+} from '@/core/oss/index.js'
 
 interface MockClient {
   putObject: ReturnType<typeof vi.fn>
   getObject: ReturnType<typeof vi.fn>
   statObject: ReturnType<typeof vi.fn>
   removeObject: ReturnType<typeof vi.fn>
+  presignedGetObject: ReturnType<typeof vi.fn>
 }
 
 function createMockClient(): MockClient {
@@ -18,6 +25,7 @@ function createMockClient(): MockClient {
     getObject: vi.fn(),
     statObject: vi.fn(),
     removeObject: vi.fn().mockResolvedValue(undefined),
+    presignedGetObject: vi.fn(),
   }
 }
 
@@ -83,6 +91,17 @@ describe('oss/utils', () => {
     it('应调用 removeObject', async () => {
       await deleteObject(asClient(client), 'bucket', 'key')
       expect(client.removeObject).toHaveBeenCalledWith('bucket', 'key')
+    })
+  })
+
+  describe('presignedGetObject', () => {
+    it('应调用 client.presignedGetObject 并返回 URL', async () => {
+      client.presignedGetObject = vi
+        .fn()
+        .mockResolvedValue('https://minio:9000/bucket/key.png?sig=abc')
+      const url = await presignedGetObject(asClient(client), 'bucket', 'key.png', 120)
+      expect(client.presignedGetObject).toHaveBeenCalledWith('bucket', 'key.png', 120)
+      expect(url).toBe('https://minio:9000/bucket/key.png?sig=abc')
     })
   })
 })

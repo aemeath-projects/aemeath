@@ -2,8 +2,6 @@
  * 用户群签到业务逻辑服务 —— 每日签到、连续天数、排行榜、统计。
  */
 
-import './checkin-cache-keys.js'
-
 import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/lifecycle'
 import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
@@ -18,6 +16,20 @@ import { cacheKeyRegistry } from '@/core/registries.js'
 import { SHANGHAI_TZ } from '@/core/utils/index.js'
 
 export type { CheckinRecord }
+
+/* 注册 cache key */
+
+cacheKeyRegistry.register({
+  namespace: 'checkin',
+  name: 'daily',
+  build: (groupId, dateStr) => `aemeath:checkin:${groupId}:${dateStr}`,
+})
+
+cacheKeyRegistry.register({
+  namespace: 'checkin',
+  name: 'stats',
+  build: (groupId, userId) => `aemeath:checkin:stats:${groupId}:${userId}`,
+})
 
 /* 缓存 TTL */
 

@@ -1,5 +1,9 @@
 /**
  * 御者（超级管理员）管理服务 —— 候选校验、全局唯一性保证、缓存。
+ *
+ * 写入边界：只写 User.relation='admin' 这一个标志位（setAdmin/removeAdmin），
+ * 用分布式锁（withAdminLock）保证全局唯一性；不涉及批量同步或事件驱动的其他字段写入，
+ * 那些见 UserService（index.ts）/UserEventService（events.ts）。
  */
 
 import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/lifecycle'
@@ -203,7 +207,7 @@ export class AdminBootstrap {
   masterApis?: MasterApis
 
   /** 对外暴露御者管理服务实例 */
-  @Provide('adminService')
+  @Provide('admin_service')
   adminService!: AdminService
 
   @Startup

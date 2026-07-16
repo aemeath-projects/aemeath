@@ -21,7 +21,7 @@ import type { JrlpService, WifeRecord } from '@/services/jrlp.js'
 const log: PinoLogger = getLogger('jrlp') as unknown as PinoLogger
 
 async function getJrlpSvc(app: FastifyInstance): Promise<JrlpService> {
-  return app.services.get('jrlp_service') as JrlpService
+  return app.services.get('jrlp_service')
 }
 
 function ceilDiv(a: number, b: number): number {

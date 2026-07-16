@@ -2,7 +2,6 @@
  * SettingsService —— 配置读写核心服务。
  */
 
-import type { Redis } from 'ioredis'
 import { v4 as uuidv4 } from 'uuid'
 
 import { Prisma } from '#prisma/aemeath'
@@ -13,6 +12,7 @@ import type { SettingNodeSchema } from './schema.js'
 
 import type { AemeathPrismaClient } from '@/core/db/index.js'
 import { ForbiddenError, ValidationError } from '@/core/errors.js'
+import type { RedisStore } from '@/core/redis/index.js'
 
 /* 常量 */
 
@@ -51,16 +51,16 @@ export interface SetOptions {
 
 export class SettingsService {
   private readonly db: AemeathPrismaClient
-  private readonly redis: Redis
+  private readonly cache: RedisStore
   private readonly schemaMap: ReadonlyMap<string, SettingNodeSchema>
 
   constructor(
     db: AemeathPrismaClient,
-    redis: Redis,
+    cache: RedisStore,
     schemaMap: ReadonlyMap<string, SettingNodeSchema>,
   ) {
     this.db = db
-    this.redis = redis
+    this.cache = cache
     this.schemaMap = schemaMap
   }
 
@@ -182,11 +182,7 @@ export class SettingsService {
       `,
     )
 
-    const pipeline = this.redis.pipeline()
-    for (const entry of entries) {
-      pipeline.del(this._cacheKey(entry.key, scope))
-    }
-    await pipeline.exec()
+    await Promise.all(entries.map((entry) => this.cache.del(this._cacheKey(entry.key, scope))))
   }
 
   /** 返回绑定了 ownerName 的轻量包装，业务代码通过它调用无需每次传 ownerName。 */
@@ -230,7 +226,7 @@ export class SettingsService {
    */
   private async _resolveCandidates(key: string, candidates: string[]): Promise<string | undefined> {
     const cacheKeys = candidates.map((scope) => this._cacheKey(key, scope))
-    const cached = await this.redis.mget(...cacheKeys)
+    const cached = await this.cache.mget<string>(cacheKeys)
 
     const missingScopes: string[] = []
     for (const [i, scope] of candidates.entries()) {
@@ -246,7 +242,7 @@ export class SettingsService {
     }
     const dbByScope = new Map(dbRows.map((r) => [r.scope, r.value]))
 
-    const pipeline = this.redis.pipeline()
+    const pipelineEntries: { key: string; value: unknown; ttl?: number }[] = []
     let result: string | undefined
 
     for (const [i, scope] of candidates.entries()) {
@@ -258,14 +254,14 @@ export class SettingsService {
         value = dbByScope.get(scope)
         const cacheValue = value ?? NULL_SENTINEL
         const ttl = value !== undefined ? POSITIVE_TTL_SECONDS : SENTINEL_TTL_SECONDS
-        pipeline.set(this._cacheKey(key, scope), cacheValue, 'EX', ttl)
+        pipelineEntries.push({ key: this._cacheKey(key, scope), value: cacheValue, ttl })
       }
       if (value !== undefined && result === undefined) {
         result = value
       }
     }
 
-    if (missingScopes.length > 0) await pipeline.exec()
+    if (pipelineEntries.length > 0) await this.cache.pipelineSet(pipelineEntries)
     return result
   }
 
@@ -277,7 +273,7 @@ export class SettingsService {
    * 该窗口期内敏感的权限类配置读取可能短暂读到旧值，属于已接受的设计权衡。
    */
   private async _invalidateCache(key: string, scope: string): Promise<void> {
-    await this.redis.del(this._cacheKey(key, scope))
+    await this.cache.del(this._cacheKey(key, scope))
   }
 
   /** 根据 Schema 类型反序列化字符串值（原样保留，未改动）。 */

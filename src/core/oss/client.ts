@@ -10,12 +10,10 @@ export interface OssConfig {
   readonly region: string
 }
 
-/** OSS bucket 名称配置。 */
-export interface OssBuckets {
-  readonly iris: string
-  readonly media: string
-  readonly render: string
-}
+/** OSS bucket 名称映射（业务侧按需扩展 key，不在此处硬编码具体桶名）。 */
+export type OssBuckets = Readonly<
+  Record<string, string> & { iris: string; media: string; render: string }
+>
 
 /** OSS 客户端与 bucket 配置的聚合对象（通过 'oss' 键注入到服务注册表）。 */
 export interface OssBundle {

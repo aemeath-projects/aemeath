@@ -14,7 +14,6 @@ import {
 import { AccountService, accountStatusBroadcaster } from '@/core/accounts/index.js'
 import type { AccountWithStatus } from '@/core/accounts/index.js'
 import { ok, fail } from '@/core/schemas/index.js'
-import type { SettingsService } from '@/core/settings/index.js'
 
 type QqParams = Static<typeof AccountQqParamsSchema>
 type CreateBody = Static<typeof CreateAccountBodySchema>
@@ -143,7 +142,7 @@ const plugin: FastifyPluginAsync = async (app) => {
 
   // GET /api/accounts/priority-mode
   app.get('/api/accounts/priority-mode', async (req, reply) => {
-    const settings = req.server.services.get('settings') as SettingsService
+    const settings = req.server.services.get('settings')
     const svc = new AccountService(req.server.services.get('db'), undefined, undefined, settings)
     const mode = await svc.getPriorityMode()
     return reply.send(ok({ mode }))
@@ -154,7 +153,7 @@ const plugin: FastifyPluginAsync = async (app) => {
     '/api/accounts/priority-mode',
     { schema: { body: SetPriorityModeBodySchema } },
     async (req, reply) => {
-      const settings = req.server.services.get('settings') as SettingsService
+      const settings = req.server.services.get('settings')
       const router = req.server.services.getOptional('message_router')
       const svc = new AccountService(req.server.services.get('db'), undefined, router, settings)
       await svc.setPriorityMode(req.body.mode)

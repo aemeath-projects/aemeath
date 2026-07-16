@@ -3,6 +3,7 @@ import type { Redis } from 'ioredis'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AemeathPrismaClient } from '@/core/db/index.js'
+import { RedisStore } from '@/core/redis/index.js'
 import { SettingNode } from '@/core/settings/decorators.js'
 import type { SettingNodeOptions } from '@/core/settings/decorators.js'
 import { buildSchemaMap, SettingsService } from '@/core/settings/index.js'
@@ -21,6 +22,13 @@ function createMockRedis(values: Record<string, string | null> = {}) {
   const pipe = {
     // 签名与 ioredis pipeline.set(key, val, 'EX', ttl) 一致，供测试断言 TTL 是否被正确传递
     set: vi.fn((key: string, val: string, ..._ttlArgs: unknown[]) => {
+      ops.push(() => {
+        store[key] = val
+      })
+      return pipe
+    }),
+    // RedisStore.pipelineSet 对带 ttl 的条目调用 pipeline.setex(key, ttl, val)
+    setex: vi.fn((key: string, _ttl: number, val: string) => {
       ops.push(() => {
         store[key] = val
       })
@@ -128,13 +136,21 @@ function createService(
   registerTestHandler()
   const schemaMap = buildSchemaMap()
   const redis = createMockRedis(redisValues)
+  const cache = new RedisStore(redis, 300)
   const db = createMockDb(dbRows)
-  return { service: new SettingsService(db, redis, schemaMap), redis, db }
+  return {
+    service: new SettingsService(db, cache, schemaMap),
+    redis,
+    db,
+  }
 }
 
 describe('SettingsService.get', () => {
   it('Redis 命中最具体候选时直接返回反序列化值', async () => {
-    const { service } = createService({}, { 'settings:feature.enabled:group:99': 'false' })
+    const { service } = createService(
+      {},
+      { 'settings:feature.enabled:group:99': JSON.stringify('false') },
+    )
     const result = await service.get<boolean>('feature.enabled', Path.group('99'))
     expect(result).toBe(false)
   })
@@ -143,8 +159,8 @@ describe('SettingsService.get', () => {
     const { service } = createService(
       {},
       {
-        'settings:feature.enabled:group:99': '__NULL__',
-        'settings:feature.enabled:': 'false',
+        'settings:feature.enabled:group:99': JSON.stringify('__NULL__'),
+        'settings:feature.enabled:': JSON.stringify('false'),
       },
     )
     const result = await service.get<boolean>('feature.enabled', Path.group('99'))
@@ -160,11 +176,11 @@ describe('SettingsService.get', () => {
   it('DB 未命中时写回 Redis 哨兵并带 SENTINEL_TTL', async () => {
     const { service, redis } = createService()
     await service.get<boolean>('feature.enabled', Path.group('99'))
-    expect(redis.pipeline().set).toHaveBeenCalledWith(
+    // RedisStore.pipelineSet 对带 ttl 的条目调用 pipeline.setex(key, ttl, JSON序列化值)
+    expect(redis.pipeline().setex).toHaveBeenCalledWith(
       'settings:feature.enabled:group:99',
-      '__NULL__',
-      'EX',
       600,
+      JSON.stringify('__NULL__'),
     )
   })
 
@@ -173,11 +189,10 @@ describe('SettingsService.get', () => {
       'group:99': [{ key: 'feature.enabled', value: 'false' }],
     })
     await service.get<boolean>('feature.enabled', Path.group('99'))
-    expect(redis.pipeline().set).toHaveBeenCalledWith(
+    expect(redis.pipeline().setex).toHaveBeenCalledWith(
       'settings:feature.enabled:group:99',
-      'false',
-      'EX',
       300,
+      JSON.stringify('false'),
     )
   })
 
@@ -197,7 +212,10 @@ describe('SettingsService.get', () => {
   })
 
   it('number 类型正确反序列化', async () => {
-    const { service } = createService({}, { 'settings:feature.count:group:99': '42' })
+    const { service } = createService(
+      {},
+      { 'settings:feature.count:group:99': JSON.stringify('42') },
+    )
     const result = await service.get<number>('feature.count', Path.group('99'))
     expect(result).toBe(42)
   })

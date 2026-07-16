@@ -64,3 +64,19 @@ export async function objectExists(client: Client, bucket: string, key: string):
 export async function deleteObject(client: Client, bucket: string, key: string): Promise<void> {
   await client.removeObject(bucket, key)
 }
+
+/**
+ * 生成对象的临时可访问 URL（presigned URL）。
+ * @param client MinIO 客户端实例
+ * @param bucket bucket 名称
+ * @param key 对象键
+ * @param expirySeconds URL 有效期（秒）
+ */
+export async function presignedGetObject(
+  client: Client,
+  bucket: string,
+  key: string,
+  expirySeconds: number,
+): Promise<string> {
+  return client.presignedGetObject(bucket, key, expirySeconds)
+}

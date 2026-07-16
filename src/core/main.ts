@@ -17,7 +17,6 @@ import {
   serviceEntryRegistry,
 } from '@aemeath-projects/exostrider/lifecycle'
 import { createLogger, setLogger, getLogger } from '@aemeath-projects/exostrider/logger'
-import type { SessionManager } from '@aemeath-projects/exostrider/session'
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 import fastifyStatic from '@fastify/static'
 import Fastify, { type FastifyInstance, type FastifyPluginAsync, LogController } from 'fastify'
@@ -36,10 +35,10 @@ import {
   FeatureCheckInterceptor,
   IrisInterceptor,
   LoggingInterceptor,
+  MetricsInterceptor,
   SessionInterceptor,
 } from './dispatch/interceptors/index.js'
-import { AppError } from './errors.js'
-import type { IrisService } from './iris/index.js'
+import { registerErrorHandlers } from './error-handler.js'
 import type { AemeathServiceMap } from './lifecycle.js'
 import { metricsRegistry } from './monitoring/index.js'
 import { corsPlugin, swaggerPlugin } from './plugins/index.js'
@@ -56,7 +55,6 @@ import { buildContextApis } from '@/core/accounts/index.js'
 import type { PriorityMode } from '@/core/accounts/index.js'
 import { ok, OkResponse, FailResponse, HealthDataSchema } from '@/core/schemas/index.js'
 import { Path } from '@/core/settings/index.js'
-import type { SettingsService } from '@/core/settings/index.js'
 import type { InfraState } from '@/types/fastify.js'
 
 /**
@@ -73,6 +71,9 @@ import type { InfraState } from '@/types/fastify.js'
 import '@/core/user/index.js'
 // 触发 AdminBootstrap 的 Startup 注册
 import '@/core/user/admin.js'
+// 触发 SyncCoordinatorBootstrap 的 Startup 注册（原随 index.ts 的运行时导入间接触发，
+// Task 25 拆分后 index.ts 不再引用 sync.js，需在此手动引入）
+import '@/core/user/sync.js'
 // 触发 OSS 模块的 Startup 注册
 import '@/core/oss/bootstrap.js'
 // 触发 MediaStorageService 的 Startup 注册
@@ -218,11 +219,12 @@ async function _startup(
   const groupBotRegistry = registry.get('group_bot_registry')
   const capabilityInterceptor = new CapabilityInterceptor(groupBotRegistry, pool)
 
+  const metricsInterceptor = new MetricsInterceptor()
   const featureCheckInterceptor = new FeatureCheckInterceptor()
   const loggingInterceptor = new LoggingInterceptor()
   const sessionInterceptor = new SessionInterceptor()
 
-  const irisInterceptor = new IrisInterceptor(registry.get('iris') as IrisService)
+  const irisInterceptor = new IrisInterceptor(registry.get('iris'))
 
   const composite = handlerRegistry.buildMappings()
 
@@ -230,6 +232,7 @@ async function _startup(
     mapping: composite,
     // 拦截器实现使用 OneBotContext（Context 子类），类型断言绕过逆变检查
     interceptors: [
+      metricsInterceptor, // 放最前面：preHandle 最早执行、afterCompletion 最后执行，计时覆盖其余拦截器开销
       featureCheckInterceptor,
       loggingInterceptor,
       capabilityInterceptor, // logging 之后，session 之前
@@ -252,8 +255,7 @@ async function _startup(
   }
 
   // 13. 注入 SessionManager 到会话拦截器（延迟绑定）
-  const sessionManager = registry.getOptional('session_manager') as
-    SessionManager<OneBotContext> | undefined
+  const sessionManager = registry.getOptional('session_manager')
   if (sessionManager !== undefined) {
     sessionInterceptor.setSessionManager(sessionManager)
   }
@@ -263,7 +265,7 @@ async function _startup(
 
   // 14.5 同步持久化的多账号路由优先级模式（延迟绑定，避免 MultiAccountBootstrap 与
   // SettingsBootstrap 之间产生启动期循环依赖，详见 accounts/bootstrap.ts 顶部说明）
-  const settingsForRouting = registry.getOptional('settings') as SettingsService | undefined
+  const settingsForRouting = registry.getOptional('settings')
   if (settingsForRouting !== undefined) {
     const persistedMode = await settingsForRouting.get<PriorityMode>(
       'accounts.priority_mode',
@@ -276,20 +278,9 @@ async function _startup(
     void dispatcher.dispatch(aggregated.event, buildContextApis(aggregated, router, pool))
   })
 
-  // 15. 启动 TaskExecutor（监听 job completed 事件）—— master_apis 现在始终是"活体
-  // 代理"（见 accounts/bootstrap.ts 的 createLiveMasterApi），即使启动时暂无主账号，
-  // 之后通过 /api/accounts 补建也无需重启即可生效，不再需要"无主账号不启动"的分支。
-  // MasterApis 的类型仍然声明为可空（兼容其他消费方独立的防御性兜底），此处用守卫
-  // 收窄类型，正常情况下不会真正命中。
-  const masterApis = registry.get('master_apis')
-  if (!masterApis.msgApi || !masterApis.friendApi || !masterApis.groupApi) {
-    throw new AppError(-1, 'master_apis 未正确初始化，TaskExecutor 无法启动', 500)
-  }
+  // 15. 启动 TaskExecutor（监听 job completed 事件）—— 全部 Bot API 调用统一走
+  // MessageRouter，不再依赖 master 专属通道，无需在此判断 master_apis 是否就绪。
   const taskExecutor = new TaskExecutor(
-    masterApis.msgApi,
-    masterApis.friendApi,
-    masterApis.groupApi,
-    pool,
     cacheStore,
     router,
     bullConn,
@@ -429,16 +420,10 @@ async function bootstrap(): Promise<void> {
       // SPA fallback：所有未匹配路由返回 index.html
       wildcard: false,
     })
-
-    // SPA fallback（前端路由）
-    app.setNotFoundHandler(async (_req, reply) => {
-      const indexPath = resolve(frontendDist, 'index.html')
-      if (existsSync(indexPath)) {
-        return reply.sendFile('index.html', frontendDist)
-      }
-      await reply.status(404).send({ error: 'Not Found' })
-    })
   }
+
+  // 全局错误处理器 + 按路径分支的 404 处理器（/api/* JSON 404，其余 SPA fallback）
+  registerErrorHandlers(app, { frontendDist: existsSync(frontendDist) ? frontendDist : null })
 
   /* 生命周期钩子（内联启动/关闭编排） */
 

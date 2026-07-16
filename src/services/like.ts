@@ -5,10 +5,10 @@
 import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/lifecycle'
 import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
-import type { FriendApi, GroupApi } from '@aemeath-projects/napcat'
 
 import type { LikeTask, LikeHistory, LikeSource, Prisma } from '#prisma/aemeath'
 
+import type { MessageRouter } from '@/core/accounts/index.js'
 import type { AemeathPrismaClient } from '@/core/db/index.js'
 import { isPrismaKnownError } from '@/core/db/index.js'
 
@@ -62,7 +62,7 @@ export class LikeService {
 
   constructor(
     private readonly db: AemeathPrismaClient,
-    private readonly friendApi: FriendApi,
+    private readonly router: MessageRouter,
   ) {}
 
   // 公共接口
@@ -82,7 +82,7 @@ export class LikeService {
   async sendLikeNow(qq: string, times: number, source: LikeSource): Promise<boolean> {
     let success = false
     try {
-      const result = await this.friendApi.sendLike(Number(qq), times)
+      const result = await this.router.sendLike(qq, times)
       success = result.ok
     } catch (err) {
       this._log.warn({ qq, times, err }, 'send_like 异常')
@@ -285,9 +285,9 @@ export class LikeBootstrap {
   @Inject('db')
   db!: AemeathPrismaClient
 
-  /** 注入主账号 API bundle */
-  @Inject('master_apis')
-  masterApis!: { groupApi: GroupApi; friendApi: FriendApi }
+  /** 注入消息路由器 */
+  @Inject('message_router')
+  router!: MessageRouter
 
   /** 对外暴露点赞服务实例 */
   @Provide('like_service')
@@ -295,6 +295,6 @@ export class LikeBootstrap {
 
   @Startup
   start(): void {
-    this.likeService = new LikeService(this.db, this.masterApis.friendApi)
+    this.likeService = new LikeService(this.db, this.router)
   }
 }

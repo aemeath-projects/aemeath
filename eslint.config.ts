@@ -204,13 +204,16 @@ export default tseslint.config(
   {
     files: ['src/core/**/*.ts'],
     rules: {
-      'no-restricted-imports': [
+      // 启用 @typescript-eslint 版本时必须关闭基础版本，避免重复报错（typescript-eslint 官方要求）
+      'no-restricted-imports': 'off',
+      '@typescript-eslint/no-restricted-imports': [
         'error',
         {
           patterns: [
             {
               group: ['@/handlers/*', '@/services/*', '@/tasks/*', '@/apis/*'],
               message: 'core 目录禁止导入外部业务模块',
+              allowTypeImports: true,
             },
           ],
         },

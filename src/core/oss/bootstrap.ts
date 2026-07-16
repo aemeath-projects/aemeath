@@ -32,7 +32,7 @@ export class OssBootstrap {
       render: config.S3_RENDER_BUCKET,
     }
 
-    for (const [name, bucket] of Object.entries(buckets) as [string, string][]) {
+    for (const [name, bucket] of Object.entries(buckets)) {
       const exists = await client.bucketExists(bucket)
       if (!exists) {
         const region: string = config.S3_REGION

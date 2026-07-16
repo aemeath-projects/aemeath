@@ -7,3 +7,5 @@ export type { TemplateFunction, SatoriElement, RenderOptions, TemplateRegistry }
 export { TemplateNotFoundError, TemplateRenderError, RenderError } from './errors.js'
 import './cache-keys.js'
 export * from './templates/help.js'
+export { enqueueRender } from './enqueue.js'
+export type { RenderTarget, EnqueueRenderOptions } from './enqueue.js'

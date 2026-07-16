@@ -2,4 +2,10 @@
 
 export { createOssClient } from './client.js'
 export type { OssConfig, OssBuckets, OssBundle } from './client.js'
-export { uploadBuffer, downloadBuffer, objectExists, deleteObject } from './utils.js'
+export {
+  uploadBuffer,
+  downloadBuffer,
+  objectExists,
+  deleteObject,
+  presignedGetObject,
+} from './utils.js'

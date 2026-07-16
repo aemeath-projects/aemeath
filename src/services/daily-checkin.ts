@@ -5,22 +5,20 @@
  * 均通过 Redis 日期键去重，防止重复打卡。
  */
 
+// 导入 CheckinService 以注册 cache keys（副作用）
+import '@/services/checkin.js'
+
 import { Service, Inject, Provide, Startup } from '@aemeath-projects/exostrider/lifecycle'
 import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
-import type { ClientPool } from '@aemeath-projects/exostrider/pool'
-import type { GroupApi, FriendApi, NapCatClient } from '@aemeath-projects/napcat'
-import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 
-import type { AccountRole } from '@/core/accounts/index.js'
+import type { MessageRouter } from '@/core/accounts/index.js'
 import type { AemeathPrismaClient } from '@/core/db/index.js'
 import type { RedisStore } from '@/core/redis/index.js'
 import { cacheKeyRegistry } from '@/core/registries.js'
 import { Path } from '@/core/settings/index.js'
 import type { SettingsService } from '@/core/settings/index.js'
 import { SHANGHAI_TZ } from '@/core/utils/index.js'
-
-type AccountPool = ClientPool<NapCatClient, AccountRole, AnyOneBotEvent>
 
 /* 常量 */
 
@@ -58,8 +56,7 @@ export class DailyCheckinService {
   constructor(
     private readonly db: AemeathPrismaClient,
     private readonly cache: RedisStore,
-    private readonly groupApi: GroupApi,
-    private readonly pool: AccountPool,
+    private readonly router: MessageRouter,
     private readonly settings: SettingsService,
   ) {}
 
@@ -92,11 +89,6 @@ export class DailyCheckinService {
   // 内部实现
 
   private async _runCheckin(source: CheckinSource): Promise<void> {
-    if (this.pool.getAvailableClients().length === 0) {
-      this._log.warn({ source }, '无可用账号，跳过本轮打卡')
-      return
-    }
-
     const today = new Intl.DateTimeFormat('sv-SE', { timeZone: SHANGHAI_TZ }).format(new Date())
     const groupIds = await this._getEligibleGroupIds()
 
@@ -139,7 +131,7 @@ export class DailyCheckinService {
 
       // 执行打卡
       try {
-        const result = await this.groupApi.sendGroupSign(Number(groupId))
+        const result = await this.router.sendGroupSign(groupId)
         if (!result.ok) {
           this._log.warn(
             { groupId, code: result.error.code, message: result.error.message },
@@ -162,7 +154,7 @@ export class DailyCheckinService {
       await new Promise<void>((resolve) => setTimeout(resolve, SEND_DELAY_MS))
     }
 
-    this._log.info({ total: groupIds.length, sent, skipped, failed }, '本轮打卡完成')
+    this._log.info({ source, total: groupIds.length, sent, skipped, failed }, '本轮打卡完成')
   }
 
   private async _getEligibleGroupIds(): Promise<string[]> {
@@ -195,13 +187,9 @@ export class DailyCheckinBootstrap {
   @Inject('cache')
   cache!: RedisStore
 
-  /** 注入主账号 API bundle */
-  @Inject('master_apis')
-  masterApis!: { groupApi: GroupApi; friendApi: FriendApi }
-
-  /** 注入账号池 */
-  @Inject('account_pool')
-  pool!: AccountPool
+  /** 注入消息路由器 */
+  @Inject('message_router')
+  router!: MessageRouter
 
   /** 注入设置服务 */
   @Inject('settings')
@@ -216,8 +204,7 @@ export class DailyCheckinBootstrap {
     this.dailyCheckinService = new DailyCheckinService(
       this.db,
       this.cache,
-      this.masterApis.groupApi,
-      this.pool,
+      this.router,
       this.settings,
     )
   }

@@ -1,7 +1,11 @@
-/** 账号连接状态广播器 —— EventEmitter，供 SSE 端点订阅账号状态变化。 */
-import { EventEmitter } from 'node:events'
+/** 账号连接状态广播器 —— TypedEventEmitter，供 SSE 端点订阅账号状态变化。 */
+import { TypedEventEmitter } from '@aemeath-projects/exostrider/types'
 
 import type { AccountWithStatus } from './service.js'
+
+interface AccountStatusEvents {
+  status: (status: AccountWithStatus) => void
+}
 
 /**
  * 账号状态广播器。
@@ -10,7 +14,7 @@ import type { AccountWithStatus } from './service.js'
  * 调用 {@link AccountStatusBroadcaster.broadcast}，`GET /api/accounts/stream`
  * 监听 `'status'` 事件实时推送给前端。
  */
-export class AccountStatusBroadcaster extends EventEmitter {
+export class AccountStatusBroadcaster extends TypedEventEmitter<AccountStatusEvents> {
   constructor() {
     super()
     this.setMaxListeners(50)

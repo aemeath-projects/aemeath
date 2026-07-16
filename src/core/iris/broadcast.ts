@@ -1,7 +1,11 @@
-/** Iris 聊天记录广播器 —— EventEmitter，供 SSE 端点订阅新入库消息。 */
-import { EventEmitter } from 'node:events'
+/** Iris 聊天记录广播器 —— TypedEventEmitter，供 SSE 端点订阅新入库消息。 */
+import { TypedEventEmitter } from '@aemeath-projects/exostrider/types'
 
 import type { ChatMessage } from '#prisma/iris'
+
+interface IrisBroadcastEvents {
+  message: (message: ChatMessage) => void
+}
 
 /**
  * Iris 消息广播器。
@@ -10,7 +14,7 @@ import type { ChatMessage } from '#prisma/iris'
  * `GET /api/iris/messages/stream` 监听 `'message'` 事件，按连接携带的
  * groupId/userId 过滤后推送给对应前端。
  */
-export class IrisBroadcaster extends EventEmitter {
+export class IrisBroadcaster extends TypedEventEmitter<IrisBroadcastEvents> {
   constructor() {
     super()
     this.setMaxListeners(50)

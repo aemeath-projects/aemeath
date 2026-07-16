@@ -1,14 +1,36 @@
 /**
  * OneBot 事件适配层 —— 为 exostrider EventDispatcher 提供 ContextConfig。
+ *
+ * `ContextApis.msgApi`（见下方 `MsgApi` 接口）不是 `MessageRouter` 之上的另一层
+ * 业务 API，而是绑定在单次入站事件上的 Handler 便捷门面：`sendGroupMsg`/
+ * `sendPrivateMsg` 委托给 `MessageRouter`（"发给谁"和路由无关，应对业务透明），
+ * `deleteMsg` 保留事件源客户端绑定（撤回操作必须由发出该消息的客户端执行）。
+ * 不响应入站事件、由定时任务/队列触发的代码（如 `DailyCheckinService`、
+ * `TaskExecutor`）没有 `ctx`，也就没有 `MsgApi` 可用，只能直接注入
+ * `MessageRouter`——这不是架构不一致，是"有事件上下文用 ctx.reply()，
+ * 没有则直接注入 message_router"两种场景各自该用的方式。
  */
 import type { ContextConfig } from '@aemeath-projects/exostrider/dispatch'
 import { GroupApi } from '@aemeath-projects/napcat'
-import type { FriendApi, MessageApi, NapCatClient } from '@aemeath-projects/napcat'
-import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
+import type { FriendApi, NapCatClient, Result } from '@aemeath-projects/napcat'
+import type { AnyOneBotEvent, MessageSegment } from '@aemeath-projects/napcat/types'
+
+/**
+ * Handler 便捷门面的消息发送接口——只声明 ctx.apis.msgApi 实际被使用的 3 个方法
+ * （均在 dispatch/context.ts 内部调用），签名与 napcat SDK 的 MessageApi 保持一致，
+ * 但不要求消费方依赖具体的 MessageApi 类。sendGroupMsg/sendPrivateMsg 由
+ * buildContextApis() 的 Proxy 委托给 MessageRouter；deleteMsg 透传到事件源客户端
+ * （撤回操作必须由发出该消息的客户端执行，不能路由到其他账号）。
+ */
+export interface MsgApi {
+  sendGroupMsg(groupId: number, message: MessageSegment[]): Promise<Result<{ messageId: number }>>
+  sendPrivateMsg(userId: number, message: MessageSegment[]): Promise<Result<{ messageId: number }>>
+  deleteMsg(messageId: number): Promise<Result<void>>
+}
 
 /** Bot API 模块集合（由 BotClientBootstrap @Provide 注册）。 */
 export interface ContextApis {
-  readonly msgApi: MessageApi
+  readonly msgApi: MsgApi
   readonly friendApi: FriendApi
   groupApi: GroupApi // 非 readonly：允许 CapabilityInterceptor 替换
 }

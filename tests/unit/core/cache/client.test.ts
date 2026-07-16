@@ -5,6 +5,29 @@ import { RedisStore } from '@/core/redis/index.js'
 
 /** 创建一个 mock Redis 实例，包含 RedisStore 使用的所有方法。 */
 function createMockRedis() {
+  let pipeOps: (() => void)[] = []
+  const pipe = {
+    setex: vi.fn((key: string, _ttl: number, val: string) => {
+      pipeOps.push(() => {
+        store[key] = val
+      })
+      return pipe
+    }),
+    set: vi.fn((key: string, val: string) => {
+      pipeOps.push(() => {
+        store[key] = val
+      })
+      return pipe
+    }),
+    exec: vi.fn(() => {
+      pipeOps.forEach((op) => {
+        op()
+      })
+      pipeOps = []
+      return Promise.resolve([])
+    }),
+  }
+  const store: Record<string, string> = {}
   return {
     get: vi.fn(),
     setex: vi.fn(),
@@ -14,6 +37,8 @@ function createMockRedis() {
     incr: vi.fn(),
     expire: vi.fn(),
     scan: vi.fn(),
+    mget: vi.fn(),
+    pipeline: vi.fn(() => pipe),
   }
 }
 
@@ -181,6 +206,46 @@ describe('RedisStore', () => {
 
       expect(deleted).toBe(0)
       expect(mockRedis.del).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('mget', () => {
+    it('应批量反序列化多个键的 JSON 值，未命中返回 null', async () => {
+      mockRedis.mget.mockResolvedValue([JSON.stringify({ id: 1 }), null, JSON.stringify('plain')])
+
+      const result = await cache.mget<unknown>(['k1', 'k2', 'k3'])
+
+      expect(mockRedis.mget).toHaveBeenCalledWith('k1', 'k2', 'k3')
+      expect(result).toEqual([{ id: 1 }, null, 'plain'])
+    })
+
+    it('空 keys 数组应直接返回空数组，不调用 Redis', async () => {
+      const result = await cache.mget<unknown>([])
+      expect(result).toEqual([])
+      expect(mockRedis.mget).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('pipelineSet', () => {
+    it('应对每个 entry 调用 JSON 序列化 + setex（有 ttl）或 set（无 ttl）', async () => {
+      await cache.pipelineSet([
+        { key: 'a', value: 'hello', ttl: 60 },
+        { key: 'b', value: { x: 1 } },
+      ])
+
+      const pipe = mockRedis.pipeline.mock.results[0]?.value as {
+        setex: ReturnType<typeof vi.fn>
+        set: ReturnType<typeof vi.fn>
+        exec: ReturnType<typeof vi.fn>
+      }
+      expect(pipe.setex).toHaveBeenCalledWith('a', 60, JSON.stringify('hello'))
+      expect(pipe.set).toHaveBeenCalledWith('b', JSON.stringify({ x: 1 }))
+      expect(pipe.exec).toHaveBeenCalledTimes(1)
+    })
+
+    it('空 entries 数组不应调用 pipeline', async () => {
+      await cache.pipelineSet([])
+      expect(mockRedis.pipeline).not.toHaveBeenCalled()
     })
   })
 })

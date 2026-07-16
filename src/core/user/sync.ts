@@ -5,12 +5,16 @@
  * 所有触发入口（WS 连接、API 手动触发、内置定时调度）统一调用 requestSync()。
  */
 
+import { Service, Inject, Provide, Startup, Shutdown } from '@aemeath-projects/exostrider/lifecycle'
 import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { FriendApi, GroupApi } from '@aemeath-projects/napcat'
 import type { FriendInfo, GroupInfo, GroupMember } from '@aemeath-projects/napcat/types'
 
 import type { UserService } from './index.js'
+
+import type { MasterApis, MessageRouter } from '@/core/accounts/index.js'
+import { AppError } from '@/core/errors.js'
 
 /** 同步触发来源。 */
 export type SyncSource = 'ws_connect' | 'manual' | 'scheduled'
@@ -179,5 +183,49 @@ export class SyncCoordinator {
     } catch (err) {
       this._log.error({ err }, '用户数据全量同步失败')
     }
+  }
+}
+
+/* 生命周期注册 */
+
+@Service({ name: 'sync_coordinator_bootstrap' })
+export class SyncCoordinatorBootstrap {
+  @Inject('master_apis')
+  masterApis!: MasterApis
+
+  @Inject('user_service')
+  userService!: UserService
+
+  @Inject('message_router')
+  router!: MessageRouter
+
+  @Provide('sync_coordinator')
+  syncCoordinator!: SyncCoordinator
+
+  @Startup
+  start(): void {
+    // friendApi/groupApi 是活体代理（见 bootstrap.ts createLiveMasterApi），
+    // 理论上不会为 null；此处仅做类型收窄，兼容其他消费方的防御性判空。
+    const { friendApi, groupApi } = this.masterApis
+    if (!friendApi || !groupApi) {
+      throw new AppError(-1, 'master_apis 未正确初始化，SyncCoordinator 无法启动', 500)
+    }
+    const router = this.router
+    const connStatus: ConnectionStatus = {
+      // 必须按 master 角色过滤，而不是任意角色——friendApi/groupApi 只走 master 通道，
+      // 否则"无 master、有 normal 账号在线"时会误判为已连接，进而在每次同步周期都
+      // 因为 API 调用失败而报 error 日志噪音。
+      get connected() {
+        return router.hasAvailableAccounts('master')
+      },
+    }
+
+    this.syncCoordinator = new SyncCoordinator(friendApi, groupApi, this.userService, connStatus)
+    this.syncCoordinator.start()
+  }
+
+  @Shutdown
+  stop(): void {
+    this.syncCoordinator.stop()
   }
 }

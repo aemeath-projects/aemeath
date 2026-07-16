@@ -14,10 +14,17 @@ export function buildContextApis(
   pool: ClientPool<NapCatClient, AccountRole, AnyOneBotEvent>,
 ): ContextApis {
   const sourceAdapter = pool.getClient(aggregated.sourceClientId)
-
-  // 非路由 API 直接使用事件来源客户端
   const sourceClient = sourceAdapter?.client
-  const groupApi = sourceClient ? new GroupApi(sourceClient) : null
+
+  // groupApi 默认绑定 Router 选号结果，与 msgApi.sendGroupMsg 指向同一账号；
+  // 只有群事件才能解析出 groupId，私聊事件或解析失败时回退到事件源客户端。
+  const groupIdForResolve = (aggregated.event as { groupId?: number } | undefined)?.groupId
+  const resolvedGroupClient =
+    groupIdForResolve != null ? router.resolveGroupClient(String(groupIdForResolve)) : null
+  const groupClient = resolvedGroupClient ?? sourceClient
+  const groupApi = groupClient ? new GroupApi(groupClient) : null
+
+  // friendApi 不涉及群路由选择，继续绑定事件来源客户端（好友关系是账号自身属性）
   const friendApi = sourceClient ? new FriendApi(sourceClient) : null
 
   // msgApi 作为代理：sendGroupMsg 委托给 MessageRouter。
@@ -30,6 +37,10 @@ export function buildContextApis(
       if (prop === 'sendGroupMsg') {
         return (groupId: number, message: MessageSegment[]) =>
           router.sendGroupMsg(String(groupId), message)
+      }
+      if (prop === 'sendPrivateMsg') {
+        return (userId: number, message: MessageSegment[]) =>
+          router.sendPrivateMsg(String(userId), message)
       }
       return Reflect.get(target, prop) as unknown
     },

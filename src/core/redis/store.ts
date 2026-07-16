@@ -97,4 +97,39 @@ export class RedisStore {
     } while (cursor !== '0')
     return deleted
   }
+
+  /**
+   * 批量获取多个键的值，自动 JSON 反序列化；单个键不存在时对应位置为 null。
+   * 空 keys 数组直接返回空数组，不发起 Redis 调用。
+   */
+  async mget<T>(keys: string[]): Promise<(T | null)[]> {
+    if (keys.length === 0) return []
+    const raws = await this.redis.mget(...keys)
+    return raws.map((raw) => {
+      if (raw === null) return null
+      try {
+        return JSON.parse(raw) as T
+      } catch {
+        return raw as T
+      }
+    })
+  }
+
+  /**
+   * 批量写入多个键值对（一次 Redis pipeline 往返），自动 JSON 序列化；
+   * 有 ttl 用 SETEX，无 ttl 用 SET（不过期）。空 entries 数组不发起 Redis 调用。
+   */
+  async pipelineSet(entries: { key: string; value: unknown; ttl?: number }[]): Promise<void> {
+    if (entries.length === 0) return
+    const pipeline = this.redis.pipeline()
+    for (const entry of entries) {
+      const serialized = JSON.stringify(entry.value)
+      if (entry.ttl !== undefined && entry.ttl > 0) {
+        pipeline.setex(entry.key, entry.ttl, serialized)
+      } else {
+        pipeline.set(entry.key, serialized)
+      }
+    }
+    await pipeline.exec()
+  }
 }

@@ -280,7 +280,7 @@ src/
 │   ├── accounts.ts  # 账号管理 + 多账号路由 API（/api/accounts，含 GET /api/accounts/stream SSE 状态推送）
 │   ├── iris.ts      # Iris 聊天记录查询 API（/api/iris）
 │   ├── handlers.ts  # 只读系统内省：GET /api/handlers 列出已注册 Handler 元数据
-│   └── permission.ts # 实际路由前缀是 /api/settings（settings 模块通用 CRUD，category=permission 只是其中一个分类，文件名为历史遗留）
+│   └── settings.ts # 实际路由前缀是 /api/settings（settings 模块通用 CRUD，category=permission 只是其中一个分类，文件名为历史遗留）
 ├── handlers/    # Bot 事件处理器（EchoLoader 自动扫描）
 ├── renderer/    # Satori + resvg-js 渲染服务（service、templates、fonts、cache-keys）
 ├── services/    # 功能业务服务（@Service/@Startup 注册）
@@ -416,7 +416,7 @@ BullMQ（任务队列）取代原有的 Dramatiq。Worker 进程运行在 `src/c
 - **Pinia** 分模块状态管理（`stores/`），`pinia-plugin-persistedstate` 做 localStorage 持久化
 - **API 层** (`apis/`) 封装所有 HTTP 请求，通过 Axios + Vite 代理访问后端
 - **Vuetify 4** 作为 UI 框架，路由见 `frontend/src/router/index.ts`
-- 权限管理页 `PermissionView.vue`（路由 `/permissions`）对应后端 `src/apis/permission.ts`（`/api/settings`，`category=permission`）
+- 权限管理页 `PermissionView.vue`（路由 `/permissions`）对应后端 `src/apis/settings.ts`（`/api/settings`，`category=permission`）
 - 站内信页 `MailboxView.vue`（路由 `/mailbox`）对应后端 `src/core/mailbox/api.ts`（`/api/mailbox`）
 
 ## 关键配置

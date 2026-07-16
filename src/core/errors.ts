@@ -38,14 +38,14 @@ export class ValidationError extends AppError {
   }
 }
 
-/** Bot API 调用失败（SDK Result.ok === false）。 */
-export class BotApiError extends Error {
+/** Bot API 调用失败（SDK Result.ok === false）。502 语义：上游 Bot API 调用失败。 */
+export class BotApiError extends AppError {
   constructor(
     /** OneBot 协议返回的 retcode。 */
     public readonly retcode: number,
     message: string,
   ) {
-    super(message)
+    super(-1, message, 502)
     this.name = 'BotApiError'
   }
 }

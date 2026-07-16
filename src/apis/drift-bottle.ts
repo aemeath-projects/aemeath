@@ -16,7 +16,7 @@ import { fail, ok, FailResponse, OkResponse } from '@/core/schemas/index.js'
 import type { DriftBottleService, PoolInfo } from '@/services/drift-bottle.js'
 
 async function getDriftSvc(app: FastifyInstance): Promise<DriftBottleService> {
-  return app.services.get('drift_bottle_service') as DriftBottleService
+  return app.services.get('drift_bottle_service')
 }
 
 /**

@@ -1,5 +1,5 @@
 /**
- * MetricsInterceptor —— 收集事件处理的 Prometheus 指标（占位实现，Phase 6 接入 prom-client）。
+ * MetricsInterceptor —— 收集 handler 调用次数、耗时直方图和错误计数的 Prometheus 指标。
  */
 
 import type {
@@ -11,11 +11,16 @@ import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 
 import type { ContextApis } from '../adapter.js'
 
+import { eventProcessed, eventProcessingSeconds, eventErrors } from '@/core/monitoring/index.js'
+
 const CTX_KEY_START_TIME = '_metrics_start_time'
 
 /**
  * 指标拦截器：跟踪 handler 调用次数、耗时直方图和错误计数。
- * 当前为占位实现，实际 Prometheus 指标在 Phase 6 连接。
+ *
+ * 用 HandlerInterceptor（而非 DispatchInterceptor）是因为这几个指标本质是
+ * "某个具体 handler 的调用次数/耗时"，语义上必须绑定到命中的 handler 才有意义；
+ * "总收到消息数"已有独立的 wsMessagesReceived 指标覆盖，两者互补不重复。
  */
 export class MetricsInterceptor implements HandlerInterceptor<AnyOneBotEvent, ContextApis> {
   async preHandle(
@@ -27,17 +32,25 @@ export class MetricsInterceptor implements HandlerInterceptor<AnyOneBotEvent, Co
   }
 
   async postHandle(
-    _ctx: Context<AnyOneBotEvent, ContextApis>,
-    _handler: ResolvedHandler,
+    ctx: Context<AnyOneBotEvent, ContextApis>,
+    handler: ResolvedHandler,
   ): Promise<void> {
-    // 占位：记录 handler 调用计数（prom-client 在 Phase 6 接入）
+    // 标签名由 Prometheus 惯例（snake_case）与 metricRegistry 中的 labelNames 定义决定
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    eventProcessed.inc({ event_type: ctx.event.postType, handler: handler.handlerName })
   }
 
   async afterCompletion(
-    _ctx: Context<AnyOneBotEvent, ContextApis>,
+    ctx: Context<AnyOneBotEvent, ContextApis>,
     _handler: ResolvedHandler,
-    _error?: Error,
+    error?: Error,
   ): Promise<void> {
-    // 占位：记录耗时直方图和错误计数（prom-client 在 Phase 6 接入）
+    const start = ctx.getAttribute<number>(CTX_KEY_START_TIME)
+    if (start !== undefined) {
+      eventProcessingSeconds.observe((Date.now() - start) / 1000)
+    }
+    if (error) {
+      eventErrors.inc()
+    }
   }
 }

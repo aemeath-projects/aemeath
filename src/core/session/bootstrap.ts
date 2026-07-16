@@ -30,7 +30,7 @@ export class SessionManagerBootstrap {
     const sessionTimeout: number =
       (rawConfig as unknown as { app?: { sessionTimeout?: number } }).app?.sessionTimeout ?? 300
     const config: SessionConfig = {
-      sessionTimeout,
+      timeout: sessionTimeout,
     }
     this.sessionManager = new SessionManager<OneBotContext>({
       config,

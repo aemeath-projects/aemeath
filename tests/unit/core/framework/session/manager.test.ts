@@ -52,7 +52,7 @@ function makeManager(timeout = 300): {
 } {
   const lockProvider = new InMemoryLockProvider()
   const manager = new SessionManager<SimpleCtx>({
-    config: { sessionTimeout: timeout },
+    config: { timeout },
     lockProvider,
     keyExtractor: (ctx) => {
       const groupPart = ctx.groupId !== undefined ? String(ctx.groupId) : 'private'

@@ -3,14 +3,12 @@
  */
 
 import { Type } from '@sinclair/typebox'
-import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
+import type { FastifyInstance, FastifyRequest } from 'fastify'
 
 import type { LLMService } from './index.js'
 
-import { NotFoundError } from '@/core/errors.js'
 import {
   ok,
-  fail,
   OkResponse,
   FailResponse,
   CreateModelSchema,
@@ -36,15 +34,6 @@ function getLlmService(request: FastifyRequest): LLMService {
   return request.server.services.get('llm_service')
 }
 
-async function handleError(reply: FastifyReply, err: unknown): Promise<void> {
-  if (err instanceof NotFoundError) {
-    await reply.status(404).send(fail(err.message))
-    return
-  }
-  const message = err instanceof Error ? err.message : '内部服务器错误'
-  await reply.status(500).send(fail(message))
-}
-
 /* Fastify 插件 */
 
 /**
@@ -68,12 +57,8 @@ export async function llmRoutes(fastify: FastifyInstance): Promise<void> {
       },
     },
     async (request, reply) => {
-      try {
-        const providers = await getLlmService(request).listProviders()
-        await reply.send(ok(providers))
-      } catch (err) {
-        await handleError(reply, err)
-      }
+      const providers = await getLlmService(request).listProviders()
+      await reply.send(ok(providers))
     },
   )
 
@@ -87,12 +72,8 @@ export async function llmRoutes(fastify: FastifyInstance): Promise<void> {
       },
     },
     async (request, reply) => {
-      try {
-        const provider = await getLlmService(request).getProvider(request.params.id)
-        await reply.send(ok(provider))
-      } catch (err) {
-        await handleError(reply, err)
-      }
+      const provider = await getLlmService(request).getProvider(request.params.id)
+      await reply.send(ok(provider))
     },
   )
 
@@ -110,14 +91,10 @@ export async function llmRoutes(fastify: FastifyInstance): Promise<void> {
       },
     },
     async (request, reply) => {
-      try {
-        const provider = await getLlmService(request).createProvider(
-          request.body as CreateProviderData,
-        )
-        await reply.status(201).send(ok(provider))
-      } catch (err) {
-        await handleError(reply, err)
-      }
+      const provider = await getLlmService(request).createProvider(
+        request.body as CreateProviderData,
+      )
+      await reply.status(201).send(ok(provider))
     },
   )
 
@@ -136,15 +113,11 @@ export async function llmRoutes(fastify: FastifyInstance): Promise<void> {
       },
     },
     async (request, reply) => {
-      try {
-        const provider = await getLlmService(request).updateProvider(
-          request.params.id,
-          request.body as UpdateProviderData,
-        )
-        await reply.send(ok(provider))
-      } catch (err) {
-        await handleError(reply, err)
-      }
+      const provider = await getLlmService(request).updateProvider(
+        request.params.id,
+        request.body as UpdateProviderData,
+      )
+      await reply.send(ok(provider))
     },
   )
 
@@ -158,12 +131,8 @@ export async function llmRoutes(fastify: FastifyInstance): Promise<void> {
       },
     },
     async (request, reply) => {
-      try {
-        await getLlmService(request).deleteProvider(request.params.id)
-        await reply.send(ok(null, 'Provider deleted'))
-      } catch (err) {
-        await handleError(reply, err)
-      }
+      await getLlmService(request).deleteProvider(request.params.id)
+      await reply.send(ok(null, 'Provider deleted'))
     },
   )
 
@@ -183,12 +152,8 @@ export async function llmRoutes(fastify: FastifyInstance): Promise<void> {
       },
     },
     async (request, reply) => {
-      try {
-        const models = await getLlmService(request).listModels(request.query.providerId)
-        await reply.send(ok(models))
-      } catch (err) {
-        await handleError(reply, err)
-      }
+      const models = await getLlmService(request).listModels(request.query.providerId)
+      await reply.send(ok(models))
     },
   )
 
@@ -202,12 +167,8 @@ export async function llmRoutes(fastify: FastifyInstance): Promise<void> {
       },
     },
     async (request, reply) => {
-      try {
-        const model = await getLlmService(request).getModel(request.params.id)
-        await reply.send(ok(model))
-      } catch (err) {
-        await handleError(reply, err)
-      }
+      const model = await getLlmService(request).getModel(request.params.id)
+      await reply.send(ok(model))
     },
   )
 
@@ -225,12 +186,8 @@ export async function llmRoutes(fastify: FastifyInstance): Promise<void> {
       },
     },
     async (request, reply) => {
-      try {
-        const model = await getLlmService(request).createModel(request.body as CreateModelData)
-        await reply.status(201).send(ok(model))
-      } catch (err) {
-        await handleError(reply, err)
-      }
+      const model = await getLlmService(request).createModel(request.body as CreateModelData)
+      await reply.status(201).send(ok(model))
     },
   )
 
@@ -249,15 +206,11 @@ export async function llmRoutes(fastify: FastifyInstance): Promise<void> {
       },
     },
     async (request, reply) => {
-      try {
-        const model = await getLlmService(request).updateModel(
-          request.params.id,
-          request.body as UpdateModelData,
-        )
-        await reply.send(ok(model))
-      } catch (err) {
-        await handleError(reply, err)
-      }
+      const model = await getLlmService(request).updateModel(
+        request.params.id,
+        request.body as UpdateModelData,
+      )
+      await reply.send(ok(model))
     },
   )
 
@@ -271,12 +224,8 @@ export async function llmRoutes(fastify: FastifyInstance): Promise<void> {
       },
     },
     async (request, reply) => {
-      try {
-        await getLlmService(request).deleteModel(request.params.id)
-        await reply.send(ok(null, 'Model deleted'))
-      } catch (err) {
-        await handleError(reply, err)
-      }
+      await getLlmService(request).deleteModel(request.params.id)
+      await reply.send(ok(null, 'Model deleted'))
     },
   )
 }

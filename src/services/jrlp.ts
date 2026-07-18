@@ -32,12 +32,26 @@ export interface ListRecordsParams {
   pageSize?: number
 }
 
+/** 今日老婆服务契约。 */
+export interface JrlpService {
+  getOrDraw(params: { groupId: string; userId: string; today: Date }): Promise<DrawResult>
+  listRecords(params?: ListRecordsParams): Promise<[WifeRecord[], number]>
+  createPreset(params: {
+    groupId: string
+    userId: string
+    wifeQq: string
+    recordDate: Date
+  }): Promise<WifeRecord>
+  updateRecord(recordId: string, opts: { wifeQq: string }): Promise<WifeRecord | null>
+  deleteRecord(recordId: string): Promise<boolean>
+}
+
 /**
- * 今日老婆服务 —— 封装抽取、预设、查询、修改、删除逻辑。
+ * 今日老婆服务实现 —— 封装抽取、预设、查询、修改、删除逻辑。
  *
  * 通过 Startup 生命周期注册，由 LifecycleOrchestrator 管理。
  */
-export class JrlpService {
+export class JrlpServiceImpl implements JrlpService {
   constructor(private readonly db: AemeathPrismaClient) {}
 
   // 核心抽取
@@ -245,6 +259,6 @@ export class JrlpBootstrap {
 
   @Startup
   start(): void {
-    this.jrlpService = new JrlpService(this.db)
+    this.jrlpService = new JrlpServiceImpl(this.db)
   }
 }

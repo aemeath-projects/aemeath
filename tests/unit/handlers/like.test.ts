@@ -1,3 +1,4 @@
+import { handlerRegistry } from '@aemeath-projects/exostrider/dispatch'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const { errorMock } = vi.hoisted(() => ({ errorMock: vi.fn() }))
@@ -34,6 +35,7 @@ function makeHandler(svc: MockLikeService) {
 describe('LikeHandler 异常保护', () => {
   beforeEach(() => {
     errorMock.mockClear()
+    handlerRegistry.clear()
   })
 
   it('schedule 子命令：registerTask 抛异常时应回复失败提示并记录日志，不让异常冒泡', async () => {

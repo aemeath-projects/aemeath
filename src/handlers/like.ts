@@ -99,17 +99,20 @@ async function handleSchedule(
   qq: string,
   log: PinoLogger,
 ): Promise<void> {
+  const groupId = ctx.groupId ?? null
+  let result: Awaited<ReturnType<LikeService['registerTask']>>
   try {
-    const groupId = ctx.groupId ?? null
-    const result = await svc.registerTask(qq, groupId)
-    if (result.alreadyExists) {
-      await ctx.reply('你已经注册过每日定时点赞了～')
-    } else {
-      await ctx.reply(`已注册每日定时点赞！每天零点自动给你点赞 ${String(DEFAULT_LIKE_TIMES)} 次`)
-    }
+    result = await svc.registerTask(qq, groupId)
   } catch (err) {
     log.error({ qq, err }, '注册定时点赞失败')
     await ctx.reply('注册失败，请稍后重试')
+    return
+  }
+
+  if (result.alreadyExists) {
+    await ctx.reply('你已经注册过每日定时点赞了～')
+  } else {
+    await ctx.reply(`已注册每日定时点赞！每天零点自动给你点赞 ${String(DEFAULT_LIKE_TIMES)} 次`)
   }
 }
 
@@ -120,16 +123,19 @@ async function handleCancel(
   qq: string,
   log: PinoLogger,
 ): Promise<void> {
+  let deleted: boolean
   try {
-    const deleted = await svc.cancelTask(qq)
-    if (deleted) {
-      await ctx.reply('已取消每日定时点赞')
-    } else {
-      await ctx.reply('你还没有注册定时点赞哦')
-    }
+    deleted = await svc.cancelTask(qq)
   } catch (err) {
     log.error({ qq, err }, '取消定时点赞失败')
     await ctx.reply('取消失败，请稍后重试')
+    return
+  }
+
+  if (deleted) {
+    await ctx.reply('已取消每日定时点赞')
+  } else {
+    await ctx.reply('你还没有注册定时点赞哦')
   }
 }
 
@@ -140,26 +146,29 @@ async function handleStatus(
   qq: string,
   log: PinoLogger,
 ): Promise<void> {
+  let status: Awaited<ReturnType<LikeService['getStatus']>>
   try {
-    const status = await svc.getStatus(qq)
-    const taskInfo = status.hasTask ? '✅ 已开启每日定时点赞' : '❌ 未开启定时点赞'
-    const lastTime = status.lastTriggeredAt
-      ? new Date(status.lastTriggeredAt).toLocaleString('zh-CN', {
-          timeZone: 'Asia/Shanghai',
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-        })
-      : '暂无'
-    await ctx.reply(
-      `点赞状态\n${taskInfo}\n累计已点赞：${String(status.totalTimes)} 次\n最近点赞：${lastTime}`,
-    )
+    status = await svc.getStatus(qq)
   } catch (err) {
     log.error({ qq, err }, '查询点赞状态失败')
     await ctx.reply('查询失败，请稍后重试')
+    return
   }
+
+  const taskInfo = status.hasTask ? '✅ 已开启每日定时点赞' : '❌ 未开启定时点赞'
+  const lastTime = status.lastTriggeredAt
+    ? new Date(status.lastTriggeredAt).toLocaleString('zh-CN', {
+        timeZone: 'Asia/Shanghai',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : '暂无'
+  await ctx.reply(
+    `点赞状态\n${taskInfo}\n累计已点赞：${String(status.totalTimes)} 次\n最近点赞：${lastTime}`,
+  )
 }
 
 export { LikeHandler }

@@ -8,12 +8,16 @@
 import { Service, Inject, Provide, Startup, Shutdown } from '@aemeath-projects/exostrider/lifecycle'
 import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
-import type { FriendApi, GroupApi } from '@aemeath-projects/napcat'
 import type { FriendInfo, GroupInfo, GroupMember } from '@aemeath-projects/napcat/types'
 
 import type { UserService } from './index.js'
 
-import type { MasterApis, MessageRouter } from '@/core/accounts/index.js'
+import type {
+  FriendApiPort,
+  GroupApiPort,
+  MasterApis,
+  MessageRouter,
+} from '@/core/accounts/index.js'
 import { AppError } from '@/core/errors.js'
 
 /** 同步触发来源。 */
@@ -56,8 +60,8 @@ export class SyncCoordinator {
   private readonly _log: PinoLogger = getLogger('user:sync') as unknown as PinoLogger
 
   constructor(
-    private readonly friendApi: FriendApi,
-    private readonly groupApi: GroupApi,
+    private readonly friendApi: FriendApiPort,
+    private readonly groupApi: GroupApiPort,
     private readonly userService: UserService,
     private readonly connStatus: ConnectionStatus,
     opts?: SyncCoordinatorOptions,

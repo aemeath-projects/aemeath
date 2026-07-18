@@ -7,7 +7,6 @@ import type { SessionManager } from '@aemeath-projects/exostrider/session'
 import type { NapCatClient } from '@aemeath-projects/napcat'
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 import type { Queue } from 'bullmq'
-import type { Redis } from 'ioredis'
 
 import type {
   MasterApis,
@@ -45,8 +44,6 @@ export interface AemeathServiceMap {
   // Redis
   cache: RedisStore
   persistent: RedisStore
-  cache_redis: Redis
-  persistent_redis: Redis
 
   // 框架核心
   dispatcher: EventDispatcher<AnyOneBotEvent, ContextApis>

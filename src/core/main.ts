@@ -193,8 +193,6 @@ async function _startup(
   registry.set('iris_db', irisDb)
   registry.set('cache', cacheStore)
   registry.set('persistent', persistentStore)
-  registry.set('cache_redis', cacheRedis)
-  registry.set('persistent_redis', persistentRedis)
   registry.set('queue', queue)
 
   // 9. 生命周期编排器：按拓扑顺序启动所有业务模块（@Provide 服务写入 registry）

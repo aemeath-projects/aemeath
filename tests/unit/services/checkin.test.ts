@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { AemeathPrismaClient } from '@/core/db/index.js'
 import type { RedisStore } from '@/core/redis/index.js'
-import { CheckinService } from '@/services/checkin.js'
+import { CheckinServiceImpl } from '@/services/checkin.js'
+import type { CheckinService } from '@/services/checkin.js'
 
 /* Mock 工厂 */
 
@@ -47,7 +48,7 @@ describe('CheckinService', () => {
   beforeEach(() => {
     mockDb = createMockDb()
     mockCache = createMockCache()
-    service = new CheckinService(
+    service = new CheckinServiceImpl(
       mockDb as unknown as AemeathPrismaClient,
       mockCache as unknown as RedisStore,
     )

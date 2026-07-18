@@ -96,18 +96,28 @@ export interface GetSummaryParams {
 }
 
 /** 用户签到缓存结构。 */
-interface CheckinCache {
+export interface CheckinCache {
   lastDate: string
   streak: number
   total: number
 }
 
+/** 用户群签到核心服务契约。 */
+export interface CheckinService {
+  checkin(params: { groupId: string; userId: string; today: Date }): Promise<CheckinResult>
+  rebuildCache(groupId: string, userId: string): Promise<CheckinCache>
+  listRecords(params?: ListRecordsParams): Promise<[CheckinRecord[], number]>
+  getLeaderboard(params: GetLeaderboardParams): Promise<LeaderEntry[]>
+  getDailyTrend(params: GetDailyTrendParams): Promise<DayCount[]>
+  getSummary(params: GetSummaryParams): Promise<SummaryData>
+}
+
 /**
- * 用户群签到核心服务。
+ * 用户群签到核心服务实现。
  *
  * 通过 Startup 生命周期注册，由 LifecycleOrchestrator 管理。
  */
-export class CheckinService {
+export class CheckinServiceImpl implements CheckinService {
   private readonly _log: PinoLogger = getLogger('checkin:service') as unknown as PinoLogger
 
   constructor(
@@ -243,6 +253,11 @@ export class CheckinService {
 
     // by === 'streak'：使用原生 SQL 计算当前连续天数
 
+    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call --
+       Prisma 7 将 Prisma.sql 标签模板的运行时类型移入间接依赖 @prisma/client-runtime-utils，
+       pnpm 严格 node_modules 隔离下该包不会被提升到顶层，typescript-eslint 无法解析其类型，
+       将 Prisma.sql 判定为 any。这是环境/依赖层面的既有问题，非本次改动引入，
+       详见 docs/superpowers/reports/2026-07-18-prisma7-client-runtime-utils-eslint.md */
     const sql =
       gid != null
         ? Prisma.sql`
@@ -302,6 +317,7 @@ export class CheckinService {
             )
             SELECT user_id, streak FROM current_streaks ORDER BY streak DESC LIMIT ${effectiveLimit}
           `
+    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
 
     interface RawRow {
       user_id: string
@@ -456,6 +472,6 @@ export class CheckinServiceBootstrap {
 
   @Startup
   start(): void {
-    this.checkinService = new CheckinService(this.db, this.cache)
+    this.checkinService = new CheckinServiceImpl(this.db, this.cache)
   }
 }

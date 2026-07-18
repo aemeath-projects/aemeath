@@ -27,6 +27,7 @@ import pkg from '../../package.json' with { type: 'json' }
 
 const logger = getLogger('main')
 
+import { createBotEventHandler } from './bot-event-handler.js'
 import { loadConfig } from './config.js'
 import { createAemeathDb, createIrisDb } from './db/index.js'
 import { oneBotContextConfig, OneBotContext } from './dispatch/index.js'
@@ -276,9 +277,7 @@ async function _startup(
     router.setPriorityMode(persistedMode)
   }
 
-  pool.on('event', (aggregated) => {
-    void dispatcher.dispatch(aggregated.event, buildContextApis(aggregated, router, pool))
-  })
+  pool.on('event', createBotEventHandler(dispatcher, router, pool, appLogger, buildContextApis))
 
   // 15. 启动 TaskExecutor（监听 job completed 事件）—— 全部 Bot API 调用统一走
   // MessageRouter，不再依赖 master 专属通道，无需在此判断 master_apis 是否就绪。

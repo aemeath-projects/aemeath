@@ -35,11 +35,18 @@ export function createBotEventHandler(
 ): (aggregated: AggregatedEvent<AnyOneBotEvent>) => void {
   return (aggregated) => {
     runWithTrace(randomUUID(), () => {
-      dispatcher
-        .dispatch(aggregated.event, buildContextApis(aggregated, router, pool))
-        .catch((err: unknown) => {
-          log.error({ err }, '事件分发未捕获异常')
-        })
+      try {
+        dispatcher
+          .dispatch(aggregated.event, buildContextApis(aggregated, router, pool))
+          .catch((err: unknown) => {
+            log.error({ err }, '事件分发未捕获异常')
+          })
+      } catch (err) {
+        // buildContextApis(...) 是同步求值的参数表达式，可能在 dispatch() 真正
+        // 被调用前就同步抛出（如账号客户端解析失败），必须与上面的异步 rejection
+        // 走同一条兜底路径，否则会穿透 EventEmitter 同步冒泡到进程级 uncaughtException。
+        log.error({ err }, '事件分发未捕获异常')
+      }
     })
   }
 }

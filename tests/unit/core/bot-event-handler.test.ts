@@ -63,4 +63,28 @@ describe('createBotEventHandler', () => {
 
     expect(errorMock).toHaveBeenCalledWith({ err: expect.any(Error) }, '事件分发未捕获异常')
   })
+
+  it('buildContextApis 同步抛出异常时应当被捕获并记录 error 日志，不向上抛出', () => {
+    const dispatch = vi.fn().mockResolvedValue(undefined)
+    const dispatcher = { dispatch }
+    const errorMock = vi.fn()
+    const log = { error: errorMock }
+    const buildContextApis = vi.fn(() => {
+      throw new Error('账号客户端解析失败')
+    })
+
+    const handler = createBotEventHandler(
+      dispatcher as never,
+      {} as never,
+      {} as never,
+      log as never,
+      buildContextApis,
+    )
+
+    expect(() => {
+      handler({ event: { postType: 'message' } } as never)
+    }).not.toThrow()
+    expect(dispatch).not.toHaveBeenCalled()
+    expect(errorMock).toHaveBeenCalledWith({ err: expect.any(Error) }, '事件分发未捕获异常')
+  })
 })

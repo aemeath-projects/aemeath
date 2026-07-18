@@ -31,4 +31,23 @@ describe('LOG_REDACT_PATHS', () => {
       { token?: string } | undefined
     expect(entry?.token).not.toBe('super-secret-value')
   })
+
+  it('手动记录含请求头的日志时，Authorization 字段会被脱敏（验证 redact 路径本身有效，即便当前 Fastify 默认日志不含 headers）', async () => {
+    const received: unknown[] = []
+    const listener = (entry: unknown) => received.push(entry)
+    logBroadcaster.on('log', listener)
+
+    const log = createLogger({ format: 'json', level: 'info', redact: LOG_REDACT_PATHS })
+    log.info(
+      { req: { headers: { authorization: 'Bearer super-secret-token' } } },
+      'header redact test',
+    )
+
+    await new Promise((r) => setTimeout(r, 50))
+    logBroadcaster.off('log', listener)
+
+    const entry = received.find((e) => (e as { msg?: string }).msg === 'header redact test') as
+      { req?: { headers?: { authorization?: string } } } | undefined
+    expect(entry?.req?.headers?.authorization).not.toBe('Bearer super-secret-token')
+  })
 })

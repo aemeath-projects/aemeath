@@ -55,18 +55,24 @@ export class IrisInterceptor implements DispatchInterceptor<AnyOneBotEvent, Cont
       groupId?: number
     }
 
-    await this.irisService.saveMessage({
-      messageId: BigInt(msgEvent.messageId),
-      messageType: resolveMessageType(msgEvent.messageType),
-      groupId: msgEvent.groupId != null ? String(msgEvent.groupId) : undefined,
-      userId: String(msgEvent.userId),
-      rawMessage: msgEvent.rawMessage,
-      segments: msgEvent.message,
-      senderNickname: msgEvent.sender.nickname ?? '',
-      senderCard: msgEvent.sender.card ?? null,
-      senderRole: msgEvent.sender.role ?? null,
-      createdAt: new Date(msgEvent.time * 1000),
-    })
+    try {
+      await this.irisService.saveMessage({
+        messageId: BigInt(msgEvent.messageId),
+        messageType: resolveMessageType(msgEvent.messageType),
+        groupId: msgEvent.groupId != null ? String(msgEvent.groupId) : undefined,
+        userId: String(msgEvent.userId),
+        rawMessage: msgEvent.rawMessage,
+        segments: msgEvent.message,
+        senderNickname: msgEvent.sender.nickname ?? '',
+        senderCard: msgEvent.sender.card ?? null,
+        senderRole: msgEvent.sender.role ?? null,
+        createdAt: new Date(msgEvent.time * 1000),
+      })
+    } catch (err) {
+      // 归档失败不应中断消息事件的其余拦截器/处理器链路。saveMessage() 内部
+      // 已有 try/catch 且从不向上抛出，这里是防止未来该内部 catch 被误删的防御性兜底。
+      log.error({ err }, '消息归档失败')
+    }
 
     return true
   }

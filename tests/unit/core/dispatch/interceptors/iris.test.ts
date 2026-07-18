@@ -2,14 +2,15 @@ import type { Context } from '@aemeath-projects/exostrider/dispatch'
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 import { describe, it, expect, vi } from 'vitest'
 
-const { debugMock } = vi.hoisted(() => {
+const { debugMock, errorMock } = vi.hoisted(() => {
   return {
     debugMock: vi.fn(),
+    errorMock: vi.fn(),
   }
 })
 
 vi.mock('@aemeath-projects/exostrider/logger', () => ({
-  getLogger: () => ({ debug: debugMock }),
+  getLogger: () => ({ debug: debugMock, error: errorMock }),
 }))
 
 import type { ContextApis } from '@/core/dispatch/index.js'
@@ -90,5 +91,17 @@ describe('IrisInterceptor（dispatch 级拦截器）', () => {
       { postType: 'notice' },
       'IrisInterceptor: 非消息事件，跳过归档',
     )
+  })
+
+  it('saveMessage 抛出异常时应当被捕获记录日志，preHandle 仍返回 true 放行（不中断消息处理链路）', async () => {
+    const saveMessage = vi.fn().mockRejectedValue(new Error('数据库连接中断'))
+    const irisService = { saveMessage } as unknown as IrisService
+    const interceptor = new IrisInterceptor(irisService)
+
+    const result = await interceptor.preHandle(makeCtx(makeGroupMessageEvent()))
+
+    expect(result).toBe(true)
+    expect(saveMessage).toHaveBeenCalledOnce()
+    expect(errorMock).toHaveBeenCalledWith({ err: expect.any(Error) }, '消息归档失败')
   })
 })

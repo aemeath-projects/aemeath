@@ -47,12 +47,32 @@ export interface PaginationParams {
   pageSize?: number
 }
 
+/** 漂流瓶核心服务契约。 */
+export interface DriftBottleService {
+  getPoolId(groupId: string): Promise<string>
+  throwBottle(params: {
+    poolId: string
+    senderId: string
+    senderGroupId: string
+    content: unknown
+  }): Promise<DriftBottle>
+  pickBottle(params: { poolId: string; userId: string }): Promise<BottleItem | null>
+  listPools(): Promise<PoolInfo[]>
+  createPool(name: string): Promise<DriftBottlePool>
+  deletePool(poolId: string): Promise<void>
+  listPoolGroups(poolId: string): Promise<string[]>
+  assignGroupPool(params: { groupId: string; poolId: string }): Promise<void>
+  listBottles(
+    params?: PaginationParams & { poolId?: string; isPicked?: boolean },
+  ): Promise<PageResult<DriftBottle>>
+}
+
 /**
- * 漂流瓶核心服务 —— 封装扔/捞/池管理逻辑。
+ * 漂流瓶核心服务实现 —— 封装扔/捞/池管理逻辑。
  *
  * 通过 Startup 生命周期注册，由 LifecycleOrchestrator 管理。
  */
-export class DriftBottleService {
+export class DriftBottleServiceImpl implements DriftBottleService {
   constructor(private readonly db: AemeathPrismaClient) {}
 
   // 工具方法
@@ -105,6 +125,7 @@ export class DriftBottleService {
       content: unknown
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Prisma 7 的 client-runtime-utils 为间接依赖，pnpm 不提升至顶层 node_modules 导致 Prisma.sql 类型不可解析，属既有环境问题，详见 docs/superpowers/reports/2026-07-18-prisma7-client-runtime-utils-eslint.md
     const rows = await this.db.$queryRaw<RawRow[]>(Prisma.sql`
       UPDATE drift_bottles
       SET is_picked = TRUE,
@@ -145,6 +166,7 @@ export class DriftBottleService {
       available_count: bigint
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Prisma 7 的 client-runtime-utils 为间接依赖，pnpm 不提升至顶层 node_modules 导致 Prisma.sql 类型不可解析，属既有环境问题，详见 docs/superpowers/reports/2026-07-18-prisma7-client-runtime-utils-eslint.md
     const rows = await this.db.$queryRaw<RawRow[]>(Prisma.sql`
       SELECT
         p.id,
@@ -299,6 +321,6 @@ export class DriftBottleBootstrap {
 
   @Startup
   start(): void {
-    this.driftBottleService = new DriftBottleService(this.db)
+    this.driftBottleService = new DriftBottleServiceImpl(this.db)
   }
 }

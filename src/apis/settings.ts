@@ -18,7 +18,7 @@ import {
   type BatchSetRequest,
 } from '@/apis/schemas/index.js'
 import { ValidationError } from '@/core/errors.js'
-import { ok, fail, OkResponse, FailResponse } from '@/core/schemas/index.js'
+import { ok, OkResponse, FailResponse } from '@/core/schemas/index.js'
 import type { SettingsService } from '@/core/settings/index.js'
 
 /** API 层代表管理员写入任意模块的配置，不归属任何具体业务模块。 */
@@ -83,13 +83,9 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
       reply: FastifyReply,
     ) => {
       const svc = getSettings(app)
-      try {
-        const path = parsePathQuery(req.query.path)
-        const data = await svc.getAll(req.query.prefix ?? '', path)
-        await reply.send(ok(data))
-      } catch (err) {
-        await reply.status(400).send(fail(String(err)))
-      }
+      const path = parsePathQuery(req.query.path)
+      const data = await svc.getAll(req.query.prefix ?? '', path)
+      await reply.send(ok(data))
     },
   )
 
@@ -112,14 +108,10 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
       reply: FastifyReply,
     ) => {
       const svc = getSettings(app)
-      try {
-        await svc.set(req.params.key, req.body.value, req.body.path, ADMIN_OWNER, {
-          bypassOwnership: true,
-        })
-        await reply.send(ok(null, 'ok'))
-      } catch (err) {
-        await reply.status(400).send(fail(String(err)))
-      }
+      await svc.set(req.params.key, req.body.value, req.body.path, ADMIN_OWNER, {
+        bypassOwnership: true,
+      })
+      await reply.send(ok(null, 'ok'))
     },
   )
 
@@ -138,12 +130,8 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
     },
     async (req: FastifyRequest<{ Body: BatchSetRequest }>, reply: FastifyReply) => {
       const svc = getSettings(app)
-      try {
-        await svc.batchSet(req.body.entries, req.body.path, ADMIN_OWNER, { bypassOwnership: true })
-        await reply.send(ok(null, 'ok'))
-      } catch (err) {
-        await reply.status(400).send(fail(String(err)))
-      }
+      await svc.batchSet(req.body.entries, req.body.path, ADMIN_OWNER, { bypassOwnership: true })
+      await reply.send(ok(null, 'ok'))
     },
   )
 }

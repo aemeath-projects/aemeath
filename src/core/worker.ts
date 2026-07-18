@@ -184,6 +184,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((err: unknown) => {
-  console.error('Worker 启动失败:', err)
+  log.fatal({ err }, 'Worker 启动失败')
   process.exit(1)
 })

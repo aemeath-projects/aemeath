@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { MessageRouter } from '@/core/accounts/index.js'
 import type { AemeathPrismaClient } from '@/core/db/index.js'
 import type { MailboxService } from '@/core/mailbox/index.js'
-import { FeedbackService } from '@/services/feedback.js'
+import { FeedbackServiceImpl } from '@/services/feedback.js'
+import type { FeedbackService } from '@/services/feedback.js'
 
 /* Mock 工厂 */
 
@@ -49,7 +50,7 @@ describe('FeedbackService', () => {
     mockDb = createMockDb()
     mockRouter = createMockRouter()
     mockMailbox = createMockMailbox()
-    service = new FeedbackService(
+    service = new FeedbackServiceImpl(
       mockDb as unknown as AemeathPrismaClient,
       mockRouter as unknown as MessageRouter,
       mockMailbox as unknown as MailboxService,

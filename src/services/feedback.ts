@@ -43,12 +43,25 @@ export interface ListFeedbacksParams {
   search?: string
 }
 
+/** 用户反馈核心服务契约。 */
+export interface FeedbackService {
+  createFeedback(data: CreateFeedbackData): Promise<Feedback>
+  listFeedbacks(params?: ListFeedbacksParams): Promise<[Feedback[], number]>
+  getFeedback(feedbackId: string): Promise<Feedback | null>
+  updateStatus(
+    feedbackId: string,
+    status: string,
+    adminReply?: string | null,
+  ): Promise<Feedback | null>
+  getUserFeedbacks(userId: string, limit?: number): Promise<Feedback[]>
+}
+
 /**
- * 用户反馈核心服务 —— 封装反馈 CRUD 和通知。
+ * 用户反馈核心服务实现 —— 封装反馈 CRUD 和通知。
  *
  * 通过 Startup 生命周期注册，由 LifecycleOrchestrator 管理。
  */
-export class FeedbackService {
+export class FeedbackServiceImpl implements FeedbackService {
   private readonly _log: PinoLogger = getLogger('feedback:service') as unknown as PinoLogger
 
   constructor(
@@ -237,6 +250,6 @@ export class FeedbackBootstrap {
 
   @Startup
   start(): void {
-    this.feedbackService = new FeedbackService(this.db, this.router, this.mailbox)
+    this.feedbackService = new FeedbackServiceImpl(this.db, this.router, this.mailbox)
   }
 }

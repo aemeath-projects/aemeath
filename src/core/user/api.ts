@@ -56,16 +56,6 @@ function getAdminService(app: FastifyInstance): AdminService {
   return app.services.get('admin_service')
 }
 
-/** 统一错误映射：ValidationError → 422，其余 → 500（参考 mailbox/api.ts 的错误映射约定；本模块暂无 NotFoundError 场景，故未引入该分支）。 */
-async function handleError(reply: FastifyReply, err: unknown): Promise<void> {
-  if (err instanceof ValidationError) {
-    await reply.status(422).send(fail(err.message))
-    return
-  }
-  const message = err instanceof Error ? err.message : '内部服务器错误'
-  await reply.status(500).send(fail(message))
-}
-
 /**
  * 注册用户管理 API 路由到 Fastify 实例。
  *
@@ -286,13 +276,9 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
       },
     },
     async (req: FastifyRequest<{ Body: { userId: string } }>, reply: FastifyReply) => {
-      try {
-        const svc = getAdminService(app)
-        await svc.setAdmin(parseQQParam(req.body.userId, 'userId'))
-        await reply.send(ok(null, '御者已设置'))
-      } catch (err) {
-        await handleError(reply, err)
-      }
+      const svc = getAdminService(app)
+      await svc.setAdmin(parseQQParam(req.body.userId, 'userId'))
+      await reply.send(ok(null, '御者已设置'))
     },
   )
 
@@ -310,17 +296,13 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
       },
     },
     async (_req: FastifyRequest, reply: FastifyReply) => {
-      try {
-        const svc = getAdminService(app)
-        const success = await svc.removeAdmin()
-        if (!success) {
-          await reply.status(404).send(fail('当前未设置御者'))
-          return
-        }
-        await reply.send(ok(null, '御者已移除'))
-      } catch (err) {
-        await handleError(reply, err)
+      const svc = getAdminService(app)
+      const success = await svc.removeAdmin()
+      if (!success) {
+        await reply.status(404).send(fail('当前未设置御者'))
+        return
       }
+      await reply.send(ok(null, '御者已移除'))
     },
   )
 
@@ -337,15 +319,11 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
       },
     },
     async (_req: FastifyRequest, reply: FastifyReply) => {
-      try {
-        const svc = getAdminService(app)
-        const candidates = await svc.listCandidates()
-        await reply.send(
-          ok(candidates.map((f) => ({ qq: f.userId, nickname: f.nickname, remark: f.remark }))),
-        )
-      } catch (err) {
-        await handleError(reply, err)
-      }
+      const svc = getAdminService(app)
+      const candidates = await svc.listCandidates()
+      await reply.send(
+        ok(candidates.map((f) => ({ qq: f.userId, nickname: f.nickname, remark: f.remark }))),
+      )
     },
   )
 

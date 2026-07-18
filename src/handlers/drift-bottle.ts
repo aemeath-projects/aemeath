@@ -5,7 +5,6 @@
 import { Inject } from '@aemeath-projects/exostrider/lifecycle'
 import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
-import { seg } from '@aemeath-projects/napcat'
 import type { MessageSegment } from '@aemeath-projects/napcat/types'
 
 import type { OneBotContext as Context } from '@/core/dispatch/index.js'
@@ -145,15 +144,12 @@ class DriftBottleHandler {
       return true
     }
 
-    const replySegs: MessageSegment[] = [
-      seg.text('捞到了一个漂流瓶：\n'),
-      ...(bottle.content as { type: string; data: Record<string, unknown> }[]).map((s) => ({
-        type: s.type,
-        data: s.data,
-      })),
-    ]
+    const builder = new MessageBuilder().text('捞到了一个漂流瓶：\n')
+    for (const s of bottle.content as { type: string; data: Record<string, unknown> }[]) {
+      builder.add({ type: s.type, data: s.data })
+    }
 
-    await ctx.reply(replySegs)
+    await ctx.reply(builder.build())
     return true
   }
 }

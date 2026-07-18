@@ -50,13 +50,26 @@ export interface ListHistoryParams {
   pageSize?: number
 }
 
+/** 点赞服务契约。 */
+export interface LikeService {
+  /** 是否有定时点赞任务正在执行。 */
+  readonly isRunning: boolean
+  sendLikeNow(qq: string, times: number, source: LikeSource): Promise<boolean>
+  registerTask(qq: string, groupId: string | null): Promise<RegisterResult>
+  cancelTask(qq: string): Promise<boolean>
+  getStatus(qq: string): Promise<LikeStatus>
+  listTasks(params?: { page?: number; pageSize?: number }): Promise<[LikeTask[], number]>
+  listHistory(params?: ListHistoryParams): Promise<[LikeHistory[], number]>
+  requestScheduledLikes(): boolean
+}
+
 /**
- * 点赞服务 —— 提供手动点赞和每日定时点赞能力。
+ * 点赞服务实现 —— 提供手动点赞和每日定时点赞能力。
  *
  * 通过 Startup 生命周期注册，由 LifecycleOrchestrator 管理。
  * run_scheduled_likes() 通过 isRunning + Promise 防止并发重入。
  */
-export class LikeService {
+export class LikeServiceImpl implements LikeService {
   private _currentTask: Promise<void> | null = null
   private readonly _log: PinoLogger = getLogger('like') as unknown as PinoLogger
 
@@ -295,6 +308,6 @@ export class LikeBootstrap {
 
   @Startup
   start(): void {
-    this.likeService = new LikeService(this.db, this.router)
+    this.likeService = new LikeServiceImpl(this.db, this.router)
   }
 }

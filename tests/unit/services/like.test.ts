@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { MessageRouter } from '@/core/accounts/index.js'
 import type { AemeathPrismaClient } from '@/core/db/index.js'
-import { LikeService } from '@/services/like.js'
+import { LikeServiceImpl } from '@/services/like.js'
+import type { LikeService } from '@/services/like.js'
 
 function createMockDb() {
   return {
@@ -33,7 +34,7 @@ describe('LikeService', () => {
   beforeEach(() => {
     mockDb = createMockDb()
     mockRouter = createMockRouter()
-    service = new LikeService(
+    service = new LikeServiceImpl(
       mockDb as unknown as AemeathPrismaClient,
       mockRouter as unknown as MessageRouter,
     )

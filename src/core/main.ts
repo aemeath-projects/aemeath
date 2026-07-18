@@ -53,6 +53,7 @@ import {
   setTaskDefinitions,
 } from './tasks/index.js'
 import type { TaskDefinition } from './tasks/index.js'
+import { registerTraceHook } from './trace-hook.js'
 
 import { buildContextApis } from '@/core/accounts/index.js'
 import type { PriorityMode } from '@/core/accounts/index.js'
@@ -363,6 +364,9 @@ async function bootstrap(): Promise<void> {
   }) as unknown as FastifyInstance
 
   /* 注册插件 */
+
+  // HTTP 链路 trace 接入（须在其余路由/插件注册前，确保覆盖全部请求）
+  registerTraceHook(app)
 
   // CORS
   await corsPlugin(app, config.CORS_ORIGINS)

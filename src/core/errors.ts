@@ -49,3 +49,19 @@ export class BotApiError extends AppError {
     this.name = 'BotApiError'
   }
 }
+
+/** 资源冲突，如重复操作、唯一约束冲突（HTTP 409）。 */
+export class ConflictError extends AppError {
+  constructor(message: string) {
+    super(-1, message, 409)
+    this.name = 'ConflictError'
+  }
+}
+
+/** 未认证，区别于 ForbiddenError 的"已认证但无权限"（HTTP 401）。 */
+export class UnauthorizedError extends AppError {
+  constructor(message: string) {
+    super(-1, message, 401)
+    this.name = 'UnauthorizedError'
+  }
+}

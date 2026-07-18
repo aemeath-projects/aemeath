@@ -49,7 +49,8 @@ export class LoggingInterceptor implements HandlerInterceptor<AnyOneBotEvent, Co
     const handlerName = `${handler.handlerName}.${String(handler.methodName)}`
 
     if (error) {
-      log.error(`${handlerName} 处理失败，耗时 ${String(durationMs)}ms，错误：${error.message}`)
+      // 用对象形式传给 pino，其 err 序列化器会保留完整 stack trace（原字符串拼接会丢失）
+      log.error({ err: error, handler: handlerName, durationMs }, 'Handler 执行异常')
     } else {
       log.debug(`${handlerName} 处理完成，耗时 ${String(durationMs)}ms`)
     }

@@ -58,15 +58,20 @@ describe('LoggingInterceptor', () => {
     expect(errorMock).not.toHaveBeenCalled()
   })
 
-  it('afterCompletion 有错误时输出 error 日志', async () => {
+  it('afterCompletion 有错误时输出结构化 error 日志（保留完整 err 对象，不丢失 stack）', async () => {
     debugMock.mockClear()
     errorMock.mockClear()
     const interceptor = new LoggingInterceptor()
     const ctx = makeCtx()
     await interceptor.preHandle(ctx as never, makeHandler())
 
-    await interceptor.afterCompletion(ctx as never, makeHandler(), new Error('boom'))
+    const error = new Error('boom')
+    await interceptor.afterCompletion(ctx as never, makeHandler(), error)
 
     expect(errorMock).toHaveBeenCalledOnce()
+    expect(errorMock).toHaveBeenCalledWith(
+      { err: error, handler: 'echo.handle', durationMs: expect.any(Number) },
+      'Handler 执行异常',
+    )
   })
 })

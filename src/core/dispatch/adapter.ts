@@ -11,9 +11,11 @@
  * 没有则直接注入 message_router"两种场景各自该用的方式。
  */
 import type { ContextConfig } from '@aemeath-projects/exostrider/dispatch'
-import { GroupApi } from '@aemeath-projects/napcat'
-import type { FriendApi, NapCatClient, Result } from '@aemeath-projects/napcat'
+import type { NapCatClient, Result } from '@aemeath-projects/napcat'
 import type { AnyOneBotEvent, MessageSegment } from '@aemeath-projects/napcat/types'
+
+import { createGroupApi } from '@/core/accounts/index.js'
+import type { FriendApiPort, GroupApiPort } from '@/core/accounts/index.js'
 
 /**
  * Handler 便捷门面的消息发送接口——只声明 ctx.apis.msgApi 实际被使用的 3 个方法
@@ -31,8 +33,8 @@ export interface MsgApi {
 /** Bot API 模块集合（由 BotClientBootstrap @Provide 注册）。 */
 export interface ContextApis {
   readonly msgApi: MsgApi
-  readonly friendApi: FriendApi
-  groupApi: GroupApi // 非 readonly：允许 CapabilityInterceptor 替换
+  readonly friendApi: FriendApiPort
+  groupApi: GroupApiPort // 非 readonly：允许 CapabilityInterceptor 替换
 }
 
 /** 从 OneBot 事件提取纯文本。 */
@@ -69,7 +71,7 @@ export const oneBotContextConfig: ContextConfig<AnyOneBotEvent, ContextApis> = {
   scopeExtractor: (event) => extractScope(event),
 }
 
-/** 根据 NapCatClient 实例构建 GroupApi，供 CapabilityInterceptor 在替换账号时使用。 */
-export function buildGroupApi(client: NapCatClient): GroupApi {
-  return new GroupApi(client)
+/** 根据 NapCatClient 实例构建 GroupApiPort，供 CapabilityInterceptor 在替换账号时使用。 */
+export function buildGroupApi(client: NapCatClient): GroupApiPort {
+  return createGroupApi(client)
 }

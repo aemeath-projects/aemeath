@@ -18,6 +18,7 @@ import { createAemeathDb, createIrisDb } from './db/index.js'
 import { AppError } from './errors.js'
 import { createOssClient } from './oss/client.js'
 import type { OssBuckets } from './oss/client.js'
+import { registerProcessErrorHandlers } from './process-handlers.js'
 import { createRedis, createBullMQConnection } from './redis/factory.js'
 import { RedisStore } from './redis/store.js'
 import { WorkerHeartbeatMiddleware } from './tasks/middleware.js'
@@ -39,6 +40,8 @@ const config = loadConfig()
 // Worker 进程独立初始化 logger
 setLogger(createLogger({ level: config.LOG_LEVEL, format: config.LOG_FORMAT }))
 const log: PinoLogger = getLogger('worker') as unknown as PinoLogger
+
+registerProcessErrorHandlers(log)
 
 /** 主函数 */
 

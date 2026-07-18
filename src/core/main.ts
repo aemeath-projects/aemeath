@@ -17,6 +17,7 @@ import {
   serviceEntryRegistry,
 } from '@aemeath-projects/exostrider/lifecycle'
 import { createLogger, setLogger, getLogger } from '@aemeath-projects/exostrider/logger'
+import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 import fastifyStatic from '@fastify/static'
 import Fastify, { type FastifyInstance, type FastifyPluginAsync, LogController } from 'fastify'
@@ -42,6 +43,7 @@ import { registerErrorHandlers } from './error-handler.js'
 import type { AemeathServiceMap } from './lifecycle.js'
 import { metricsRegistry } from './monitoring/index.js'
 import { corsPlugin, swaggerPlugin } from './plugins/index.js'
+import { registerProcessErrorHandlers } from './process-handlers.js'
 import { createRedis, checkRedisReachable, RedisStore } from './redis/index.js'
 import {
   createBullMQConnection,
@@ -440,6 +442,8 @@ async function bootstrap(): Promise<void> {
 }
 
 /* 入口 */
+
+registerProcessErrorHandlers(logger as unknown as PinoLogger)
 
 bootstrap().catch((err: unknown) => {
   // _startupFailed 为 true 时，LifecycleOrchestrator 已记录详细错误，此处仅退出

@@ -40,4 +40,16 @@ describe('registerTraceHook', () => {
     expect(res.headers['x-trace-id']).toBeDefined()
     expect(typeof res.headers['x-trace-id']).toBe('string')
   })
+
+  it('两次不同请求应当产生不同的 traceId', async () => {
+    await app.ready()
+    const res1 = await app.inject({ method: 'GET', url: '/ping' })
+    const res2 = await app.inject({ method: 'GET', url: '/ping' })
+
+    expect(enterTraceMock).toHaveBeenCalledTimes(2)
+    const [traceId1] = enterTraceMock.mock.calls[0] as [string]
+    const [traceId2] = enterTraceMock.mock.calls[1] as [string]
+    expect(traceId1).not.toBe(traceId2)
+    expect(res1.headers['x-trace-id']).not.toBe(res2.headers['x-trace-id'])
+  })
 })

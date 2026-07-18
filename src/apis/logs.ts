@@ -6,6 +6,7 @@ import { logBroadcaster } from '@aemeath-projects/exostrider/logger'
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
 import { LogStreamQuerySchema } from '@/apis/schemas/index.js'
+import { openSseConnection } from '@/core/utils/index.js'
 
 /** Pino 日志级别数字 → 小写标签映射。 */
 const PINO_LEVEL_LABELS: Record<number, string> = {
@@ -46,44 +47,18 @@ const logsRoutes: FastifyPluginAsync = async (app) => {
     async (req: FastifyRequest<{ Querystring: { level?: string } }>, reply: FastifyReply) => {
       const levelFilter = req.query.level?.toLowerCase()
 
-      // 设置 SSE 响应头
-      reply.raw.setHeader('Content-Type', 'text/event-stream')
-      reply.raw.setHeader('Cache-Control', 'no-cache')
-      reply.raw.setHeader('X-Accel-Buffering', 'no')
-      reply.raw.setHeader('Connection', 'keep-alive')
-
-      // 发送初始连接事件
-      reply.raw.write('event: connected\ndata: {}\n\n')
-
-      // 监听日志广播器
       const onLog = (entry: Record<string, unknown>): void => {
         // 按级别过滤
         if (levelFilter !== undefined && levelFilter !== '') {
           if (normalizePinoLevel(entry.level) !== levelFilter) return
         }
-
-        try {
-          const data = JSON.stringify({ ...entry, level: normalizePinoLevel(entry.level) })
-          reply.raw.write(`data: ${data}\n\n`)
-        } catch {
-          // 序列化失败时忽略
-        }
+        conn.send({ ...entry, level: normalizePinoLevel(entry.level) })
       }
 
+      const conn = openSseConnection(req, reply, () => logBroadcaster.off('log', onLog))
       logBroadcaster.on('log', onLog)
 
-      // 客户端断开时清理监听器
-      const cleanup = (): void => {
-        logBroadcaster.off('log', onLog)
-        reply.raw.end()
-      }
-
-      req.raw.on('close', cleanup)
-
-      // 阻止 Fastify 自动关闭响应，等待连接断开
-      await new Promise<void>((resolve) => {
-        req.raw.on('close', resolve)
-      })
+      await conn.waitForClose()
     },
   )
 }

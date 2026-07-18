@@ -14,6 +14,7 @@ import {
 import { AccountService, accountStatusBroadcaster } from '@/core/accounts/index.js'
 import type { AccountWithStatus } from '@/core/accounts/index.js'
 import { ok, fail } from '@/core/schemas/index.js'
+import { openSseConnection } from '@/core/utils/index.js'
 
 type QqParams = Static<typeof AccountQqParamsSchema>
 type CreateBody = Static<typeof CreateAccountBodySchema>
@@ -163,30 +164,16 @@ const plugin: FastifyPluginAsync = async (app) => {
 
   // GET /api/accounts/stream —— 账号连接状态实时推送
   app.get('/api/accounts/stream', { schema: { hide: true } }, async (req, reply) => {
-    reply.raw.setHeader('Content-Type', 'text/event-stream')
-    reply.raw.setHeader('Cache-Control', 'no-cache')
-    reply.raw.setHeader('X-Accel-Buffering', 'no')
-    reply.raw.setHeader('Connection', 'keep-alive')
-    reply.raw.write('event: connected\ndata: {}\n\n')
-
     const onStatus = (status: AccountWithStatus): void => {
-      try {
-        reply.raw.write(`data: ${JSON.stringify(status)}\n\n`)
-      } catch {
-        // 序列化失败时忽略单条推送
-      }
+      conn.send(status)
     }
+
+    const conn = openSseConnection(req, reply, () =>
+      accountStatusBroadcaster.off('status', onStatus),
+    )
     accountStatusBroadcaster.on('status', onStatus)
 
-    const cleanup = (): void => {
-      accountStatusBroadcaster.off('status', onStatus)
-      reply.raw.end()
-    }
-    req.raw.on('close', cleanup)
-
-    await new Promise<void>((resolve) => {
-      req.raw.on('close', resolve)
-    })
+    await conn.waitForClose()
   })
 }
 

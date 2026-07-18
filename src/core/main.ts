@@ -42,6 +42,7 @@ import {
 } from './dispatch/interceptors/index.js'
 import { registerErrorHandlers } from './error-handler.js'
 import type { AemeathServiceMap } from './lifecycle.js'
+import { LOG_REDACT_PATHS } from './logging-redact.js'
 import { metricsRegistry } from './monitoring/index.js'
 import { corsPlugin, swaggerPlugin } from './plugins/index.js'
 import { registerProcessErrorHandlers } from './process-handlers.js'
@@ -351,6 +352,7 @@ async function bootstrap(): Promise<void> {
   const appLogger = createLogger({
     level: config.LOG_LEVEL,
     format: config.LOG_FORMAT,
+    redact: LOG_REDACT_PATHS,
   })
   setLogger(appLogger)
 

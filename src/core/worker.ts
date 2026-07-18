@@ -16,6 +16,7 @@ import { Worker } from 'bullmq'
 import { loadConfig } from './config.js'
 import { createAemeathDb, createIrisDb } from './db/index.js'
 import { AppError } from './errors.js'
+import { LOG_REDACT_PATHS } from './logging-redact.js'
 import { createOssClient } from './oss/client.js'
 import type { OssBuckets } from './oss/client.js'
 import { registerProcessErrorHandlers } from './process-handlers.js'
@@ -38,7 +39,9 @@ interface AemeathAppConfig {
 const config = loadConfig()
 
 // Worker 进程独立初始化 logger
-setLogger(createLogger({ level: config.LOG_LEVEL, format: config.LOG_FORMAT }))
+setLogger(
+  createLogger({ level: config.LOG_LEVEL, format: config.LOG_FORMAT, redact: LOG_REDACT_PATHS }),
+)
 const log: PinoLogger = getLogger('worker') as unknown as PinoLogger
 
 registerProcessErrorHandlers(log)

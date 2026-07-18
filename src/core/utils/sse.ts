@@ -45,15 +45,20 @@ export function openSseConnection(
     }
   }
 
-  const waitForClose = (): Promise<void> =>
-    new Promise<void>((resolve) => {
-      request.raw.on('close', () => {
+  // 用同一个 Promise 缓存，确保重复调用 waitForClose() 不会重复注册 'close' 监听器、
+  // 不会让 onClose()/reply.raw.end() 被多次执行。
+  let closePromise: Promise<void> | undefined
+  const waitForClose = (): Promise<void> => {
+    closePromise ??= new Promise<void>((resolve) => {
+      request.raw.once('close', () => {
         onClose?.()
         reply.raw.end()
         log.debug({ url: request.url }, 'SSE 连接断开')
         resolve()
       })
     })
+    return closePromise
+  }
 
   return { send, waitForClose }
 }

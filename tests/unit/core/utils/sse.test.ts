@@ -8,7 +8,7 @@ vi.mock('@aemeath-projects/exostrider/logger', () => ({
   getLogger: () => ({ debug: debugMock }),
 }))
 
-const { openSseConnection } = await import('@/core/utils/sse.js')
+const { openSseConnection } = await import('@/core/utils/index.js')
 
 function makeReply() {
   const headers: Record<string, string> = {}
@@ -95,5 +95,22 @@ describe('openSseConnection', () => {
     expect(onClose).toHaveBeenCalledOnce()
     expect(reply._ended).toBe(true)
     expect(debugMock).toHaveBeenCalledWith({ url: '/test' }, 'SSE 连接断开')
+  })
+
+  it('多次调用 waitForClose() 不应重复注册监听器：close 触发时 onClose/reply.raw.end() 各只执行一次', async () => {
+    const reply = makeReply()
+    const request = makeRequest()
+    const onClose = vi.fn()
+    const conn = openSseConnection(request as never, reply as never, onClose)
+
+    const promise1 = conn.waitForClose()
+    const promise2 = conn.waitForClose()
+    expect(promise1).toBe(promise2)
+
+    request.raw.emit('close')
+    await promise1
+
+    expect(onClose).toHaveBeenCalledTimes(1)
+    expect(request.raw.listenerCount('close')).toBe(0)
   })
 })

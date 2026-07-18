@@ -5,8 +5,6 @@
 import { Type } from '@sinclair/typebox'
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify'
 
-import type { Feedback } from '#prisma/aemeath'
-
 import {
   FeedbackIdParamSchema,
   FeedbackListQuerySchema,
@@ -15,6 +13,25 @@ import {
   FeedbackDetailDataSchema,
 } from '@/apis/schemas/index.js'
 import { ok, fail, OkResponse, FailResponse } from '@/core/schemas/index.js'
+
+/**
+ * API 层消费的反馈记录字段子集，解耦对 Prisma 生成类型的直接依赖。
+ * `FeedbackService` 的方法实际返回 Prisma 的 `Feedback` 类型（结构上是本接口的超集），
+ * 结构化类型系统下可以直接赋值给这里声明的参数类型。
+ */
+interface FeedbackRecord {
+  id: string
+  userId: string
+  groupId: string | null
+  content: string
+  status: string
+  feedbackType: string | null
+  source: string
+  adminReply: string | null
+  createdAt: Date | string
+  updatedAt: Date | string
+  processedAt: Date | string | null
+}
 
 async function getFeedbackSvc(app: FastifyInstance) {
   return app.services.get('feedback_service')
@@ -29,7 +46,7 @@ function ceilDiv(a: number, b: number): number {
   return Math.ceil(a / b)
 }
 
-function feedbackToDict(f: Feedback): Record<string, unknown> {
+function feedbackToDict(f: FeedbackRecord): Record<string, unknown> {
   return {
     id: f.id,
     userId: f.userId,

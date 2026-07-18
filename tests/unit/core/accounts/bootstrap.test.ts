@@ -183,6 +183,8 @@ describe('MultiAccountBootstrap', () => {
       }
     }
 
+    const createFakeApi = (client: NapCatClient): FakeApi => new FakeApi(client)
+
     function fakeClient(id: string): NapCatClient {
       return { id } as unknown as NapCatClient
     }
@@ -195,7 +197,7 @@ describe('MultiAccountBootstrap', () => {
         typeof createLiveMasterApi
       >[0]
 
-      const api = createLiveMasterApi(fakePool, FakeApi)
+      const api = createLiveMasterApi(fakePool, createFakeApi)
 
       expect(api.getId()).toBe('client-A')
 
@@ -212,7 +214,7 @@ describe('MultiAccountBootstrap', () => {
         typeof createLiveMasterApi
       >[0]
 
-      const api = createLiveMasterApi(fakePool, FakeApi)
+      const api = createLiveMasterApi(fakePool, createFakeApi)
 
       expect(() => api.getId()).toThrow('主账号不在线，无法调用 Bot API')
     })

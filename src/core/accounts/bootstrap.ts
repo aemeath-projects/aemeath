@@ -20,7 +20,6 @@ import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import { ClientPool, RoutingTable, PriorityStickyStrategy } from '@aemeath-projects/exostrider/pool'
 import type { ClientState } from '@aemeath-projects/exostrider/pool'
 import type { NapCatClient } from '@aemeath-projects/napcat'
-import { MessageApi, GroupApi, FriendApi } from '@aemeath-projects/napcat'
 import type { AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 import pLimit from 'p-limit'
 import type { LimitFunction } from 'p-limit'
@@ -29,6 +28,8 @@ import { NapCatClientAdapter } from './adapter.js'
 import { OneBotDedupKeyExtractor } from './dedup.js'
 import { GroupBotRegistry } from './group-bot-registry.js'
 import type { GroupBotRole } from './group-bot-registry.js'
+import { createFriendApi, createGroupApi, createMessageApi } from './napcat-ports.js'
+import type { FriendApiPort, GroupApiPort, MessageApiPort } from './napcat-ports.js'
 import type { AccountRole } from './roles.js'
 import { MessageRouter } from './router.js'
 import { AccountService } from './service.js'
@@ -53,9 +54,9 @@ export type AccountPool = ClientPool<NapCatClient, AccountRole, AnyOneBotEvent>
 
 /** 主账号 API bundle —— 供需要特定账号操作的 service 注入。无主账号时各字段为 null。 */
 export interface MasterApis {
-  msgApi: MessageApi | null
-  groupApi: GroupApi | null
-  friendApi: FriendApi | null
+  msgApi: MessageApiPort | null
+  groupApi: GroupApiPort | null
+  friendApi: FriendApiPort | null
 }
 
 /**
@@ -69,7 +70,7 @@ export interface MasterApis {
  */
 export function createLiveMasterApi<TApi extends object>(
   pool: AccountPool,
-  apiClass: new (client: NapCatClient) => TApi,
+  apiFactory: (client: NapCatClient) => TApi,
 ): TApi {
   return new Proxy({} as TApi, {
     get(_target, prop) {
@@ -77,7 +78,7 @@ export function createLiveMasterApi<TApi extends object>(
       if (!master) {
         throw new AppError(-1, '主账号不在线，无法调用 Bot API', 503)
       }
-      const api = new apiClass(master.client)
+      const api = apiFactory(master.client)
       const value = Reflect.get(api, prop) as unknown
       return typeof value === 'function'
         ? (value as (...args: unknown[]) => unknown).bind(api)
@@ -200,9 +201,9 @@ export class MultiAccountBootstrap {
       )
     }
     this.masterApis = {
-      msgApi: createLiveMasterApi(this.pool, MessageApi),
-      groupApi: createLiveMasterApi(this.pool, GroupApi),
-      friendApi: createLiveMasterApi(this.pool, FriendApi),
+      msgApi: createLiveMasterApi(this.pool, createMessageApi),
+      groupApi: createLiveMasterApi(this.pool, createGroupApi),
+      friendApi: createLiveMasterApi(this.pool, createFriendApi),
     }
 
     // 8. 监听连接状态变化
@@ -282,7 +283,7 @@ export class MultiAccountBootstrap {
     adapter: NapCatClientAdapter,
     limit: LimitFunction,
   ): Promise<void> {
-    const groupApi = new GroupApi(adapter.client)
+    const groupApi = createGroupApi(adapter.client)
     const listResult = await groupApi.getGroupList()
     if (!listResult.ok) {
       log.error(

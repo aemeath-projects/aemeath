@@ -15,11 +15,11 @@
 import { getLogger } from '@aemeath-projects/exostrider/logger'
 import type { PinoLogger } from '@aemeath-projects/exostrider/logger'
 import type { ClientPool, RoutingTable } from '@aemeath-projects/exostrider/pool'
-import { MessageApi, GroupApi, FriendApi } from '@aemeath-projects/napcat'
 import type { NapCatClient, Result } from '@aemeath-projects/napcat'
 import type { MessageSegment, AnyOneBotEvent } from '@aemeath-projects/napcat/types'
 
 import type { GroupBotRegistry } from './group-bot-registry.js'
+import { createMessageApi, createGroupApi, createFriendApi } from './napcat-ports.js'
 import { getRolesForMode } from './roles.js'
 import type { AccountRole, PriorityMode } from './roles.js'
 
@@ -86,7 +86,7 @@ export class MessageRouter {
     )
     const adapter = this.pool.getClient(selectedId)
     if (!adapter) throw new AppError(-1, '路由选择的账号已离线', 503)
-    const msgApi = new MessageApi(adapter.client)
+    const msgApi = createMessageApi(adapter.client)
     return msgApi.sendGroupMsg(Number(groupId), message)
   }
 
@@ -122,7 +122,7 @@ export class MessageRouter {
     const selectedId = this.routingTable.resolve(`private:${userId}`, candidates)
     const adapter = this.pool.getClient(selectedId)
     if (!adapter) throw new AppError(-1, '路由选择的账号已离线', 503)
-    const msgApi = new MessageApi(adapter.client)
+    const msgApi = createMessageApi(adapter.client)
     return msgApi.sendPrivateMsg(Number(userId), message)
   }
 
@@ -153,7 +153,7 @@ export class MessageRouter {
     const selectedId = this.routingTable.resolve(groupId, candidates)
     const adapter = this.pool.getClient(selectedId)
     if (!adapter) throw new AppError(-1, '路由选择的账号已离线', 503)
-    const groupApi = new GroupApi(adapter.client)
+    const groupApi = createGroupApi(adapter.client)
     return groupApi.sendGroupSign(Number(groupId))
   }
 
@@ -213,7 +213,7 @@ export class MessageRouter {
     const selectedId = this.routingTable.resolve(`private:${userId}`, candidates)
     const adapter = this.pool.getClient(selectedId)
     if (!adapter) throw new AppError(-1, '路由选择的账号已离线', 503)
-    const friendApi = new FriendApi(adapter.client)
+    const friendApi = createFriendApi(adapter.client)
     return friendApi.sendLike(Number(userId), times)
   }
 
@@ -225,7 +225,7 @@ export class MessageRouter {
     const masters = this.pool.getClientsByRole('master')
     const master = masters.find((c) => c.state === 'connected')
     if (!master) throw new AppError(-1, '主账号不在线，无法发送管理员通知', 503)
-    const msgApi = new MessageApi(master.client)
+    const msgApi = createMessageApi(master.client)
     return msgApi.sendPrivateMsg(Number(adminQq), message)
   }
 

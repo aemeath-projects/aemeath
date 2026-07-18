@@ -2,4 +2,3 @@ export { createRedis, checkRedisReachable, createBullMQConnection } from './fact
 export { RedisStore } from './store.js'
 export { cacheKeyRegistry, CacheKeyRegistry } from './registry.js'
 export type { CacheKeyDefinition } from './registry.js'
-export type { RedisLock } from './lock.js'

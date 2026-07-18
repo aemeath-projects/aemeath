@@ -42,14 +42,27 @@ export interface DailyCheckinResult {
   failed: number
 }
 
+/** 每日自动打卡协调器契约。 */
+export interface DailyCheckinService {
+  /** 是否有打卡任务正在执行。 */
+  readonly isRunning: boolean
+  /**
+   * 请求执行一轮打卡（防并发重入）。
+   *
+   * @param source - 触发来源
+   * @returns true 表示任务已触发，false 表示有任务正在执行（跳过）
+   */
+  requestCheckin(source?: CheckinSource): boolean
+}
+
 /**
- * 每日自动打卡协调器。
+ * 每日自动打卡协调器实现。
  *
  * 由 BullMQ 每天零点触发，WS 连接建立时亦可触发，
  * 均通过 Redis 日期键去重防止重复执行。
  * 打卡 API 使用 NapCat send_group_sign，不发送文本消息。
  */
-export class DailyCheckinService {
+export class DailyCheckinServiceImpl implements DailyCheckinService {
   private _currentTask: Promise<void> | null = null
   private readonly _log: PinoLogger = getLogger('daily-checkin') as unknown as PinoLogger
 
@@ -201,7 +214,7 @@ export class DailyCheckinBootstrap {
 
   @Startup
   start(): void {
-    this.dailyCheckinService = new DailyCheckinService(
+    this.dailyCheckinService = new DailyCheckinServiceImpl(
       this.db,
       this.cache,
       this.router,

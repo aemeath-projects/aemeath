@@ -6,7 +6,8 @@ import type { RedisStore } from '@/core/redis/index.js'
 import type { SettingsService } from '@/core/settings/index.js'
 // 导入 CheckinService 以注册 checkin cache keys
 import '@/services/checkin.js'
-import { DailyCheckinService } from '@/services/daily-checkin.js'
+import { DailyCheckinServiceImpl } from '@/services/daily-checkin.js'
+import type { DailyCheckinService } from '@/services/daily-checkin.js'
 
 function createMockDb(groupIds: string[] = ['100']) {
   return {
@@ -47,7 +48,7 @@ describe('DailyCheckinService', () => {
     mockCache = createMockCache()
     mockRouter = createMockRouter()
     mockSettings = createMockSettings()
-    service = new DailyCheckinService(
+    service = new DailyCheckinServiceImpl(
       mockDb as unknown as AemeathPrismaClient,
       mockCache as unknown as RedisStore,
       mockRouter as unknown as MessageRouter,

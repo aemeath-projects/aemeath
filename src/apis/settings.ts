@@ -73,7 +73,7 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
         querystring: SettingsValuesQuerySchema,
         response: {
           200: OkResponse(SettingsRecordDataSchema),
-          400: FailResponse(),
+          422: FailResponse(),
           500: FailResponse(),
         },
       },
@@ -98,7 +98,7 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
         body: SetValueRequestSchema,
         response: {
           200: OkResponse(Type.Null()),
-          400: FailResponse(),
+          422: FailResponse(),
           500: FailResponse(),
         },
       },
@@ -123,7 +123,7 @@ const permissionRoutes: FastifyPluginAsync = async (app) => {
         body: BatchSetRequestSchema,
         response: {
           200: OkResponse(Type.Null()),
-          400: FailResponse(),
+          422: FailResponse(),
           500: FailResponse(),
         },
       },
